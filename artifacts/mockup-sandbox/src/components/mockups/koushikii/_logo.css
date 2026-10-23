@@ -1,0 +1,7 @@
+.kq .brand { display:flex; align-items:center; }
+.kq .brand img { position:static; width:100%; height:auto; max-width:100%; object-fit:contain; }
+.kq .footbrand { display:flex; align-items:center; background:transparent; }
+.kq .footbrand img { position:static; width:100%; height:auto; max-width:100%; object-fit:contain; filter:none; mix-blend-mode:screen; }
+@media(max-width:650px) {
+  .kq .brand img { position:static; width:100%; height:auto; }
+}

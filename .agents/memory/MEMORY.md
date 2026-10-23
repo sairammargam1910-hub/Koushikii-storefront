@@ -1,0 +1,1 @@
+- [Storefront scope](storefront-scope.md) — client-led handloom storefront design, logo palette, future commerce integrations.
