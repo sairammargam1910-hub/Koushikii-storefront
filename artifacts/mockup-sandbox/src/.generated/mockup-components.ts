@@ -17,6 +17,7 @@ export const modules: ModuleMap = {
   "./components/mockups/koushikii/OurStory.tsx": () => import("../components/mockups/koushikii/OurStory.tsx"),
   "./components/mockups/koushikii/Policies.tsx": () => import("../components/mockups/koushikii/Policies.tsx"),
   "./components/mockups/koushikii/Product.tsx": () => import("../components/mockups/koushikii/Product.tsx"),
+  "./components/mockups/koushikii/Profile.tsx": () => import("../components/mockups/koushikii/Profile.tsx"),
   "./components/mockups/koushikii/SareeCare.tsx": () => import("../components/mockups/koushikii/SareeCare.tsx"),
   "./components/mockups/koushikii/TrackOrder.tsx": () => import("../components/mockups/koushikii/TrackOrder.tsx"),
   "./components/mockups/koushikii/WeaveGuide.tsx": () => import("../components/mockups/koushikii/WeaveGuide.tsx"),

@@ -12,4 +12,10 @@ The user explicitly rejected a modern-looking storefront and repeatedly emphasiz
 
 **Why:** The user corrected the first design because it reinterpreted the HTML content without inspecting its rendered appearance.
 
-**How to apply:** Home needs Collections, About Us, Blog, Contact Us, Log in and Search navigation; distinct bestselling, premium, new-arrival and client-review sections; animated handloom craft; and backgrounds inspired by regional weaving motifs. About Us needs how the brand started, its ideology supporting weavers, and an animated local-weaver gallery. Do not invent actual founder history, reviews or weaver identities when client content is missing.
+**How to apply:** Home needs distinct bestselling, premium, new-arrival and client-review sections; animated handloom craft; and backgrounds inspired by regional weaving motifs. About Us needs the brand's origin and philosophy supporting weavers, and an animated local-weaver gallery. Do not invent actual founder history, reviews or weaver identities when client content is missing.
+
+Keep only Home, Collections, Product, Our Story, Wishlist, Cart, Checkout, Confirmation, Account, Orders, Contact, Customer Care and Saree Care for now, plus a separate logged-in Profile preview.
+
+**Why:** The user explicitly narrowed the page list and requested a logged-in profile design; this supersedes the earlier request for Blog navigation.
+
+**How to apply:** Remove other standalone pages from the canvas and navigation. Regional exploration on Home must lead to sarees from that selected region only, never silently show all regions. Use useful factual copy without inventing missing client business facts.

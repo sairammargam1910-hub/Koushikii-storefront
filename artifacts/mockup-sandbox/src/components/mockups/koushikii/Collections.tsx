@@ -1,35 +1,42 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Shell, PageHero, products, ProductGrid, cottonWeaves } from "./_shared";
+import { defaultFilters, filterCatalog, normalizeRegion, normalizeWeave, regions } from "./_shared/catalog-filter";
+import type { CatalogFilters } from "./_shared/catalog-filter";
 
-export function Collections(){
+function readFilters():CatalogFilters {
  const params=new URLSearchParams(window.location.search);
- const [query,setQuery]=useState(params.get("q")||"");
- const [fabric,setFabric]=useState(params.get("fabric")||"All fabrics");
- const [weave,setWeave]=useState(params.get("weave")||"All weaves");
- const [category,setCategory]=useState(params.get("category")||"All pieces");
- const [sort,setSort]=useState("Featured");
- const [edit,setEdit]=useState(params.get("edit")||"all");
- const weaves=Array.from(new Set([...products.map(p=>p.weave),...cottonWeaves.map(w=>w.replace(" Cotton","")),weave])).filter(w=>w!=="All weaves");
- const filtered=useMemo(()=>products.filter(p=>
-  (!query||`${p.name} ${p.weave} ${p.fabric} ${p.type}`.toLowerCase().includes(query.toLowerCase()))&&
-  (fabric==="All fabrics"||p.fabric===fabric)&&
-  (weave==="All weaves"||p.weave===weave)&&
-  (category==="All pieces"||p.type.toLowerCase().includes(category.toLowerCase().startsWith("saree")?"saree":"dupatta"))&&
-  (edit!=="premium"||p.price>=12000)&&
-  (edit!=="new"||["New arrival","Just arrived","Hand-finished","Everyday"].includes(p.tag))
- ).sort((a,b)=>sort==="Price: low to high"?a.price-b.price:sort==="Price: high to low"?b.price-a.price:0),[query,fabric,weave,category,sort,edit]);
- return <Shell><PageHero eyebrow="The collection · Sample catalog" title={edit==="premium"?"The Premium Collection":edit==="new"?"New Arrivals":"Cloth with a place. Weaves with a story."} subtitle="From South Indian temple borders to the diverse textile traditions of India. Explore by fabric, weave or the way you wear it."/>
+ return {...defaultFilters,query:params.get("q")||"",fabric:params.get("fabric")||defaultFilters.fabric,
+  weave:params.has("weave")?normalizeWeave(params.get("weave")!):defaultFilters.weave,
+  category:params.get("category")||defaultFilters.category,region:normalizeRegion(params.get("region")||""),
+  edit:params.get("edit")||"all",sort:params.get("sort")||"Featured"};
+}
+export function Collections(){
+ const [filters,setFilters]=useState<CatalogFilters>(readFilters);
+ const {query,fabric,weave,category,region,edit,sort}=filters;
+ const update=(values:Partial<CatalogFilters>)=>setFilters(f=>({...f,...values}));
+ useEffect(()=>{const sync=()=>setFilters(readFilters());window.addEventListener("popstate",sync);return()=>window.removeEventListener("popstate",sync)},[]);
+ useEffect(()=>{
+  const params=new URLSearchParams();
+  Object.entries(filters).forEach(([key,value])=>{if(value!==defaultFilters[key as keyof CatalogFilters])params.set(key==="query"?"q":key,value)});
+  const search=params.toString();
+  window.history.replaceState(null,"",window.location.pathname+(search?"?"+search:"")+window.location.hash);
+ },[filters]);
+ const filtered=useMemo(()=>filterCatalog(products,filters),[filters]);
+ const weaves=Array.from(new Set([...products.map(p=>p.weave),...cottonWeaves.map(normalizeWeave),weave])).filter(w=>w!=="All weaves");
+ const active=Object.entries(filters).filter(([key,value])=>value!==defaultFilters[key as keyof CatalogFilters]);
+ return <Shell><PageHero eyebrow="The collection · Sample catalog" title={edit==="premium"?"The Premium Collection":edit==="new"?"New Arrivals":"Cloth with a place. Weaves with a story."} subtitle="Explore South Indian temple borders and the textile traditions of India. Choose a region, fabric or weave to find your thread."/>
  <main className="content wrap">
-  <div className="toolbar">{["All pieces","Sarees","Dupattas"].map(c=><button key={c} className="btn small outline" aria-pressed={category===c} style={{background:category===c?"#efe2c8":"transparent"}} onClick={()=>setCategory(c)}>{c}</button>)}
-  <label style={{marginLeft:"auto",fontSize:12}}>Collection edit <select value={edit} onChange={e=>setEdit(e.target.value)}><option value="all">All collections</option><option value="premium">Premium Collection</option><option value="new">New Arrivals</option></select></label></div>
-  <details><summary>Cotton handlooms · Explore regional weaves</summary><div className="toolbar">{cottonWeaves.map(w=><button key={w} className="pill" style={{border:"1px solid var(--line)"}} onClick={()=>{setWeave(w.replace(" Cotton",""));setFabric("Cotton")}}>{w}</button>)}</div><p className="muted">Some traditions are awaiting sample products. The catalog does not yet represent the complete planned collection.</p></details>
-  <div className="filterbar"><input aria-label="Search collection" type="search" placeholder="Search by weave or name…" value={query} onChange={e=>setQuery(e.target.value)}/>
-   <select aria-label="Filter by fabric" value={fabric} onChange={e=>setFabric(e.target.value)}><option>All fabrics</option><option>Cotton</option><option>Silk</option><option>Cotton-Silk</option><option>Other blends</option></select>
-   <select aria-label="Filter by weave" value={weave} onChange={e=>setWeave(e.target.value)}><option>All weaves</option>{weaves.map(w=><option key={w}>{w}</option>)}</select>
-   <select aria-label="Sort collection" value={sort} onChange={e=>setSort(e.target.value)}><option>Featured</option><option>Price: low to high</option><option>Price: high to low</option></select>
-   <span className="muted" style={{marginLeft:"auto"}}>{filtered.length} pieces</span>
+  <div className="toolbar">{["All pieces","Sarees","Dupattas"].map(c=><button key={c} className="btn small outline" aria-pressed={category===c} style={{background:category===c?"#efe2c8":"transparent"}} onClick={()=>update({category:c})}>{c}</button>)}
+  <label style={{marginLeft:"auto",fontSize:12}}>Collection edit <select value={edit} onChange={e=>update({edit:e.target.value})}><option value="all">All collections</option><option value="premium">Premium Collection</option><option value="new">New Arrivals</option>{!["all","premium","new"].includes(edit)&&<option value={edit}>Unknown edit: {edit}</option>}</select></label></div>
+  <details><summary>Cotton handlooms · Explore regional weaves</summary><div className="toolbar">{cottonWeaves.map(w=><button key={w} className="pill" style={{border:"1px solid var(--line)"}} onClick={()=>update({weave:normalizeWeave(w),fabric:"Cotton",category:"Sarees"})}>{w}</button>)}</div><p className="muted">The sample catalog represents only a few traditions. Some selections have no sample pieces.</p></details>
+  <div className="filterbar"><input aria-label="Search collection" type="search" placeholder="Search by weave or name…" value={query} onChange={e=>update({query:e.target.value})}/>
+   <select aria-label="Filter by region" value={region} onChange={e=>update({region:e.target.value})}><option value="">All regions</option>{region&&!regions[region]&&<option value={region}>Unknown region: {region}</option>}{Object.entries(regions).sort((a,b)=>a[1].localeCompare(b[1])).map(([code,name])=><option key={code} value={code}>{name}</option>)}</select>
+   <select aria-label="Filter by fabric" value={fabric} onChange={e=>update({fabric:e.target.value})}>{Array.from(new Set(["All fabrics","Cotton","Silk","Cotton-Silk","Other blends",fabric])).map(f=><option key={f}>{f}</option>)}</select>
+   <select aria-label="Filter by weave" value={weave} onChange={e=>update({weave:e.target.value})}><option>All weaves</option>{weaves.map(w=><option key={w}>{w}</option>)}</select>
+   <select aria-label="Sort collection" value={sort} onChange={e=>update({sort:e.target.value})}><option>Featured</option><option>Price: low to high</option><option>Price: high to low</option></select>
   </div>
-  {filtered.length?<ProductGrid items={filtered}/>:<div className="empty"><span className="eyebrow">More threads to come</span><h2 style={{marginTop:15}}>This weave is still on its way.</h2><p>No sample pieces match these filters. Explore the rest of the collection.</p><button className="btn" onClick={()=>{setQuery("");setFabric("All fabrics");setWeave("All weaves");setCategory("All pieces");setEdit("all")}}>Explore all pieces</button></div>}
-  <p className="muted" style={{fontSize:11,marginTop:25}}>Design preview · Illustrative textile swatches, sample products and prices. Final product imagery and catalog await client content.</p>
- </main></Shell>
+  <div className="active-filters" aria-live="polite"><strong>{filtered.length} sample {filtered.length===1?"piece":"pieces"}</strong>{active.map(([key,value])=><span className="pill" key={key}>{key==="region"?"Region: "+(regions[value]||"Unknown ("+value+")"):key+": "+value}</span>)}{active.length>0&&<button className="btn small outline" onClick={()=>setFilters({...defaultFilters})}>Clear all filters</button>}</div>
+  {filtered.length?<ProductGrid items={filtered}/>:<div className="empty"><span className="eyebrow">A collection to discover</span><h2 style={{marginTop:15}}>No sample pieces match.</h2><p>{region?`There are no sample ${category==="Sarees"?"sarees":"pieces"} for ${regions[region]||"this unrecognised region"} with the selected filters.`:"Try changing a filter to discover another textile."} No other regions have been substituted.</p><button className="btn" onClick={()=>setFilters({...defaultFilters})}>Reset to all pieces</button></div>}
+  <p className="muted" style={{fontSize:11,marginTop:25}}>Design preview · Sample products, prices and illustrative pattern swatches. Regional assignments support collection discovery only; they do not certify origin, fibre or handloom production.</p>
+ </main></Shell>;
 }

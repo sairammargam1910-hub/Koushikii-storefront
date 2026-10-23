@@ -56,7 +56,7 @@ export function SareeCare() {
     <li><h3>Ease the folds</h3><p>Fold gently along the length without forcing a sharp crease through a heavy border. Change fold positions from time to time.</p></li>
     <li><h3>Make a little room</h3><p>Use a clean, breathable cover. Avoid overcrowding, plastic sealed around damp cloth, and jewellery or pins stored inside the folds.</p></li>
    </ol></section>
-   <section className="related-guide"><div><span className="eyebrow">Know the weave, too</span><h3>Read the border. Follow the thread.</h3><p>Understand the difference between a fibre, a technique and a regional textile tradition.</p></div><a className="btn gold" href={base+"WeaveGuide"}>Explore the weave guide <ArrowRight size={14}/></a></section>
+   <section className="related-guide"><div><span className="eyebrow">Find your next thread</span><h3>Read the border. Explore the cloth.</h3><p>Browse the sample collection by fibre, regional tradition or the way you wear it. Always check the care instructions for the individual piece.</p></div><a className="btn gold" href={base+"Collections"}>Explore the collections <ArrowRight size={14}/></a></section>
   </main>
  </Shell>;
 }
