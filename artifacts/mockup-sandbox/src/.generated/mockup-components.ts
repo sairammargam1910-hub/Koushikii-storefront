@@ -8,6 +8,7 @@ export const modules: ModuleMap = {
   "./components/mockups/koushikii/Collections.tsx": () => import("../components/mockups/koushikii/Collections.tsx"),
   "./components/mockups/koushikii/Confirmation.tsx": () => import("../components/mockups/koushikii/Confirmation.tsx"),
   "./components/mockups/koushikii/Contact.tsx": () => import("../components/mockups/koushikii/Contact.tsx"),
+  "./components/mockups/koushikii/CraftAnimation.tsx": () => import("../components/mockups/koushikii/CraftAnimation.tsx"),
   "./components/mockups/koushikii/Help.tsx": () => import("../components/mockups/koushikii/Help.tsx"),
   "./components/mockups/koushikii/Home.tsx": () => import("../components/mockups/koushikii/Home.tsx"),
   "./components/mockups/koushikii/Journal.tsx": () => import("../components/mockups/koushikii/Journal.tsx"),
