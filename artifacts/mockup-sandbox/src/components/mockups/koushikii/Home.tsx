@@ -39,7 +39,7 @@ function IndiaWeaves(){
    <select id="weave-state" className="state-select" value={selected} onChange={e=>setSelected(e.target.value)}>{Object.entries(stateNames).map(([code,name])=><option key={code} value={code}>{name}</option>)}</select>
    <h3>{stateNames[selected]||"Tamil Nadu"}</h3>
    {info?<ul>{info[1].map(([name,description])=><li key={name}><strong>{name}</strong><br/><span style={{fontSize:12,color:"#eddbc0"}}>{description}</span></li>)}</ul>:<p>Our weave notes for this region are still being gathered. Explore the journal for more craft stories.</p>}
-   <a className="btn gold" href={base+"Journal"}>Read the weave stories <ArrowRight size={14}/></a>
+    <a className="btn gold" href={base+"WeaveGuide"}>Explore the weave guide <ArrowRight size={14}/></a>
   </div></div>
  </div></section>
 }
@@ -64,7 +64,7 @@ export function Home(){
    <div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>
   </div></section>
   <ProductCarousel title="Most Loved" copy="The bestseller edit · Sample selection"/>
-  <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Premium Collection</span><h2>Heirloom pieces,<br/>woven over weeks.</h2><p>Celebratory silks, intricate borders and cloth to keep close. Discover the premium edit.</p><a className="btn gold" href={base+"Collections?edit=premium"}>Explore Premium <ArrowRight size={14}/></a></div><div className="mini-swatches">{["s1","s3","s4"].map((s,i)=><a key={s} href={base+"Product?id="+["surya","ambar","nila"][i]}><Textile pattern={s} label={["Kanchipuram silk","Banarasi silk","Ikat cotton-silk"][i]}/><span style={{display:"block",marginTop:9,fontSize:11}}>{["Kanchipuram","Banarasi","Ikat"][i]}</span></a>)}</div></div></div></section>
+   <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Premium Collection</span><h2>For the days<br/>you will remember.</h2><p>Celebratory silks, intricate borders and cloth to keep close. Discover the premium edit.</p><a className="btn gold" href={base+"Collections?edit=premium"}>Explore Premium <ArrowRight size={14}/></a></div><div className="mini-swatches">{["s3","s1","s1"].map((s,i)=><a key={i} href={base+"Product?id="+["surya","ambar","nila"][i]}><Textile pattern={s} label={["Kanchipuram silk","Banarasi silk","Ikat cotton-silk"][i]}/><span style={{display:"block",marginTop:9,fontSize:11}}>{["Kanchipuram","Banarasi","Ikat"][i]}</span></a>)}</div></div></div></section>
   <ProductCarousel title="New Arrivals" copy="A fresh chapter from the loom · Sample selection" offset={4}/>
   <section className="section" id="craft-animation" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">A rhythm older than us</span><h2>The Craft, Animated</h2><p>A South Indian handloom workshop, brought to life in an illustrated loop.</p></div></div><CraftAnimation/></div></section>
   <IndiaWeaves/>
@@ -72,5 +72,6 @@ export function Home(){
   <section className="section"><div className="wrap"><div className="section-head"><div><h2>Shop by Weave</h2><p>Different regions. Distinct hands. A shared love of cloth.</p></div><a href={base+"Collections"} className="link">All weaves →</a></div>
    <div className="weave-grid">{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina","Narayanpet"].map((w,i)=><a key={w} href={base+"Collections?weave="+w}><Textile pattern={"s"+(i+1)} label={w}/><h3>{w}</h3><span className="eyebrow" style={{fontSize:9}}>Explore →</span></a>)}</div>
   </div></section>
+   <section className="section" style={{paddingTop:12}}><div className="wrap home-guide-link"><a href={base+"WeaveGuide"}><span className="eyebrow">A companion for choosing</span><h3>Know the weave.</h3><p>Begin with Kanchipuram, Mangalagiri and Narayanpet. Discover the difference between a place, a fibre and a technique.</p><span className="link">Explore the weave guide →</span></a><a href={base+"SareeCare"}><span className="eyebrow">A companion for keeping</span><h3>Care for the cloth.</h3><p>Give an everyday cotton and a treasured silk the different kinds of attention they need.</p><span className="link">Read the saree care notes →</span></a></div></section>
  </Shell>
 }

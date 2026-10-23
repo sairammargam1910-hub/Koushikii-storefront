@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, PageHero, base } from "./_shared";
 import { CraftScene } from "./CraftAnimation";
 
@@ -9,19 +9,19 @@ const profiles = [
  {role:"dyeing" as const,title:"Colour, slowly gathered",copy:"Yarn meets the dye bath before it reaches the loom. Colours, methods and materials differ between weaving communities.",note:"Dyeing · Illustrative craft role"},
 ];
 function WeaverGallery(){
- const [slide,setSlide]=useState(0),[playing,setPlaying]=useState(true);
+ const [slide,setSlide]=useState(0),[playing,setPlaying]=useState(true),[reduced,setReduced]=useState(true),[replay,setReplay]=useState(0);
  useEffect(()=>{
   const media=window.matchMedia("(prefers-reduced-motion: reduce)");
-  const update=()=>setPlaying(!media.matches);update();media.addEventListener("change",update);
+  const update=()=>{setReduced(media.matches);setPlaying(!media.matches)};update();media.addEventListener("change",update);
   return()=>media.removeEventListener("change",update);
  },[]);
- useEffect(()=>{if(!playing)return;const timer=window.setInterval(()=>setSlide(s=>(s+1)%profiles.length),7000);return()=>window.clearInterval(timer)},[playing]);
+ useEffect(()=>{if(!playing||reduced)return;const timer=window.setInterval(()=>setSlide(s=>(s+1)%profiles.length),16000);return()=>window.clearInterval(timer)},[playing,reduced]);
  const p=profiles[slide];
  return <section className="section"><div className="wrap">
   <div className="section-head"><div><span className="eyebrow">The people behind the process</span><h2>A workshop in motion</h2><p>An animated gallery of local craft roles — not a directory of actual makers.</p></div></div>
-  <div className="maker-gallery"><div className="craft-frame"><CraftScene key={p.role} role={p.role} paused={!playing}/></div><div>
+  <div className="maker-gallery"><div className="craft-frame"><CraftScene key={p.role+replay} role={p.role} paused={!playing}/></div><div>
    <span className="draft-label">Illustrative profile · Not an actual employee</span><h3>{p.title}</h3><p className="muted">{p.copy}</p><p className="eyebrow" style={{fontSize:10}}>{p.note}</p>
-   <div className="carousel-controls" style={{marginTop:25}}><button onClick={()=>setSlide((slide+2)%3)} aria-label="Previous craft role"><ArrowLeft size={15}/></button><span>{slide+1} / 3</span><button onClick={()=>setSlide((slide+1)%3)} aria-label="Next craft role"><ArrowRight size={15}/></button><button aria-pressed={playing} onClick={()=>setPlaying(!playing)}>{playing?<Pause size={14}/>:<Play size={14}/>} {playing?"Pause":"Play"}</button></div>
+   <div className="carousel-controls" style={{marginTop:25,flexWrap:"wrap"}}><button onClick={()=>{setSlide((slide+2)%3);setPlaying(false)}} aria-label="Previous craft role"><ArrowLeft size={15}/></button><span>{slide+1} / 3</span><button onClick={()=>{setSlide((slide+1)%3);setPlaying(false)}} aria-label="Next craft role"><ArrowRight size={15}/></button><button disabled={reduced} aria-pressed={playing&&!reduced} onClick={()=>setPlaying(!playing)}>{playing&&!reduced?<Pause size={14}/>:<Play size={14}/>} {playing&&!reduced?"Pause":"Play"}</button><button onClick={()=>{setReplay(r=>r+1);setPlaying(!reduced)}}><RotateCcw size={14}/>{reduced?"Reset still":"Replay"}</button></div>
    <p className="muted" style={{fontSize:11}}>Original illustrated scenes. Verified names, portraits and maker stories will be added with permission.</p>
   </div></div>
  </div></section>

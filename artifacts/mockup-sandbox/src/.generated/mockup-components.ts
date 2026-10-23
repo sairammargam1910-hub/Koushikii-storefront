@@ -9,6 +9,7 @@ export const modules: ModuleMap = {
   "./components/mockups/koushikii/Confirmation.tsx": () => import("../components/mockups/koushikii/Confirmation.tsx"),
   "./components/mockups/koushikii/Contact.tsx": () => import("../components/mockups/koushikii/Contact.tsx"),
   "./components/mockups/koushikii/CraftAnimation.tsx": () => import("../components/mockups/koushikii/CraftAnimation.tsx"),
+  "./components/mockups/koushikii/CustomerCare.tsx": () => import("../components/mockups/koushikii/CustomerCare.tsx"),
   "./components/mockups/koushikii/Help.tsx": () => import("../components/mockups/koushikii/Help.tsx"),
   "./components/mockups/koushikii/Home.tsx": () => import("../components/mockups/koushikii/Home.tsx"),
   "./components/mockups/koushikii/Journal.tsx": () => import("../components/mockups/koushikii/Journal.tsx"),
@@ -16,6 +17,8 @@ export const modules: ModuleMap = {
   "./components/mockups/koushikii/OurStory.tsx": () => import("../components/mockups/koushikii/OurStory.tsx"),
   "./components/mockups/koushikii/Policies.tsx": () => import("../components/mockups/koushikii/Policies.tsx"),
   "./components/mockups/koushikii/Product.tsx": () => import("../components/mockups/koushikii/Product.tsx"),
+  "./components/mockups/koushikii/SareeCare.tsx": () => import("../components/mockups/koushikii/SareeCare.tsx"),
   "./components/mockups/koushikii/TrackOrder.tsx": () => import("../components/mockups/koushikii/TrackOrder.tsx"),
+  "./components/mockups/koushikii/WeaveGuide.tsx": () => import("../components/mockups/koushikii/WeaveGuide.tsx"),
   "./components/mockups/koushikii/Wishlist.tsx": () => import("../components/mockups/koushikii/Wishlist.tsx")
 };

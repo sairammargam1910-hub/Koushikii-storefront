@@ -8,7 +8,7 @@ The user is designing the complete customer-facing storefront for their client's
 
 **How to apply:** Keep customer browsing, purchase and after-purchase pages visually consistent. Backend/admin is planned for Shopify or WordPress, with third-party payment and delivery services; neither platform nor providers were selected. Do not treat prototype flows as live integrations or choose a provider without confirmation.
 
-The user explicitly rejected a modern-looking storefront and wants a design resembling South Indian culture. Render and visually inspect supplied HTML references, not only extract their text. Preserve their traditional motifs and page structure while applying the organisation logo colours.
+The user explicitly rejected a modern-looking storefront and repeatedly emphasized that the design should resemble Indian culture very deeply, especially South Indian culture. Render and visually inspect supplied HTML references, not only extract their text. Preserve their traditional motifs and page structure while applying the organisation logo colours.
 
 **Why:** The user corrected the first design because it reinterpreted the HTML content without inspecting its rendered appearance.
 

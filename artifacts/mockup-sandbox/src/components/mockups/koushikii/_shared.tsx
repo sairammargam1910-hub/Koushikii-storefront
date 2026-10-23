@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, Instagram, ChevronRight, Check, ChevronDown, UserRound } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound } from "lucide-react";
 import "./_group.css";
 import "./_logo.css";
 import "./_heritage.css";
+import "./_refinements.css";
+import { LogoSilhouette } from "./_LogoSilhouette";
 
 export const base="/__mockup/preview/koushikii/";
 export const products=[
@@ -22,7 +24,7 @@ export function format(n:number){return `₹${n.toLocaleString("en-IN")}`}
 export function addItem(id:string){const list=getItems("kq-cart");const found=list.find(x=>x.id===id);if(found)found.qty++;else list.push({id,qty:1});saveItems("kq-cart",list)}
 export function toggleWish(id:string){const list=getItems("kq-wish");saveItems("kq-wish",list.some(x=>x.id===id)?list.filter(x=>x.id!==id):[...list,{id,qty:1}])}
 export function useStore(key:string){const [items,set]=useState<Item[]>(()=>getItems(key));useEffect(()=>{const sync=()=>set(getItems(key));window.addEventListener("storage",sync);window.addEventListener("kq-storage",sync);return()=>{window.removeEventListener("storage",sync);window.removeEventListener("kq-storage",sync)}},[key]);return items}
-export const cottonWeaves = ["Mangalagiri Cotton","Narayanpet","Venkatagiri","Gadwal","Kosargad","Paithani","Kala Cotton","Patola","Ikat","Moirang Phee","Kanchi Cottons","Chettinad Cottons","Banaras Cottons","Kota Cottons"];
+export const cottonWeaves = ["Mangalagiri Cotton","Narayanpet","Venkatagiri","Gadwal","Kasaragod","Paithani","Kala Cotton","Patola","Ikat","Moirang Phee","Kanchi Cottons","Chettinad Cottons","Banaras Cottons","Kota Cottons"];
 export function TempleBorder(){return <div className="temple-border" aria-hidden="true"/>}
 export function Header(){
  const [menu,setMenu]=useState(false),[search,setSearch]=useState(false);
@@ -33,7 +35,7 @@ export function Header(){
   <a className="brand" href={base+"Home"}><img src="/__mockup/images/koushikii/wordmark-red.png" alt="Chenetha by Koushikii"/></a>
   <nav id="kq-main-menu" aria-label="Main menu" className={`nav ${menu?"open":""}`}>
    <details className="collection-nav"><summary>Collections <ChevronDown size={13}/></summary>
-    <div className="mega-menu"><div><strong>Cotton handlooms</strong><div className="cotton-links">{cottonWeaves.map(w=><a key={w} href={base+"Collections?weave="+encodeURIComponent(w.replace(" Cotton",""))}>{w}</a>)}</div></div>
+     <div className="mega-menu"><div><strong>Regional handlooms</strong><div className="cotton-links">{cottonWeaves.map(w=><a key={w} href={base+"Collections?weave="+encodeURIComponent(w.replace(/ Cottons?$/,""))}>{w}</a>)}</div><a href={base+"WeaveGuide"} className="link" style={{marginTop:18}}>A guide to places & processes →</a></div>
     <div><strong>Shop by Fabric</strong>{["Cotton","Silk","Cotton-Silk","Other blends"].map(f=><a key={f} href={base+"Collections?fabric="+encodeURIComponent(f)}>{f}</a>)}
     <div className="menu-weaves"><strong>Shop by Weave</strong>{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina"].map(w=><a key={w} href={base+"Collections?weave="+w}>{w}</a>)}<a href={base+"Collections"}>View all collections →</a></div></div></div>
    </details>
@@ -50,9 +52,9 @@ export function Footer(){
  return <footer className="footer"><TempleBorder/><div className="wrap">
  <div className="newsletter"><div><h3>Letters from the loom</h3><p>New weaves, care notes and the stories behind the cloth.</p></div>
  <div>{subscribed?<p role="status">Thank you. Your sign-up is recorded for this demo only.</p>:<form onSubmit={e=>{e.preventDefault();setSubscribed(true)}}><input required type="email" aria-label="Newsletter email address" placeholder="Your email address"/><button className="btn gold">Subscribe <ArrowRight size={14}/></button></form>}<p style={{fontSize:10}}>Preview only · No email is sent or shared.</p></div></div>
- <div className="footgrid"><div><div className="footbrand"><img src="/__mockup/images/koushikii/wordmark-white.png" alt="Chenetha by Koushikii"/></div><p>Sarees and dupattas. The warmth of a hand, the memory of a loom.</p><a href={base+"Journal"}>Follow the thread <Instagram size={13}/></a></div>
+  <div className="footgrid"><div><a className="footbrand" href={base+"Home"}><LogoSilhouette/></a><p>Sarees and dupattas. The warmth of a hand, the memory of a loom.</p><a href={base+"Journal"}>Follow the thread <ArrowRight size={13}/></a></div>
  <div><h4>Shop</h4><p><a href={base+"Collections"}>Collections</a><br/><a href={base+"Collections?edit=new"}>New Arrivals</a><br/><a href={base+"Collections?edit=premium"}>Premium Collection</a><br/><a href={base+"OurStory"}>About Us</a></p></div>
- <div><h4>Here to help</h4><p><a href={base+"Help"}>FAQs & care guide</a><br/><a href={base+"TrackOrder"}>Track an order</a><br/><a href={base+"Contact"}>Contact Us</a><br/><a href={base+"Journal"}>Blog</a></p></div>
+  <div><h4>Cloth & care</h4><p><a href={base+"WeaveGuide"}>A guide to our weaves</a><br/><a href={base+"SareeCare"}>Saree care</a><br/><a href={base+"CustomerCare"}>Customer care & FAQs</a><br/><a href={base+"TrackOrder"}>Track an order</a><br/><a href={base+"Contact"}>Contact Us</a><br/><a href={base+"Journal"}>Blog</a></p></div>
  <div><h4>Your account</h4><p><a href={base+"Policies"}>Draft policies</a><br/><a href={base+"Account"}>Log in</a><br/><a href={base+"Orders"}>Orders & returns</a><br/><a href={base+"Wishlist"}>Your wishlist</a></p></div></div>
  <div className="copyright">© Chenetha by Koushikii · Design preview · Sample catalog, illustrative artwork and demo checkout.</div></div></footer>
 }
