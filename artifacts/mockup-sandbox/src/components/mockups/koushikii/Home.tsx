@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Shell, products, ProductGrid, base, TempleBorder } from "./_shared";
 import { WeavingJourney } from "./WeavingJourney";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
+import "./Home.css";
 
 const fabrics = [
  {name:"Cotton",className:"cotton",copy:"Breathable, everyday handlooms",query:"Cotton"},
