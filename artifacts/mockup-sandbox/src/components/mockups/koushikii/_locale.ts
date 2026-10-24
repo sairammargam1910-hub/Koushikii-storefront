@@ -586,6 +586,184 @@ const normalizedPhrases = new Map(
     translations,
   ]),
 );
+const termTranslations: Record<string, [string, string]> = {
+  "Nila Ikat": ["నీల ఇకత్", "नीला इकत"],
+  "Gulmohar Jamdani": ["గుల్మోహర్ జమ్దానీ", "गुलमोहर जामदानी"],
+  "Surya Kanchipuram": ["సూర్య కాంచీపురం", "सूर्य कांचीपुरम"],
+  "Noor Pashmina": ["నూర్ పష్మీనా", "नूर पश्मीना"],
+  "Mira Narayanpet": ["మీరా నారాయణపేట", "मीरा नारायणपेट"],
+  "Indigo Mangalagiri": ["ఇండిగో మంగళగిరి", "इंडिगो मंगलगिरि"],
+  "Ambar Banarasi": ["అంబర్ బనారసీ", "अंबर बनारसी"],
+  "Rekha Moirang Phee": ["రేఖా మొయిరాంగ్ ఫీ", "रेखा मोइरांग फी"],
+  "Cotton-silk saree": ["కాటన్-పట్టు చీర", "सूती-रेशमी साड़ी"],
+  "Cotton-silk": ["కాటన్-పట్టు", "सूती-रेशमी"],
+  "Handwoven cotton saree": ["చేతితో నేసిన కాటన్ చీర", "हाथ से बुनी सूती साड़ी"],
+  "Pure silk saree": ["స్వచ్ఛమైన పట్టు చీర", "शुद्ध रेशमी साड़ी"],
+  "Handwoven dupatta": ["చేతితో నేసిన దుపట్టా", "हाथ से बुना दुपट्टा"],
+  "Cotton saree": ["కాటన్ చీర", "सूती साड़ी"],
+  "Silk saree": ["పట్టు చీర", "रेशमी साड़ी"],
+  "Woven dupatta": ["నేసిన దుపట్టా", "बुना दुपट्टा"],
+  "New arrival": ["కొత్త రాక", "नई पेशकश"],
+  "Pattern study": ["నేత నమూనా పరిశీలన", "बुनाई नमूना"],
+  "Heirloom edit": ["వారసత్వ సేకరణ", "धरोहर चयन"],
+  "Fine fibres": ["సున్నితమైన నూలు", "बारीक रेशे"],
+  "Everyday": ["రోజువారీ", "रोज़मर्रा"],
+  "Loom classic": ["మగ్గపు సంప్రదాయ నేత", "करघे की पारंपरिक बुनाई"],
+  "Just arrived": ["ఇప్పుడే వచ్చింది", "अभी आई"],
+  "Wool & fine blends": ["ఉన్ని & సున్నితమైన మిశ్రమాలు", "ऊन और महीन मिश्रण"],
+  "Order on WhatsApp": ["WhatsApp ద్వారా ఆర్డర్ చేయండి", "WhatsApp पर ऑर्डर करें"],
+  "Orders & tracking →": ["ఆర్డర్లు & ట్రాకింగ్ →", "ऑर्डर और ट्रैकिंग →"],
+  "Care for your cloth": ["మీ వస్త్రాన్ని జాగ్రత్తగా చూసుకోండి", "अपने कपड़े की देखभाल करें"],
+  "Yarn preparation · Hand-cranked bobbin winder · Illustrated study": ["నూలు సిద్ధం · చేతితో తిప్పే బాబిన్ చుట్టే పరికరం · చిత్ర అధ్యయనం", "धागा तैयार करना · हाथ से चलने वाला बॉबिन लपेटने का औज़ार · चित्रात्मक अध्ययन"],
+  "Yarn preparation · Hand-cranked bobbin winder": ["నూలు సిద్ధం · చేతితో తిప్పే బాబిన్ చుట్టే పరికరం", "धागा तैयार करना · हाथ से चलने वाला बॉबिन लपेटने का औज़ार"],
+  "At the loom · Lift, pass, settle, beat": ["మగ్గం వద్ద · పైకెత్తడం, దారం చొప్పించడం, కిందపరచడం, బిగించడం", "करघे पर · उठाना, धागा गुज़ारना, बैठाना, कसकर दबाना"],
+  "At the dye bath · Lowering a hank of yarn": ["రంగు పాత్ర వద్ద · నూలు ముడిని మెల్లగా దించడం", "रंगाई के पात्र पर · धागे की लच्छी नीचे उतारना"],
+  "Illustrated study": ["చిత్ర అధ్యయనం", "चित्रात्मक अध्ययन"],
+  "· Illustrated study": ["· చిత్ర అధ్యయనం", "· चित्रात्मक अध्ययन"],
+  "In transit · sample": ["రవాణాలో · నమూనా", "रास्ते में · नमूना"],
+  "16 Aug 2024": ["16 ఆగస్టు 2024", "16 अगस्त 2024"],
+  "Andaman and Nicobar Islands": ["ఆండమాన్ నికోబార్ దీవులు", "अंडमान और निकोबार द्वीपसमूह"],
+  "Andhra Pradesh": ["ఆంధ్రప్రదేశ్", "आंध्र प्रदेश"],
+  "Arunachal Pradesh": ["అరుణాచల్ ప్రదేశ్", "अरुणाचल प्रदेश"],
+  "Assam": ["అస్సాం", "असम"],
+  "Bihar": ["బీహార్", "बिहार"],
+  "Chandigarh": ["చండీగఢ్", "चंडीगढ़"],
+  "Chhattisgarh": ["ఛత్తీస్‌గఢ్", "छत्तीसगढ़"],
+  "Dadra and Nagar Haveli": ["దాద్రా నగర్ హవేలీ", "दादरा और नगर हवेली"],
+  "Dadra and Nagar Haveli and Daman and Diu": ["దాద్రా నగర్ హవేలీ మరియు దమన్ డయ్యూ", "दादरा और नगर हवेली और दमन और दीव"],
+  "Daman and Diu": ["దమన్ డయ్యూ", "दमन और दीव"],
+  "Delhi": ["ఢిల్లీ", "दिल्ली"],
+  "Goa": ["గోవా", "गोवा"],
+  "Gujarat": ["గుజరాత్", "गुजरात"],
+  "Haryana": ["హర్యానా", "हरियाणा"],
+  "Himachal Pradesh": ["హిమాచల్ ప్రదేశ్", "हिमाचल प्रदेश"],
+  "Jammu and Kashmir": ["జమ్మూ కశ్మీర్", "जम्मू और कश्मीर"],
+  "Jharkhand": ["జార్ఖండ్", "झारखंड"],
+  "Karnataka": ["కర్ణాటక", "कर्नाटक"],
+  "Kerala": ["కేరళ", "केरल"],
+  "Lakshadweep": ["లక్షద్వీప్", "लक्षद्वीप"],
+  "Ladakh": ["లడఖ్", "लद्दाख"],
+  "Madhya Pradesh": ["మధ్యప్రదేశ్", "मध्य प्रदेश"],
+  "Maharashtra": ["మహారాష్ట్ర", "महाराष्ट्र"],
+  "Manipur": ["మణిపూర్", "मणिपुर"],
+  "Meghalaya": ["మేఘాలయ", "मेघालय"],
+  "Mizoram": ["మిజోరం", "मिज़ोरम"],
+  "Nagaland": ["నాగాలాండ్", "नागालैंड"],
+  "Odisha": ["ఒడిశా", "ओडिशा"],
+  "Puducherry": ["పుదుచ్చేరి", "पुडुचेरी"],
+  "Punjab": ["పంజాబ్", "पंजाब"],
+  "Rajasthan": ["రాజస్థాన్", "राजस्थान"],
+  "Sikkim": ["సిక్కిం", "सिक्किम"],
+  "Tamil Nadu": ["తమిళనాడు", "तमिलनाडु"],
+  "Telangana": ["తెలంగాణ", "तेलंगाना"],
+  "Tripura": ["త్రిపుర", "त्रिपुरा"],
+  "Uttar Pradesh": ["ఉత్తరప్రదేశ్", "उत्तर प्रदेश"],
+  "Uttarakhand": ["ఉత్తరాఖండ్", "उत्तराखंड"],
+  "West Bengal": ["పశ్చిమ బెంగాల్", "पश्चिम बंगाल"],
+  "Mangalagiri Cotton": ["మంగళగిరి కాటన్", "मंगलगिरि सूती"],
+  "Narayanpet": ["నారాయణపేట", "नारायणपेट"],
+  "Venkatagiri": ["వెంకటగిరి", "वेंकटगिरि"],
+  "Gadwal": ["గద్వాల్", "गडवाल"],
+  "Kasaragod": ["కాసరగోడ్", "कासरगोड"],
+  "Paithani": ["పైఠణీ", "पैठणी"],
+  "Kala Cotton": ["కాలా కాటన్", "काला सूती"],
+  "Kala": ["కాలా", "काला"],
+  "Patola": ["పటోలా", "पटोला"],
+  "Ikat": ["ఇకత్", "इकत"],
+  "Moirang Phee": ["మొయిరాంగ్ ఫీ", "मोइरांग फी"],
+  "Kanchi Cottons": ["కాంచీ కాటన్లు", "कांची सूती"],
+  "Kanchi": ["కాంచీ", "कांची"],
+  "Chettinad Cotton": ["చెట్టినాడు కాటన్", "चेट्टीनाड सूती"],
+  "Chettinad Cottons": ["చెట్టినాడు కాటన్లు", "चेट्टीनाड सूती"],
+  "Chettinad": ["చెట్టినాడు", "चेट्टीनाड"],
+  "Banaras Cottons": ["బనారస్ కాటన్లు", "बनारस सूती"],
+  "Kota Cottons": ["కోట కాటన్లు", "कोटा सूती"],
+  "Kota": ["కోట", "कोटा"],
+  "Other Blends": ["ఇతర మిశ్రమాలు", "अन्य मिश्रण"],
+  "Kanchipuram": ["కాంచీపురం", "कांचीपुरम"],
+  "Kovai Cotton": ["కోవై కాటన్", "कोवई सूती"],
+  "Banarasi": ["బనారసీ", "बनारसी"],
+  "Tanchoi": ["తంచోయ్", "तंचोई"],
+  "Jamdani": ["జమ్దానీ", "जामदानी"],
+  "Baluchari": ["బాలుచరి", "बालुचरी"],
+  "Tant": ["తాంత్", "तांत"],
+  "Sambalpuri": ["సంబల్‌పురి", "संबलपुरी"],
+  "Bomkai": ["బొంకై", "बोंकाई"],
+  "Kotpad": ["కొట్పాడ్", "कोटपाड़"],
+  "Pochampally": ["పోచంపల్లి", "पोचमपल्ली"],
+  "Mangalagiri": ["మంగళగిరి", "मंगलगिरि"],
+  "Uppada": ["ఉప్పాడ", "उप्पाडा"],
+  "Patan Patola": ["పాటన్ పటోలా", "पाटन पटोला"],
+  "Tangaliya": ["తంగాలియా", "तंगालिया"],
+  "Himroo": ["హిమ్రూ", "हिमरू"],
+  "Chanderi": ["చందేరి", "चंदेरी"],
+  "Maheshwari": ["మహేశ్వరి", "महेश्वरी"],
+  "Kota Doria": ["కోట డోరియా", "कोटा डोरिया"],
+  "Bandhani": ["బంధనీ", "बांधनी"],
+  "Mysore Silk": ["మైసూరు పట్టు", "मैसूर रेशम"],
+  "Ilkal": ["ఇల్కల్", "इलकल"],
+  "Kasavu": ["కసవు", "कसावु"],
+  "Balaramapuram": ["బలరామపురం", "बालरामपुरम"],
+  "Muga": ["ముగా", "मूगा"],
+  "Eri": ["ఏరి", "एरी"],
+  "Mekhela Chador": ["మేఖేలా చాదర్", "मेखेला चादर"],
+  "Pashmina": ["పష్మీనా", "पश्मीना"],
+  "Kani": ["కాని", "कानी"],
+  "Bhagalpuri": ["భాగల్పురి", "भागलपुरी"],
+  "Tussar": ["తస్సర్", "तसर"],
+  "Kosa": ["కోసా", "कोसा"],
+  "Kullu": ["కుల్లు", "कुल्लू"],
+  "Kinnauri": ["కిన్నౌరి", "किन्नौरी"],
+  "Naga Shawls": ["నాగా శాలువాలు", "नागा शॉल"],
+  "Phulkari": ["ఫుల్కారీ", "फुलकारी"],
+  "Temple-border silk, zari": ["ఆలయ అంచుల పట్టు, జరీ", "मंदिर-किनारे वाली रेशम, ज़री"],
+  "Light everyday cotton": ["రోజువారీకి తేలికైన కాటన్", "रोज़मर्रा का हल्का सूती कपड़ा"],
+  "Bold checks, wide borders": ["పెద్ద చెక్స్, వెడల్పాటి అంచులు", "बड़े चेक और चौड़े किनारे"],
+  "Brocade with gold zari": ["బంగారు జరీతో బ్రోకేడ్ నేత", "सुनहरी ज़री वाली ब्रोकेड बुनाई"],
+  "Fine silk, small motifs": ["చిన్న నమూనాలతో సన్నని పట్టు", "छोटे नमूनों वाली महीन रेशम"],
+  "Fine muslin, floating motifs": ["తేలియాడే నమూనాలతో సన్నని మస్లిన్", "तैरते नमूनों वाली महीन मलमल"],
+  "Silk with story panels": ["కథా చిత్రాల అంచులతో పట్టు", "कथा-दृश्यों वाले पैनल की रेशम"],
+  "Crisp everyday cotton": ["రోజువారీకి గట్టిగా ఉండే కాటన్", "रोज़मर्रा का कुरकुरा सूती कपड़ा"],
+  "Tie-dyed ikat weave": ["కట్టుకట్టి రంగించిన ఇకత్ నేత", "बंधेज रंगाई वाली इकत बुनाई"],
+  "Silk with thread motifs": ["దారపు నమూనాలతో పట్టు", "धागे के नमूनों वाली रेशम"],
+  "Natural-dyed tribal cotton": ["సహజ రంగులతో రంగించిన గిరిజన కాటన్", "प्राकृतिक रंगों वाला जनजातीय सूती कपड़ा"],
+  "Ikat, geometric patterns": ["ఇకత్, రేఖాగణిత నమూనాలు", "इकत, ज्यामितीय नमूने"],
+  "Cotton body, silk border": ["కాటన్ వస్త్రభాగం, పట్టు అంచు", "सूती शरीर, रेशमी किनारा"],
+  "Cotton, temple borders": ["కాటన్, ఆలయ అంచులు", "सूती कपड़ा, मंदिर किनारे"],
+  "Fine cotton, zari borders": ["సన్నని కాటన్, జరీ అంచులు", "महीन सूती कपड़ा, ज़री किनारे"],
+  "Cotton, crisp borders": ["కాటన్, గట్టిగా ఉండే అంచులు", "सूती कपड़ा, साफ़ किनारे"],
+  "Jamdani-style silk weave": ["జమ్దానీ శైలిలో పట్టు నేత", "जामदानी शैली की रेशमी बुनाई"],
+  "Double ikat silk": ["డబుల్ ఇకత్ పట్టు", "डबल इकत रेशम"],
+  "Dot-patterned weave": ["చుక్కల నమూనా నేత", "बिंदुदार बुनाई"],
+  "Peacock-motif silk, zari": ["నెమలి నమూనా పట్టు, జరీ", "मोर के नमूने वाली रेशम, ज़री"],
+  "Cotton-silk blend": ["కాటన్-పట్టు మిశ్రమం", "सूती-रेशमी मिश्रण"],
+  "Sheer silk-cotton weave": ["తేలికైన పట్టు-కాటన్ నేత", "हल्की सूती-रेशमी बुनाई"],
+  "Light weave, reversible border": ["తేలికైన నేత, రెండు వైపులా ధరించగల అంచు", "हल्की बुनाई, दोनों ओर पहना जा सकने वाला किनारा"],
+  "Airy square-check weave": ["గాలి ఆడే చతురస్ర చెక్స్ నేత", "हवादार चौखानेदार बुनाई"],
+  "Tie-dyed dot patterns": ["కట్టుకట్టి రంగించిన చుక్కల నమూనాలు", "बंधेज रंगाई के बिंदुदार नमूने"],
+  "Pure silk, gold zari": ["స్వచ్ఛమైన పట్టు, బంగారు జరీ", "शुद्ध रेशम, सुनहरी ज़री"],
+  "Cotton body, silk pallu": ["కాటన్ వస్త్రభాగం, పట్టు పల్లూ", "सूती शरीर, रेशमी पल्लू"],
+  "Cream with gold border": ["బంగారు అంచుతో క్రీమ్ రంగు", "सुनहरे किनारे वाला क्रीम रंग"],
+  "Fine handloom cotton": ["సన్నని చేనేత కాటన్", "महीन हथकरघा सूती कपड़ा"],
+  "Golden natural silk": ["సహజ బంగారు రంగు పట్టు", "प्राकृतिक सुनहरी रेशम"],
+  "Soft, warm silk": ["మెత్తని, వెచ్చని పట్టు", "मुलायम, गरम रेशम"],
+  "Traditional two-piece drape": ["సంప్రదాయ రెండు ముక్కల వస్త్రధారణ", "पारंपरिक दो-भाग वाली पोशाक"],
+  "Fine Himalayan goat wool": ["హిమాలయ మేక ఉన్నితో చేసిన సన్నని వస్త్రం", "हिमालयी बकरी के ऊन का महीन कपड़ा"],
+  "Woven with wooden bobbins": ["చెక్క బాబిన్లతో నేసినది", "लकड़ी की बॉबिन से बुनी"],
+  "Tussar silk fabrics": ["తస్సర్ పట్టు వస్త్రాలు", "तसर रेशमी कपड़े"],
+  "Wild silk, natural sheen": ["అడవి పట్టు, సహజ మెరుపు", "जंगली रेशम, प्राकृतिक चमक"],
+  "Tussar silk, Champa": ["చంపా ప్రాంతపు తస్సర్ పట్టు", "चंपा का तसर रेशम"],
+  "Wool, geometric borders": ["ఉన్ని, రేఖాగణిత అంచులు", "ऊन, ज्यामितीय किनारे"],
+  "Warm woollen shawls": ["వెచ్చని ఉన్ని శాలువాలు", "गरम ऊनी शॉल"],
+  "Bold tribal stripes": ["దట్టమైన గిరిజన గీతలు", "गहरी जनजातीय धारियाँ"],
+  "Floral thread embroidery": ["పూల దారపు ఎంబ్రాయిడరీ", "फूलों की धागे वाली कढ़ाई"],
+  "illustrative textile swatch": ["ఉదాహరణ వస్త్ర నమూనా", "उदाहरणात्मक कपड़े का नमूना"],
+  "illustrative pattern": ["ఉదాహరణ నేత నమూనా", "उदाहरणात्मक बुनाई नमूना"],
+  "illustrative textile pattern": ["ఉదాహరణ వస్త్ర నమూనా", "उदाहरणात्मक कपड़े का नमूना"],
+};
+for (const [source, translations] of Object.entries(termTranslations)) {
+  normalizedPhrases.set(source.replace(/\s+/g, " ").trim(), translations);
+}
 normalizedPhrases.set("You are viewing a design preview.", [
   "మీరు డిజైన్ ముందస్తు నమూనాను చూస్తున్నారు.",
   "आप डिज़ाइन का पूर्वावलोकन देख रहे हैं।",
@@ -596,9 +774,62 @@ const attributeRecords = new WeakMap<Element, Map<string, { original: string; ap
 
 export function translatePhrase(language: StoreLanguage, source: string): string {
   if (language === "en") return source;
-  const translations = normalizedPhrases.get(source.replace(/\s+/g, " ").trim());
-  if (!translations) return source;
-  return translations[language === "te" ? 0 : 1];
+  const normalized = source.replace(/\s+/g, " ").trim();
+  const translations = normalizedPhrases.get(normalized);
+  if (translations) return translations[language === "te" ? 0 : 1];
+
+  const translated = (term: string) => translatePhrase(language, term);
+  const languageIndex = language === "te" ? 0 : 1;
+  const stateShop = normalized.match(/^Shop (.+) sarees$/);
+  if (stateShop) {
+    const state = translated(stateShop[1]);
+    return language === "te" ? `${state} చీరలను చూడండి` : `${state} की साड़ियाँ देखें`;
+  }
+
+  const unknownRegion = normalized.match(/^Unknown region:\s*(.+)$/);
+  if (unknownRegion) {
+    const label = language === "te" ? "తెలియని ప్రాంతం:" : "अज्ञात क्षेत्र:";
+    return `${label} ${translated(unknownRegion[1])}`;
+  }
+
+  const activeFilter = normalized.match(/^(region|weave|fabric|category|edit|sort):\s*(.+)$/i);
+  if (activeFilter) {
+    const labels: Record<string, [string, string]> = {
+      region: ["ప్రాంతం", "क्षेत्र"],
+      weave: ["నేత", "बुनाई"],
+      fabric: ["వస్త్రం", "कपड़ा"],
+      category: ["వర్గం", "श्रेणी"],
+      edit: ["ఎంపిక", "चयन"],
+      sort: ["క్రమం", "क्रम"],
+      query: ["వెతుకుడు", "खोज"],
+    };
+    const key = activeFilter[1].toLowerCase();
+    if (!labels[key]) return source;
+    return `${labels[key][languageIndex]}: ${translated(activeFilter[2])}`;
+  }
+
+  const noSamples = normalized.match(/^There are no sample (sarees|pieces) for (.+) with the selected filters\.$/);
+  if (noSamples) {
+    const region = translated(noSamples[2]);
+    if (language === "te") {
+      const type = noSamples[1] === "sarees" ? "చీరలు" : "వస్త్రాలు";
+      return `ఎంచుకున్న వడపోతలతో ${region} ప్రాంతానికి నమూనా ${type} లేవు.`;
+    }
+    const type = noSamples[1] === "sarees" ? "साड़ी" : "कपड़ा";
+    return `चुने गए फ़िल्टर के अनुसार ${region} के लिए कोई नमूना ${type} उपलब्ध नहीं है।`;
+  }
+
+  const illustrativeAlt = normalized.match(/^(.+?) — (illustrative textile swatch|illustrative pattern|illustrative textile pattern)$/);
+  if (illustrativeAlt) {
+    return `${translated(illustrativeAlt[1])} — ${translated(illustrativeAlt[2])}`;
+  }
+
+  const footerNotice = normalized.match(/^© Chenetha by Koushikii · (.+)$/);
+  if (footerNotice) {
+    return `© Chenetha by Koushikii · ${translated(footerNotice[1])}`;
+  }
+
+  return source;
 }
 
 export function localizeTree(root: HTMLElement, language: StoreLanguage) {

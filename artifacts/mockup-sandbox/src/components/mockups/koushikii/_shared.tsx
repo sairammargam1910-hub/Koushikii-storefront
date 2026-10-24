@@ -30,8 +30,13 @@ function WhatsAppMark(){return <svg className="whatsapp-mark" viewBox="0 0 32 32
 export function WhatsAppOrderLink({message,children,className="whatsapp-order-button"}:{message:string;children:React.ReactNode;className?:string}){
  return <a className={className} href={whatsappOrderUrl(message)} target="_blank" rel="noopener noreferrer" aria-label="Order on WhatsApp" title="Order on WhatsApp"><WhatsAppMark/><span>{children}</span></a>;
 }
-export function WhatsAppOverlay(){
- return <WhatsAppOrderLink className="whatsapp-overlay-button" message="Namaste, I’d like to ask about a handloom piece from Chenetha by Koushikii. Please share the current product details and availability.">Order on WhatsApp</WhatsAppOrderLink>;
+export function WhatsAppOverlay({language}:{language:StoreLanguage}){
+ const messages:Record<StoreLanguage,string>={
+  en:"Namaste, I’d like to ask about a handloom piece from Chenetha by Koushikii. Please share the current product details and availability.",
+  te:"నమస్కారం, Chenetha by Koushikii చేనేత వస్త్రం గురించి తెలుసుకోవాలనుకుంటున్నాను. దయచేసి ప్రస్తుత ఉత్పత్తి వివరాలు, లభ్యత తెలియజేయండి.",
+  hi:"नमस्ते, मुझे Chenetha by Koushikii के हथकरघा वस्त्र की जानकारी चाहिए। कृपया मौजूदा उत्पाद का विवरण और उपलब्धता बताएं।",
+ };
+ return <WhatsAppOrderLink className="whatsapp-overlay-button" message={messages[language]}>Order on WhatsApp</WhatsAppOrderLink>;
 }
 export function addItem(id:string){const list=getItems("kq-cart");const found=list.find(x=>x.id===id);if(found)found.qty++;else list.push({id,qty:1});saveItems("kq-cart",list)}
 export function toggleWish(id:string){const list=getItems("kq-wish");saveItems("kq-wish",list.some(x=>x.id===id)?list.filter(x=>x.id!==id):[...list,{id,qty:1}])}
@@ -95,7 +100,7 @@ export function Shell({children}:{children:React.ReactNode}){
   observer.observe(root,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["aria-label","placeholder","title","alt"]});
   return()=>observer.disconnect();
  },[language]);
- return <div ref={rootRef} className="kq" data-lang={language}><Header language={language} onLanguageChange={setLanguage}/>{children}<Footer/><WhatsAppOverlay/></div>
+ return <div ref={rootRef} className="kq" data-lang={language}><Header language={language} onLanguageChange={setLanguage}/>{children}<Footer/><WhatsAppOverlay language={language}/></div>
 }
 export function PageHero({eyebrow,title,subtitle}:{eyebrow:string;title:string;subtitle?:string}){return <div className="pagehero"><div className="wrap"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1>{subtitle&&<p>{subtitle}</p>}</div></div>}
 export function ProductCard({product:p}:{product:typeof products[number]}){const wish=useStore("kq-wish");const active=wish.some(x=>x.id===p.id);return <article className="product-card"><a href={base+"Product?id="+p.id} className="product-img"><span className={`textile s${products.indexOf(p)%6+1}`} role="img" aria-label={p.name+" — illustrative textile swatch"}/><span className="pill" style={{position:"absolute",left:12,top:12}}>{p.tag}</span></a><button className="heart" aria-label={active?"Remove from wishlist":"Add to wishlist"} aria-pressed={active} onClick={()=>toggleWish(p.id)}><Heart size={16} fill={active?"#8f2429":"none"}/></button><a href={base+"Product?id="+p.id}><h3>{p.name}</h3></a><p>{p.type} · {p.weave}</p><span className="price">{format(p.price)}</span></article>}

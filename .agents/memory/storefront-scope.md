@@ -30,4 +30,4 @@ The intended audience includes an older customer who only knows Telugu. English 
 
 **Why:** The user explicitly identified this customer need and requested a language selector that updates the website content.
 
-**How to apply:** Keep language selection easy to find, make Telugu script readable, and translate customer-facing content rather than only the navigation.
+**How to apply:** Keep language selection easy to find, make Telugu script readable, and translate static and dynamic customer-facing content—including product names, weave names, and state/region labels—not just navigation.

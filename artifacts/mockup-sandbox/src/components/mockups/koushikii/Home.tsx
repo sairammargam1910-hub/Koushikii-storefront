@@ -39,7 +39,7 @@ function IndiaWeaves(){
    <select id="weave-state" className="state-select" value={selected} onChange={e=>setSelected(e.target.value)}>{Object.entries(stateNames).map(([code,name])=><option key={code} value={code}>{name}</option>)}</select>
    <h3>{stateNames[selected]||"Tamil Nadu"}</h3>
     {info?<ul>{info[1].map(([name,description])=><li key={name}><strong>{name}</strong><br/><span style={{fontSize:12,color:"#eddbc0"}}>{description}</span></li>)}</ul>:<p>Explore the regional selection. Not every region has a sample piece in this preview.</p>}
-     <a className="btn gold" href={base+"Collections?region="+selected+"&category=Sarees"}>Shop {stateNames[selected]} sarees <ArrowRight size={14}/></a>
+      <a className="btn gold" href={base+"Collections?region="+selected+"&category=Sarees"}>{`Shop ${stateNames[selected]} sarees`} <ArrowRight size={14}/></a>
      <p style={{fontSize:10}}>Illustrative collection assignments, not certification of origin.</p>
   </div></div>
  </div></section>
