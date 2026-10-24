@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Pause, Play, RotateCcw } from "lucide-react";
 
 type CraftRole = "weaving" | "winding" | "dyeing";
 type Point = [number, number];
@@ -203,15 +202,3 @@ export function CraftScene({ role = "weaving", paused = false }: { role?: CraftR
  </div>;
 }
 
-export function CraftAnimation() {
- const [playing, setPlaying] = useState(true), [replay, setReplay] = useState(0);
- const reduced = useReducedMotion();
- return <div className="craft-frame">
-  <CraftScene key={replay} paused={!playing}/>
-  <div className="scene-controls"><div>
-   <button onClick={() => setPlaying(!playing)} aria-pressed={playing && !reduced} disabled={reduced}>{playing && !reduced ? <Pause size={14}/> : <Play size={14}/>} {playing && !reduced ? "Pause" : "Play"} animation</button>
-   <button onClick={() => { setReplay(r => r + 1); setPlaying(true); }}><RotateCcw size={14}/>{reduced ? "Reset still" : "Replay"}</button>
-  </div><p>{reduced ? "Still illustration · Reduced motion is respected." : "Browser animation · Original illustration, not client footage"}</p></div>
-  <div className="craft-steps"><div><b>01 · Lift</b>The warp opens into a shed.</div><div><b>02 · Pass</b>The shuttle carries the weft.</div><div><b>03 · Settle</b>The warp closes around the pick.</div><div><b>04 · Beat</b>The reed brings the weft to the cloth.</div></div>
- </div>;
-}

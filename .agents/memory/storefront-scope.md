@@ -12,7 +12,13 @@ The user explicitly rejected a modern-looking storefront and repeatedly emphasiz
 
 **Why:** The user corrected the first design because it reinterpreted the HTML content without inspecting its rendered appearance.
 
-**How to apply:** Home needs distinct bestselling, premium, new-arrival and client-review sections; animated handloom craft; and backgrounds inspired by regional weaving motifs. About Us needs the brand's origin and philosophy supporting weavers, and an animated local-weaver gallery. Do not invent actual founder history, reviews or weaver identities when client content is missing.
+**How to apply:** Home needs distinct bestselling, premium, new-arrival and client-review sections; an illustrated three-stage making lifecycle (yarn preparation, colour and weaving); and backgrounds inspired by regional weaving motifs. About Us needs the brand's origin and philosophy, without inventing founder history or actual maker identities.
+
+The client requested a single floating WhatsApp order button across the storefront screens, not repeated in-page or footer banners.
+
+**Why:** The user explicitly asked to remove WhatsApp banners everywhere and use only an overlay button.
+
+**How to apply:** Keep WhatsApp ordering as a shared floating control on storefront pages; do not add page-specific WhatsApp banners or footer links.
 
 Keep only Home, Collections, Product, Our Story, Wishlist, Cart, Checkout, Confirmation, Account, Orders, Contact, Customer Care and Saree Care for now, plus a separate logged-in Profile preview.
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Shell, PageHero, products, ProductGrid, cottonWeaves, WhatsAppOrderBanner } from "./_shared";
+import { Shell, PageHero, products, ProductGrid, cottonWeaves } from "./_shared";
 import { defaultFilters, filterCatalog, normalizeRegion, normalizeWeave, regions } from "./_shared/catalog-filter";
 import type { CatalogFilters } from "./_shared/catalog-filter";
 
@@ -24,10 +24,7 @@ export function Collections(){
  const filtered=useMemo(()=>filterCatalog(products,filters),[filters]);
  const weaves=Array.from(new Set([...products.map(p=>p.weave),...cottonWeaves.map(normalizeWeave),weave])).filter(w=>w!=="All weaves");
  const active=Object.entries(filters).filter(([key,value])=>value!==defaultFilters[key as keyof CatalogFilters]);
- const chosen=[region?regions[region]:null,weave!=="All weaves"?weave:null,fabric!=="All fabrics"?fabric:null].filter(Boolean).join(", ");
- const whatsappMessage=`Namaste, I’m exploring ${chosen||"Chenetha by Koushikii’s handloom collection"}${category!=="All pieces"?` ${category.toLowerCase()}`:""} and would like to order. Please share current availability, verified product details, final prices and delivery options.`;
  return <Shell><PageHero eyebrow="The collection · Sample catalog" title={edit==="premium"?"The Premium Collection":edit==="new"?"New Arrivals":"Cloth with a place. Weaves with a story."} subtitle="Explore South Indian temple borders and the textile traditions of India. Choose a region, fabric or weave to find your thread."/>
- <div className="wrap" style={{paddingTop:24}}><WhatsAppOrderBanner title="Would you like help choosing?" copy="Ask about a regional weave or a particular piece. The team can confirm current availability and details with you." message={whatsappMessage}/></div>
  <main className="content wrap">
   <div className="toolbar">{["All pieces","Sarees","Dupattas"].map(c=><button key={c} className="btn small outline" aria-pressed={category===c} style={{background:category===c?"#efe2c8":"transparent"}} onClick={()=>update({category:c})}>{c}</button>)}
   <label style={{marginLeft:"auto",fontSize:12}}>Collection edit <select value={edit} onChange={e=>update({edit:e.target.value})}><option value="all">All collections</option><option value="premium">Premium Collection</option><option value="new">New Arrivals</option>{!["all","premium","new"].includes(edit)&&<option value={edit}>Unknown edit: {edit}</option>}</select></label></div>
