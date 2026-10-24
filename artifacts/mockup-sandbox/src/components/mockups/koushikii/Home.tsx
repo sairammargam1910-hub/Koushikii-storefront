@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Shell, products, ProductGrid, base, TempleBorder } from "./_shared";
 import { WeavingJourney } from "./WeavingJourney";
@@ -54,31 +54,56 @@ const customerVoices = [
 ];
 
 function Reviews(){
+  const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-  const customer = customerVoices[active];
-  const move = (direction: number) => setActive((current) =>
-    (current + direction + customerVoices.length) % customerVoices.length
-  );
+  const scrollToPhoto = (index:number) => {
+    const track = trackRef.current;
+    const card = track?.children[index] as HTMLElement | undefined;
+    if (!track || !card) return;
+    const left = card.getBoundingClientRect().left - track.getBoundingClientRect().left + track.scrollLeft;
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    track.scrollTo({left, behavior});
+    setActive(index);
+  };
+  const move = (direction:number) => scrollToPhoto((active + direction + customerVoices.length) % customerVoices.length);
+  const updateActive = () => {
+    const track = trackRef.current;
+    if (!track) return;
+    const left = track.getBoundingClientRect().left;
+    const cards = Array.from(track.children) as HTMLElement[];
+    let nearest = 0;
+    let distance = Number.POSITIVE_INFINITY;
+    cards.forEach((card,index) => {
+      const currentDistance = Math.abs(card.getBoundingClientRect().left - left);
+      if (currentDistance < distance) {
+        nearest = index;
+        distance = currentDistance;
+      }
+    });
+    setActive(nearest);
+  };
 
   return <section className="section customer-voices"><div className="wrap">
-   <div className="section-head"><div><h2>Customer voices</h2><p>The everyday life of a textile matters, too.</p></div></div>
-   <div className="customer-review-carousel" role="region" aria-label="Customer photographs">
-    <article className="customer-review-card" aria-live="polite">
-     <div className="customer-review-photo">
-      <img src={customer.image} alt={`${customer.name} — Customer photo`}/>
+   <div className="customer-voices-heading"><h2>Customer voices</h2><p>The everyday life of a textile matters, too.</p></div>
+   <div className="customer-reel">
+    <button type="button" className="customer-reel-arrow is-prev" aria-label="Previous customer photo" onClick={()=>move(-1)}><ArrowLeft size={17}/></button>
+    <div className="customer-review-track" ref={trackRef} role="region" aria-label="Customer photographs" tabIndex={0} onScroll={updateActive}>
+     {customerVoices.map((customer,index)=><article className="customer-review-card" key={customer.name}>
+      <img src={customer.image} alt={`${customer.name} — Customer photo`} loading="eager"/>
       <span className="customer-photo-label">Customer photo</span>
-     </div>
-     <div className="customer-review-content">
-      <span className="eyebrow review-pending">Review text pending</span>
-      <h3>{customer.name}</h3>
-      <p>Customer-approved review text will appear here.</p>
-      <div className="review-controls" role="group" aria-label="Customer photo navigation">
-       <button type="button" aria-label="Previous customer photo" onClick={()=>move(-1)}><ArrowLeft size={16}/></button>
-       <span role="status" aria-live="polite">{String(active+1).padStart(2,"0")} / {String(customerVoices.length).padStart(2,"0")}</span>
-       <button type="button" aria-label="Next customer photo" onClick={()=>move(1)}><ArrowRight size={16}/></button>
+      <span className="customer-photo-index" aria-hidden="true">{String(index+1).padStart(2,"0")}</span>
+      <div className="customer-review-content">
+       <span className="review-pending">Review text pending</span>
+       <h3>{customer.name}</h3>
+       <p>Customer-approved review text will appear here.</p>
       </div>
-     </div>
-    </article>
+     </article>)}
+    </div>
+    <button type="button" className="customer-reel-arrow is-next" aria-label="Next customer photo" onClick={()=>move(1)}><ArrowRight size={17}/></button>
+   </div>
+   <div className="customer-reel-pagination" role="group" aria-label="Customer photo navigation">
+    {customerVoices.map((customer,index)=><button key={customer.name} type="button" aria-label={customer.name} aria-pressed={active===index} onClick={()=>scrollToPhoto(index)}><span/></button>)}
+    <span className="customer-reel-status" role="status" aria-live="polite">{String(active+1).padStart(2,"0")} / {String(customerVoices.length).padStart(2,"0")}</span>
    </div>
   </div></section>
  }
