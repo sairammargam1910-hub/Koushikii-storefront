@@ -6,7 +6,7 @@ export function Contact() {
  const [sent,setSent]=useState(false);
  return <Shell><PageHero eyebrow="A note to Chenetha" title="Begin with a question." subtitle="About a border, a fabric, a piece you are considering. A useful conversation starts with the small details."/>
   <main className="wrap content"><div className="two-col"><section>
-   <div className="guide-warning" style={{marginTop:0,marginBottom:24}}><strong>Enquiry preview only.</strong> This form sends no message. The floating WhatsApp button opens a chat with the business number supplied by the client; response hours are not listed.</div>
+    <div className="guide-warning" style={{marginTop:0,marginBottom:24}}><strong>Enquiry preview only.</strong> This form sends no message. The WhatsApp icon in the top navigation opens a chat with the business number supplied by the client; response hours are not listed.</div>
    <form className="form panel" onSubmit={e=>{e.preventDefault();setSent(true)}} onChange={()=>setSent(false)}>
     <div className="cols"><div className="field"><label htmlFor="contact-name">Your name</label><input id="contact-name" required autoComplete="name"/></div><div className="field"><label htmlFor="contact-email">Email</label><input id="contact-email" required type="email" autoComplete="email"/></div></div>
     <div className="field"><label htmlFor="contact-topic">What can we help with?</label><select id="contact-topic"><option>Choosing a textile</option><option>Order or delivery</option><option>Care question</option><option>Something else</option></select></div>
