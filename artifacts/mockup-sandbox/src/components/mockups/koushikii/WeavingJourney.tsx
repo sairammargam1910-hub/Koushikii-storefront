@@ -53,15 +53,11 @@ export function WeavingJourney() {
   };
 
   return (
-    <div className="maker-gallery making-journey">
-      <div className="craft-frame">
+    <div className="making-journey">
+      <div className="craft-frame journey-scene">
         <CraftScene key={current.role + replay} role={current.role} paused={!playing} />
       </div>
       <div className="journey-copy">
-        <span className="draft-label">Illustrative craft process · methods vary</span>
-        <p className="eyebrow journey-stage">Stage {String(stage + 1).padStart(2, "0")} · {current.note}</p>
-        <h3>{current.title}</h3>
-        <p className="muted">{current.copy}</p>
         <nav className="journey-stages" aria-label="Stages in the handloom-making process">
           {stages.map((item, index) => (
             <button
@@ -71,10 +67,22 @@ export function WeavingJourney() {
               aria-current={stage === index ? "step" : undefined}
               onClick={() => selectStage(index)}
             >
-              <span>{String(index + 1).padStart(2, "0")}</span>{item.title}
+              <span className="journey-stage-number">{String(index + 1).padStart(2, "0")}</span>
+              <span className="journey-stage-detail">
+                <span className="journey-stage-name">{item.note}</span>
+                <span className="journey-stage-title">{item.title}</span>
+              </span>
+              <span className="journey-stage-arrow" aria-hidden="true">→</span>
             </button>
           ))}
         </nav>
+        <div className="journey-current">
+          <div>
+            <span className="draft-label">Stage {String(stage + 1).padStart(2, "0")} · {current.note}</span>
+            <h3>{current.title}</h3>
+          </div>
+          <p className="muted">{current.copy}</p>
+        </div>
         <div className="journey-controls">
           <button type="button" onClick={() => selectStage(stage - 1)} aria-label="Previous craft stage"><ArrowLeft size={15} /></button>
           <button type="button" onClick={() => selectStage(stage + 1)} aria-label="Next craft stage"><ArrowRight size={15} /></button>
@@ -86,7 +94,7 @@ export function WeavingJourney() {
             <RotateCcw size={14} />{reducedMotion ? "Reset still" : "Replay"}
           </button>
         </div>
-        <p className="muted journey-footnote">An original illustration of craft roles, not client footage or a record of one specific maker’s process.</p>
+        <p className="muted journey-footnote">An original illustration of craft roles, not client footage or a record of one specific maker’s process. Methods vary across regions and makers.</p>
       </div>
     </div>
   );
