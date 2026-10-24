@@ -1,4 +1,15 @@
 .kq{--red:#922c32;--red-dark:#6e2028;--paper:#f7f1e6;--cream:#efe5d1;--gold:#cda34e;--ink:#472d2c;--muted:#786957;--line:#d9c9aa;--green:#365b4c}
+.kq .language-switcher{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:0 8px;border:1px solid var(--line);background:#fbf6ed;color:var(--ink);white-space:nowrap}
+.kq .language-switcher svg{flex:none;color:var(--red)}
+.kq .language-switcher select{width:82px;max-width:82px;border:0;background:transparent;color:inherit;outline-offset:3px;font-size:11px;cursor:pointer}
+.kq .language-switcher select:focus-visible{outline:2px solid var(--gold)}
+.kq[data-lang="te"]{font-family:'Noto Sans Telugu','DM Sans',sans-serif}
+.kq[data-lang="te"] h1,.kq[data-lang="te"] h2,.kq[data-lang="te"] h3,.kq[data-lang="te"] blockquote,.kq[data-lang="te"] .journey-stage-title{font-family:'Noto Serif Telugu','Cormorant Garamond',serif}
+.kq[data-lang="hi"]{font-family:'Noto Sans Devanagari','DM Sans',sans-serif}
+.kq[data-lang="hi"] h1,.kq[data-lang="hi"] h2,.kq[data-lang="hi"] h3,.kq[data-lang="hi"] blockquote,.kq[data-lang="hi"] .journey-stage-title{font-family:'Noto Serif Devanagari','Cormorant Garamond',serif}
+.kq[data-lang="te"] *,.kq[data-lang="hi"] *{letter-spacing:normal!important;text-transform:none!important}
+@media(max-width:767px){.kq .headrow{gap:8px}.kq .brand{width:122px;height:54px;flex:0 1 122px}.kq .head-actions{gap:7px;flex:1;justify-content:flex-end}.kq .language-switcher{min-height:34px;gap:3px;padding:0 5px}.kq .language-switcher select{width:72px;max-width:72px;font-size:10px}}
+@media(max-width:380px){.kq .headrow{gap:5px}.kq .brand{width:105px;height:48px;flex-basis:105px}.kq .head-actions{gap:5px}.kq .language-switcher select{width:65px;max-width:65px}}
 .kq .footer-logo{width:100%;height:auto;display:block;overflow:visible}
 .kq .craft-scene svg{aspect-ratio:900/510}
 .kq .scene-caption{background:#f7f1e6e8;padding:7px 10px;letter-spacing:.1em;top:14px;left:14px;max-width:calc(100% - 28px);border-left:2px solid var(--red)}

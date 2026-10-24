@@ -25,3 +25,9 @@ Keep only Home, Collections, Product, Our Story, Wishlist, Cart, Checkout, Confi
 **Why:** The user explicitly narrowed the page list and requested a logged-in profile design; this supersedes the earlier request for Blog navigation.
 
 **How to apply:** Remove other standalone pages from the canvas and navigation. Regional exploration on Home must lead to sarees from that selected region only, never silently show all regions. Use useful factual copy without inventing missing client business facts.
+
+The intended audience includes an older customer who only knows Telugu. English is the default; Telugu and Hindi should also be available.
+
+**Why:** The user explicitly identified this customer need and requested a language selector that updates the website content.
+
+**How to apply:** Keep language selection easy to find, make Telugu script readable, and translate customer-facing content rather than only the navigation.

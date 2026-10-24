@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;500;600;700&family=Noto+Serif+Telugu:wght@400;500;600;700&display=swap');
 
 .kq .whatsapp-overlay-button{position:fixed;right:24px;bottom:22px;z-index:80;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:13px 18px;border:1px solid #204e38;border-radius:999px;background:#286347;color:#fff!important;box-shadow:0 8px 24px #30252230;font-size:11px;font-weight:700;letter-spacing:.04em;transition:background .2s,transform .2s}
 .kq .whatsapp-overlay-button:hover{background:#1e4e38;transform:translateY(-2px)}

@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound, Languages } from "lucide-react";
 import "./_group.css";
 import "./_logo.css";
 import "./_heritage.css";
 import "./_refinements.css";
 import { LogoSilhouette } from "./_LogoSilhouette";
 import { useDemoSession } from "./_shared/demo-session";
+import { languageNames, localizeTree, readStoreLanguage, type StoreLanguage } from "./_locale";
 import "./_profile.css";
 
 export const base="/__mockup/preview/koushikii/";
@@ -37,7 +38,17 @@ export function toggleWish(id:string){const list=getItems("kq-wish");saveItems("
 export function useStore(key:string){const [items,set]=useState<Item[]>(()=>getItems(key));useEffect(()=>{const sync=()=>set(getItems(key));window.addEventListener("storage",sync);window.addEventListener("kq-storage",sync);return()=>{window.removeEventListener("storage",sync);window.removeEventListener("kq-storage",sync)}},[key]);return items}
 export const cottonWeaves = ["Mangalagiri Cotton","Narayanpet","Venkatagiri","Gadwal","Kasaragod","Paithani","Kala Cotton","Patola","Ikat","Moirang Phee","Kanchi Cottons","Chettinad Cottons","Banaras Cottons","Kota Cottons"];
 export function TempleBorder(){return <div className="temple-border" aria-hidden="true"/>}
-export function Header(){
+function LanguageSelect({language,onChange}:{language:StoreLanguage;onChange:(language:StoreLanguage)=>void}){
+ return <label className="language-switcher">
+  <Languages size={15} aria-hidden="true"/>
+  <select aria-label="Choose website language" value={language} onChange={event=>onChange(event.target.value as StoreLanguage)}>
+   <option value="en">{languageNames.en}</option>
+   <option value="te">{languageNames.te}</option>
+   <option value="hi">{languageNames.hi}</option>
+  </select>
+ </label>
+}
+export function Header({language,onLanguageChange}:{language:StoreLanguage;onLanguageChange:(language:StoreLanguage)=>void}){
  const signedIn=useDemoSession();
  const [menu,setMenu]=useState(false),[search,setSearch]=useState(false);
  const cart=useStore("kq-cart"),wish=useStore("kq-wish");
@@ -53,7 +64,7 @@ export function Header(){
    </details>
     <a href={base+"OurStory"}>About Us</a><a href={base+"Contact"}>Contact Us</a>
   </nav>
-  <div className="head-actions"><button className="text-action" aria-label="Search" aria-expanded={search} onClick={()=>setSearch(!search)}><Search size={16}/>Search</button>
+  <div className="head-actions"><LanguageSelect language={language} onChange={onLanguageChange}/><button className="text-action" aria-label="Search" aria-expanded={search} onClick={()=>setSearch(!search)}><Search size={16}/>Search</button>
    <a href={base+(signedIn?"Profile":"Account")} className="text-action" aria-label={signedIn?"Demo profile":"Log in"}><UserRound size={16}/>{signedIn?"My profile":"Log in"}</a>
   <a href={base+"Wishlist"} className="iconbtn optional" aria-label="Wishlist"><Heart size={17}/>{wish.length>0&&<span className="count">{wish.length}</span>}</a>
   <a href={base+"Cart"} className="iconbtn" aria-label="Shopping bag"><ShoppingBag size={18}/>{cart.length>0&&<span className="count">{cart.reduce((a,b)=>a+b.qty,0)}</span>}</a></div>
@@ -70,7 +81,22 @@ export function Footer(){
   <div><h4>Your account</h4><p><a href={base+"Account"}>Log in</a><br/><a href={base+"Profile"}>Demo profile</a><br/><a href={base+"Orders"}>Orders & returns</a><br/><a href={base+"Wishlist"}>Your wishlist</a></p></div></div>
  <div className="copyright">© Chenetha by Koushikii · Design preview · Sample catalog, illustrative artwork and demo checkout.</div></div></footer>
 }
-export function Shell({children}:{children:React.ReactNode}){return <div className="kq"><Header/>{children}<Footer/><WhatsAppOverlay/></div>}
+export function Shell({children}:{children:React.ReactNode}){
+ const [language,setLanguage]=useState<StoreLanguage>(readStoreLanguage);
+ const rootRef=useRef<HTMLDivElement>(null);
+ useEffect(()=>{
+  try{localStorage.setItem("kq-language",language)}catch{}
+  document.documentElement.lang=language==="te"?"te-IN":language==="hi"?"hi-IN":"en";
+  const root=rootRef.current;
+  if(!root)return;
+  const apply=()=>localizeTree(root,language);
+  apply();
+  const observer=new MutationObserver(apply);
+  observer.observe(root,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["aria-label","placeholder","title","alt"]});
+  return()=>observer.disconnect();
+ },[language]);
+ return <div ref={rootRef} className="kq" data-lang={language}><Header language={language} onLanguageChange={setLanguage}/>{children}<Footer/><WhatsAppOverlay/></div>
+}
 export function PageHero({eyebrow,title,subtitle}:{eyebrow:string;title:string;subtitle?:string}){return <div className="pagehero"><div className="wrap"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1>{subtitle&&<p>{subtitle}</p>}</div></div>}
 export function ProductCard({product:p}:{product:typeof products[number]}){const wish=useStore("kq-wish");const active=wish.some(x=>x.id===p.id);return <article className="product-card"><a href={base+"Product?id="+p.id} className="product-img"><span className={`textile s${products.indexOf(p)%6+1}`} role="img" aria-label={p.name+" — illustrative textile swatch"}/><span className="pill" style={{position:"absolute",left:12,top:12}}>{p.tag}</span></a><button className="heart" aria-label={active?"Remove from wishlist":"Add to wishlist"} aria-pressed={active} onClick={()=>toggleWish(p.id)}><Heart size={16} fill={active?"#8f2429":"none"}/></button><a href={base+"Product?id="+p.id}><h3>{p.name}</h3></a><p>{p.type} · {p.weave}</p><span className="price">{format(p.price)}</span></article>}
 export function ProductGrid({items=products}:{items?:typeof products}){return <div className="products">{items.map(p=><ProductCard key={p.id} product={p}/>)}</div>}
