@@ -1,7 +1,14 @@
 .kq {
   background-image: url("/__mockup/images/koushikii-home-kanjeevaram-star.png");
-  background-size: 600px 600px;
+  background-size: 480px 480px;
+  background-position: 0 0;
   background-repeat: repeat;
+}
+
+@media (max-width: 640px) {
+  .kq {
+    background-size: 360px 360px;
+  }
 }
 
 .kq .temple-border {
