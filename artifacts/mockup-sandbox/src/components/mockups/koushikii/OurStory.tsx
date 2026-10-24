@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
-import { Shell, PageHero, base } from "./_shared";
+import { Shell, PageHero, base, WhatsAppOrderLink } from "./_shared";
 import { CraftScene } from "./CraftAnimation";
 
 const profiles = [
@@ -51,6 +51,6 @@ export function OurStory(){
    <p className="muted" style={{fontSize:11}}>Brand philosophy · This preview does not claim verified maker partnerships, certification or environmental outcomes.</p>
   </div></section>
   <WeaverGallery/>
-  <section className="section"><div className="wrap"><div className="story-end"><span className="eyebrow" style={{color:"#e3bf71"}}>Keep the thread moving</span><h2 style={{marginTop:13}}>Wear a story woven by hand</h2><p>Start with a textile. Stay for the places and knowledge behind it.</p><div className="actions"><a className="btn gold" href={base+"Collections"}>Shop Collections <ArrowRight size={14}/></a><a className="btn pale" href={base+"SareeCare"}>Care for your cloth</a></div></div></div></section>
+  <section className="section"><div className="wrap"><div className="story-end"><span className="eyebrow" style={{color:"#e3bf71"}}>Keep the thread moving</span><h2 style={{marginTop:13}}>Wear a story woven by hand</h2><p>Start with a textile. Stay for the places and knowledge behind it.</p><div className="actions"><a className="btn gold" href={base+"Collections"}>Shop Collections <ArrowRight size={14}/></a><WhatsAppOrderLink className="whatsapp-order-button" message="Namaste, I’ve read about Chenetha by Koushikii and would like to ask about ordering a current handloom piece. Please share available options and verified product details.">Ask about ordering on WhatsApp</WhatsAppOrderLink><a className="btn pale" href={base+"SareeCare"}>Care for your cloth</a></div></div></div></section>
  </Shell>
 }

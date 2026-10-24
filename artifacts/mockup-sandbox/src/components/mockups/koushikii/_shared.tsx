@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound, MessageCircle, Flower2 } from "lucide-react";
 import "./_group.css";
 import "./_logo.css";
 import "./_heritage.css";
@@ -23,6 +23,21 @@ export type Item={id:string;qty:number};
 export function getItems(key:string):Item[]{try{return JSON.parse(localStorage.getItem(key)||"[]")}catch{return []}}
 export function saveItems(key:string,items:Item[]){localStorage.setItem(key,JSON.stringify(items));window.dispatchEvent(new Event("kq-storage"))}
 export function format(n:number){return `₹${n.toLocaleString("en-IN")}`}
+const WHATSAPP_BUSINESS_NUMBER="916309741049";
+export function whatsappOrderUrl(message:string){return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`}
+export function buildWhatsAppOrderMessage(items:Item[]){
+ const lines=items.map(item=>{const product=products.find(p=>p.id===item.id);return `• ${product?.name||"Handloom piece"} × ${item.qty}`});
+ return `Namaste, I’d like to enquire about ordering these pieces from Chenetha by Koushikii:\n${lines.join("\n")}\nPlease confirm current availability, product details, final prices and delivery options before I proceed.`;
+}
+export function WhatsAppOrderLink({message,children,className="whatsapp-order-button"}:{message:string;children:React.ReactNode;className?:string}){
+ return <a className={className} href={whatsappOrderUrl(message)} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} aria-hidden="true"/><span>{children}</span></a>;
+}
+export function WhatsAppOrderBanner({title,copy,message,buttonLabel="Enquire & order on WhatsApp",eyebrow="Personal ordering · WhatsApp",compact=false}:{title:string;copy:string;message:string;buttonLabel?:string;eyebrow?:string;compact?:boolean}){
+ return <section className={`whatsapp-order-banner${compact?" compact":""}`} aria-label={title}>
+  <div className="whatsapp-order-copy"><span className="eyebrow">{eyebrow}</span><h3>{title}</h3><p>{copy}</p></div>
+  <div className="whatsapp-order-action"><span className="whatsapp-order-flower" aria-hidden="true"><Flower2 size={31}/></span><WhatsAppOrderLink message={message}>{buttonLabel}</WhatsAppOrderLink><small>Opens a WhatsApp chat with the brand. No payment or delivery is completed here.</small></div>
+ </section>;
+}
 export function addItem(id:string){const list=getItems("kq-cart");const found=list.find(x=>x.id===id);if(found)found.qty++;else list.push({id,qty:1});saveItems("kq-cart",list)}
 export function toggleWish(id:string){const list=getItems("kq-wish");saveItems("kq-wish",list.some(x=>x.id===id)?list.filter(x=>x.id!==id):[...list,{id,qty:1}])}
 export function useStore(key:string){const [items,set]=useState<Item[]>(()=>getItems(key));useEffect(()=>{const sync=()=>set(getItems(key));window.addEventListener("storage",sync);window.addEventListener("kq-storage",sync);return()=>{window.removeEventListener("storage",sync);window.removeEventListener("kq-storage",sync)}},[key]);return items}
@@ -55,8 +70,8 @@ export function Footer(){
  return <footer className="footer"><TempleBorder/><div className="wrap">
  <div className="newsletter"><div><h3>Letters from the loom</h3><p>New weaves, care notes and the stories behind the cloth.</p></div>
  <div>{subscribed?<p role="status">Thank you. Your sign-up is recorded for this demo only.</p>:<form onSubmit={e=>{e.preventDefault();setSubscribed(true)}}><input required type="email" aria-label="Newsletter email address" placeholder="Your email address"/><button className="btn gold">Subscribe <ArrowRight size={14}/></button></form>}<p style={{fontSize:10}}>Preview only · No email is sent or shared.</p></div></div>
-   <div className="footgrid"><div><a className="footbrand" href={base+"Home"}><LogoSilhouette/></a><p>Sarees and dupattas. The warmth of a hand, the memory of a loom.</p><a href={base+"OurStory"}>Follow the thread <ArrowRight size={13}/></a></div>
- <div><h4>Shop</h4><p><a href={base+"Collections"}>Collections</a><br/><a href={base+"Collections?edit=new"}>New Arrivals</a><br/><a href={base+"Collections?edit=premium"}>Premium Collection</a><br/><a href={base+"OurStory"}>About Us</a></p></div>
+ <div className="footgrid"><div><a className="footbrand" href={base+"Home"}><LogoSilhouette/></a><p>Sarees and dupattas. The warmth of a hand, the memory of a loom.</p><a href={base+"OurStory"}>Follow the thread <ArrowRight size={13}/></a></div>
+ <div><h4>Shop</h4><p><a href={base+"Collections"}>Collections</a><br/><a href={base+"Collections?edit=new"}>New Arrivals</a><br/><a href={base+"Collections?edit=premium"}>Premium Collection</a><br/><a href={base+"OurStory"}>About Us</a></p><WhatsAppOrderLink className="footer-whatsapp-link" message="Namaste, I’d like to explore Chenetha by Koushikii’s current handloom collection and ask about ordering. Please share current availability and product details.">Order on WhatsApp</WhatsAppOrderLink></div>
    <div><h4>Cloth & care</h4><p><a href={base+"Collections"}>Discover our weaves</a><br/><a href={base+"SareeCare"}>Saree care</a><br/><a href={base+"CustomerCare"}>Customer care & purchase notes</a><br/><a href={base+"Orders"}>Orders & tracking</a><br/><a href={base+"Contact"}>Contact Us</a></p></div>
   <div><h4>Your account</h4><p><a href={base+"Account"}>Log in</a><br/><a href={base+"Profile"}>Demo profile</a><br/><a href={base+"Orders"}>Orders & returns</a><br/><a href={base+"Wishlist"}>Your wishlist</a></p></div></div>
  <div className="copyright">© Chenetha by Koushikii · Design preview · Sample catalog, illustrative artwork and demo checkout.</div></div></footer>

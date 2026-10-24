@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { Shell, products, ProductGrid, base, TempleBorder } from "./_shared";
+import { Shell, products, ProductGrid, base, TempleBorder, WhatsAppOrderBanner } from "./_shared";
 import { CraftAnimation } from "./CraftAnimation";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 
@@ -57,6 +57,7 @@ export function Home(){
    <p>Sarees and dupattas with a human touch. From the temple borders of Kanchipuram to the many weaving traditions of India, a thread worth following.</p>
    <div className="actions"><a className="btn gold" href={base+"Collections"}>Shop Collections <ArrowRight size={14}/></a><a className="btn pale" href="#craft-animation">Watch the weaving</a></div>
   </div><div className="hero-swatches"><Textile pattern="s1" label="Temple red and gold striped handloom"/><Textile pattern="s2" label="Indigo dotted weave"/></div></div><TempleBorder/></section>
+  <div className="wrap" style={{paddingTop:24}}><WhatsAppOrderBanner title="A personal way to choose your weave." copy="Ask about the current saree and dupatta collection, product details and availability before you decide." message="Namaste, I’d like to explore Chenetha by Koushikii’s current saree and dupatta collection and place an order. Please share current product details and availability." buttonLabel="Order via WhatsApp"/></div>
 
   <section className="section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
    <div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>
