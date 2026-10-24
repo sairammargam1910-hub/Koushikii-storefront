@@ -76,6 +76,51 @@
 .kq .thumbs button{padding:0;border:1px solid var(--line);background:var(--cream)}
 .kq .thumbs button[aria-pressed=true]{border:2px solid var(--red)}
 .kq .thumbs button img{width:100%;height:90px;object-fit:cover}
+.kq .confirmation-page{padding-top:42px}
+.kq .confirmation-welcome{display:grid;grid-template-columns:78px minmax(0,1fr) auto;align-items:center;gap:22px;padding:30px 34px;margin:0 0 24px;background:#f2e8d5;border:1px solid var(--gold);outline:1px solid #d9c9aa;outline-offset:-7px}
+.kq .confirmation-seal{width:70px;height:70px;display:grid;place-items:center;border:1px solid var(--gold);border-radius:50%;background:#fff9ed}
+.kq .confirmation-seal span{width:48px;height:48px;display:grid;place-items:center;background:var(--green);color:#fff8e9;border-radius:50%;box-shadow:0 0 0 4px #d9c393}
+.kq .confirmation-welcome h2{font-size:clamp(30px,3.5vw,43px);margin:8px 0}
+.kq .confirmation-welcome p{max-width:620px;margin:0;color:var(--muted);font-size:13px}
+.kq .confirmation-reference{display:grid;gap:5px;min-width:190px;padding:15px 18px;border-left:1px solid var(--gold)}
+.kq .confirmation-reference span,.kq .confirmation-reference small{font-size:10px;color:var(--muted)}
+.kq .confirmation-reference strong{font:600 22px 'Cormorant Garamond',Georgia,serif;color:var(--red);overflow-wrap:anywhere}
+.kq .confirmation-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(310px,.7fr);gap:23px;align-items:start}
+.kq .confirmation-items,.kq .confirmation-status{background:#fffaf1}
+.kq .confirmation-section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.kq .confirmation-section-heading h3{font-size:29px;margin-top:7px}
+.kq .confirmation-section-heading>svg{color:var(--red)}
+.kq .confirmation-count{white-space:nowrap;padding:7px 10px;background:#efe5d1;color:var(--red);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.kq .confirmation-product{display:grid;grid-template-columns:78px minmax(0,1fr) auto;align-items:center;gap:16px;padding:18px 0;border-bottom:1px solid var(--line)}
+.kq .confirmation-product>.textile{height:92px}
+.kq .confirmation-product-copy .eyebrow{font-size:8px}
+.kq .confirmation-product-copy h4{font:600 20px/1.2 'Cormorant Garamond',Georgia,serif;margin:5px 0}
+.kq .confirmation-product-copy p{font-size:11px;color:var(--muted);margin:0}
+.kq .confirmation-product>strong{font-size:13px;white-space:nowrap}
+.kq .confirmation-total{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:20px 0 3px;font-size:13px}
+.kq .confirmation-total strong{font-size:18px;color:var(--red)}
+.kq .confirmation-tax-note{margin:4px 0 0;font-size:10px;color:var(--muted)}
+.kq .confirmation-side{display:grid;gap:16px}
+.kq .confirmation-status{padding:24px}
+.kq .confirmation-status .confirmation-section-heading{padding-bottom:13px}
+.kq .confirmation-status .confirmation-section-heading h3{font-size:27px}
+.kq .confirmation-timeline{list-style:none;padding:0;margin:17px 0 0}
+.kq .confirmation-timeline li{position:relative;display:grid;grid-template-columns:27px 1fr;gap:12px;min-height:65px;padding-bottom:13px}
+.kq .confirmation-timeline li:not(:last-child):before{position:absolute;content:"";left:13px;top:28px;bottom:0;border-left:1px dashed #cdb991}
+.kq .confirmation-timeline-mark{position:relative;z-index:1;width:27px;height:27px;display:grid;place-items:center;border:1px solid #d5c5a6;border-radius:50%;background:#f5eddf;color:#806b52;font-size:9px}
+.kq .confirmation-timeline .complete .confirmation-timeline-mark{background:var(--green);border-color:var(--green);color:#fff}
+.kq .confirmation-timeline li div{display:grid;gap:4px;padding-top:2px}
+.kq .confirmation-timeline li strong{font-size:12px}
+.kq .confirmation-timeline li small{font-size:10px;color:var(--muted);line-height:1.5}
+.kq .confirmation-demo-note{margin:0;padding:11px 12px;background:#efe5d1;border-left:2px solid var(--gold);font-size:10px;line-height:1.65;color:var(--muted)}
+.kq .confirmation-help{display:grid;grid-template-columns:22px 1fr;gap:13px;padding:19px 20px;border:1px solid var(--line);background:#f4ecdf}
+.kq .confirmation-help>svg{color:var(--red);margin-top:2px}
+.kq .confirmation-help h3{font-size:22px}
+.kq .confirmation-help p{margin:6px 0 11px;font-size:11px;color:var(--muted)}
+.kq .confirmation-help .link{display:inline-flex;align-items:center;gap:6px}
+.kq .confirmation-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin:26px 0 13px}
+.kq .confirmation-actions .btn{min-width:205px}
+.kq .confirmation-disclaimer{text-align:center;max-width:800px;margin:0 auto;color:var(--muted);font-size:10px;line-height:1.7}
 .kq .product-sample{border-left:2px solid var(--gold);padding:10px 14px;background:var(--cream);font-size:12px;line-height:1.7}
 .kq .product-breadcrumb{display:flex;flex-wrap:wrap;gap:12px;padding:25px 0 28px;font-size:11px;color:var(--muted)}
 .kq .product-breadcrumb a{color:var(--red)}
@@ -110,5 +155,30 @@
  .kq .article-motif{height:95px;margin-top:20px}
  .kq .home-guide-link{gap:18px}
  .kq .sample-gallery{height:420px}
+ .kq .confirmation-welcome{grid-template-columns:58px 1fr;gap:15px;padding:25px 22px}
+ .kq .confirmation-seal{width:55px;height:55px}
+ .kq .confirmation-seal span{width:38px;height:38px}
+ .kq .confirmation-reference{grid-column:1/-1;border-left:0;border-top:1px solid var(--gold);padding:13px 0 0 73px}
+ .kq .confirmation-layout{grid-template-columns:1fr;gap:17px}
+ .kq .confirmation-status{padding:21px}
+ .kq .confirmation-product{grid-template-columns:65px minmax(0,1fr) auto;gap:12px}
+ .kq .confirmation-product>.textile{height:82px}
+ .kq .confirmation-section-heading h3{font-size:25px}
+ .kq .confirmation-actions .btn{min-width:0;flex:1}
+}
+@media(max-width:420px){
+ .kq .confirmation-page{padding-top:25px}
+ .kq .confirmation-welcome{grid-template-columns:1fr;padding:23px 20px}
+ .kq .confirmation-seal{width:52px;height:52px}
+ .kq .confirmation-reference{grid-column:auto;padding:12px 0 0;border-top:1px solid var(--gold)}
+ .kq .confirmation-items{padding:18px 15px}
+ .kq .confirmation-product{grid-template-columns:54px minmax(0,1fr);gap:10px}
+ .kq .confirmation-product>.textile{height:72px;grid-row:span 2}
+ .kq .confirmation-product>strong{grid-column:2}
+ .kq .confirmation-section-heading{align-items:flex-start}
+ .kq .confirmation-section-heading h3{font-size:23px}
+ .kq .confirmation-count{font-size:8px;padding:6px 7px}
+ .kq .confirmation-actions{display:grid}
+ .kq .confirmation-actions .btn{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.kq *{animation:none!important;transition:none!important;scroll-behavior:auto!important}.kq .product-img:hover>.textile,.kq .fabric-card:hover .textile{transform:none}}
