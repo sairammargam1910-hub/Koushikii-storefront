@@ -31,3 +31,9 @@ The intended audience includes an older customer who only knows Telugu. English 
 **Why:** The user explicitly identified this customer need and requested a language selector that updates the website content.
 
 **How to apply:** Keep language selection easy to find, make Telugu script readable, and translate static and dynamic customer-facing content—including product names, weave names, and state/region labels—not just navigation.
+
+The Home customer-photo carousel has no approved review text yet; do not invent praise or attribute fabricated endorsements to the named customers.
+
+**Why:** The user chose a “Review text pending” placeholder because no customer quotes were supplied.
+
+**How to apply:** Replace the placeholder only with exact, approved customer words; do not create customer endorsements or ratings.

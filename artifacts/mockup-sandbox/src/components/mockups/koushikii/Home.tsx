@@ -44,11 +44,44 @@ function IndiaWeaves(){
   </div></div>
  </div></section>
 }
+const customerVoices = [
+  { name: "Dr. Sahiti Reddy", image: "/__mockup/images/customer-dr-sahiti-reddy.jpg" },
+  { name: "Mounika", image: "/__mockup/images/customer-mounika.jpg" },
+  { name: "Poornima garu", image: "/__mockup/images/customer-poornima-garu.jpg" },
+  { name: "Priya", image: "/__mockup/images/customer-priya.jpg" },
+  { name: "Sudha garu", image: "/__mockup/images/customer-sudha-garu.jpg" },
+  { name: "Vasantha garu", image: "/__mockup/images/customer-vasantha-garu.jpg" },
+];
+
 function Reviews(){
-  return <section className="section"><div className="wrap"><div className="section-head"><div><h2>Customer voices</h2><p>The everyday life of a textile matters, too.</p></div></div>
-   <div className="sample-review"><span className="eyebrow">No reviews published yet</span><h3 style={{marginTop:20}}>How does your favourite cloth live with you?</h3><p>From the first drape to the care that keeps it beautiful, an honest experience can help another person choose thoughtfully.</p><p className="muted" style={{fontSize:11}}>This preview contains no customer endorsements or ratings. The enquiry form below is a demonstration, not a live review submission.</p><a className="link" href={base+"Contact"}>Explore the contact form →</a></div>
- </div></section>
-}
+  const [active, setActive] = useState(0);
+  const customer = customerVoices[active];
+  const move = (direction: number) => setActive((current) =>
+    (current + direction + customerVoices.length) % customerVoices.length
+  );
+
+  return <section className="section customer-voices"><div className="wrap">
+   <div className="section-head"><div><h2>Customer voices</h2><p>The everyday life of a textile matters, too.</p></div></div>
+   <div className="customer-review-carousel" role="region" aria-label="Customer photographs">
+    <article className="customer-review-card" aria-live="polite">
+     <div className="customer-review-photo">
+      <img src={customer.image} alt={`${customer.name} — Customer photo`}/>
+      <span className="customer-photo-label">Customer photo</span>
+     </div>
+     <div className="customer-review-content">
+      <span className="eyebrow review-pending">Review text pending</span>
+      <h3>{customer.name}</h3>
+      <p>Customer-approved review text will appear here.</p>
+      <div className="review-controls" role="group" aria-label="Customer photo navigation">
+       <button type="button" aria-label="Previous customer photo" onClick={()=>move(-1)}><ArrowLeft size={16}/></button>
+       <span role="status" aria-live="polite">{String(active+1).padStart(2,"0")} / {String(customerVoices.length).padStart(2,"0")}</span>
+       <button type="button" aria-label="Next customer photo" onClick={()=>move(1)}><ArrowRight size={16}/></button>
+      </div>
+     </div>
+    </article>
+   </div>
+  </div></section>
+ }
 export function Home(){
  return <Shell>
   <section className="heritage-hero"><div className="wrap"><div>

@@ -622,6 +622,13 @@ const termTranslations: Record<string, [string, string]> = {
   "· Illustrated study": ["· చిత్ర అధ్యయనం", "· चित्रात्मक अध्ययन"],
   "In transit · sample": ["రవాణాలో · నమూనా", "रास्ते में · नमूना"],
   "16 Aug 2024": ["16 ఆగస్టు 2024", "16 अगस्त 2024"],
+  "Customer photo": ["కస్టమర్ ఫోటో", "ग्राहक की फ़ोटो"],
+  "Review text pending": ["సమీక్ష వచనం రావాల్సి ఉంది", "समीक्षा का पाठ प्रतीक्षित है"],
+  "Customer-approved review text will appear here.": ["కస్టమర్ ఆమోదించిన సమీక్ష వచనం ఇక్కడ కనిపిస్తుంది.", "ग्राहक द्वारा स्वीकृत समीक्षा का पाठ यहाँ दिखेगा।"],
+  "Customer photographs": ["కస్టమర్ ఫోటోలు", "ग्राहकों की फ़ोटो"],
+  "Customer photo navigation": ["కస్టమర్ ఫోటోలను చూడండి", "ग्राहक फ़ोटो देखें"],
+  "Previous customer photo": ["మునుపటి కస్టమర్ ఫోటో", "पिछली ग्राहक फ़ोटो"],
+  "Next customer photo": ["తదుపరి కస్టమర్ ఫోటో", "अगली ग्राहक फ़ोटो"],
   "Andaman and Nicobar Islands": ["ఆండమాన్ నికోబార్ దీవులు", "अंडमान और निकोबार द्वीपसमूह"],
   "Andhra Pradesh": ["ఆంధ్రప్రదేశ్", "आंध्र प्रदेश"],
   "Arunachal Pradesh": ["అరుణాచల్ ప్రదేశ్", "अरुणाचल प्रदेश"],
@@ -822,6 +829,11 @@ export function translatePhrase(language: StoreLanguage, source: string): string
   const illustrativeAlt = normalized.match(/^(.+?) — (illustrative textile swatch|illustrative pattern|illustrative textile pattern)$/);
   if (illustrativeAlt) {
     return `${translated(illustrativeAlt[1])} — ${translated(illustrativeAlt[2])}`;
+  }
+
+  const customerPhotoAlt = normalized.match(/^(.+?) — Customer photo$/);
+  if (customerPhotoAlt) {
+    return `${customerPhotoAlt[1]} — ${translated("Customer photo")}`;
   }
 
   const footerNotice = normalized.match(/^© Chenetha by Koushikii · (.+)$/);
