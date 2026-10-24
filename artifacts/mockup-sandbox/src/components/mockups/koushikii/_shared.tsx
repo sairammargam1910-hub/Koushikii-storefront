@@ -67,7 +67,7 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
     <div><strong>Shop by Fabric</strong>{["Cotton","Silk","Cotton-Silk","Other blends"].map(f=><a key={f} href={base+"Collections?fabric="+encodeURIComponent(f)}>{f}</a>)}
      <div className="menu-weaves"><strong>Shop by Weave</strong>{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina"].map(w=><a key={w} href={base+"Collections?category="+(w==="Pashmina"?"Dupattas":"Sarees")+"&weave="+w}>{w}</a>)}<a href={base+"Collections"}>View all collections →</a></div></div></div>
    </details>
-    <a href={base+"OurStory"}>About Us</a><a href={base+"Contact"}>Contact Us</a>
+    <a href={base+"OurStory"}>About Us</a><a href={base+"Videos"}>Videos</a><a href={base+"Contact"}>Contact Us</a>
   </nav>
   <div className="head-actions"><LanguageSelect language={language} onChange={onLanguageChange}/><button className="text-action" aria-label="Search" aria-expanded={search} onClick={()=>setSearch(!search)}><Search size={16}/>Search</button>
    <a href={base+(signedIn?"Profile":"Account")} className="text-action" aria-label={signedIn?"Demo profile":"Log in"}><UserRound size={16}/>{signedIn?"My profile":"Log in"}</a>
@@ -82,7 +82,7 @@ export function Footer(){
  <div className="newsletter"><div><h3>Letters from the loom</h3><p>New weaves, care notes and the stories behind the cloth.</p></div>
  <div>{subscribed?<p role="status">Thank you. Your sign-up is recorded for this demo only.</p>:<form onSubmit={e=>{e.preventDefault();setSubscribed(true)}}><input required type="email" aria-label="Newsletter email address" placeholder="Your email address"/><button className="btn gold">Subscribe <ArrowRight size={14}/></button></form>}<p style={{fontSize:10}}>Preview only · No email is sent or shared.</p></div></div>
  <div className="footgrid"><div><a className="footbrand" href={base+"Home"}><LogoSilhouette/></a><p>Sarees and dupattas. The warmth of a hand, the memory of a loom.</p><a href={base+"OurStory"}>Follow the thread <ArrowRight size={13}/></a></div>
- <div><h4>Shop</h4><p><a href={base+"Collections"}>Collections</a><br/><a href={base+"Collections?edit=new"}>New Arrivals</a><br/><a href={base+"Collections?edit=premium"}>Premium Collection</a><br/><a href={base+"OurStory"}>About Us</a></p></div>
+ <div><h4>Shop</h4><p><a href={base+"Collections"}>Collections</a><br/><a href={base+"Collections?edit=new"}>New Arrivals</a><br/><a href={base+"Collections?edit=premium"}>Premium Collection</a><br/><a href={base+"Videos"}>Videos</a><br/><a href={base+"OurStory"}>About Us</a></p></div>
    <div><h4>Cloth & care</h4><p><a href={base+"Collections"}>Discover our weaves</a><br/><a href={base+"SareeCare"}>Saree care</a><br/><a href={base+"CustomerCare"}>Customer care & purchase notes</a><br/><a href={base+"Orders"}>Orders & tracking</a><br/><a href={base+"Contact"}>Contact Us</a></p></div>
   <div><h4>Your account</h4><p><a href={base+"Account"}>Log in</a><br/><a href={base+"Profile"}>Demo profile</a><br/><a href={base+"Orders"}>Orders & returns</a><br/><a href={base+"Wishlist"}>Your wishlist</a></p></div></div>
  <div className="copyright">© Chenetha by Koushikii · Design preview · Sample catalog, illustrative artwork and demo checkout.</div></div></footer>
