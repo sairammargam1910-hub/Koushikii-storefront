@@ -12,6 +12,7 @@ export const modules: ModuleMap = {
   "./components/mockups/koushikii/CustomerCare.tsx": () => import("../components/mockups/koushikii/CustomerCare.tsx"),
   "./components/mockups/koushikii/Help.tsx": () => import("../components/mockups/koushikii/Help.tsx"),
   "./components/mockups/koushikii/Home.tsx": () => import("../components/mockups/koushikii/Home.tsx"),
+  "./components/mockups/koushikii/HomeMakingJourney.tsx": () => import("../components/mockups/koushikii/HomeMakingJourney.tsx"),
   "./components/mockups/koushikii/Journal.tsx": () => import("../components/mockups/koushikii/Journal.tsx"),
   "./components/mockups/koushikii/Orders.tsx": () => import("../components/mockups/koushikii/Orders.tsx"),
   "./components/mockups/koushikii/OurStory.tsx": () => import("../components/mockups/koushikii/OurStory.tsx"),

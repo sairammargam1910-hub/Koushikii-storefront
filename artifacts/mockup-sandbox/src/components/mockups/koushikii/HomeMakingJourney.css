@@ -1,0 +1,272 @@
+.kq .home-making-journey {
+  overflow: hidden;
+  border: 1px solid #cda34e;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.25), transparent 44%),
+    #f1e6cd;
+  box-shadow: 0 16px 35px rgba(73, 46, 31, .08);
+}
+
+.kq .home-making-scene {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1350 / 690;
+  min-height: 300px;
+  background: #e4d3b2;
+  border: 9px solid #f1e6cd;
+}
+
+.kq .home-making-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: kq-making-reveal .9s cubic-bezier(.2,.7,.2,1) both;
+}
+
+.kq .home-making-caption {
+  position: absolute;
+  top: 24px;
+  left: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  color: #f7f1e6;
+  background: rgba(76, 43, 34, .86);
+  border: 1px solid rgba(220, 184, 111, .8);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.kq .home-making-caption-mark {
+  color: #e5bf66;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.kq .home-making-scene-index {
+  position: absolute;
+  right: 25px;
+  bottom: 22px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: #fff8e9;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 24px;
+  text-shadow: 0 2px 8px rgba(29, 20, 14, .65);
+}
+
+.kq .home-making-scene-index i {
+  color: #e6c47d;
+  font: normal 12px 'DM Sans', sans-serif;
+}
+
+.kq .home-making-progress {
+  position: absolute;
+  z-index: 2;
+  right: 9px;
+  bottom: 9px;
+  left: 9px;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(72, 43, 34, .26);
+}
+
+.kq .home-making-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #d4a23b;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.kq .home-making-journey.is-playing .home-making-progress span {
+  animation: kq-making-progress 12s linear infinite;
+}
+
+.kq .home-making-stages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid #cda34e;
+  border-bottom: 1px solid #cda34e;
+}
+
+.kq .home-making-stages button {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 82px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  border: 0;
+  border-right: 1px solid #cdbd9d;
+  background: rgba(255, 250, 239, .72);
+  color: #45302a;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .2s ease;
+}
+
+.kq .home-making-stages button:last-child { border-right: 0; }
+.kq .home-making-stages button:hover { background: #f6ecd4; }
+.kq .home-making-stages button.active { background: #e8d8b8; }
+
+.kq .home-making-step {
+  display: grid;
+  width: 39px;
+  height: 39px;
+  flex: 0 0 39px;
+  place-items: center;
+  border: 1px solid #b9995d;
+  border-radius: 50%;
+  color: #922c32;
+  font: 600 16px 'Cormorant Garamond', Georgia, serif;
+  transition: background-color .2s ease, color .2s ease;
+}
+
+.kq .home-making-stages .active .home-making-step {
+  background: #922c32;
+  color: #f7f1e6;
+  border-color: #922c32;
+}
+
+.kq .home-making-stage-copy { display: grid; gap: 4px; min-width: 0; }
+.kq .home-making-note {
+  color: #8d5b43;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.kq .home-making-title {
+  overflow: hidden;
+  font: 600 19px/1.1 'Cormorant Garamond', Georgia, serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kq .home-making-stage-arrow {
+  margin-left: auto;
+  color: #922c32;
+  opacity: .55;
+}
+
+.kq .home-making-detail {
+  display: grid;
+  grid-template-columns: .85fr 1.15fr;
+  gap: 32px;
+  align-items: center;
+  padding: 24px 26px 12px;
+}
+
+.kq .home-making-detail-kicker {
+  color: #8d5b43;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.kq .home-making-detail h3 {
+  margin: 7px 0 0;
+  color: #4c302a;
+  font: 600 clamp(25px, 3vw, 36px)/1.05 'Cormorant Garamond', Georgia, serif;
+}
+
+.kq .home-making-detail > p {
+  margin: 0;
+  color: #6f6254;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.kq .home-making-controls {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 26px 22px;
+}
+
+.kq .home-making-control-group { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.kq .home-making-controls button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid #d2c3a6;
+  background: #fbf6ea;
+  color: #7a332e;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+
+.kq .home-making-controls button:hover:not(:disabled) {
+  border-color: #922c32;
+  background: #fffaf0;
+}
+
+.kq .home-making-controls button:disabled { opacity: .52; cursor: not-allowed; }
+.kq .home-making-controls .home-making-play { background: #922c32; border-color: #922c32; color: #fff7e9; }
+.kq .home-making-controls .home-making-play:hover:not(:disabled) { background: #742329; }
+
+.kq .home-making-disclaimer {
+  max-width: 500px;
+  margin: 0;
+  color: #8a7a66;
+  font-size: 10px;
+  line-height: 1.55;
+  text-align: right;
+}
+
+@keyframes kq-making-reveal {
+  from { opacity: .25; transform: scale(1.015); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes kq-making-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (max-width: 767px) {
+  .kq .home-making-scene { aspect-ratio: 4 / 3; min-height: 0; border-width: 5px; }
+  .kq .home-making-art { object-fit: cover; object-position: center; }
+  .kq .home-making-caption { top: 12px; left: 12px; max-width: calc(100% - 70px); padding: 7px 9px; gap: 6px; font-size: 8px; letter-spacing: .08em; }
+  .kq .home-making-caption-mark { font-size: 13px; }
+  .kq .home-making-scene-index { right: 14px; bottom: 16px; font-size: 19px; }
+  .kq .home-making-progress { right: 5px; bottom: 5px; left: 5px; }
+  .kq .home-making-stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kq .home-making-stages button { min-height: 77px; gap: 8px; padding: 10px 8px; }
+  .kq .home-making-step { width: 30px; height: 30px; flex-basis: 30px; font-size: 14px; }
+  .kq .home-making-title { font-size: 15px; white-space: normal; }
+  .kq .home-making-note { font-size: 8px; letter-spacing: .08em; }
+  .kq .home-making-stage-arrow { display: none; }
+  .kq .home-making-detail { grid-template-columns: 1fr; gap: 9px; padding: 18px 15px 8px; }
+  .kq .home-making-detail h3 { font-size: 28px; }
+  .kq .home-making-detail > p { font-size: 12px; }
+  .kq .home-making-controls { display: grid; gap: 12px; padding: 12px 15px 17px; }
+  .kq .home-making-controls button { min-height: 36px; padding: 7px 8px; font-size: 10px; }
+  .kq .home-making-disclaimer { text-align: left; }
+}
+
+@media (max-width: 420px) {
+  .kq .home-making-stages button { display: grid; justify-items: center; gap: 5px; text-align: center; }
+  .kq .home-making-step { width: 27px; height: 27px; flex-basis: 27px; }
+  .kq .home-making-title { font-size: 13px; }
+  .kq .home-making-note { font-size: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kq .home-making-art,
+  .kq .home-making-progress span { animation: none !important; }
+}
