@@ -43,7 +43,7 @@ export function HomeMakingJourney() {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => {
       setReducedMotion(media.matches);
-      setPlaying(!media.matches);
+      setPlaying((wasPlaying) => (media.matches ? false : wasPlaying));
     };
     update();
     media.addEventListener("change", update);
@@ -51,10 +51,10 @@ export function HomeMakingJourney() {
   }, []);
 
   useEffect(() => {
-    if (!playing || reducedMotion) return;
-    const timer = window.setInterval(() => setStage((value) => (value + 1) % stages.length), 12000);
+    if (!playing) return;
+    const timer = window.setInterval(() => setStage((value) => (value + 1) % stages.length), 4800);
     return () => window.clearInterval(timer);
-  }, [playing, reducedMotion]);
+  }, [playing]);
 
   const chooseStage = (index: number) => {
     setStage((index + stages.length) % stages.length);
@@ -62,7 +62,7 @@ export function HomeMakingJourney() {
   };
 
   return (
-    <div className={`home-making-journey${playing && !reducedMotion ? " is-playing" : ""}`}>
+    <div className={`home-making-journey${playing ? " is-playing" : ""}`}>
       <div className="home-making-scene">
         <img
           key={`${current.id}-${replay}`}
@@ -119,12 +119,11 @@ export function HomeMakingJourney() {
           <button
             type="button"
             className="home-making-play"
-            disabled={reducedMotion}
-            aria-pressed={playing && !reducedMotion}
+            aria-pressed={playing}
             onClick={() => setPlaying((value) => !value)}
           >
-            {playing && !reducedMotion ? <Pause size={14} /> : <Play size={14} />}
-            {playing && !reducedMotion ? "Pause story" : "Play story"}
+            {playing ? <Pause size={14} /> : <Play size={14} />}
+            {playing ? "Pause story" : "Play story"}
           </button>
           <button
             type="button"
