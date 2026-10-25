@@ -32,7 +32,7 @@
   border-bottom: 1px solid #d9c9aa;
 }
 
-/* Keep the progress indicator in sync with the faster, visible stage changes. */
+/* Each client-supplied clip is 12 seconds long; keep the progress in sync. */
 .kq .home-making-journey.is-playing .home-making-progress span {
-  animation-duration: 4.8s;
+  animation-duration: 12s;
 }

@@ -15,15 +15,16 @@ function Textile({pattern,label}:{pattern:string;label:string}){
  return <span className={"textile "+pattern} role="img" aria-label={label+" — illustrative textile pattern"}/>;
 }
 const makingStages = [
-  {id:"yarn",step:"01",note:"Preparation",title:"Prepare the yarn",copy:"Yarn is wound onto bobbins in preparation for the loom. The tools and sequence vary between fibres and weaving communities.",image:"/__mockup/images/koushikii-home-yarn.svg",motionImage:"/__mockup/images/koushikii-home-yarn-motion.svg",alt:"Illustration of a craftswoman winding yarn by hand beside a spinning wheel."},
-  {id:"dye",step:"02",note:"Colour",title:"Bring in the colour",copy:"Yarn may be coloured before it is woven. Dye methods and timing differ by material, design and regional practice.",image:"/__mockup/images/koushikii-home-dye.svg",motionImage:"/__mockup/images/koushikii-home-dye-motion.svg",alt:"Illustration of a craftswoman lowering a hank of yarn into a dye vessel."},
-  {id:"loom",step:"03",note:"Weaving",title:"Weave the cloth",copy:"Warp and weft meet at the handloom. Each pass of the shuttle brings the fabric a little closer to its finished form.",image:"/__mockup/images/koushikii-home-loom.svg",motionImage:"/__mockup/images/koushikii-home-loom-motion.svg",alt:"Illustration of a craftswoman working at a traditional handloom."},
+  {id:"yarn",step:"01",note:"Preparation",title:"Prepare the yarn",copy:"Yarn is wound onto bobbins in preparation for the loom. The tools and sequence vary between fibres and weaving communities.",image:"/__mockup/images/koushikii-home-yarn.svg",video:"/__mockup/images/koushikii-home-yarn.mp4",alt:"A short video of yarn preparation for handloom weaving."},
+  {id:"dye",step:"02",note:"Colour",title:"Bring in the colour",copy:"Yarn may be coloured before it is woven. Dye methods and timing differ by material, design and regional practice.",image:"/__mockup/images/koushikii-home-dye.svg",video:"/__mockup/images/koushikii-home-dye.mp4",alt:"A short video showing the colouring stage of handloom preparation."},
+  {id:"loom",step:"03",note:"Weaving",title:"Weave the cloth",copy:"Warp and weft meet at the handloom. Each pass of the shuttle brings the fabric a little closer to its finished form.",image:"/__mockup/images/koushikii-home-loom.svg",video:"/__mockup/images/koushikii-home-loom.mp4",alt:"A short video of a handloom in use."},
 ];
 function MakingJourney(){
  const [stage,setStage]=useState(0);
  const [playing,setPlaying]=useState(false);
  const [reducedMotion,setReducedMotion]=useState(false);
  const [replay,setReplay]=useState(0);
+  const videoRef=useRef<HTMLVideoElement>(null);
  const current=makingStages[stage];
 
  useEffect(()=>{
@@ -36,14 +37,27 @@ function MakingJourney(){
 
  useEffect(()=>{
   if(!playing)return;
-  const timer=window.setInterval(()=>setStage(value=>(value+1)%makingStages.length),4800);
+   const timer=window.setInterval(()=>setStage(value=>(value+1)%makingStages.length),12000);
   return ()=>window.clearInterval(timer);
  },[playing]);
+
+  useEffect(()=>{
+   const video=videoRef.current;
+   if(!video)return;
+   if(playing){
+    void video.play().catch(()=>setPlaying(false));
+   }else{
+    video.pause();
+    video.currentTime=0;
+   }
+  },[playing,stage,replay]);
 
  const chooseStage=(index:number)=>{setStage((index+makingStages.length)%makingStages.length);setPlaying(false);};
  return <div className={`home-making-journey${playing?" is-playing":""}`} data-replay={replay}>
   <div className="home-making-scene">
-    <img key={`${current.id}-${replay}`} className="home-making-art" src={reducedMotion&&!playing?current.image:current.motionImage} alt={current.alt} loading="eager"/>
+     {playing?
+      <video key={`${current.id}-${replay}`} ref={videoRef} className="home-making-art" src={current.video} poster={current.image} aria-label={current.alt} autoPlay muted playsInline preload="auto" onError={()=>setPlaying(false)}/>:
+      <img key={`${current.id}-${replay}`} className="home-making-art" src={current.image} alt={current.alt} loading="eager"/>}
    <div className="home-making-caption"><span className="home-making-caption-mark" aria-hidden="true">✳</span><span>{current.note} · Handloom craft, in three moments</span></div>
    <div className="home-making-scene-index" aria-hidden="true">{current.step}<i>/</i>03</div>
    <div className="home-making-progress" key={`progress-${stage}-${replay}`}><span/></div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Instagram } from "lucide-react";
 import { Shell, PageHero, base } from "./_shared";
 
 export function Contact() {
@@ -15,6 +15,6 @@ export function Contact() {
     {sent&&<div className="notice" role="status">Your enquiry has been validated for this preview. Nothing was sent or saved to a service.</div>}
     <button className="btn">Preview enquiry <ArrowRight size={14}/></button><small className="muted">Please use sample details. This prototype is not monitored for support.</small>
    </form>
-   </section><aside><div style={{marginTop:26}}><span className="eyebrow">While you are here</span><h2 style={{margin:"12px 0 20px"}}>A few answers<br/>already gathered.</h2><p className="muted">For choosing a cloth, caring for one you own, or understanding the sample order flow, start with these notes.</p><nav className="support-links" aria-label="Help before sending an enquiry">{[["CustomerCare","Customer care & purchase notes"],["SareeCare","Care notes by fabric"],["Collections","Discover regional collections"],["Orders","Demo orders & tracking"]].map(([path,title])=><a key={path} href={base+path}>{title}<ArrowRight size={14}/></a>)}</nav><div className="guide-note"><span className="eyebrow">A useful enquiry</span><h3>The details help.</h3><p>Include the name of the piece, what you want to know about its fibre or border, and an order reference if the question is about a purchase. Never include card details or passwords.</p></div></div></aside></div></main>
+    </section><aside><div style={{marginTop:26}}><span className="eyebrow">While you are here</span><h2 style={{margin:"12px 0 20px"}}>A few answers<br/>already gathered.</h2><p className="muted">For choosing a cloth, caring for one you own, or understanding the sample order flow, start with these notes.</p><nav className="support-links" aria-label="Help before sending an enquiry">{[["CustomerCare","Customer care & purchase notes"],["SareeCare","Care notes by fabric"],["Collections","Discover regional collections"],["Orders","Demo orders & tracking"]].map(([path,title])=><a key={path} href={base+path}>{title}<ArrowRight size={14}/></a>)}</nav><div className="guide-note"><span className="eyebrow">Instagram</span><h3>Follow the thread.</h3><p>See new drapes, textile details and updates from Chenetha by Koushikii.</p><a className="btn outline small" href="https://www.instagram.com/chenetha_by_koushikii/" target="_blank" rel="noopener noreferrer"><Instagram size={15}/> @chenetha_by_koushikii <ArrowRight size={14}/></a></div><div className="guide-note"><span className="eyebrow">A useful enquiry</span><h3>The details help.</h3><p>Include the name of the piece, what you want to know about its fibre or border, and an order reference if the question is about a purchase. Never include card details or passwords.</p></div></div></aside></div></main>
  </Shell>;
 }

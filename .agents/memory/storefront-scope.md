@@ -20,6 +20,12 @@ The client requested a single floating WhatsApp order button across the storefro
 
 **How to apply:** Keep WhatsApp ordering as a shared floating control on storefront pages; do not add page-specific WhatsApp banners or footer links.
 
+The official Instagram profile supplied for Chenetha by Koushikii is https://www.instagram.com/chenetha_by_koushikii/.
+
+**Why:** The user supplied this profile and asked for it on the Contact Us page.
+
+**How to apply:** Use this exact URL for the brand's social link.
+
 Keep only Home, Collections, Product, Our Story, Wishlist, Cart, Checkout, Confirmation, Account, Orders, Contact, Customer Care and Saree Care for now, plus a separate logged-in Profile preview.
 
 **Why:** The user explicitly narrowed the page list and requested a logged-in profile design; this supersedes the earlier request for Blog navigation.
