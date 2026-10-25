@@ -232,6 +232,11 @@ function Reviews(){
   </div></section>
  }
 export function Home(){
+  useEffect(()=>{
+   if(window.location.hash==="#about-us"){
+    window.requestAnimationFrame(()=>document.getElementById("about-us")?.scrollIntoView({block:"start",behavior:"auto"}));
+   }
+  },[]);
  return <Shell>
   <section className="heritage-hero"><div className="wrap"><div>
    <span className="eyebrow">Chenetha · The living art of handloom</span>
@@ -248,6 +253,27 @@ export function Home(){
   <ProductCarousel title="New Arrivals" copy="A fresh chapter from the loom · Sample selection" offset={4}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
   <IndiaWeaves/>
+   <section className="section home-about" id="about-us" style={{scrollMarginTop:110}}>
+    <div className="wrap home-about-card">
+     <div className="home-about-copy">
+      <span className="eyebrow">About Chenetha · A handloom story</span>
+      <h2>The hands behind the heritage.</h2>
+      <p className="home-about-lead">A saree carries more than colour. It carries knowledge, patience and the rhythm of a loom.</p>
+      <p>Chenetha by Koushikii brings handloom sarees and dupattas into closer view, with respect for the people and regional knowledge behind every weave.</p>
+      <p>We believe this craft stays alive when it is seen, understood and valued. Our aim is to help each customer discover the technique, place and patient work woven into a piece—and to keep the skill of weaving communities at the heart of the story.</p>
+      <div className="home-about-values">
+       <div><span>01</span><strong>Look closer</strong><small>Notice the motif, border and method.</small></div>
+       <div><span>02</span><strong>Value the hands</strong><small>Recognise the knowledge behind the cloth.</small></div>
+       <div><span>03</span><strong>Wear with care</strong><small>Keep a good weave in use for years.</small></div>
+      </div>
+      <a className="btn gold" href={base+"OurStory"}>Continue to our story <ArrowRight size={14}/></a>
+     </div>
+     <figure className="home-about-visual">
+      <img src="/__mockup/images/koushikii-weave.jpg" alt="Artisan hands arranging a patterned handwoven cloth across a wooden loom" loading="eager"/>
+      <figcaption>A handloom at work · Methods and motifs vary across weaving communities.</figcaption>
+     </figure>
+    </div>
+   </section>
   <Reviews/>
   <section className="section"><div className="wrap"><div className="section-head"><div><h2>Shop by Weave</h2><p>Different regions. Distinct hands. A shared love of cloth.</p></div><a href={base+"Collections"} className="link">All weaves →</a></div>
     <div className="weave-grid">{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina","Narayanpet"].map((w,i)=><a key={w} href={base+"Collections?category="+(w==="Pashmina"?"Dupattas":"Sarees")+"&weave="+w}><Textile pattern={"s"+(i+1)} label={w}/><h3>{w}</h3><span className="eyebrow" style={{fontSize:9}}>Explore →</span></a>)}</div>

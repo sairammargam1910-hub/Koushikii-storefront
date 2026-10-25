@@ -1,31 +1,138 @@
 import { ArrowRight } from "lucide-react";
 import { Shell, PageHero, base } from "./_shared";
-import { CraftScene } from "./CraftAnimation";
+import "./OurStory.css";
 
-export function OurStory(){
- return <Shell>
-  <PageHero eyebrow="About Us · Chenetha by Koushikii" title="Every thread has a hand behind it" subtitle="Rooted in South Indian handloom culture, with an open heart for the weaving traditions of India."/>
-  <section className="section"><div className="wrap story-origin"><div><h2>A thread worth following</h2><div className="story-illustration"><CraftScene role="winding" paused/></div><p className="muted" style={{fontSize:11}}>An illustrated study of yarn preparation.</p></div>
-   <div><span className="eyebrow">The idea behind Chenetha</span><h3 style={{margin:"22px 0 14px"}}>Cloth is more than its colour.</h3>
-    <p className="muted">Chenetha by Koushikii is rooted in a love of South Indian textile culture: the rhythm of checks, the architecture of a temple border and the way a saree becomes part of everyday life. The intent is to make room for looking closely, choosing thoughtfully and wearing well.</p>
-    <p className="muted">A regional name can open a conversation, but it cannot tell the whole story of a piece. Fibre, technique, weight and finish each matter. Understanding their differences helps us value the knowledge within the cloth without reducing a tradition to a single pattern.</p>
-    <div className="milestones">{[
-     ["01","Look closely","Notice the relationship between the body, border and pallu. Let texture be as important as colour."],
-     ["02","Ask about the cloth","Understand composition and construction. A familiar regional name is a starting point, not proof of origin."],
-     ["03","Choose for your life","Think about when you will wear it, how it drapes and the care it needs."],
-     ["04","Keep it in use","Air, fold and store with attention. Care makes space for many more days of wearing."]
-    ].map(([n,title,copy])=><div className="milestone" key={n}><b>{n}</b><div><h3 style={{fontSize:25,marginBottom:5}}>{title}</h3><p>{copy}</p></div></div>)}</div>
-   </div>
-  </div></section>
-  <section className="section"><div className="wrap"><div className="section-head"><div><h2>What we value in handloom</h2><p>A philosophy of attention, not a claim of certification.</p></div></div>
-   <div className="promise-grid">{[
-    ["Skilled work","A handloom textile holds many kinds of knowledge: preparing yarn, planning colour, setting the warp and working at the loom. Each deserves recognition."],
-    ["Living traditions","Regional pattern languages continue through learning, practice and adaptation. Tradition is not a frozen design; it is knowledge kept in use."],
-    ["Honest descriptions","Origin, fibre and production method are separate questions. Specific, reliable information matters more than a romantic label."],
-    ["Longer wear","Care, repair and thoughtful storage can help a textile remain part of a wardrobe. Begin with the instructions for the individual piece."]
-   ].map(([title,copy],i)=><article key={title}><span className="promise-number">0{i+1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
-   <p className="muted" style={{fontSize:11}}>Brand philosophy · This preview does not claim verified maker partnerships, certification or environmental outcomes.</p>
-  </div></section>
-  <section className="section"><div className="wrap"><div className="story-end"><span className="eyebrow" style={{color:"#e3bf71"}}>Keep the thread moving</span><h2 style={{marginTop:13}}>Wear a story woven by hand</h2><p>Start with a textile. Stay for the places and knowledge behind it.</p><div className="actions"><a className="btn gold" href={base+"Collections"}>Shop Collections <ArrowRight size={14}/></a><a className="btn pale" href={base+"SareeCare"}>Care for your cloth</a></div></div></div></section>
- </Shell>
+const principles = [
+  [
+    "01",
+    "Listen to craft",
+    "Regional traditions hold living knowledge. Share makers' stories with permission, context and credit.",
+  ],
+  [
+    "02",
+    "Describe with care",
+    "Fibre, construction, technique and place are different details. Clear product information helps customers choose with understanding.",
+  ],
+  [
+    "03",
+    "Wear and care",
+    "Choose a drape for your life, then follow the care guidance for that particular cloth.",
+  ],
+];
+
+const values = [
+  [
+    "Respect for skill",
+    "The knowledge in preparing yarn, planning colour, setting the warp and weaving deserves recognition.",
+  ],
+  [
+    "Regional knowledge",
+    "Each textile tradition has its own language. We share it with context, without flattening the differences between places.",
+  ],
+  [
+    "Honest details",
+    "We distinguish what is known about fibre, construction and origin, and avoid claims that cannot be supported.",
+  ],
+  [
+    "Longer wear",
+    "Thoughtful storage and care can help a saree remain part of a wardrobe. Follow the guidance for the piece you own.",
+  ],
+];
+
+export function OurStory() {
+  return (
+    <Shell>
+      <PageHero
+        eyebrow="About Us · Chenetha by Koushikii"
+        title="A story held in every thread"
+        subtitle="Rooted in South Indian handloom traditions, Chenetha by Koushikii invites you to explore each textile with curiosity, respect and care."
+      />
+
+      <section className="section">
+        <div className="wrap story-origin">
+          <div>
+            <h2>The beauty is in the making</h2>
+            <figure className="story-illustration story-photo">
+              <img
+                src="/__mockup/images/koushikii-weave.jpg"
+                alt="Hands arranging a patterned cloth across a wooden handloom"
+                loading="lazy"
+              />
+              <figcaption>Hands at the loom · A closer look at cloth taking shape.</figcaption>
+            </figure>
+          </div>
+
+          <div className="story-origin-copy">
+            <span className="eyebrow">The thought behind Chenetha</span>
+            <h3>Look beyond the finished drape.</h3>
+            <p>
+              Every saree invites a closer look: the meeting of warp and weft, the balance of body and
+              border, and the way colour travels through a pallu. We want to make space for that
+              attention—and for the knowledge carried by the people who create textiles.
+            </p>
+            <p>
+              Respect for weavers starts with honest storytelling. We aim to make regional craft
+              easier to discover, share product details clearly, and let makers' words be heard when
+              their stories are shared with permission. A familiar weave name is a starting point,
+              not proof of origin.
+            </p>
+            <div className="milestones">
+              {principles.map(([number, title, copy]) => (
+                <div className="milestone" key={number}>
+                  <b>{number}</b>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{copy}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="wrap">
+          <div className="section-head">
+            <div>
+              <h2>What we hope each textile carries</h2>
+              <p>A point of view rooted in respect, clarity and everyday use.</p>
+            </div>
+          </div>
+          <div className="promise-grid">
+            {values.map(([title, copy], index) => (
+              <article key={title}>
+                <span className="promise-number">0{index + 1}</span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
+            ))}
+          </div>
+          <p className="story-disclaimer">
+            Design preview · No verified maker partnerships, certifications or origin claims are implied.
+          </p>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="wrap">
+          <div className="story-end">
+            <span className="eyebrow" style={{ color: "#e3bf71" }}>
+              Keep the thread moving
+            </span>
+            <h2>Find a piece worth keeping</h2>
+            <p>Explore the collection, then learn how to care for the cloth you choose.</p>
+            <div className="actions">
+              <a className="btn gold" href={base + "Collections"}>
+                Shop Collections <ArrowRight size={14} />
+              </a>
+              <a className="btn pale" href={base + "SareeCare"}>
+                Care for your cloth
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </Shell>
+  );
 }
