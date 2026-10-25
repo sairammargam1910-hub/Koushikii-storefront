@@ -177,79 +177,6 @@ const customerVoices = [
   { name: "Vasantha garu", image: "/__mockup/images/customer-vasantha-garu.jpg" },
 ];
 
-const aboutTranslations = {
-  en: {
-    eyebrow: "The thought behind Chenetha",
-    title: "A saree holds more than a pattern.",
-    lead: "Rooted in South Indian handloom culture, woven across India.",
-    first: "Look closely at the border, the body, the pallu: colour, texture and drape give each textile its own character. Small details change how a piece feels and moves.",
-    second: "We want to make these traditions easier to discover, describe each textile with care and make room for makers' stories when they are shared with permission.",
-    values: [
-      ["01", "Look closer", "Explore weave, border, fabric and drape before choosing."],
-      ["02", "Name with care", "Regional names begin a conversation; they are not proof of origin."],
-      ["03", "Choose for life", "Find a cloth that suits how you live, then care for it thoughtfully."],
-    ],
-    imageAlt: "Hands arranging a patterned cloth across a wooden handloom.",
-    caption: "A closer look at cloth taking shape at the loom.",
-  },
-  te: {
-    eyebrow: "Chenetha వెనుక ఉన్న ఆలోచన",
-    title: "ఒక చీరలో నమూనా కన్నా ఎక్కువ ఉంది.",
-    lead: "దక్షిణ భారత చేనేత సంస్కృతిలో పాతుకుపోయి, భారతదేశమంతా అల్లబడినది.",
-    first: "అంచు, వస్త్రపు భాగం, పైటను దగ్గరగా చూడండి: రంగు, ఆకృతి, కట్టుకునే తీరు ప్రతి వస్త్రానికి ప్రత్యేకతను ఇస్తాయి. చిన్న వివరాలే వస్త్రం ఎలా అనిపిస్తుందో, ఎలా కదులుతుందో మార్చుతాయి.",
-    second: "ఈ సంప్రదాయాలను సులభంగా తెలుసుకునేలా చేయడం, ప్రతి వస్త్రాన్ని శ్రద్ధగా వివరించడం, అనుమతితో పంచుకున్నప్పుడే నేతగారి కథలకు చోటివ్వడం మా ఉద్దేశం.",
-    values: [
-      ["01", "దగ్గరగా చూడండి", "ఎంచుకునే ముందు నేత, అంచు, వస్త్రం, కట్టుకునే తీరును గమనించండి."],
-      ["02", "పేరును శ్రద్ధగా వాడండి", "ప్రాంతీయ పేర్లు సంభాషణకు ఆరంభం మాత్రమే; అవి ఉత్పత్తి స్థలానికి రుజువు కావు."],
-      ["03", "జీవనశైలికి సరిపడేలా ఎంచుకోండి", "మీకు సరిపోయే వస్త్రాన్ని ఎంచుకుని, జాగ్రత్తగా సంరక్షించండి."],
-    ],
-    imageAlt: "చెక్క మగ్గంపై నమూనా వస్త్రాన్ని సరిచేస్తున్న చేతులు.",
-    caption: "మగ్గంపై రూపం దాలుస్తున్న వస్త్రాన్ని దగ్గరగా చూడండి.",
-  },
-  hi: {
-    eyebrow: "Chenetha के पीछे की सोच",
-    title: "साड़ी में सिर्फ़ एक नमूना नहीं होता।",
-    lead: "दक्षिण भारतीय हथकरघा संस्कृति से जुड़ी, पूरे भारत में बुनी।",
-    first: "किनारे, मुख्य हिस्से और पल्लू को ध्यान से देखें: रंग, बनावट और पहनने का ढंग हर वस्त्र को अपना चरित्र देते हैं। छोटी-छोटी बातें बदल देती हैं कि कपड़ा कैसा लगता और कैसे बहता है।",
-    second: "हम इन परंपराओं को खोजना आसान बनाना, हर वस्त्र का विवरण सोच-समझकर देना और कारीगरों की कहानियों को जगह देना चाहते हैं—जब वे अनुमति से साझा की जाएँ।",
-    values: [
-      ["01", "ध्यान से देखें", "चुनने से पहले बुनाई, किनारा, कपड़ा और पहनने का ढंग समझें।"],
-      ["02", "नाम सोच-समझकर दें", "क्षेत्रीय नाम बातचीत की शुरुआत हैं; वे उत्पत्ति का प्रमाण नहीं।"],
-      ["03", "अपने जीवन के लिए चुनें", "अपने अनुकूल कपड़ा चुनें और उसकी सोच-समझकर देखभाल करें।"],
-    ],
-    imageAlt: "लकड़ी के हथकरघे पर नमूनेदार कपड़ा ठीक करते हाथ।",
-    caption: "करघे पर आकार लेते कपड़े को करीब से देखें।",
-  },
-} as const;
-
-type HomeLanguage = keyof typeof aboutTranslations;
-
-function useHomeLanguage(): HomeLanguage {
-  const [language, setLanguage] = useState<HomeLanguage>(() => {
-    try {
-      const saved = localStorage.getItem("kq-language");
-      return saved === "te" || saved === "hi" ? saved : "en";
-    } catch {
-      return "en";
-    }
-  });
-
-  useEffect(() => {
-    const root = document.querySelector<HTMLElement>(".kq");
-    if (!root) return;
-    const syncLanguage = () => {
-      const next = root.dataset.lang;
-      if (next === "en" || next === "te" || next === "hi") setLanguage(next);
-    };
-    syncLanguage();
-    const observer = new MutationObserver(syncLanguage);
-    observer.observe(root, { attributes: true, attributeFilter: ["data-lang"] });
-    return () => observer.disconnect();
-  }, []);
-
-  return language;
-}
-
 function Reviews(){
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
@@ -305,12 +232,6 @@ function Reviews(){
   </div></section>
  }
 export function Home(){
-  const about = aboutTranslations[useHomeLanguage()];
-  useEffect(()=>{
-   if(window.location.hash==="#about-us"){
-    window.requestAnimationFrame(()=>document.getElementById("about-us")?.scrollIntoView({block:"start",behavior:"auto"}));
-   }
-  },[]);
  return <Shell>
   <section className="heritage-hero"><div className="wrap"><div>
    <span className="eyebrow">Chenetha · The living art of handloom</span>
@@ -327,30 +248,6 @@ export function Home(){
   <ProductCarousel title="New Arrivals" copy="A fresh chapter from the loom · Sample selection" offset={4}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
   <IndiaWeaves/>
-   <section className="section home-about" id="about-us" style={{scrollMarginTop:110}}>
-    <div className="wrap home-about-card">
-     <div className="home-about-copy">
-       <span className="eyebrow">{about.eyebrow}</span>
-       <h2>{about.title}</h2>
-       <p className="home-about-lead">{about.lead}</p>
-       <p>{about.first}</p>
-       <p>{about.second}</p>
-      <div className="home-about-values">
-        {about.values.map(([number, title, copy])=><div key={number}><span>{number}</span><strong>{title}</strong><small>{copy}</small></div>)}
-      </div>
-      <a className="btn gold" href={base+"OurStory"}>Continue to our story <ArrowRight size={14}/></a>
-     </div>
-     <figure className="home-about-visual">
-        <img
-          className="home-about-image"
-          src="/__mockup/images/koushikii-weave.jpg"
-          alt={about.imageAlt}
-          loading="lazy"
-        />
-       <figcaption>{about.caption}</figcaption>
-     </figure>
-    </div>
-   </section>
   <Reviews/>
   <section className="section"><div className="wrap"><div className="section-head"><div><h2>Shop by Weave</h2><p>Different regions. Distinct hands. A shared love of cloth.</p></div><a href={base+"Collections"} className="link">All weaves →</a></div>
     <div className="weave-grid">{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina","Narayanpet"].map((w,i)=><a key={w} href={base+"Collections?category="+(w==="Pashmina"?"Dupattas":"Sarees")+"&weave="+w}><Textile pattern={"s"+(i+1)} label={w}/><h3>{w}</h3><span className="eyebrow" style={{fontSize:9}}>Explore →</span></a>)}</div>

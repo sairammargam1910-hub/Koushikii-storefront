@@ -49,3 +49,9 @@ The client's designated patented brand red is `#B22222`; use it consistently whe
 **Why:** The user explicitly identified this as the company's patented colour and asked to replace the site's previous red.
 
 **How to apply:** Prefer the shared red token and use `#B22222` for red brand accents and surfaces across storefront pages.
+
+Use the Home page's Kanjeevaram-inspired motif as the shared background pattern across the storefront, and keep hero dividers consistent with its red-and-gold diagonal border.
+
+**Why:** The user explicitly asked for one consistent background pattern and matching hero borders throughout the website.
+
+**How to apply:** Keep the motif and divider in shared storefront styles so every customer-facing page uses the same treatment.
