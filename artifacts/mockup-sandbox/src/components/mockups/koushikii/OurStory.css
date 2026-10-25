@@ -1,18 +1,20 @@
-.kq .story-photo {
+.kq .story-media {
   margin: 0;
   border: 1px solid var(--gold);
   background: var(--cream);
   padding: 7px;
 }
 
-.kq .story-photo img {
-  width: 100%;
-  height: clamp(330px, 38vw, 510px);
+.kq .story-video {
+  display: block;
+  width: min(100%, 360px);
+  aspect-ratio: 9 / 16;
+  margin: 0 auto;
+  background: #241b16;
   object-fit: cover;
-  object-position: center;
 }
 
-.kq .story-photo figcaption {
+.kq .story-media figcaption {
   padding: 10px 8px 3px;
   color: var(--muted);
   font-size: 11px;
@@ -35,8 +37,8 @@
 }
 
 @media (max-width: 767px) {
-  .kq .story-photo img {
-    height: 320px;
+  .kq .story-video {
+    width: min(100%, 340px);
   }
 
   .kq .story-origin-copy > h3 {

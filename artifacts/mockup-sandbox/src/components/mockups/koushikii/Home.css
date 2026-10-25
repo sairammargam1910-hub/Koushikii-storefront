@@ -812,16 +812,14 @@
   border: 12px solid rgba(247, 241, 230, .14);
 }
 
-.kq .home-about-video {
+.kq .home-about-image {
   display: block;
-  width: auto;
+  width: 100%;
   height: min(62vh, 550px);
   max-width: 100%;
-  aspect-ratio: 9 / 16;
   object-fit: cover;
   object-position: center;
   border: 1px solid rgba(212, 162, 59, .9);
-  background: #472d2c;
   box-shadow: 0 12px 32px rgba(55, 35, 28, .16);
 }
 
@@ -849,7 +847,7 @@
     padding: 22px 18px;
   }
 
-  .kq .home-about-video {
+  .kq .home-about-image {
     height: min(54vh, 430px);
   }
 }

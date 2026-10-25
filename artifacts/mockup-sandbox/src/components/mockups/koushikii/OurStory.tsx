@@ -51,14 +51,25 @@ export function OurStory() {
       <section className="section">
         <div className="wrap story-origin">
           <div>
-            <h2>The beauty is in the making</h2>
-            <figure className="story-illustration story-photo">
-              <img
-                src="/__mockup/images/koushikii-weave.jpg"
-                alt="Hands arranging a patterned cloth across a wooden handloom"
-                loading="lazy"
-              />
-              <figcaption>Hands at the loom · A closer look at cloth taking shape.</figcaption>
+            <h2>A moment at the loom</h2>
+            <figure className="story-illustration story-media">
+              <video
+                className="story-video"
+                controls
+                playsInline
+                preload="metadata"
+                poster="/__mockup/images/koushikii-home-weaver-poster.jpg"
+                aria-label="A short video of a weaver working at a handloom."
+              >
+                <source
+                  src="/__mockup/@fs/home/runner/workspace/attached_assets/AQMDsYmNaRf7YC1n3HA5-zstbtfaytEVF_IQKKEGFXqa-0rWRkuSCZqG_vOOTi_1792914848505.mp4"
+                  type="video/mp4"
+                />
+                Your browser does not support embedded video.
+              </video>
+              <figcaption>
+                Client-supplied footage · One weaving moment; methods vary across makers and regions.
+              </figcaption>
             </figure>
           </div>
 
@@ -66,9 +77,9 @@ export function OurStory() {
             <span className="eyebrow">The thought behind Chenetha</span>
             <h3>Look beyond the finished drape.</h3>
             <p>
-              Every saree invites a closer look: the meeting of warp and weft, the balance of body and
-              border, and the way colour travels through a pallu. We want to make space for that
-              attention—and for the knowledge carried by the people who create textiles.
+              This client-supplied clip follows one weaver at a handloom, working with a bright
+              patterned textile. It offers a glimpse of one practice—not a template for every region,
+              material or maker.
             </p>
             <p>
               Respect for weavers starts with honest storytelling. We aim to make regional craft

@@ -179,49 +179,46 @@ const customerVoices = [
 
 const aboutTranslations = {
   en: {
-    eyebrow: "A moment at the loom",
-    title: "A saree takes shape, one pass at a time.",
-    lead: "Watch warp and weft meet in the steady rhythm of the shuttle.",
-    first: "This client-supplied footage follows one weaver at work on a bright, patterned textile. Every region, material and maker brings a different rhythm to the loom.",
-    second: "Chenetha by Koushikii invites you to look closer at the knowledge behind the cloth. We aim to share clear details about each piece and give makers' stories room—only when they are shared with permission.",
+    eyebrow: "The thought behind Chenetha",
+    title: "A saree holds more than a pattern.",
+    lead: "Rooted in South Indian handloom culture, woven across India.",
+    first: "Look closely at the border, the body, the pallu: colour, texture and drape give each textile its own character. Small details change how a piece feels and moves.",
+    second: "We want to make these traditions easier to discover, describe each textile with care and make room for makers' stories when they are shared with permission.",
     values: [
-      ["01", "Respect the skill", "Recognise the knowledge behind setting the warp, working colour and bringing cloth to life."],
-      ["02", "Describe craft honestly", "A regional weave name opens a conversation; it is not proof of a textile's origin."],
-      ["03", "Choose with care", "Discover its fabric, construction and care needs before making it part of your wardrobe."],
+      ["01", "Look closer", "Explore weave, border, fabric and drape before choosing."],
+      ["02", "Name with care", "Regional names begin a conversation; they are not proof of origin."],
+      ["03", "Choose for life", "Find a cloth that suits how you live, then care for it thoughtfully."],
     ],
-    caption: "Client-supplied footage · One weaving moment; methods vary across makers and regions.",
-    videoLabel: "A short video of a weaver working at a handloom.",
-    unsupported: "Your browser does not support embedded video.",
+    imageAlt: "Hands arranging a patterned cloth across a wooden handloom.",
+    caption: "A closer look at cloth taking shape at the loom.",
   },
   te: {
-    eyebrow: "మగ్గం దగ్గర ఒక క్షణం",
-    title: "ఒక్కో అల్లికతో చీర రూపం దాలుస్తుంది.",
-    lead: "మగ్గం గమనంలో నిలువు, అడ్డ నూలు కలుస్తున్న తీరు చూడండి.",
-    first: "క్లయింట్ అందించిన ఈ దృశ్యంలో, రంగుల నమూనా వస్త్రంపై ఒక నేతగారు పని చేస్తున్నారు. ప్రతి ప్రాంతం, నూలు రకం, నేతగారు మగ్గానికి ప్రత్యేకమైన లయను తీసుకొస్తారు.",
-    second: "వస్త్రం వెనుక ఉన్న జ్ఞానాన్ని దగ్గరగా చూడమని Chenetha by Koushikii ఆహ్వానిస్తుంది. ప్రతి వస్త్రం గురించి స్పష్టమైన వివరాలు పంచుకోవడం, అనుమతితో పంచుకున్నప్పుడే నేతగారి కథలకు చోటివ్వడం మా ఉద్దేశం.",
+    eyebrow: "Chenetha వెనుక ఉన్న ఆలోచన",
+    title: "ఒక చీరలో నమూనా కన్నా ఎక్కువ ఉంది.",
+    lead: "దక్షిణ భారత చేనేత సంస్కృతిలో పాతుకుపోయి, భారతదేశమంతా అల్లబడినది.",
+    first: "అంచు, వస్త్రపు భాగం, పైటను దగ్గరగా చూడండి: రంగు, ఆకృతి, కట్టుకునే తీరు ప్రతి వస్త్రానికి ప్రత్యేకతను ఇస్తాయి. చిన్న వివరాలే వస్త్రం ఎలా అనిపిస్తుందో, ఎలా కదులుతుందో మార్చుతాయి.",
+    second: "ఈ సంప్రదాయాలను సులభంగా తెలుసుకునేలా చేయడం, ప్రతి వస్త్రాన్ని శ్రద్ధగా వివరించడం, అనుమతితో పంచుకున్నప్పుడే నేతగారి కథలకు చోటివ్వడం మా ఉద్దేశం.",
     values: [
-      ["01", "నైపుణ్యాన్ని గౌరవించండి", "నిలువు నూలును అమర్చడం, రంగులతో పని చేయడం, వస్త్రాన్ని రూపొందించడంలో ఉన్న జ్ఞానాన్ని గుర్తించండి."],
-      ["02", "చేనేతను నిజాయితీగా వివరించండి", "ప్రాంతీయ నేత పేరు సంభాషణకు ఆరంభం మాత్రమే; వస్త్రం ఎక్కడ తయారైందో దానికి రుజువు కాదు."],
-      ["03", "శ్రద్ధగా ఎంచుకోండి", "మీ అలమారాలో చోటిచ్చే ముందు వస్త్రం, నిర్మాణం, సంరక్షణ అవసరాలను తెలుసుకోండి."],
+      ["01", "దగ్గరగా చూడండి", "ఎంచుకునే ముందు నేత, అంచు, వస్త్రం, కట్టుకునే తీరును గమనించండి."],
+      ["02", "పేరును శ్రద్ధగా వాడండి", "ప్రాంతీయ పేర్లు సంభాషణకు ఆరంభం మాత్రమే; అవి ఉత్పత్తి స్థలానికి రుజువు కావు."],
+      ["03", "జీవనశైలికి సరిపడేలా ఎంచుకోండి", "మీకు సరిపోయే వస్త్రాన్ని ఎంచుకుని, జాగ్రత్తగా సంరక్షించండి."],
     ],
-    caption: "క్లయింట్ అందించిన దృశ్యం · ఇది ఒక నేత విధానం మాత్రమే; ప్రాంతం, నేతగారిని బట్టి పద్ధతులు మారుతాయి.",
-    videoLabel: "చేతిమగ్గంపై పని చేస్తున్న నేతగారి చిన్న వీడియో.",
-    unsupported: "మీ బ్రౌజర్ వీడియోను చూపలేకపోతోంది.",
+    imageAlt: "చెక్క మగ్గంపై నమూనా వస్త్రాన్ని సరిచేస్తున్న చేతులు.",
+    caption: "మగ్గంపై రూపం దాలుస్తున్న వస్త్రాన్ని దగ్గరగా చూడండి.",
   },
   hi: {
-    eyebrow: "करघे पर एक पल",
-    title: "हर चाल के साथ साड़ी आकार लेती है।",
-    lead: "करघे की लय में ताने-बाने को मिलते हुए देखें।",
-    first: "क्लाइंट द्वारा दिया गया यह वीडियो एक बुनकर को रंगीन नमूने वाले कपड़े पर काम करते दिखाता है। हर क्षेत्र, रेशा और कारीगर करघे में अपनी अलग लय लाते हैं।",
-    second: "Chenetha by Koushikii आपको कपड़े के पीछे के ज्ञान को करीब से देखने का आमंत्रण देता है। हमारा उद्देश्य हर वस्त्र की साफ़ जानकारी देना और कारीगरों की कहानियों को जगह देना है—जब वे अनुमति से साझा की जाएँ।",
+    eyebrow: "Chenetha के पीछे की सोच",
+    title: "साड़ी में सिर्फ़ एक नमूना नहीं होता।",
+    lead: "दक्षिण भारतीय हथकरघा संस्कृति से जुड़ी, पूरे भारत में बुनी।",
+    first: "किनारे, मुख्य हिस्से और पल्लू को ध्यान से देखें: रंग, बनावट और पहनने का ढंग हर वस्त्र को अपना चरित्र देते हैं। छोटी-छोटी बातें बदल देती हैं कि कपड़ा कैसा लगता और कैसे बहता है।",
+    second: "हम इन परंपराओं को खोजना आसान बनाना, हर वस्त्र का विवरण सोच-समझकर देना और कारीगरों की कहानियों को जगह देना चाहते हैं—जब वे अनुमति से साझा की जाएँ।",
     values: [
-      ["01", "कौशल का सम्मान", "ताना बिठाने, रंगों पर काम करने और कपड़े को आकार देने के ज्ञान को पहचानें।"],
-      ["02", "कारीगरी का सही वर्णन", "क्षेत्रीय बुनाई का नाम बातचीत की शुरुआत है; यह वस्त्र की उत्पत्ति का प्रमाण नहीं।"],
-      ["03", "सोच-समझकर चुनें", "अपनी अलमारी का हिस्सा बनाने से पहले कपड़ा, बनावट और देखभाल की ज़रूरत समझें।"],
+      ["01", "ध्यान से देखें", "चुनने से पहले बुनाई, किनारा, कपड़ा और पहनने का ढंग समझें।"],
+      ["02", "नाम सोच-समझकर दें", "क्षेत्रीय नाम बातचीत की शुरुआत हैं; वे उत्पत्ति का प्रमाण नहीं।"],
+      ["03", "अपने जीवन के लिए चुनें", "अपने अनुकूल कपड़ा चुनें और उसकी सोच-समझकर देखभाल करें।"],
     ],
-    caption: "क्लाइंट द्वारा दिया गया वीडियो · बुनाई का एक पल; तरीके क्षेत्र और कारीगर के अनुसार बदलते हैं।",
-    videoLabel: "हथकरघे पर काम करते बुनकर का छोटा वीडियो।",
-    unsupported: "आपका ब्राउज़र एम्बेड किया गया वीडियो नहीं चला सकता।",
+    imageAlt: "लकड़ी के हथकरघे पर नमूनेदार कपड़ा ठीक करते हाथ।",
+    caption: "करघे पर आकार लेते कपड़े को करीब से देखें।",
   },
 } as const;
 
@@ -344,17 +341,12 @@ export function Home(){
       <a className="btn gold" href={base+"OurStory"}>Continue to our story <ArrowRight size={14}/></a>
      </div>
      <figure className="home-about-visual">
-       <video
-        className="home-about-video"
-        controls
-        playsInline
-        preload="none"
-        poster="/__mockup/images/koushikii-home-weaver-poster.jpg"
-        aria-label={about.videoLabel}
-       >
-        <source src="/__mockup/@fs/home/runner/workspace/attached_assets/AQMDsYmNaRf7YC1n3HA5-zstbtfaytEVF_IQKKEGFXqa-0rWRkuSCZqG_vOOTi_1792914848505.mp4" type="video/mp4"/>
-        {about.unsupported}
-       </video>
+        <img
+          className="home-about-image"
+          src="/__mockup/images/koushikii-weave.jpg"
+          alt={about.imageAlt}
+          loading="lazy"
+        />
        <figcaption>{about.caption}</figcaption>
      </figure>
     </div>
