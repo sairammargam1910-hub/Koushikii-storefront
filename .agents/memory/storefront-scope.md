@@ -43,3 +43,9 @@ The Home customer-photo carousel has no approved review text yet; do not invent 
 **Why:** The user chose a “Review text pending” placeholder because no customer quotes were supplied.
 
 **How to apply:** Replace the placeholder only with exact, approved customer words; do not create customer endorsements or ratings.
+
+The client's designated patented brand red is `#B22222`; use it consistently wherever the storefront uses brand red.
+
+**Why:** The user explicitly identified this as the company's patented colour and asked to replace the site's previous red.
+
+**How to apply:** Prefer the shared red token and use `#B22222` for red brand accents and surfaces across storefront pages.

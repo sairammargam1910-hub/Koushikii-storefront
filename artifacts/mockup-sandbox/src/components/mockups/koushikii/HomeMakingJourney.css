@@ -125,15 +125,15 @@
   place-items: center;
   border: 1px solid #b9995d;
   border-radius: 50%;
-  color: #922c32;
+  color: var(--red);
   font: 600 16px 'Cormorant Garamond', Georgia, serif;
   transition: background-color .2s ease, color .2s ease;
 }
 
 .kq .home-making-stages .active .home-making-step {
-  background: #922c32;
+  background: var(--red);
   color: #f7f1e6;
-  border-color: #922c32;
+  border-color: var(--red);
 }
 
 .kq .home-making-stage-copy { display: grid; gap: 4px; min-width: 0; }
@@ -152,7 +152,7 @@
 }
 .kq .home-making-stage-arrow {
   margin-left: auto;
-  color: #922c32;
+  color: var(--red);
   opacity: .55;
 }
 
@@ -204,20 +204,20 @@
   padding: 8px 11px;
   border: 1px solid #d2c3a6;
   background: #fbf6ea;
-  color: #7a332e;
+  color: var(--red);
   font-size: 11px;
   cursor: pointer;
   transition: border-color .2s ease, background-color .2s ease;
 }
 
 .kq .home-making-controls button:hover:not(:disabled) {
-  border-color: #922c32;
+  border-color: var(--red);
   background: #fffaf0;
 }
 
 .kq .home-making-controls button:disabled { opacity: .52; cursor: not-allowed; }
-.kq .home-making-controls .home-making-play { background: #922c32; border-color: #922c32; color: #fff7e9; }
-.kq .home-making-controls .home-making-play:hover:not(:disabled) { background: #742329; }
+.kq .home-making-controls .home-making-play { background: var(--red); border-color: var(--red); color: #fff7e9; }
+.kq .home-making-controls .home-making-play:hover:not(:disabled) { background: var(--red); }
 
 .kq .home-making-disclaimer {
   max-width: 500px;

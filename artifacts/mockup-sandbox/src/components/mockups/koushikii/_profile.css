@@ -2,7 +2,7 @@
 .kq .profile-card{background:var(--red);color:var(--paper);padding:32px 25px;border:4px double var(--gold)}
 .kq .profile-monogram{width:68px;height:68px;display:grid;place-items:center;border:1px solid var(--gold);font-family:'Cormorant Garamond',serif;font-size:32px;margin-bottom:22px}
 .kq .profile-card .eyebrow{color:var(--gold)}.kq .profile-card h2{font-size:34px;margin:12px 0}
-.kq .profile-nav{display:grid;gap:0;margin:26px 0}.kq .profile-nav a{padding:14px 0;border-bottom:1px solid #b66b66;font-size:12px}
+.kq .profile-nav{display:grid;gap:0;margin:26px 0}.kq .profile-nav a{padding:14px 0;border-bottom:1px solid #b22222;font-size:12px}
 .kq .profile-section{margin-bottom:32px}.kq .profile-section h2{font-size:34px}.kq .profile-section .section-head{align-items:center;margin-bottom:22px}
 .kq .address-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.kq .address-list p{white-space:pre-line;overflow-wrap:anywhere}
 .kq .profile-feedback{margin-bottom:24px;border-left:3px solid var(--gold)}

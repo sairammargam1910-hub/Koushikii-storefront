@@ -70,7 +70,7 @@ function Artisan({ standing = false }: { standing?: boolean }) {
   {!standing && <path d="M233 355h108M245 358v87M328 358v87" stroke="#684631" strokeWidth="9"/>}
   <path d={standing ? "M250 307l-12 128h97l-28-129Z" : "M247 310q-18 30-2 55l79 29 25-30-43-42Z"} fill="#365b4c" stroke="#294638" strokeWidth="3"/>
   {standing && <path d="M244 435h33m26 0h34" stroke="#a76d4e" strokeWidth="13" strokeLinecap="round"/>}
-  <path d="M260 218q-33 5-36 41l3 66 88 16 4-76-27-45Z" fill="#b54b40" stroke="#7e3e32" strokeWidth="3"/>
+  <path d="M260 218q-33 5-36 41l3 66 88 16 4-76-27-45Z" fill="#b22222" stroke="#7e3e32" strokeWidth="3"/>
   <path d="M249 225l61 101-19 15-62-105" fill="#d5ad59"/>
   <path d="M249 231l48 91" stroke="#efd08a" strokeWidth="3"/>
   <path d="M260 199v27q14 12 27-1v-26" fill="#b97c57" stroke="#8d533d" strokeWidth="2"/>
@@ -80,7 +80,7 @@ function Artisan({ standing = false }: { standing?: boolean }) {
   <path d="M232 151q-13 15 1 23" fill="none" stroke="#eee2bb" strokeWidth="5"/>
   <path d="M256 177l8-2m18 0 8 2" stroke="#3e302c" strokeWidth="2.5" strokeLinecap="round"/>
   <path d="M277 179l2 13h-6m-4 9q9 4 15-2" fill="none" stroke="#8d4b3b" strokeWidth="2"/>
-  <circle cx="276" cy="163" r="2.6" fill="#922c32"/>
+  <circle cx="276" cy="163" r="2.6" fill="#b22222"/>
   <circle cx="247" cy="188" r="5" fill="none" stroke="#d4a23b" strokeWidth="3"/>
  </g>;
 }
@@ -107,7 +107,7 @@ export function CraftScene({ role = "weaving", paused = false }: { role?: CraftR
    <desc id={id + "desc"}>{role === "weaving" ? "A seated adult artisan beside a schematic loom. Anchored warp threads separate, a shuttle crosses between the layers, the shed closes, then the reed beats the weft. The artisan's hand stays on the beater." : role === "winding" ? "A seated adult artisan turns a wheel with a connected hand on its crank. A belt drives the bobbin; yarn runs from a separate hank through a fixed guide to the bobbin, away from the artisan's body." : "A standing adult artisan holds a wooden rod supporting a looped hank of yarn. The hand, rod and hank lower together into a dye bath; the front of the vessel conceals the submerged yarn."} Original explanatory illustration, not documentary footage or a complete technical demonstration.</desc>
    <defs>
     <linearGradient id={id + "wall"} x2="0" y2="1"><stop stopColor="#f1e2c5"/><stop offset="1" stopColor="#d8bf95"/></linearGradient>
-    <pattern id={id + "cloth"} width="26" height="18" patternUnits="userSpaceOnUse"><rect width="26" height="18" fill="#922c32"/><path d="M0 4h26M0 7h26M7 0v18" stroke="#d5ab53" strokeWidth="2"/></pattern>
+    <pattern id={id + "cloth"} width="26" height="18" patternUnits="userSpaceOnUse"><rect width="26" height="18" fill="#b22222"/><path d="M0 4h26M0 7h26M7 0v18" stroke="#d5ab53" strokeWidth="2"/></pattern>
    </defs>
    <rect width="900" height="510" fill={`url(#${id}wall)`}/>
    <path d="M0 0h900v55H0z" fill="#744637"/><path d="M0 51h900" stroke="#bb864e" strokeWidth="6"/>
@@ -122,7 +122,7 @@ export function CraftScene({ role = "weaving", paused = false }: { role?: CraftR
     <path d="M73 472l20-20 20 20-20 20Z M63 472h60M93 442v60"/><circle cx="93" cy="472" r="13"/>
     <path d="M770 472l22-22 22 22-22 22Z"/><circle cx="792" cy="472" r="15"/>
    </g>
-   <g><path d="M694 88h80v74h-80Z" fill="#a06a45"/><path d="M702 96h64v58h-64Z" fill="#e8d3a3"/><path d="M734 104l20 22-20 22-20-22Z" fill="none" stroke="#922c32" strokeWidth="3"/><circle cx="734" cy="126" r="5" fill="#ba8b39"/></g>
+   <g><path d="M694 88h80v74h-80Z" fill="#a06a45"/><path d="M702 96h64v58h-64Z" fill="#e8d3a3"/><path d="M734 104l20 22-20 22-20-22Z" fill="none" stroke="#b22222" strokeWidth="3"/><circle cx="734" cy="126" r="5" fill="#ba8b39"/></g>
    <Artisan standing={role === "dyeing"}/>
    {role === "weaving" ? <g>
     <path d="M420 196v255M788 196v255M412 206h384M420 449h368" stroke="#684631" strokeWidth="14" fill="none"/>
@@ -171,13 +171,13 @@ export function CraftScene({ role = "weaving", paused = false }: { role?: CraftR
     </g>
     <path d="M586 300h59" stroke="#684631" strokeWidth="6"/>
     <path d="M596 286v28M634 286v28" stroke="#775035" strokeWidth="6"/>
-    <rect x="599" y="289" width="32" height="22" rx="5" fill="#922c32"/>
+    <rect x="599" y="289" width="32" height="22" rx="5" fill="#b22222"/>
     {Array.from({ length: 8 }, (_, i) => <path key={i} d={`M${601 + i * 4} 289v22`} stroke="#d6ab61" strokeWidth="1"/>)}
     <g transform="translate(638 300) scale(.45 1)"><g transform={`rotate(${t*16320})`}><circle r="14" fill="#d3aa61" stroke="#775035" strokeWidth="3"/><path d="M0 0V-11" stroke="#775035" strokeWidth="3"/></g></g>
     <path d="M705 182v75M686 257h38M705 257v187M684 444h42" stroke="#775035" strokeWidth="6"/>
-    <ellipse cx="705" cy="212" rx="25" ry="45" fill="none" stroke="#922c32" strokeWidth="9"/>
-    <ellipse cx="705" cy="212" rx="17" ry="42" fill="none" stroke="#b55245" strokeWidth="4"/>
-    <path d="M703 255L650 268L615 289" stroke="#922c32" strokeWidth="2" fill="none"/>
+    <ellipse cx="705" cy="212" rx="25" ry="45" fill="none" stroke="#b22222" strokeWidth="9"/>
+    <ellipse cx="705" cy="212" rx="17" ry="42" fill="none" stroke="#b22222" strokeWidth="4"/>
+    <path d="M703 255L650 268L615 289" stroke="#b22222" strokeWidth="2" fill="none"/>
     <path d="M650 274v52" stroke="#775035" strokeWidth="4"/><circle cx="650" cy="268" r="5" stroke="#775035" strokeWidth="3" fill="#e8d3a3"/>
     <path d="M286 354l45 40 14 47h25" fill="none" stroke="#c99066" strokeWidth="14" strokeLinecap="round"/>
    </g> : <g>
@@ -185,7 +185,7 @@ export function CraftScene({ role = "weaving", paused = false }: { role?: CraftR
     <ellipse cx="587" cy="350" rx="94" ry="24" fill="#593947" stroke="#733f30" strokeWidth="5"/>
     <g transform={`translate(0 ${dip})`}>
      <path d="M413 272l182 29" stroke="#a57847" strokeWidth="9" strokeLinecap="round"/>
-     <path d="M553 295q-14 3-13 20v60q20 30 43 0v-58q0-16-14-19" fill="none" stroke="#922c32" strokeWidth="14"/>
+      <path d="M553 295q-14 3-13 20v60q20 30 43 0v-58q0-16-14-19" fill="none" stroke="#b22222" strokeWidth="14"/>
      <path d="M552 301v72q8 17 16 0v-71" fill="none" stroke="#cf8c63" strokeWidth="2"/>
     </g>
     {/* Vessel front occludes the submerged hank rather than drawing through it. */}
@@ -197,7 +197,7 @@ export function CraftScene({ role = "weaving", paused = false }: { role?: CraftR
    <Arm shoulder={[305, 249]} elbow={role === "weaving" ? [343, 290 + beat * .45] : role === "winding" ? [354, 290 + Math.sin(crank) * 10] : [351, 296 + dip * .4]} hand={rightHand}/>
    <path d="M32 396h43l-8 49H39Z" fill="#935438"/>
    <path d="M53 397v-70M53 373q-34-18-24-37 29 6 24 37M53 359q34-16 25-35-29 6-25 35" fill="#526d4b" stroke="#526d4b" strokeWidth="3"/>
-   <path d="M0 502h900" stroke="#922c32" strokeWidth="16"/><path d="M0 493h900" stroke="#d4a23b" strokeWidth="3"/>
+   <path d="M0 502h900" stroke="#b22222" strokeWidth="16"/><path d="M0 493h900" stroke="#d4a23b" strokeWidth="3"/>
   </svg>
  </div>;
 }

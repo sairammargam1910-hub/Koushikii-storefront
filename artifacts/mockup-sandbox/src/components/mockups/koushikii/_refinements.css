@@ -1,4 +1,9 @@
-.kq{--red:#922c32;--red-dark:#6e2028;--paper:#f7f1e6;--cream:#efe5d1;--gold:#cda34e;--ink:#472d2c;--muted:#786957;--line:#d9c9aa;--green:#365b4c}
+.kq{--red:#b22222;--red-dark:#b22222;--paper:#f7f1e6;--cream:#efe5d1;--gold:#cda34e;--ink:#472d2c;--muted:#786957;--line:#d9c9aa;--green:#365b4c}
+.kq .field input,.kq .field select,.kq .field textarea,.kq input,.kq select,.kq textarea{outline-color:var(--red)}
+.kq .footbrand{background:var(--red)}
+.kq .s1{background:repeating-linear-gradient(90deg,#b22222 0 17px,#d4a23b 17px 20px,#b22222 20px 30px)}
+.kq .silk{background:linear-gradient(130deg,#b22222,#b22222 44%,#b22222 70%,#b22222)}
+.kq .cotton-silk{background:repeating-linear-gradient(90deg,#f7f1e6 0 9px,#b22222 9px 13px,#d4a23b 13px 15px)}
 .kq .language-switcher{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:0 8px;border:1px solid var(--line);background:#fbf6ed;color:var(--ink);white-space:nowrap}
 .kq .language-switcher svg{flex:none;color:var(--red)}
 .kq .language-switcher select{width:82px;max-width:82px;border:0;background:transparent;color:inherit;outline-offset:3px;font-size:11px;cursor:pointer}

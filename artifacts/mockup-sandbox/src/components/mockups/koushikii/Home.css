@@ -1,10 +1,12 @@
 .kq {
+  --red: #b22222;
+  --red-dark: #b22222;
   background-image:
     url("/__mockup/images/koushikii-home-kanjeevaram-star.png"),
     repeating-linear-gradient(
       0deg,
       transparent 0 11px,
-      rgba(146, 44, 50, 0.022) 11px 12px
+      rgba(178, 34, 34, 0.022) 11px 12px
     ),
     repeating-linear-gradient(
       90deg,
@@ -98,7 +100,7 @@
 .kq .footer {
   position: relative;
   overflow: hidden;
-  background-color: #681f27;
+  background-color: #b22222;
   background-image:
     repeating-linear-gradient(0deg, transparent 0 8px, rgba(245, 224, 188, .025) 8px 9px),
     repeating-linear-gradient(90deg, transparent 0 17px, rgba(218, 178, 102, .035) 17px 18px);
@@ -125,8 +127,8 @@
   margin-bottom: clamp(32px, 4vw, 52px);
   border: 1px solid rgba(220, 182, 112, .52);
   background:
-    linear-gradient(115deg, rgba(119, 40, 43, .92), rgba(89, 27, 35, .96)),
-    #681f27;
+    linear-gradient(115deg, rgba(178, 34, 34, .92), rgba(178, 34, 34, .96)),
+    #b22222;
 }
 
 .kq .newsletter::after {
@@ -228,7 +230,7 @@
 }
 
 .kq .home-footer-social a:hover {
-  color: #6a2027;
+  color: #b22222;
   background: #e2bd69;
 }
 
@@ -378,7 +380,7 @@
 /* Home footer: adapt the reference's four-column contact / links / signup rhythm
    to Chenetha's handloom palette, without claiming unconfigured payment methods. */
 .kq:has(.home-footer-reimagined) .footer {
-  background-color: #681f27;
+  background-color: #b22222;
 }
 
 .kq:has(.home-footer-reimagined) .footer .wrap > .newsletter,
@@ -655,4 +657,45 @@
   .home-footer-form .btn {
     width: 100%;
   }
+}
+
+/* The client's registered brand red is #b22222. Keep every Home-page red
+   accent, weave stripe, and primary surface on this exact patented colour. */
+.kq {
+  --red: #b22222;
+  --red-dark: #b22222;
+}
+
+.kq .s1 {
+  background: repeating-linear-gradient(90deg, #b22222 0 17px, #d4a23b 17px 20px, #b22222 20px 30px);
+}
+
+.kq .silk {
+  background: linear-gradient(130deg, #b22222, #b22222 44%, #b22222 70%, #b22222);
+}
+
+.kq .cotton-silk {
+  background: repeating-linear-gradient(90deg, #f7f1e6 0 9px, #b22222 9px 13px, #d4a23b 13px 15px);
+}
+
+.kq .home-making-step,
+.kq .home-making-stage-arrow,
+.kq .home-making-detail-kicker,
+.kq .home-making-controls button {
+  color: #b22222;
+}
+
+.kq .home-making-stages .active .home-making-step,
+.kq .home-making-controls .home-making-play,
+.kq .home-making-controls .home-making-play:hover:not(:disabled) {
+  background: #b22222;
+  border-color: #b22222;
+}
+
+.kq .home-making-controls button:hover:not(:disabled) {
+  border-color: #b22222;
+}
+
+.kq .heart[aria-pressed="true"] svg {
+  fill: #b22222 !important;
 }
