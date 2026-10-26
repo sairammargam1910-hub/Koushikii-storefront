@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
-import { Shell, products, ProductGrid, base, TempleBorder } from "./_shared";
+import { Shell, products, ProductGrid, base } from "./_shared";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import "./HomeMakingJourney.css";
 import "./Home.css";
@@ -22,7 +22,7 @@ const homeHeroSlides = [
 function HomeHeroCarousel(){
  const [active,setActive]=useState(0);
  const [playing,setPlaying]=useState(true);
- const touchStart=useRef<number|null>(null);
+ const touchStart=useRef<{x:number;y:number}|null>(null);
  useEffect(()=>{
   if(!playing)return;
   const timer=window.setInterval(()=>setActive(index=>(index+1)%homeHeroSlides.length),6000);
@@ -30,7 +30,7 @@ function HomeHeroCarousel(){
  },[playing]);
  const go=(direction:number)=>setActive(index=>(index+direction+homeHeroSlides.length)%homeHeroSlides.length);
   return <section className="heritage-hero home-hero-carousel" aria-label="Featured handloom collection">
-   <div className="home-hero-images" onPointerDown={event=>{touchStart.current=event.clientX}} onPointerUp={event=>{if(touchStart.current===null)return;const delta=event.clientX-touchStart.current;if(Math.abs(delta)>45)go(delta<0?1:-1);touchStart.current=null}} onPointerCancel={()=>{touchStart.current=null}}>
+   <div className="home-hero-images" onPointerDown={event=>{if(event.isPrimary)touchStart.current={x:event.clientX,y:event.clientY}}} onPointerUp={event=>{if(touchStart.current===null)return;const deltaX=event.clientX-touchStart.current.x;const deltaY=event.clientY-touchStart.current.y;if(Math.abs(deltaX)>45&&Math.abs(deltaX)>Math.abs(deltaY))go(deltaX<0?1:-1);touchStart.current=null}} onPointerCancel={()=>{touchStart.current=null}}>
    {homeHeroSlides.map((slide,index)=><img key={slide.image} className={`home-hero-image${active===index?" is-active":""}`} src={slide.image} alt="" aria-hidden="true" fetchPriority={index===0?"high":"auto"}/>)}
    <div className="home-hero-shade" aria-hidden="true"/>
    <div className="home-hero-content wrap">
@@ -45,7 +45,6 @@ function HomeHeroCarousel(){
     </div>
    </div>
   </div>
-  <TempleBorder/>
  </section>
 }
 const makingStages = [
