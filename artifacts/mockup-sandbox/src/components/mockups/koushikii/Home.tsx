@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, Instagram, Mail, Pause, Play, RotateCcw } from "lucide-react";
-import { Shell, products, ProductGrid, base, TempleBorder, whatsappOrderUrl } from "./_shared";
+import { Shell, products, ProductGrid, base, TempleBorder } from "./_shared";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import { LogoSilhouette } from "./_LogoSilhouette";
 import "./HomeMakingJourney.css";
@@ -19,6 +19,7 @@ function Textile({pattern,label}:{pattern:string;label:string}){
 function WhatsAppFooterMark(){
  return <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3.2a12.5 12.5 0 0 0-10.7 19L3.5 28.5l6.5-1.7A12.5 12.5 0 1 0 16 3.2Z" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinejoin="round"/><path d="M12.1 9.7c-.4-.9-.8-.9-1.2-.9h-1c-.4 0-.9.2-1.3.7s-1.7 1.7-1.7 4.1 1.8 4.7 2 5c.2.4 3.5 5.6 8.6 7.6 4.2 1.7 5.1 1.3 6 1.2.9-.1 2.9-1.2 3.3-2.4.4-1.2.4-2.2.3-2.4-.1-.2-.4-.4-.9-.6l-3.1-1.5c-.4-.2-.8-.3-1.1.3-.4.6-1.3 1.6-1.6 2-.3.4-.6.4-1.1.1-.5-.2-2.1-.8-4-2.5-1.5-1.3-2.5-2.9-2.8-3.4-.3-.5 0-.8.2-1 .2-.2.5-.6.7-.9.2-.3.3-.5.5-.8.2-.3.1-.6 0-.9l-1.3-3.2Z" fill="currentColor" transform="translate(2 -2) scale(.82)"/></svg>;
 }
+const homeWhatsAppUrl = "https://wa.me/916309741049?text=" + encodeURIComponent("Namaste, I would like to ask about a handloom piece from Chenetha by Koushikii.");
 function HomeFooterLayout(){
  const [target,setTarget]=useState<HTMLElement|null>(null);
  const [subscribed,setSubscribed]=useState(false);
@@ -53,7 +54,7 @@ function HomeFooterLayout(){
     <p>New weaves, care notes and stories behind the cloth.</p>
     <nav className="home-footer-social" aria-label="Social and contact links">
      <a href="https://www.instagram.com/chenetha_by_koushikii/" target="_blank" rel="noopener noreferrer" aria-label="Follow Chenetha by Koushikii on Instagram" title="Instagram"><Instagram size={20} aria-hidden="true"/></a>
-     <a href={whatsappOrderUrl("Namaste, I would like to ask about a handloom piece from Chenetha by Koushikii.")} target="_blank" rel="noopener noreferrer" aria-label="Chat with Chenetha by Koushikii on WhatsApp" title="WhatsApp"><WhatsAppFooterMark/></a>
+      <a href={homeWhatsAppUrl} target="_blank" rel="noopener noreferrer" aria-label="Chat with Chenetha by Koushikii on WhatsApp" title="WhatsApp"><WhatsAppFooterMark/></a>
      <a href={base+"Contact"} aria-label="Email Chenetha by Koushikii through the contact page" title="Email"><Mail size={20} aria-hidden="true"/></a>
     </nav>
     {subscribed?<p className="home-footer-status" role="status">Thank you. Your sign-up is recorded for this demo only.</p>:<form className="home-footer-form" onSubmit={event=>{event.preventDefault();setSubscribed(true)}}>
