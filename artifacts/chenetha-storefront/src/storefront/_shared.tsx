@@ -8,6 +8,7 @@ import { LogoSilhouette } from "./_LogoSilhouette";
 import { languageNames, localizeTree, readStoreLanguage, type StoreLanguage } from "./_locale";
 import "./_profile.css";
 import "./_storefront-pattern.css";
+import "./_mobile.css";
 import { useLocation } from "wouter";
 
 export const base="/";

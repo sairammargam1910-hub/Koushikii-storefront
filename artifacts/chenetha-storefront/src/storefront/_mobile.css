@@ -1,0 +1,157 @@
+/* Shared small-screen refinements for the Chenetha storefront. */
+@media (max-width: 767px) {
+  .kq .products {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .kq .product-card {
+    min-width: 0;
+  }
+
+  .kq .product-img {
+    height: auto;
+    aspect-ratio: 4 / 5;
+  }
+
+  .kq .collection-toolbar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .kq .collection-toolbar > .btn {
+    min-width: 0;
+    min-height: 44px;
+    justify-content: center;
+    padding-inline: 5px;
+    font-size: 10px;
+  }
+
+  .kq .collection-toolbar > label {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: 7px;
+    margin-left: 0 !important;
+    font-size: 12px !important;
+  }
+
+  .kq .filterbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .kq .filterbar input[type="search"],
+  .kq .filterbar select[aria-label="Filter by region"],
+  .kq .filterbar select[aria-label="Sort collection"] {
+    grid-column: 1 / -1;
+  }
+
+  .kq .filterbar input,
+  .kq .filterbar select,
+  .kq .collection-toolbar select,
+  .kq .field input,
+  .kq .field select,
+  .kq .field textarea {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .kq .btn {
+    min-height: 44px;
+  }
+
+  .kq .carousel-controls button,
+  .kq .scene-controls button {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .kq .pagehero {
+    padding: 36px 0 28px;
+  }
+
+  .kq .content {
+    padding-top: 30px;
+    padding-bottom: 58px;
+  }
+}
+
+@media (max-width: 420px) {
+  .kq .headrow {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-rows: 54px 44px;
+    height: auto;
+    min-height: 102px;
+    gap: 4px 8px;
+    justify-content: initial;
+  }
+
+  .kq .mobile-menu {
+    grid-column: 1;
+    grid-row: 1;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .kq .brand {
+    grid-column: 2;
+    grid-row: 1;
+    width: 148px;
+    min-width: 148px;
+    height: 58px;
+    flex: none;
+  }
+
+  .kq .head-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-width: 0;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .kq .head-actions .language-switcher,
+  .kq .head-actions .text-action {
+    flex: none;
+  }
+
+  .kq .head-actions .text-action {
+    width: 32px;
+    height: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .kq .head-actions .header-whatsapp,
+  .kq .head-actions > .iconbtn {
+    width: 40px;
+    height: 44px;
+    flex: 0 0 40px;
+    justify-content: center;
+  }
+
+  .kq .nav {
+    top: 102px;
+  }
+}
+
+@media (max-width: 360px) {
+  .kq .products {
+    gap: 9px;
+  }
+
+  .kq .product-card h3 {
+    font-size: 18px;
+  }
+}
