@@ -880,4 +880,10 @@
   border-radius: 12px;
 }
 
+.kq .home-fabric-section .fabric-card > .textile,
+.kq .home-weave-section .weave-grid > a > .textile {
+  overflow: hidden;
+  border-radius: 12px;
+}
+
 
