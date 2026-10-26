@@ -18,7 +18,8 @@
   min-height: 0;
   overflow: hidden;
   background: #e9dfca;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
+  user-select: none;
 }
 
 .kq .home-hero-image {

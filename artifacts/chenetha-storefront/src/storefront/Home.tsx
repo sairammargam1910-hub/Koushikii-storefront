@@ -23,14 +23,37 @@ function HomeHeroCarousel(){
  const [active,setActive]=useState(0);
  const [playing,setPlaying]=useState(true);
  const touchStart=useRef<{x:number;y:number}|null>(null);
+ const swipeClickGuard=useRef(0);
  useEffect(()=>{
   if(!playing)return;
   const timer=window.setInterval(()=>setActive(index=>(index+1)%homeHeroSlides.length),6000);
   return()=>window.clearInterval(timer);
  },[playing]);
  const go=(direction:number)=>setActive(index=>(index+direction+homeHeroSlides.length)%homeHeroSlides.length);
-  return <section className="heritage-hero home-hero-carousel" aria-label="Featured handloom collection">
-   <div className="home-hero-images" onPointerDown={event=>{if(event.isPrimary)touchStart.current={x:event.clientX,y:event.clientY}}} onPointerUp={event=>{if(touchStart.current===null)return;const deltaX=event.clientX-touchStart.current.x;const deltaY=event.clientY-touchStart.current.y;if(Math.abs(deltaX)>45&&Math.abs(deltaX)>Math.abs(deltaY))go(deltaX<0?1:-1);touchStart.current=null}} onPointerCancel={()=>{touchStart.current=null}}>
+ const finishSwipe=(end:{x:number;y:number})=>{
+  const start=touchStart.current;
+  touchStart.current=null;
+  if(!start)return;
+  const deltaX=end.x-start.x;
+  const deltaY=end.y-start.y;
+  if(Math.abs(deltaX)<45||Math.abs(deltaX)<=Math.abs(deltaY))return;
+  swipeClickGuard.current=Date.now()+450;
+  go(deltaX<0?1:-1);
+ };
+  return <section
+   className="heritage-hero home-hero-carousel"
+   aria-label="Featured handloom collection"
+   onClickCapture={event=>{if(Date.now()<swipeClickGuard.current){event.preventDefault();event.stopPropagation();swipeClickGuard.current=0}}}
+  >
+   <div
+    className="home-hero-images"
+    onPointerDown={event=>{if(event.isPrimary&&event.pointerType!=="touch")touchStart.current={x:event.clientX,y:event.clientY}}}
+    onPointerUp={event=>{if(event.pointerType!=="touch")finishSwipe({x:event.clientX,y:event.clientY})}}
+    onPointerCancel={event=>{if(event.pointerType!=="touch")touchStart.current=null}}
+    onTouchStart={event=>{if(event.touches.length!==1){touchStart.current=null;return}const touch=event.touches[0];touchStart.current={x:touch.clientX,y:touch.clientY}}}
+    onTouchEnd={event=>{const touch=event.changedTouches[0];if(touch)finishSwipe({x:touch.clientX,y:touch.clientY})}}
+    onTouchCancel={()=>{touchStart.current=null}}
+   >
    {homeHeroSlides.map((slide,index)=><img key={slide.image} className={`home-hero-image${active===index?" is-active":""}`} src={slide.image} alt="" aria-hidden="true" fetchPriority={index===0?"high":"auto"}/>)}
    <div className="home-hero-shade" aria-hidden="true"/>
    <div className="home-hero-content wrap">
