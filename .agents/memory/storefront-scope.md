@@ -8,6 +8,12 @@ The user is designing the complete customer-facing storefront for their client's
 
 **How to apply:** Keep customer browsing, purchase and after-purchase pages visually consistent. Backend/admin is planned for Shopify or WordPress, with third-party payment and delivery services; neither platform nor providers were selected. Do not treat prototype flows as live integrations or choose a provider without confirmation.
 
+Until the client selects the commerce providers and supplies a real catalogue, the functional storefront uses WhatsApp enquiries rather than simulated completed orders. Prices remain explicitly illustrative, and opening a WhatsApp draft must not clear the customer's cart.
+
+**Why:** Graduation to a working app does not authorize selecting a commerce platform or representing sample pieces as confirmed inventory. Opening an external draft is not proof an enquiry was sent or an order accepted.
+
+**How to apply:** Keep browsing and saved selections functional, identify sample pricing, and ask the brand to confirm availability and final pricing. Add payment, account and delivery integrations only after the client chooses them.
+
 The user explicitly rejected a modern-looking storefront and repeatedly emphasized that the design should resemble Indian culture very deeply, especially South Indian culture. Render and visually inspect supplied HTML references, not only extract their text. Preserve their traditional motifs and page structure while applying the organisation logo colours.
 
 **Why:** The user corrected the first design because it reinterpreted the HTML content without inspecting its rendered appearance.

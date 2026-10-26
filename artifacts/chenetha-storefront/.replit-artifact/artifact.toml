@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Chenetha by Koushikii"
+description = "Customer-facing handloom storefront graduated from the approved canvas design, with heritage styling, searchable collections, product details, wishlist, cart and WhatsApp order enquiries."
+version = "1.0.0"
+id = "artifacts/chenetha-storefront"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20119
+
+[services.development]
+run = "pnpm --filter @workspace/chenetha-storefront run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/chenetha-storefront", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/chenetha-storefront/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20119"
+BASE_PATH = "/"

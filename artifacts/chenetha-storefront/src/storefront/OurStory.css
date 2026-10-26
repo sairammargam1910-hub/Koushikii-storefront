@@ -1,0 +1,47 @@
+.kq .story-media {
+  margin: 0;
+  border: 1px solid var(--gold);
+  background: var(--cream);
+  padding: 7px;
+}
+
+.kq .story-video {
+  display: block;
+  width: min(100%, 360px);
+  aspect-ratio: 9 / 16;
+  margin: 0 auto;
+  background: #241b16;
+  object-fit: cover;
+}
+
+.kq .story-media figcaption {
+  padding: 10px 8px 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.kq .story-origin-copy > h3 {
+  margin: 22px 0 14px;
+  font-size: 34px;
+}
+
+.kq .story-origin-copy > p {
+  color: var(--muted);
+}
+
+.kq .story-disclaimer {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 767px) {
+  .kq .story-video {
+    width: min(100%, 340px);
+  }
+
+  .kq .story-origin-copy > h3 {
+    font-size: 30px;
+  }
+}

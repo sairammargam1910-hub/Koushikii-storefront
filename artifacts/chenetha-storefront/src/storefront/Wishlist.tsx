@@ -1,0 +1,6 @@
+import { Shell,PageHero,useStore,products,ProductCard,Empty,saveItems,base } from "./_shared";
+export function Wishlist(){
+ const wish=useStore("kq-wish");
+ const list=products.filter(p=>wish.some(w=>w.id===p.id));
+ return <Shell><PageHero eyebrow="Kept for later" title="Your saved pieces." subtitle="A small collection of things that caught your eye."/><main className="wrap content">{list.length?<><div className="row" style={{marginBottom:25}}><span className="muted">{list.length} saved pieces</span><button className="link" onClick={()=>saveItems("kq-wish",[])}>Clear saved pieces</button></div><div className="products">{list.map(p=><ProductCard key={p.id} product={p}/>)}</div></>:<Empty title="Nothing saved, for now." copy="When a piece stays with you, save it here for another look." cta="Find a piece" href={base+"Collections"}/>}</main></Shell>;
+}
