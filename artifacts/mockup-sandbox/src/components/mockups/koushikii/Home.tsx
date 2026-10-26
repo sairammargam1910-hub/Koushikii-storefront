@@ -35,8 +35,8 @@ function HomeHeroCarousel(){
   return()=>window.clearInterval(timer);
  },[playing]);
  const go=(direction:number)=>setActive(index=>(index+direction+homeHeroSlides.length)%homeHeroSlides.length);
- return <section className="heritage-hero home-hero-carousel" aria-label="Featured handloom collection">
-  <div className="home-hero-images" onTouchStart={event=>{touchStart.current=event.touches[0]?.clientX??null}} onTouchEnd={event=>{if(touchStart.current===null)return;const endX=event.changedTouches[0]?.clientX;if(endX!==undefined){const delta=endX-touchStart.current;if(Math.abs(delta)>45)go(delta<0?1:-1)}touchStart.current=null}}>
+  return <section className="heritage-hero home-hero-carousel" aria-label="Featured handloom collection">
+   <div className="home-hero-images" onPointerDown={event=>{touchStart.current=event.clientX}} onPointerUp={event=>{if(touchStart.current===null)return;const delta=event.clientX-touchStart.current;if(Math.abs(delta)>45)go(delta<0?1:-1);touchStart.current=null}} onPointerCancel={()=>{touchStart.current=null}}>
    {homeHeroSlides.map((slide,index)=><img key={slide.image} className={`home-hero-image${active===index?" is-active":""}`} src={slide.image} alt="" aria-hidden="true" fetchPriority={index===0?"high":"auto"}/>)}
    <div className="home-hero-shade" aria-hidden="true"/>
    <div className="home-hero-content wrap">
@@ -47,11 +47,7 @@ function HomeHeroCarousel(){
      <a className="home-hero-cta" href={homeHeroSlides[active].href}>{homeHeroSlides[active].cta}<ArrowRight size={15}/></a>
     </div>
     <div className="home-hero-controls" role="group" aria-label="Featured collection slides">
-     <button type="button" className="home-hero-toggle" onClick={()=>setPlaying(value=>!value)} aria-label={playing?"Pause slides":"Play slides"} title={playing?"Pause slides":"Play slides"}>{playing?<Pause size={14}/>:<Play size={14}/>}</button>
-     <button type="button" className="home-hero-arrow" aria-label="Previous slide" onClick={()=>go(-1)}><ArrowLeft size={16}/></button>
      {homeHeroSlides.map((slide,index)=><button key={slide.image} type="button" className={`home-hero-dot${active===index?" is-active":""}`} aria-label={`Show slide ${index+1}: ${slide.eyebrow}`} aria-pressed={active===index} onClick={()=>setActive(index)}/>)}
-     <span className="home-hero-count" aria-live="polite">{String(active+1).padStart(2,"0")} / {String(homeHeroSlides.length).padStart(2,"0")}</span>
-     <button type="button" className="home-hero-arrow" aria-label="Next slide" onClick={()=>go(1)}><ArrowRight size={16}/></button>
     </div>
    </div>
   </div>

@@ -117,7 +117,9 @@
 .kq .home-hero-controls {
   display: flex;
   align-items: center;
-  gap: 13px;
+  justify-content: center;
+  gap: 10px;
+  min-height: 32px;
   color: #472d2c;
 }
 
@@ -132,30 +134,17 @@
   background: transparent;
 }
 
-.kq .home-hero-toggle,
-.kq .home-hero-arrow {
-  width: 31px;
-  height: 31px;
-  border: 1px solid rgba(71, 45, 44, .35) !important;
-  border-radius: 50%;
-}
-
-.kq .home-hero-toggle:hover,
-.kq .home-hero-arrow:hover {
-  background: rgba(255, 255, 255, .7) !important;
-}
-
 .kq .home-hero-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 99px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   background: rgba(71, 45, 44, .4) !important;
-  transition: width .2s ease, background-color .2s ease;
+  transition: transform .2s ease, background-color .2s ease;
 }
 
 .kq .home-hero-dot.is-active {
-  width: 22px;
   background: #922c32 !important;
+  transform: scale(1.25);
 }
 
 .kq .home-hero-count {
@@ -168,6 +157,13 @@
 .kq .home-hero-carousel > .temple-border {
   position: relative;
   z-index: 2;
+  height: 22px;
+  border-top: 1px solid rgba(212, 162, 59, .8);
+  border-bottom: 1px solid rgba(212, 162, 59, .8);
+  background-color: #b22222;
+  background-position: center;
+  background-size: auto 28px;
+  box-shadow: 0 2px 5px rgba(71, 45, 44, .1);
 }
 
 @keyframes home-hero-arrive {
