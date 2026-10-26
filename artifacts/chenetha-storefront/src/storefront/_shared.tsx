@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound, Languages } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound, Languages, Instagram, Mail } from "lucide-react";
 import "./_group.css";
 import "./_logo.css";
 import "./_heritage.css";
@@ -78,14 +78,40 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
   </div>{search&&<div className="wrap searchline active"><form style={{display:"flex",width:"100%"}} onSubmit={event=>{event.preventDefault();const query=String(new FormData(event.currentTarget).get("q")||"").trim();setLocation(base+"Collections"+(query?"?q="+encodeURIComponent(query):""));setSearch(false)}}><input data-testid="input-header-search" name="q" aria-label="Search textiles" placeholder="Search Ikat, cotton, Kanchipuram…" autoFocus/><button className="btn small" data-testid="button-submit-search">Search</button></form></div>}</header></>
 }
 export function Footer(){
- return <footer className="footer"><TempleBorder/><div className="wrap">
-  <div className="newsletter"><div><h3>Letters from the loom</h3><p>New weaves, care notes and the stories behind the cloth.</p></div>
-  <div><p>Newsletter sign-up is not available yet. Reach us through the contact page for current collection enquiries.</p><p style={{fontSize:10}}>No email list provider is connected.</p></div></div>
- <div className="footgrid"><div><a className="footbrand" href={base+"Home"}><LogoSilhouette/></a><p>Sarees and dupattas. The warmth of a hand, the memory of a loom.</p><a href={base+"OurStory"}>Follow the thread <ArrowRight size={13}/></a></div>
- <div><h4>Shop</h4><p><a href={base+"Collections"}>Collections</a><br/><a href={base+"Collections?edit=new"}>New Arrivals</a><br/><a href={base+"Collections?edit=premium"}>Premium Collection</a><br/><a href={base+"Videos"}>Videos</a><br/><a href={base+"OurStory"}>About Us</a></p></div>
-   <div><h4>Cloth & care</h4><p><a href={base+"Collections"}>Discover our weaves</a><br/><a href={base+"SareeCare"}>Saree care</a><br/><a href={base+"CustomerCare"}>Customer care & purchase notes</a><br/><a href={base+"Orders"}>Orders & tracking</a><br/><a href={base+"Contact"}>Contact Us</a></p></div>
-   <div><h4>Your preferences</h4><p><a href={base+"Account"}>Saved preferences</a><br/><a href={base+"Profile"}>Your details</a><br/><a href={base+"Orders"}>Order information</a><br/><a href={base+"Wishlist"}>Your wishlist</a></p></div></div>
-  <div className="copyright">© Chenetha by Koushikii · Sample catalogue and illustrative textile swatches.</div></div></footer>
+ return <footer className="footer"><TempleBorder/><div className="wrap"><div className="home-footer-reimagined">
+  <div className="home-footer-grid">
+   <div className="home-footer-brand">
+    <a className="home-footer-logo" href={base+"Home"} aria-label="Chenetha by Koushikii home"><LogoSilhouette/></a>
+    <p>Sarees and dupattas. The warmth of a hand, the memory of a loom.</p>
+    <a className="home-footer-contact" href={base+"Contact"}>Questions about a weave? We’re here to help <ArrowRight size={14}/></a>
+    <span className="home-footer-origin">Rooted in the South · Woven across India</span>
+   </div>
+   <nav className="home-footer-links" aria-label="Our company">
+    <h4>Our Company</h4>
+    <a href={base+"OurStory"}>Our Story</a><a href={base+"Contact"}>Contact Us</a>
+    <a href={base+"CustomerCare"}>Customer Care</a><a href={base+"SareeCare"}>Saree Care</a>
+   </nav>
+   <nav className="home-footer-links" aria-label="Quick links">
+    <h4>Quick Links</h4>
+    <a href={base+"Collections"}>Collections</a><a href={base+"Collections?edit=new"}>New Arrivals</a>
+    <a href={base+"Collections?edit=premium"}>Premium Collection</a><a href={base+"Videos"}>Videos</a>
+    <a href={base+"Orders"}>Orders & tracking</a>
+   </nav>
+   <section className="home-footer-newsletter" aria-labelledby="home-footer-news-title">
+    <span className="home-footer-kicker">A note from our loom</span>
+    <h3 id="home-footer-news-title">Letters from the loom</h3>
+    <p>New weaves, care notes and stories behind the cloth.</p>
+    <nav className="home-footer-social" aria-label="Social and contact links">
+     <a href="https://www.instagram.com/chenetha_by_koushikii/" target="_blank" rel="noopener noreferrer" aria-label="Follow Chenetha by Koushikii on Instagram" title="Instagram"><Instagram size={20} aria-hidden="true"/></a>
+     <a href={whatsappOrderUrl("Namaste, I would like to ask about a handloom piece from Chenetha by Koushikii.")} target="_blank" rel="noopener noreferrer" aria-label="Chat with Chenetha by Koushikii on WhatsApp" title="WhatsApp"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3.2a12.5 12.5 0 0 0-10.7 19L3.5 28.5l6.5-1.7A12.5 12.5 0 1 0 16 3.2Z" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinejoin="round"/><path d="M12.1 9.7c-.4-.9-.8-.9-1.2-.9h-1c-.4 0-.9.2-1.3.7s-1.7 1.7-1.7 4.1 1.8 4.7 2 5c.2.4 3.5 5.6 8.6 7.6 4.2 1.7 5.1 1.3 6 1.2.9-.1 2.9-1.2 3.3-2.4.4-1.2.4-2.2.3-2.4-.1-.2-.4-.4-.9-.6l-3.1-1.5c-.4-.2-.8-.3-1.1.3-.4.6-1.3 1.6-1.6 2-.3.4-.6.4-1.1.1-.5-.2-2.1-.8-4-2.5-1.5-1.3-2.5-2.9-2.8-3.4-.3-.5 0-.8.2-1 .2-.2.5-.6.7-.9.2-.3.3-.5.5-.8.2-.3.1-.6 0-.9l-1.3-3.2Z" fill="currentColor" transform="translate(2 -2) scale(.82)"/></svg></a>
+     <a href={base+"Contact"} aria-label="Email Chenetha by Koushikii through the contact page" title="Email"><Mail size={20} aria-hidden="true"/></a>
+    </nav>
+    <p className="home-footer-status">Newsletter sign-up is not available yet. Please use Contact Us for an enquiry.</p>
+    <small>No newsletter provider is connected.</small>
+   </section>
+  </div>
+  <div className="home-footer-bottom"><span>© Chenetha by Koushikii · Sample catalogue and illustrative textile swatches.</span><a href={base+"Checkout"}>Payment & delivery details at checkout <ArrowRight size={12}/></a></div>
+ </div></div></footer>
 }
 export function Shell({children}:{children:React.ReactNode}){
  const [language,setLanguage]=useState<StoreLanguage>(readStoreLanguage);
