@@ -8,6 +8,7 @@ import { LogoSilhouette } from "./_LogoSilhouette";
 import { useDemoSession } from "./_shared/demo-session";
 import { languageNames, localizeTree, readStoreLanguage, type StoreLanguage } from "./_locale";
 import "./_profile.css";
+import "./_storefront-pattern.css";
 
 export const base="/__mockup/preview/koushikii/";
 export const products=[

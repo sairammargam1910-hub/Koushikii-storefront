@@ -1,0 +1,39 @@
+/* Home's woven field and supplied kolam artwork, shared by every storefront page. */
+.kq {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 11px,
+      rgba(178, 34, 34, 0.022) 11px 12px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 11px,
+      rgba(205, 163, 78, 0.026) 11px 12px
+    );
+  background-size: 24px 24px, 24px 24px;
+  background-position: 0 0, 0 0;
+  background-repeat: repeat;
+}
+
+.kq .temple-border,
+.kq .heritage-hero > .temple-border,
+.kq .footer > .temple-border,
+.kq .pagehero::after {
+  display: block;
+  width: 100%;
+  height: clamp(24px, 3vw, 40px);
+  margin: 0;
+  border: 0;
+  background-color: #b22222;
+  background-image: url("/__mockup/images/koushikii-home-kolam.svg");
+  background-position: center;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+}
+
+@media (max-width: 640px) {
+  .kq {
+    background-size: 20px 20px, 20px 20px;
+  }
+}
