@@ -32,6 +32,10 @@
   background-size: auto 100%;
 }
 
+.kq .pagehero::after {
+  height: 18px;
+}
+
 @media (max-width: 640px) {
   .kq {
     background-size: 20px 20px, 20px 20px;
