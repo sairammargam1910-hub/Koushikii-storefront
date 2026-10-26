@@ -20,6 +20,44 @@ function WhatsAppFooterMark(){
  return <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3.2a12.5 12.5 0 0 0-10.7 19L3.5 28.5l6.5-1.7A12.5 12.5 0 1 0 16 3.2Z" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinejoin="round"/><path d="M12.1 9.7c-.4-.9-.8-.9-1.2-.9h-1c-.4 0-.9.2-1.3.7s-1.7 1.7-1.7 4.1 1.8 4.7 2 5c.2.4 3.5 5.6 8.6 7.6 4.2 1.7 5.1 1.3 6 1.2.9-.1 2.9-1.2 3.3-2.4.4-1.2.4-2.2.3-2.4-.1-.2-.4-.4-.9-.6l-3.1-1.5c-.4-.2-.8-.3-1.1.3-.4.6-1.3 1.6-1.6 2-.3.4-.6.4-1.1.1-.5-.2-2.1-.8-4-2.5-1.5-1.3-2.5-2.9-2.8-3.4-.3-.5 0-.8.2-1 .2-.2.5-.6.7-.9.2-.3.3-.5.5-.8.2-.3.1-.6 0-.9l-1.3-3.2Z" fill="currentColor" transform="translate(2 -2) scale(.82)"/></svg>;
 }
 const homeWhatsAppUrl = "https://wa.me/916309741049?text=" + encodeURIComponent("Namaste, I would like to ask about a handloom piece from Chenetha by Koushikii.");
+const homeHeroSlides = [
+ {image:"/__mockup/images/chenetha-home-hero-courtyard.png", alt:"Rose and vermilion Kanjeevaram silk saree in a sunlit South Indian courtyard", eyebrow:"THE LIVING ART OF HANDLOOM", title:<>Chronicles<br/>of weaves.</>, copy:"Discover the quiet beauty of South Indian handlooms.", cta:"Shop the collection", href:base+"Collections"},
+ {image:"/__mockup/images/chenetha-home-hero-weaving.png", alt:"Midnight-indigo handloom with a fine gold border in a weaving atelier", eyebrow:"A THREAD WORTH FOLLOWING", title:<>Woven by hand.<br/>Kept for years.</>, copy:"Find a weave with colour, character and a story of its own.", cta:"Explore the weaves", href:base+"Collections"},
+ {image:"/__mockup/images/chenetha-home-hero-garden.png", alt:"Bottle-green silk saree with an antique-gold border in a heritage garden", eyebrow:"COLOUR FROM THE LOOM", title:<>A little gold.<br/>A lot of soul.</>, copy:"Meet considered handlooms for days both special and everyday.", cta:"Discover the edit", href:base+"Collections?edit=premium"}
+];
+function HomeHeroCarousel(){
+ const [active,setActive]=useState(0);
+ const [playing,setPlaying]=useState(true);
+ const touchStart=useRef<number|null>(null);
+ useEffect(()=>{
+  if(!playing)return;
+  const timer=window.setInterval(()=>setActive(index=>(index+1)%homeHeroSlides.length),6000);
+  return()=>window.clearInterval(timer);
+ },[playing]);
+ const go=(direction:number)=>setActive(index=>(index+direction+homeHeroSlides.length)%homeHeroSlides.length);
+ return <section className="heritage-hero home-hero-carousel" aria-label="Featured handloom collection">
+  <div className="home-hero-images" onTouchStart={event=>{touchStart.current=event.touches[0]?.clientX??null}} onTouchEnd={event=>{if(touchStart.current===null)return;const endX=event.changedTouches[0]?.clientX;if(endX!==undefined){const delta=endX-touchStart.current;if(Math.abs(delta)>45)go(delta<0?1:-1)}touchStart.current=null}}>
+   {homeHeroSlides.map((slide,index)=><img key={slide.image} className={`home-hero-image${active===index?" is-active":""}`} src={slide.image} alt="" aria-hidden="true" fetchPriority={index===0?"high":"auto"}/>)}
+   <div className="home-hero-shade" aria-hidden="true"/>
+   <div className="home-hero-content wrap">
+    <div className="home-hero-copy" key={active} role="group" aria-roledescription="slide" aria-label={`${active+1} of ${homeHeroSlides.length}: ${homeHeroSlides[active].eyebrow}`}>
+     <span className="eyebrow">{homeHeroSlides[active].eyebrow}</span>
+     <h1>{homeHeroSlides[active].title}</h1>
+     <p>{homeHeroSlides[active].copy}</p>
+     <a className="home-hero-cta" href={homeHeroSlides[active].href}>{homeHeroSlides[active].cta}<ArrowRight size={15}/></a>
+    </div>
+    <div className="home-hero-controls" role="group" aria-label="Featured collection slides">
+     <button type="button" className="home-hero-toggle" onClick={()=>setPlaying(value=>!value)} aria-label={playing?"Pause slides":"Play slides"} title={playing?"Pause slides":"Play slides"}>{playing?<Pause size={14}/>:<Play size={14}/>}</button>
+     <button type="button" className="home-hero-arrow" aria-label="Previous slide" onClick={()=>go(-1)}><ArrowLeft size={16}/></button>
+     {homeHeroSlides.map((slide,index)=><button key={slide.image} type="button" className={`home-hero-dot${active===index?" is-active":""}`} aria-label={`Show slide ${index+1}: ${slide.eyebrow}`} aria-pressed={active===index} onClick={()=>setActive(index)}/>)}
+     <span className="home-hero-count" aria-live="polite">{String(active+1).padStart(2,"0")} / {String(homeHeroSlides.length).padStart(2,"0")}</span>
+     <button type="button" className="home-hero-arrow" aria-label="Next slide" onClick={()=>go(1)}><ArrowRight size={16}/></button>
+    </div>
+   </div>
+  </div>
+  <TempleBorder/>
+ </section>
+}
 function HomeFooterLayout(){
  const [target,setTarget]=useState<HTMLElement|null>(null);
  const [subscribed,setSubscribed]=useState(false);
@@ -234,12 +272,7 @@ function Reviews(){
  }
 export function Home(){
  return <Shell>
-  <section className="heritage-hero"><div className="wrap"><div>
-   <span className="eyebrow">Chenetha · The living art of handloom</span>
-   <h1>Woven by hand.<br/>Worn for generations.</h1>
-   <p>Sarees and dupattas with a human touch. From the temple borders of Kanchipuram to the many weaving traditions of India, a thread worth following.</p>
-   <div className="actions"><a className="btn gold" href={base+"Collections"}>Shop Collections <ArrowRight size={14}/></a><a className="btn pale" href="#making-process">See the making process</a></div>
-  </div><div className="hero-swatches"><Textile pattern="s1" label="Temple red and gold striped handloom"/><Textile pattern="s2" label="Indigo dotted weave"/></div></div><TempleBorder/></section>
+  <HomeHeroCarousel/>
 
   <section className="section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
    <div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>
