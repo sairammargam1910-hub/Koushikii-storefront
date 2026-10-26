@@ -50,8 +50,8 @@ The client's designated patented brand red is `#B22222`; use it consistently whe
 
 **How to apply:** Prefer the shared red token and use `#B22222` for red brand accents and surfaces across storefront pages.
 
-Use the Home page's Kanjeevaram-inspired motif as the shared background pattern across the storefront, and keep hero dividers consistent with its red-and-gold diagonal border.
+Use the Home page's Kanjeevaram-inspired motif across storefront backgrounds. Use cream-white kolam linework on brand red for hero and footer dividers on every page.
 
-**Why:** The user explicitly asked for one consistent background pattern and matching hero borders throughout the website.
+**Why:** The user explicitly asked for one shared background pattern, then specified cream-white kolam dividers on the same red as the hero/footer across the whole site.
 
-**How to apply:** Keep the motif and divider in shared storefront styles so every customer-facing page uses the same treatment.
+**How to apply:** Keep both treatments in shared storefront styles so every customer-facing page uses the same treatment.

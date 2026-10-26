@@ -71,12 +71,6 @@
   color: #f6edde;
 }
 
-.kq .footer > .temple-border {
-  height: 22px;
-  margin-bottom: 0;
-  border-color: rgba(219, 184, 119, .66);
-}
-
 .kq .footer > .wrap {
   padding-top: clamp(30px, 4.5vw, 58px);
 }
