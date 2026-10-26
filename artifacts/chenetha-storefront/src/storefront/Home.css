@@ -875,4 +875,9 @@
   fill: #b22222 !important;
 }
 
+.kq .home-product-section .product-img {
+  overflow: hidden;
+  border-radius: 12px;
+}
+
 

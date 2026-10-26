@@ -141,7 +141,7 @@ function MakingJourney(){
 function ProductCarousel({title,copy,offset=0}:{title:string;copy:string;offset?:number}){
  const [slide,setSlide]=useState(0);
  const order=[...products.slice(offset),...products.slice(0,offset)];
- return <section className="section"><div className="wrap">
+ return <section className="section home-product-section"><div className="wrap">
   <div className="section-head"><div><h2>{title}</h2><p>{copy}</p></div><div className="carousel-controls">
    <button aria-label={"Previous "+title} onClick={()=>setSlide((slide+1)%2)}><ArrowLeft size={15}/></button><span>{slide+1} / 2</span><button aria-label={"Next "+title} onClick={()=>setSlide((slide+1)%2)}><ArrowRight size={15}/></button>
   </div></div>
