@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: shopify
+    description: Shopify storefront operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /shopify/products:
+    get:
+      operationId: getShopifyProducts
+      tags: [shopify]
+      summary: Get published sarees from Shopify
+      description: Returns published Shopify products classified as sarees.
+      responses:
+        "200":
+          description: Connected Shopify saree catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyProductsResponse"
+        "502":
+          description: Shopify catalog could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +54,83 @@ components:
           type: string
       required:
         - status
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    ShopifyImage:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        altText:
+          type: [string, "null"]
+      required: [url, altText]
+    ShopifyOption:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+      required: [name, value]
+    ShopifyVariant:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        availableForSale:
+          type: boolean
+        price:
+          type: string
+        currencyCode:
+          type: string
+        selectedOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyOption"
+      required: [id, title, availableForSale, price, currencyCode, selectedOptions]
+    ShopifyProduct:
+      type: object
+      properties:
+        id:
+          type: string
+        handle:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        productType:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyImage"
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyVariant"
+      required: [id, handle, title, description, productType, tags, images, variants]
+    ShopifyProductsResponse:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyProduct"
+        totalPublishedProducts:
+          type: integer
+        truncated:
+          type: boolean
+      required: [products, totalPublishedProducts, truncated]
 

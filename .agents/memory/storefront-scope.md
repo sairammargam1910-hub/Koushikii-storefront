@@ -6,13 +6,19 @@ The user is designing the complete customer-facing storefront for their client's
 
 **Why:** The user explicitly requested a complete storefront design based on their client's references and logo.
 
-**How to apply:** Keep customer browsing, purchase and after-purchase pages visually consistent. Backend/admin is planned for Shopify or WordPress, with third-party payment and delivery services; neither platform nor providers were selected. Do not treat prototype flows as live integrations or choose a provider without confirmation.
+**How to apply:** Keep customer browsing, purchase and after-purchase pages visually consistent. Shopify is now the selected commerce system for physical handloom products; do not treat prototype flows as live integrations.
 
-Until the client selects the commerce providers and supplies a real catalogue, the functional storefront uses WhatsApp enquiries rather than simulated completed orders. Prices remain explicitly illustrative, and opening a WhatsApp draft must not clear the customer's cart.
+The user selected sarees as the initial Shopify catalog category.
 
-**Why:** Graduation to a working app does not authorize selecting a commerce platform or representing sample pieces as confirmed inventory. Opening an external draft is not proof an enquiry was sent or an order accepted.
+**Why:** The user chose Shopify and answered that the storefront should sell sarees.
 
-**How to apply:** Keep browsing and saved selections functional, identify sample pricing, and ask the brand to confirm availability and final pricing. Add payment, account and delivery integrations only after the client chooses them.
+**How to apply:** Use published Shopify product and variant IDs for the live catalog and checkout. Do not create products or inventory without real product details and explicit approval.
+
+Until the client supplies or publishes a real catalogue, the current storefront's sample pieces and prices remain illustrative. Its WhatsApp enquiry flow is not a completed order or payment.
+
+**Why:** The connected Shopify Store currently has no published saree products, and the demo catalog is not verified inventory.
+
+**How to apply:** Keep sample items clearly separate from Shopify products, and never present them as available stock or confirmed pricing. Opening a WhatsApp draft must not clear the customer's cart.
 
 The user explicitly rejected a modern-looking storefront and repeatedly emphasized that the design should resemble Indian culture very deeply, especially South Indian culture. Render and visually inspect supplied HTML references, not only extract their text. Preserve their traditional motifs and page structure while applying the organisation logo colours.
 
