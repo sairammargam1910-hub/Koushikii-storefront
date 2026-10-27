@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, products, ProductGrid, base } from "./_shared";
+import { ShopifyCatalogSection } from "./ShopifyCatalog";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import "./HomeMakingJourney.css";
 import "./Home.css";
@@ -235,6 +236,7 @@ function Reviews(){
 export function Home(){
  return <Shell>
   <HomeHeroCarousel/>
+  <ShopifyCatalogSection title="Published sarees" copy="Product photos and details from the connected Shopify store."/>
 
   <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
    <div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>
