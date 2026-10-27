@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { Shell, PageHero, products, ProductGrid, cottonWeaves } from "./_shared";
 import { defaultFilters, filterCatalog, normalizeRegion, normalizeWeave, regions } from "./_shared/catalog-filter";
 import type { CatalogFilters } from "./_shared/catalog-filter";
-import { ShopifyCatalogSection } from "./ShopifyCatalog";
 
 function readFilters():CatalogFilters {
  const params=new URLSearchParams(window.location.search);
@@ -27,8 +26,7 @@ export function Collections(){
  const filtered=useMemo(()=>filterCatalog(products,filters),[filters]);
  const weaves=Array.from(new Set([...products.map(p=>p.weave),...cottonWeaves.map(normalizeWeave),weave])).filter(w=>w!=="All weaves");
  const active=Object.entries(filters).filter(([key,value])=>value!==defaultFilters[key as keyof CatalogFilters]);
-  return <Shell><PageHero eyebrow="The collection · Shopify and samples" title={edit==="premium"?"The Premium Collection":edit==="new"?"New Arrivals":"Cloth with a place. Weaves with a story."} subtitle="Explore published sarees from Shopify alongside clearly marked sample pieces."/>
-  <ShopifyCatalogSection title="Published sarees" copy="These products are loaded from Shopify, not the sample catalog." showEmpty/>
+  return <Shell><PageHero eyebrow="The collection · Sample catalog" title={edit==="premium"?"The Premium Collection":edit==="new"?"New Arrivals":"Cloth with a place. Weaves with a story."} subtitle="Explore South Indian temple borders and the textile traditions of India. Choose a region, fabric or weave to find your thread."/>
  <main className="content wrap">
   <div className="toolbar collection-toolbar">{["All pieces","Sarees","Dupattas"].map(c=><button key={c} className="btn small outline" aria-pressed={category===c} style={{background:category===c?"#efe2c8":"transparent"}} onClick={()=>update({category:c})}>{c}</button>)}
   <label style={{marginLeft:"auto",fontSize:12}}>Collection edit <select value={edit} onChange={e=>update({edit:e.target.value})}><option value="all">All collections</option><option value="premium">Premium Collection</option><option value="new">New Arrivals</option>{!["all","premium","new"].includes(edit)&&<option value={edit}>Unknown edit: {edit}</option>}</select></label></div>

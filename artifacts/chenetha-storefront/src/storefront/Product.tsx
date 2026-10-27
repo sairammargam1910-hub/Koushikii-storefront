@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Heart, Check, ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 import { Shell, products, format, addItem, toggleWish, ProductGrid, base, useStore, Qty, Empty } from "./_shared";
-import { ShopifyProductDetail, useShopifyCatalog } from "./ShopifyCatalog";
 
 export function Product() {
  const [location] = useLocation();
@@ -10,17 +9,8 @@ export function Product() {
  const params = new URLSearchParams(search);
  const shopifyHandle = params.get("shopify");
  return shopifyHandle
-  ? <ShopifyProductRoute key={shopifyHandle} handle={shopifyHandle}/>
+  ? <Shell><main className="wrap content"><Empty title="This Shopify listing is not shown here." copy="The product remains in Shopify. Browse the sample catalog to explore the design preview."/></main></Shell>
   : <SampleProductRoute id={params.get("id") || "nila"}/>;
-}
-
-function ShopifyProductRoute({handle}:{handle:string}) {
- const catalog=useShopifyCatalog();
- if(catalog.isLoading)return <Shell><main className="wrap content"><p role="status">Loading Shopify product…</p></main></Shell>;
- if(catalog.isError)return <Shell><main className="wrap content"><Empty title="The Shopify listing could not load." copy="Please try again in a moment or return to the collections page."/></main></Shell>;
- const product=catalog.data?.products.find(item=>item.handle===handle);
- if(!product)return <Shell><main className="wrap content"><Empty title="This Shopify product is unavailable." copy="It may have been unpublished or removed from the connected catalog."/></main></Shell>;
- return <ShopifyProductDetail product={product}/>;
 }
 
 function SampleProductRoute({id}:{id:string}) {
