@@ -87,6 +87,30 @@ async function choosePhoto(page, { name = "handloom.jpg", mimeType = "image/jpeg
   await page.getByTestId("input-product-photo").setInputFiles({ name, mimeType, buffer });
 }
 
+async function useShortPhotoUploadTimeout(page) {
+  await page.addInitScript(() => {
+    const timeoutDescriptor = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, "timeout");
+    if (!timeoutDescriptor?.get || !timeoutDescriptor.set) throw new Error("XMLHttpRequest timeout is not configurable");
+    Object.defineProperty(XMLHttpRequest.prototype, "timeout", {
+      configurable: timeoutDescriptor.configurable,
+      enumerable: timeoutDescriptor.enumerable,
+      get: timeoutDescriptor.get,
+      set(value) {
+        timeoutDescriptor.set.call(this, Math.min(value, 100));
+      },
+    });
+  });
+}
+
+function observeShopifyRequests(page) {
+  const requests = [];
+  page.on("request", (request) => {
+    const hostname = new URL(request.url()).hostname;
+    if (hostname === "shopify.com" || hostname.endsWith(".shopify.com")) requests.push(request.url());
+  });
+  return requests;
+}
+
 async function mockCreateOrUpdate(page, { method = "POST", onMutation, beforeMediaResponse } = {}) {
   const observed = [];
   await page.route("**/api/shopify/admin/products**", async (route) => {
@@ -300,6 +324,78 @@ test("failed uploads can be retried and their source is sent with product creati
   await page.getByTestId("fixture-closed").waitFor();
   assert.equal(attempts, 2);
   assert.equal(mutations[0].body.imageUrl, uploadUrl);
+  await context.close();
+});
+
+test("a timed-out photo keeps Save blocked until retry succeeds", async () => {
+  const { context, page } = await openForm({ setup: useShortPhotoUploadTimeout });
+  const shopifyRequests = observeShopifyRequests(page);
+  const mutations = await mockCreateOrUpdate(page);
+  let attempts = 0;
+  await page.route("**/api/shopify/admin/images", async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ resourceUrl: uploadUrl }),
+      }).catch(() => {});
+      return;
+    }
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ resourceUrl: uploadUrl }),
+    });
+  });
+
+  await page.getByTestId("input-product-title").fill("Timeout recovery saree");
+  await page.getByTestId("input-product-price").fill("2200");
+  await choosePhoto(page);
+  await page.getByTestId("text-photo-upload-error").getByText(/The photo upload took too long/).waitFor();
+  await page.getByTestId("text-photo-upload-error").getByText(/Retry or remove this photo before saving/).waitFor();
+  assert.equal(await page.getByTestId("button-save-product").isDisabled(), true);
+  assert.equal(mutations.length, 0, "a timed-out, still-pending photo must block product creation");
+  assert.equal(await page.getByTestId("button-retry-photo").isVisible(), true);
+
+  await page.getByTestId("button-retry-photo").click();
+  await page.getByText("Photo uploaded. Save the product to add it.", { exact: false }).waitFor();
+  assert.equal(await page.getByTestId("button-save-product").isDisabled(), false);
+  await page.getByTestId("button-save-product").click();
+  await page.getByTestId("fixture-closed").waitFor();
+
+  assert.equal(attempts, 2);
+  assert.equal(mutations.length, 1);
+  assert.equal(mutations[0].body.imageUrl, uploadUrl);
+  assert.deepEqual(shopifyRequests, [], "all Shopify interactions must remain mocked by the browser test");
+  await context.close();
+});
+
+test("a disconnected upload keeps Save blocked until the pending photo is removed", async () => {
+  const { context, page } = await openForm();
+  const shopifyRequests = observeShopifyRequests(page);
+  const mutations = await mockCreateOrUpdate(page);
+  await page.route("**/api/shopify/admin/images", async (route) => {
+    await route.abort("internetdisconnected");
+  });
+
+  await page.getByTestId("input-product-title").fill("Disconnected upload saree");
+  await page.getByTestId("input-product-price").fill("2300");
+  await choosePhoto(page);
+  await page.getByTestId("text-photo-upload-error").getByText(/The connection was interrupted/).waitFor();
+  await page.getByTestId("text-photo-upload-error").getByText(/Retry or remove this photo before saving/).waitFor();
+  assert.equal(await page.getByTestId("button-save-product").isDisabled(), true);
+  assert.equal(mutations.length, 0, "a disconnected, still-pending photo must block product creation");
+
+  await page.getByTestId("button-remove-photo").click();
+  assert.equal(await page.getByTestId("button-save-product").isDisabled(), false);
+  await page.getByTestId("button-save-product").click();
+  await page.getByTestId("fixture-closed").waitFor();
+
+  assert.equal(mutations.length, 1);
+  assert.equal(Object.hasOwn(mutations[0].body, "imageUrl"), false);
+  assert.deepEqual(shopifyRequests, [], "all Shopify interactions must remain mocked by the browser test");
   await context.close();
 });
 
