@@ -65,7 +65,17 @@ export function Checkout() {
           ) : shopifyCart.isError || !shopifyCart.data ? (
             <div className="panel" role="alert">
               <span className="eyebrow">Shopify checkout unavailable</span>
-              <p className="muted">We could not refresh this bag. Return to your bag and try again.</p>
+              <p className="muted">We could not refresh this bag. Try again here, or return to your bag.</p>
+              <button
+                className="btn outline"
+                type="button"
+                data-testid="button-retry-shopify-cart-refresh"
+                onClick={() => shopifyCart.refetch()}
+                disabled={shopifyCart.isFetching}
+                style={{ marginRight: 10 }}
+              >
+                Try again
+              </button>
               <a className="btn" href={base + "Cart"}>Return to bag <ArrowRight size={14} /></a>
             </div>
           ) : (
