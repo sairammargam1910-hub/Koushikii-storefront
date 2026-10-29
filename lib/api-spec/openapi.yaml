@@ -45,6 +45,111 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/cart:
+    get:
+      operationId: getShopifyCart
+      tags: [shopify]
+      summary: Get a Shopify cart
+      description: Returns the current Shopify cart and its hosted checkout URL.
+      parameters:
+        - name: cartId
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 1000
+      responses:
+        "200":
+          description: Shopify cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCartResponse"
+        "400":
+          description: Invalid cart identifier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify cart could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify cart could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: addShopifyCartLine
+      tags: [shopify]
+      summary: Add a product to a Shopify cart
+      description: Creates a Shopify cart or adds a product to the existing cart.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyCartAddInput"
+      responses:
+        "200":
+          description: Updated Shopify cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCartResponse"
+        "400":
+          description: Product cannot be purchased or cart input is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify cart could not be updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateShopifyCartLines
+      tags: [shopify]
+      summary: Update Shopify cart quantities
+      description: Updates or removes lines in a Shopify cart.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyCartUpdateInput"
+      responses:
+        "200":
+          description: Updated Shopify cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCartResponse"
+        "400":
+          description: Cart input is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify cart could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify cart could not be updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -133,4 +238,93 @@ components:
         truncated:
           type: boolean
       required: [products, totalPublishedProducts, truncated]
+    ShopifyCartAddInput:
+      type: object
+      properties:
+        cartId:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        merchandiseId:
+          type: string
+          minLength: 1
+          maxLength: 250
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 99
+      required: [merchandiseId, quantity]
+    ShopifyCartLineUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        quantity:
+          type: integer
+          minimum: 0
+          maximum: 99
+      required: [id, quantity]
+    ShopifyCartUpdateInput:
+      type: object
+      properties:
+        cartId:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/ShopifyCartLineUpdate"
+      required: [cartId, lines]
+    ShopifyCartLine:
+      type: object
+      properties:
+        id:
+          type: string
+        merchandiseId:
+          type: string
+        productHandle:
+          type: string
+        productTitle:
+          type: string
+        variantTitle:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: string
+        currencyCode:
+          type: string
+        availableForSale:
+          type: boolean
+        isDemo:
+          type: boolean
+        image:
+          anyOf:
+            - $ref: "#/components/schemas/ShopifyImage"
+            - type: "null"
+      required: [id, merchandiseId, productHandle, productTitle, variantTitle, quantity, unitPrice, currencyCode, availableForSale, isDemo, image]
+    ShopifyCartResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        checkoutUrl:
+          type: ["string", "null"]
+          format: uri
+        totalQuantity:
+          type: integer
+        subtotalAmount:
+          type: string
+        currencyCode:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyCartLine"
+      required: [id, checkoutUrl, totalQuantity, subtotalAmount, currencyCode, lines]
 

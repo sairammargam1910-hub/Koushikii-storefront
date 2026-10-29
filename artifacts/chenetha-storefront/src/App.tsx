@@ -24,7 +24,7 @@ import { Videos } from "./storefront/Videos";
 const queryClient = new QueryClient();
 const pageTitles: Record<string,string> = {
   "/": "Home", "/Home": "Home", "/Collections": "Collections", "/Product": "Textile details",
-  "/Cart": "Your bag", "/Wishlist": "Wishlist", "/Checkout": "Review enquiry",
+  "/Cart": "Your bag", "/Wishlist": "Wishlist", "/Checkout": "Secure checkout",
   "/Confirmation": "WhatsApp handoff", "/OurStory": "Our story", "/Contact": "Contact",
   "/CustomerCare": "Customer care", "/SareeCare": "Saree care", "/Account": "Saved preferences",
   "/Profile": "Your details", "/Orders": "Order information", "/Videos": "Videos"

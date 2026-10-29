@@ -6,23 +6,31 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
   ApiError,
+  GetShopifyCartParams,
   HealthStatus,
+  ShopifyCartAddInput,
+  ShopifyCartResponse,
+  ShopifyCartUpdateInput,
   ShopifyProductsResponse
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
-import type { ErrorType } from '../custom-fetch';
+import type { ErrorType , BodyType } from '../custom-fetch';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -203,4 +211,267 @@ export function useGetShopifyProducts<TData = Awaited<ReturnType<typeof getShopi
 
 
 
+
+export const getGetShopifyCartUrl = (params: GetShopifyCartParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shopify/cart?${stringifiedParams}` : `/api/shopify/cart`
+}
+
+/**
+ * Returns the current Shopify cart and its hosted checkout URL.
+ * @summary Get a Shopify cart
+ */
+export const getShopifyCart = async (params: GetShopifyCartParams, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyCartResponse> => {
+
+  return customFetch<ShopifyCartResponse>(getGetShopifyCartUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyCartQueryKey = (params?: GetShopifyCartParams,) => {
+    return [
+    `/api/shopify/cart`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetShopifyCartQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyCart>>, TError = ErrorType<ApiError>>(params: GetShopifyCartParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyCart>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyCartQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyCart>>> = ({ signal }) => getShopifyCart(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyCart>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyCartQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyCart>>>
+export type GetShopifyCartQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get a Shopify cart
+ */
+
+export function useGetShopifyCart<TData = Awaited<ReturnType<typeof getShopifyCart>>, TError = ErrorType<ApiError>>(
+ params: GetShopifyCartParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyCart>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyCartQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddShopifyCartLineUrl = () => {
+
+
+
+
+  return `/api/shopify/cart`
+}
+
+/**
+ * Creates a Shopify cart or adds a product to the existing cart.
+ * @summary Add a product to a Shopify cart
+ */
+export const addShopifyCartLine = async (shopifyCartAddInput: ShopifyCartAddInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyCartResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyCartResponse>(getAddShopifyCartLineUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyCartAddInput)
+  }
+);}
+
+
+
+
+
+export const getAddShopifyCartLineMutationKey = () => ['addShopifyCartLine'] as const;
+
+export const getAddShopifyCartLineMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addShopifyCartLine>>, TError,AddShopifyCartLineMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addShopifyCartLine>>, TError,AddShopifyCartLineMutationVariables, TContext> => {
+
+const mutationKey = getAddShopifyCartLineMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addShopifyCartLine>>, AddShopifyCartLineMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  addShopifyCartLine(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddShopifyCartLineMutationResult = NonNullable<Awaited<ReturnType<typeof addShopifyCartLine>>>
+    export type AddShopifyCartLineMutationBody = BodyType<ShopifyCartAddInput>
+    export type AddShopifyCartLineMutationError = ErrorType<ApiError>
+    export type AddShopifyCartLineMutationVariables = {data: BodyType<ShopifyCartAddInput>}
+
+    /**
+ * @summary Add a product to a Shopify cart
+ */
+export const useAddShopifyCartLine = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addShopifyCartLine>>, TError,AddShopifyCartLineMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addShopifyCartLine>>,
+        TError,
+        AddShopifyCartLineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddShopifyCartLineMutationOptions(options));
+    }
+
+export const getUpdateShopifyCartLinesUrl = () => {
+
+
+
+
+  return `/api/shopify/cart`
+}
+
+/**
+ * Updates or removes lines in a Shopify cart.
+ * @summary Update Shopify cart quantities
+ */
+export const updateShopifyCartLines = async (shopifyCartUpdateInput: ShopifyCartUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyCartResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyCartResponse>(getUpdateShopifyCartLinesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyCartUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateShopifyCartLinesMutationKey = () => ['updateShopifyCartLines'] as const;
+
+export const getUpdateShopifyCartLinesMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyCartLines>>, TError,UpdateShopifyCartLinesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateShopifyCartLines>>, TError,UpdateShopifyCartLinesMutationVariables, TContext> => {
+
+const mutationKey = getUpdateShopifyCartLinesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShopifyCartLines>>, UpdateShopifyCartLinesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateShopifyCartLines(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateShopifyCartLinesMutationResult = NonNullable<Awaited<ReturnType<typeof updateShopifyCartLines>>>
+    export type UpdateShopifyCartLinesMutationBody = BodyType<ShopifyCartUpdateInput>
+    export type UpdateShopifyCartLinesMutationError = ErrorType<ApiError>
+    export type UpdateShopifyCartLinesMutationVariables = {data: BodyType<ShopifyCartUpdateInput>}
+
+    /**
+ * @summary Update Shopify cart quantities
+ */
+export const useUpdateShopifyCartLines = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyCartLines>>, TError,UpdateShopifyCartLinesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateShopifyCartLines>>,
+        TError,
+        UpdateShopifyCartLinesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateShopifyCartLinesMutationOptions(options));
+    }
 

@@ -10,6 +10,7 @@ import "./_profile.css";
 import "./_storefront-pattern.css";
 import "./_mobile.css";
 import { useLocation } from "wouter";
+import { useShopifyCartMeta } from "./shopifyCartState";
 
 export const base="/";
 export const products=[
@@ -59,6 +60,8 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
  const [menu,setMenu]=useState(false),[search,setSearch]=useState(false);
   const [,setLocation]=useLocation();
  const cart=useStore("kq-cart"),wish=useStore("kq-wish");
+  const shopifyCart=useShopifyCartMeta();
+  const cartCount=cart.reduce((sum,item)=>sum+item.qty,0)+(shopifyCart?.totalQuantity||0);
  return <><div className="topline">The living art of handloom · Rooted in the South, woven across India</div>
  <header className="header"><div className="wrap headrow">
    <button className="iconbtn mobile-menu" data-testid="button-mobile-menu" onClick={()=>setMenu(!menu)} aria-expanded={menu} aria-controls="kq-main-menu" aria-label="Toggle main menu">{menu?<X size={20}/>:<Menu size={20}/>}</button>
@@ -75,7 +78,7 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
     <a href={base+"Profile"} className="text-action" aria-label="Saved preferences"><UserRound size={16}/>My details</a>
    <WhatsAppHeaderIcon language={language}/>
    <a href={base+"Wishlist"} className="iconbtn optional" data-testid="link-wishlist" aria-label={`Wishlist${wish.length?`, ${wish.length} saved pieces`:""}`}><Heart size={17}/>{wish.length>0&&<span className="count">{wish.length}</span>}</a>
-   <a href={base+"Cart"} className="iconbtn" data-testid="link-cart" aria-label={`Shopping bag${cart.length?`, ${cart.reduce((a,b)=>a+b.qty,0)} items`:""}`}><ShoppingBag size={18}/>{cart.length>0&&<span className="count">{cart.reduce((a,b)=>a+b.qty,0)}</span>}</a></div>
+    <a href={base+"Cart"} className="iconbtn" data-testid="link-cart" aria-label={`Shopping bag${cartCount?`, ${cartCount} items`:""}`}><ShoppingBag size={18}/>{cartCount>0&&<span className="count">{cartCount}</span>}</a></div>
   </div>{search&&<div className="wrap searchline active"><form style={{display:"flex",width:"100%"}} onSubmit={event=>{event.preventDefault();const query=String(new FormData(event.currentTarget).get("q")||"").trim();setLocation(base+"Collections"+(query?"?q="+encodeURIComponent(query):""));setSearch(false)}}><input data-testid="input-header-search" name="q" aria-label="Search textiles" placeholder="Search Ikat, cotton, Kanchipuram…" autoFocus/><button className="btn small" data-testid="button-submit-search">Search</button></form></div>}</header></>
 }
 export function Footer(){

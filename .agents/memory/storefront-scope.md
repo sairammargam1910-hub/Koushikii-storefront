@@ -14,11 +14,17 @@ The user selected sarees as the initial Shopify catalog category.
 
 **How to apply:** Use published Shopify product and variant IDs for the live catalog and checkout. Do not create products or inventory without real product details and explicit approval.
 
-Published Shopify sarees replace the storefront's sample product cards; drafts are not visible through the buyer catalog. Sample pieces remain only as a fallback when Shopify has no published sarees. Demo or placeholder products must be clearly marked and never presented as real stock or verified offers. WhatsApp enquiries are not completed orders or payments.
+Published Shopify sarees replace the storefront's sample product cards; drafts are not visible through the buyer catalog. Sample pieces remain only as a fallback when Shopify has no published sarees. Demo or placeholder products must be clearly marked and blocked from purchase, including by server-side cart validation. Real orders use Shopify Storefront carts and Shopify-hosted checkout; the app must not collect payment or address details.
 
-**Why:** The user wants products entered in Shopify to appear in the storefront, while preserving sample content for preview and avoiding accidental sale of placeholder details.
+**Why:** The user wants products entered in Shopify to appear in the storefront and checkout, while avoiding accidental sale of placeholder content or collection of sensitive buyer details in the app.
 
-**How to apply:** Display only products returned by the published Storefront catalog, label demo content, and do not imply checkout or availability until those flows are actually connected.
+**How to apply:** Validate product availability and demo markers on the server before adding a cart line. Keep Shopify as the source for variants, prices, shipping, payment, and order status; direct buyers to Shopify-hosted checkout.
+
+Shopify currency is authoritative. Request the India market context for this storefront, but display the currency Shopify returns; never relabel a USD price as INR in app code. Local-currency transaction support depends on Shopify market and payment-provider settings.
+
+**Why:** A Shopify product may display a local currency while checkout still charges the store's base currency, depending on the configured payment gateway.
+
+**How to apply:** Keep currency and payment configuration in Shopify. If the storefront API returns USD, tell the merchant to configure the store or India market currency and confirm that the payment provider can process INR before promising an INR charge.
 
 The user explicitly rejected a modern-looking storefront and repeatedly emphasized that the design should resemble Indian culture very deeply, especially South Indian culture. Render and visually inspect supplied HTML references, not only extract their text. Preserve their traditional motifs and page structure while applying the organisation logo colours.
 

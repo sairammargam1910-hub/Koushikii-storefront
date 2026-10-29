@@ -1,13 +1,23 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  addShopifyCartLine,
+  getGetShopifyCartQueryKey,
   getGetShopifyProductsQueryKey,
+  getShopifyCart,
   getShopifyProducts,
+  type ShopifyCartAddInput,
+  type ShopifyCartResponse,
   type ShopifyProduct,
+  updateShopifyCartLines,
 } from "@workspace/api-client-react";
-import { base, Empty, Shell } from "./_shared";
+import { base, Empty, Qty, Shell } from "./_shared";
 import type { CatalogFilters } from "./_shared/catalog-filter";
 import { normalizeRegion, regions } from "./_shared/catalog-filter";
+import {
+  readShopifyCartMeta,
+  saveShopifyCartMeta,
+} from "./shopifyCartState";
 import "./ShopifyCatalog.css";
 
 export function useShopifyCatalog() {
@@ -18,6 +28,29 @@ export function useShopifyCatalog() {
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
+}
+
+export function useShopifyCart(cartId?: string) {
+  return useQuery({
+    queryKey: cartId
+      ? getGetShopifyCartQueryKey({ cartId })
+      : ["/api/shopify/cart", "empty"],
+    queryFn: ({ signal }) => {
+      if (!cartId) throw new Error("No Shopify cart is selected.");
+      return getShopifyCart({ cartId }, { signal });
+    },
+    enabled: Boolean(cartId),
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+}
+
+export function updateShopifyCartCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  cart: ShopifyCartResponse,
+) {
+  saveShopifyCartMeta({ id: cart.id, totalQuantity: cart.totalQuantity });
+  queryClient.setQueryData(getGetShopifyCartQueryKey({ cartId: cart.id }), cart);
 }
 
 export function getShopifyTagValue(product: ShopifyProduct, key: string) {
@@ -202,10 +235,37 @@ export function ShopifyProductRoute({ handle }: { handle: string }) {
 function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
   const [imageIndex, setImageIndex] = useState(0);
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? "");
+  const [quantity, setQuantity] = useState(1);
+  const [cartMessage, setCartMessage] = useState("");
+  const [cartError, setCartError] = useState("");
+  const queryClient = useQueryClient();
   const image = product.images[imageIndex];
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
   const price = variant ? formatShopifyMoney(variant.price, variant.currencyCode) : "";
   const demo = isDemoProduct(product);
+  const addToCart = useMutation({
+    mutationFn: ({ merchandiseId, quantity: lineQuantity }: { merchandiseId: string; quantity: number }) => {
+      const input: ShopifyCartAddInput = {
+        cartId: readShopifyCartMeta()?.id,
+        merchandiseId,
+        quantity: lineQuantity,
+      };
+      return addShopifyCartLine(input);
+    },
+    onSuccess: (cart) => {
+      updateShopifyCartCache(queryClient, cart);
+      setCartError("");
+      setCartMessage("Added to your Shopify bag.");
+    },
+    onError: (error) => {
+      const data = error && typeof error === "object" && "data" in error
+        ? (error as { data?: { error?: string } }).data
+        : undefined;
+      setCartError(data?.error || "This product could not be added. Please try again.");
+      setCartMessage("");
+    },
+  });
+  const canPurchase = Boolean(variant?.availableForSale && !demo);
 
   return (
     <Shell>
@@ -271,14 +331,50 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
                 <>
                   <strong>Demo only — not for sale</strong>
                   <br />
-                  Replace placeholder text, photos, and price with verified product information before publishing for customers.
+                  This Shopify listing contains demo wording. Replace the description, photos, and price with verified product details before adding it to a cart.
                 </>
               ) : (
                 <>
                   <strong>Live product details from Shopify</strong>
                   <br />
-                  This preview does not process Shopify orders or payments yet.
+                  Shipping and payment are completed securely on Shopify.
                 </>
+              )}
+            </div>
+            <div className="shopify-buy-controls">
+              <label className="shopify-quantity-label">
+                Quantity
+                <Qty value={quantity} onChange={setQuantity} />
+              </label>
+              <button
+                className="btn"
+                type="button"
+                data-testid="button-add-shopify-to-cart"
+                disabled={!canPurchase || addToCart.isPending}
+                onClick={() => {
+                  if (variant && canPurchase) {
+                    setCartMessage("");
+                    setCartError("");
+                    addToCart.mutate({ merchandiseId: variant.id, quantity });
+                  }
+                }}
+              >
+                {demo
+                  ? "Demo listing · not for sale"
+                  : !variant?.availableForSale
+                    ? "Currently unavailable"
+                    : addToCart.isPending
+                      ? "Adding to bag…"
+                      : `Add to bag${price ? ` · ${formatShopifyMoney(String(Number(variant?.price || 0) * quantity), variant?.currencyCode || "INR")}` : ""}`}
+              </button>
+              {cartMessage && (
+                <p className="shopify-cart-feedback" role="status">
+                  {cartMessage} <a href={`${base}Cart`}>View bag →</a>
+                </p>
+              )}
+              {cartError && <p className="shopify-cart-feedback is-error" role="alert">{cartError}</p>}
+              {!variant?.availableForSale && !demo && (
+                <p className="muted">This option is currently out of stock in Shopify.</p>
               )}
             </div>
           </section>

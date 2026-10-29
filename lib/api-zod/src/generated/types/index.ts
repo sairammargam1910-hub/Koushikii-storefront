@@ -7,7 +7,13 @@
  */
 
 export * from './apiError';
+export * from './getShopifyCartParams';
 export * from './healthStatus';
+export * from './shopifyCartAddInput';
+export * from './shopifyCartLine';
+export * from './shopifyCartLineUpdate';
+export * from './shopifyCartResponse';
+export * from './shopifyCartUpdateInput';
 export * from './shopifyImage';
 export * from './shopifyOption';
 export * from './shopifyProduct';

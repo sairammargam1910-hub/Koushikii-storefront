@@ -50,3 +50,79 @@ export interface ShopifyProductsResponse {
   truncated: boolean;
 }
 
+export interface ShopifyCartAddInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  cartId?: string;
+  /**
+     * @minLength 1
+     * @maxLength 250
+     */
+  merchandiseId: string;
+  /**
+     * @minimum 1
+     * @maximum 99
+     */
+  quantity: number;
+}
+
+export interface ShopifyCartLineUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  id: string;
+  /**
+     * @minimum 0
+     * @maximum 99
+     */
+  quantity: number;
+}
+
+export interface ShopifyCartUpdateInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  cartId: string;
+  /**
+     * @minItems 1
+     * @maxItems 50
+     */
+  lines: ShopifyCartLineUpdate[];
+}
+
+export interface ShopifyCartLine {
+  id: string;
+  merchandiseId: string;
+  productHandle: string;
+  productTitle: string;
+  variantTitle: string;
+  quantity: number;
+  unitPrice: string;
+  currencyCode: string;
+  availableForSale: boolean;
+  isDemo: boolean;
+  image: ShopifyImage | null;
+}
+
+export interface ShopifyCartResponse {
+  id: string;
+  /** @nullable */
+  checkoutUrl: string | null;
+  totalQuantity: number;
+  subtotalAmount: string;
+  currencyCode: string;
+  lines: ShopifyCartLine[];
+}
+
+export type GetShopifyCartParams = {
+/**
+ * @minLength 1
+ * @maxLength 1000
+ */
+cartId: string;
+};
+

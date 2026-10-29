@@ -50,3 +50,131 @@ export const GetShopifyProductsResponse = zod.object({
 })
 
 
+/**
+ * Returns the current Shopify cart and its hosted checkout URL.
+ * @summary Get a Shopify cart
+ */
+export const getShopifyCartQueryCartIdMax = 1000;
+
+
+
+export const GetShopifyCartQueryParams = zod.object({
+  "cartId": zod.coerce.string().min(1).max(getShopifyCartQueryCartIdMax)
+})
+
+export const GetShopifyCartResponse = zod.object({
+  "id": zod.string(),
+  "checkoutUrl": zod.string().url().nullable(),
+  "totalQuantity": zod.number().int(),
+  "subtotalAmount": zod.string(),
+  "currencyCode": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "merchandiseId": zod.string(),
+  "productHandle": zod.string(),
+  "productTitle": zod.string(),
+  "variantTitle": zod.string(),
+  "quantity": zod.number().int(),
+  "unitPrice": zod.string(),
+  "currencyCode": zod.string(),
+  "availableForSale": zod.boolean(),
+  "isDemo": zod.boolean(),
+  "image": zod.union([zod.object({
+  "url": zod.string().url(),
+  "altText": zod.string().nullable()
+}),zod.null()])
+}))
+})
+
+
+/**
+ * Creates a Shopify cart or adds a product to the existing cart.
+ * @summary Add a product to a Shopify cart
+ */
+export const addShopifyCartLineBodyCartIdMax = 1000;
+
+export const addShopifyCartLineBodyMerchandiseIdMax = 250;
+
+export const addShopifyCartLineBodyQuantityMax = 99;
+
+
+
+export const AddShopifyCartLineBody = zod.object({
+  "cartId": zod.string().min(1).max(addShopifyCartLineBodyCartIdMax).optional(),
+  "merchandiseId": zod.string().min(1).max(addShopifyCartLineBodyMerchandiseIdMax),
+  "quantity": zod.number().int().min(1).max(addShopifyCartLineBodyQuantityMax)
+})
+
+export const AddShopifyCartLineResponse = zod.object({
+  "id": zod.string(),
+  "checkoutUrl": zod.string().url().nullable(),
+  "totalQuantity": zod.number().int(),
+  "subtotalAmount": zod.string(),
+  "currencyCode": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "merchandiseId": zod.string(),
+  "productHandle": zod.string(),
+  "productTitle": zod.string(),
+  "variantTitle": zod.string(),
+  "quantity": zod.number().int(),
+  "unitPrice": zod.string(),
+  "currencyCode": zod.string(),
+  "availableForSale": zod.boolean(),
+  "isDemo": zod.boolean(),
+  "image": zod.union([zod.object({
+  "url": zod.string().url(),
+  "altText": zod.string().nullable()
+}),zod.null()])
+}))
+})
+
+
+/**
+ * Updates or removes lines in a Shopify cart.
+ * @summary Update Shopify cart quantities
+ */
+export const updateShopifyCartLinesBodyCartIdMax = 1000;
+
+export const updateShopifyCartLinesBodyLinesItemIdMax = 1000;
+
+export const updateShopifyCartLinesBodyLinesItemQuantityMin = 0;
+export const updateShopifyCartLinesBodyLinesItemQuantityMax = 99;
+
+export const updateShopifyCartLinesBodyLinesMax = 50;
+
+
+
+export const UpdateShopifyCartLinesBody = zod.object({
+  "cartId": zod.string().min(1).max(updateShopifyCartLinesBodyCartIdMax),
+  "lines": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateShopifyCartLinesBodyLinesItemIdMax),
+  "quantity": zod.number().int().min(updateShopifyCartLinesBodyLinesItemQuantityMin).max(updateShopifyCartLinesBodyLinesItemQuantityMax)
+})).min(1).max(updateShopifyCartLinesBodyLinesMax)
+})
+
+export const UpdateShopifyCartLinesResponse = zod.object({
+  "id": zod.string(),
+  "checkoutUrl": zod.string().url().nullable(),
+  "totalQuantity": zod.number().int(),
+  "subtotalAmount": zod.string(),
+  "currencyCode": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "merchandiseId": zod.string(),
+  "productHandle": zod.string(),
+  "productTitle": zod.string(),
+  "variantTitle": zod.string(),
+  "quantity": zod.number().int(),
+  "unitPrice": zod.string(),
+  "currencyCode": zod.string(),
+  "availableForSale": zod.boolean(),
+  "isDemo": zod.boolean(),
+  "image": zod.union([zod.object({
+  "url": zod.string().url(),
+  "altText": zod.string().nullable()
+}),zod.null()])
+}))
+})
+
+
