@@ -72,6 +72,32 @@ async function getShopifyConfig(forceRefresh = false) {
   return config;
 }
 
+export async function getShopifyCustomerAccountUrl(): Promise<string> {
+  const { shopDomain } = await getShopifyConfig();
+  let storeUrl: URL;
+  try {
+    storeUrl = new URL(
+      shopDomain.includes("://") ? shopDomain : `https://${shopDomain}`,
+    );
+  } catch {
+    throw new Error("Shopify returned an invalid store domain");
+  }
+
+  if (
+    storeUrl.protocol !== "https:" ||
+    !storeUrl.hostname ||
+    storeUrl.username ||
+    storeUrl.password ||
+    (storeUrl.pathname !== "/" && storeUrl.pathname !== "") ||
+    storeUrl.search ||
+    storeUrl.hash
+  ) {
+    throw new Error("Shopify returned an invalid store domain");
+  }
+
+  return new URL("/account", storeUrl.origin).toString();
+}
+
 export async function shopifyStorefrontRequest<T>(
   query: string,
   variables?: Record<string, unknown>,

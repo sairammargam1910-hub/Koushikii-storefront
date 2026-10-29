@@ -2,9 +2,13 @@ import { Router, type IRouter } from "express";
 import {
   AddShopifyCartLineBody,
   GetShopifyCartQueryParams,
+  GetShopifyCustomerAccountResponse,
   UpdateShopifyCartLinesBody,
 } from "@workspace/api-zod";
-import { shopifyStorefrontRequest } from "../lib/shopifyStorefrontClient";
+import {
+  getShopifyCustomerAccountUrl,
+  shopifyStorefrontRequest,
+} from "../lib/shopifyStorefrontClient";
 import { logger } from "../lib/logger";
 
 type ShopifyImage = {
@@ -402,6 +406,19 @@ router.get("/shopify/products", async (_req, res) => {
   } catch (error) {
     logger.error({ err: error }, "Shopify saree catalog could not be loaded");
     res.status(502).json({ error: "Shopify products are temporarily unavailable." });
+  }
+});
+
+router.get("/shopify/customer-account", async (req, res): Promise<void> => {
+  try {
+    const accountUrl = await getShopifyCustomerAccountUrl();
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.json(GetShopifyCustomerAccountResponse.parse({ accountUrl }));
+  } catch (error) {
+    req.log.error({ err: error }, "Shopify customer account URL could not be loaded");
+    res.status(502).json({
+      error: "The Shopify account page is temporarily unavailable.",
+    });
   }
 });
 

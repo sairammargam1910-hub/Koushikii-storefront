@@ -51,6 +51,15 @@ export const GetShopifyProductsResponse = zod.object({
 
 
 /**
+ * Returns the hosted Shopify account page where customers can check confirmed orders and delivery updates.
+ * @summary Get the connected Shopify customer account URL
+ */
+export const GetShopifyCustomerAccountResponse = zod.object({
+  "accountUrl": zod.string().url()
+})
+
+
+/**
  * Returns the current Shopify cart and its hosted checkout URL.
  * @summary Get a Shopify cart
  */

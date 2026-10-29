@@ -45,6 +45,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/customer-account:
+    get:
+      operationId: getShopifyCustomerAccount
+      tags: [shopify]
+      summary: Get the connected Shopify customer account URL
+      description: Returns the hosted Shopify account page where customers can check confirmed orders and delivery updates.
+      responses:
+        "200":
+          description: Shopify hosted customer account page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCustomerAccountResponse"
+        "502":
+          description: Shopify account page could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/cart:
     get:
       operationId: getShopifyCart
@@ -731,6 +750,13 @@ components:
         truncated:
           type: boolean
       required: [products, totalPublishedProducts, truncated]
+    ShopifyCustomerAccountResponse:
+      type: object
+      properties:
+        accountUrl:
+          type: string
+          format: uri
+      required: [accountUrl]
     ShopifyCartAddInput:
       type: object
       properties:

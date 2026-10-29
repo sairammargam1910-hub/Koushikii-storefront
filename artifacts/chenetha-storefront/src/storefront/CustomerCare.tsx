@@ -10,7 +10,7 @@ const faqs = [
  {group:"Orders & delivery",questions:[
    ["How do I ask about a catalogue piece?","Use the WhatsApp enquiry review from your bag. The message is only a draft until you choose to send it. The brand must confirm the piece’s availability and final pricing directly."],
   ["Where do you deliver, and how much does it cost?","Delivery locations, dispatch windows and shipping charges are not set in this preview. A PIN-code check validates format only. Before making a real purchase, confirm the merchant’s delivery availability, charges and timing."],
-   ["How do I track an order?","This catalogue does not create or track orders. If you arranged a purchase directly with the brand, use the order and tracking details they supplied and contact them if you need an update."],
+    ["How do I track an order?","For a Shopify purchase, sign in to your Shopify customer account to see order and delivery updates. If no update appears yet, check the email you used at checkout, including its spam folder. This storefront does not confirm an order."],
  ]},
  {group:"Returns & support",questions:[
   ["Can I return or exchange a saree?","This preview does not establish return or exchange eligibility, deadlines, exclusions, cancellation terms or refund timing. Before a real purchase, read the merchant’s published terms for the specific product. Do not send a textile anywhere on the basis of this preview."],

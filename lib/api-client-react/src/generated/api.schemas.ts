@@ -50,6 +50,10 @@ export interface ShopifyProductsResponse {
   truncated: boolean;
 }
 
+export interface ShopifyCustomerAccountResponse {
+  accountUrl: string;
+}
+
 export interface ShopifyCartAddInput {
   /**
      * @minLength 1

@@ -43,6 +43,7 @@ export * from './shopifyCartLine';
 export * from './shopifyCartLineUpdate';
 export * from './shopifyCartResponse';
 export * from './shopifyCartUpdateInput';
+export * from './shopifyCustomerAccountResponse';
 export * from './shopifyImage';
 export * from './shopifyOption';
 export * from './shopifyProduct';

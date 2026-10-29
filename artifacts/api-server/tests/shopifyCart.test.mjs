@@ -24,7 +24,10 @@ const compiled = await build({
       }));
       builder.onLoad({ filter: /.*/, namespace: "test" }, ({ path }) => ({
         contents: {
-          "storefront-client": "export const shopifyStorefrontRequest = (...args) => storefrontRequest(...args);",
+          "storefront-client": [
+            "export const shopifyStorefrontRequest = (...args) => storefrontRequest(...args);",
+            "export const getShopifyCustomerAccountUrl = async () => 'https://chenetha.myshopify.com/account';",
+          ].join("\n"),
           logger: "export const logger = { error() {} };",
         }[path],
       }));

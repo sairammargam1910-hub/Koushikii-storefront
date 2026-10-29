@@ -40,6 +40,7 @@ import type {
   ShopifyCartAddInput,
   ShopifyCartResponse,
   ShopifyCartUpdateInput,
+  ShopifyCustomerAccountResponse,
   ShopifyProductsResponse
 } from './api.schemas';
 
@@ -214,6 +215,84 @@ export function useGetShopifyProducts<TData = Awaited<ReturnType<typeof getShopi
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetShopifyProductsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetShopifyCustomerAccountUrl = () => {
+
+
+
+
+  return `/api/shopify/customer-account`
+}
+
+/**
+ * Returns the hosted Shopify account page where customers can check confirmed orders and delivery updates.
+ * @summary Get the connected Shopify customer account URL
+ */
+export const getShopifyCustomerAccount = async ( options?: Parameters<typeof customFetch>[1]): Promise<ShopifyCustomerAccountResponse> => {
+
+  return customFetch<ShopifyCustomerAccountResponse>(getGetShopifyCustomerAccountUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyCustomerAccountQueryKey = () => {
+    return [
+    `/api/shopify/customer-account`
+    ] as const;
+    }
+
+
+export const getGetShopifyCustomerAccountQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyCustomerAccount>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyCustomerAccount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyCustomerAccountQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyCustomerAccount>>> = ({ signal }) => getShopifyCustomerAccount({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyCustomerAccount>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyCustomerAccountQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyCustomerAccount>>>
+export type GetShopifyCustomerAccountQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get the connected Shopify customer account URL
+ */
+
+export function useGetShopifyCustomerAccount<TData = Awaited<ReturnType<typeof getShopifyCustomerAccount>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyCustomerAccount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyCustomerAccountQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
