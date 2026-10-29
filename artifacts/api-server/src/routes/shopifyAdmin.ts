@@ -8,6 +8,7 @@ import {
   CreateShopifyAdminProductResponse,
   DeactivateShopifyAdminDiscountResponse,
   GetShopifyAdminDiscountsResponse,
+  GetShopifyAdminInventoryResponse,
   GetShopifyAdminProductsResponse,
   GetShopifyAdminProductMediaResponse,
   UpdateShopifyAdminProductBody,
@@ -80,6 +81,61 @@ type SingleProductQueryResult = {
   shop: { currencyCode: string };
   product: AdminProduct | null;
 };
+
+type AdminInventoryVariant = {
+  id: string;
+  title: string;
+  inventoryPolicy: "DENY" | "CONTINUE";
+  product: { id: string; title: string; status: "ACTIVE" | "DRAFT" | "ARCHIVED" };
+  inventoryItem: {
+    id: string;
+    tracked: boolean;
+    inventoryLevels: {
+      nodes: Array<{ location: { id: string; name: string; isActive: boolean }; quantities: Array<{ name: string; quantity: number }> }>;
+      pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    };
+  } | null;
+};
+
+type AdminInventoryPage = {
+  productVariants: {
+    nodes: AdminInventoryVariant[];
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+  };
+};
+
+const ADMIN_INVENTORY_QUERY = `#graphql
+  query MerchantInventoryWatch($after: String) {
+    productVariants(first: 25, after: $after) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id
+        title
+        inventoryPolicy
+        product { id title status }
+        inventoryItem {
+          id
+          tracked
+          inventoryLevels(first: 20) {
+            pageInfo { hasNextPage endCursor }
+            nodes { location { id name isActive } quantities(names: ["available"]) { name quantity } }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const ADMIN_INVENTORY_LEVEL_PAGE_QUERY = `#graphql
+  query MerchantInventoryLocationPage($id: ID!, $after: String!) {
+    inventoryItem(id: $id) {
+      inventoryLevels(first: 100, after: $after) {
+        pageInfo { hasNextPage endCursor }
+        nodes { location { id name isActive } quantities(names: ["available"]) { name quantity } }
+      }
+    }
+  }
+`;
 
 const ADMIN_PRODUCT_FIELDS = `#graphql
   id
@@ -559,6 +615,80 @@ async function fetchProduct(id: string): Promise<{
   return { product: result.product, currencyCode: result.shop.currencyCode };
 }
 
+async function fetchShopifyInventoryWatch() {
+  const variants: AdminInventoryVariant[] = [];
+  let after: string | null = null;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const page: AdminInventoryPage = await shopifyAdminRequest<AdminInventoryPage>(
+      ADMIN_INVENTORY_QUERY,
+      after ? { after } : {},
+    );
+    variants.push(...page.productVariants.nodes);
+    hasNextPage = page.productVariants.pageInfo.hasNextPage;
+    after = page.productVariants.pageInfo.endCursor;
+    if (hasNextPage && !after) {
+      throw new ShopifyAdminError("Shopify did not return the next inventory page cursor.");
+    }
+  }
+
+  const mapped = [];
+  for (const variant of variants) {
+    const item = variant.inventoryItem;
+    if (!item) {
+      mapped.push({
+        productId: variant.product.id,
+        productTitle: variant.product.title,
+        productStatus: variant.product.status,
+        variantId: variant.id,
+        variantTitle: variant.title,
+        tracked: false,
+        inventoryPolicy: variant.inventoryPolicy,
+        locations: [],
+      });
+      continue;
+    }
+    const levels = item.inventoryLevels;
+    while (levels.pageInfo.hasNextPage) {
+      if (!levels.pageInfo.endCursor) {
+        throw new ShopifyAdminError("Shopify did not return the next inventory location cursor.");
+      }
+      const page = await shopifyAdminRequest<{
+        inventoryItem: { inventoryLevels: typeof levels } | null;
+      }>(ADMIN_INVENTORY_LEVEL_PAGE_QUERY, {
+        id: item.id,
+        after: levels.pageInfo.endCursor,
+      });
+      if (!page.inventoryItem) {
+        throw new ShopifyInputError("Inventory changed. Reload the stock watch.");
+      }
+      levels.nodes.push(...page.inventoryItem.inventoryLevels.nodes);
+      levels.pageInfo = page.inventoryItem.inventoryLevels.pageInfo;
+    }
+    mapped.push({
+      productId: variant.product.id,
+      productTitle: variant.product.title,
+      productStatus: variant.product.status,
+      variantId: variant.id,
+      variantTitle: variant.title,
+      tracked: item.tracked,
+      inventoryPolicy: variant.inventoryPolicy,
+      locations: levels.nodes.map((level) => ({
+        locationId: level.location.id,
+        locationName: level.location.name,
+        active: level.location.isActive,
+        available: level.quantities.find((quantity) => quantity.name === "available")?.quantity ?? 0,
+      })),
+    });
+  }
+
+  return GetShopifyAdminInventoryResponse.parse({
+    refreshedAt: new Date().toISOString(),
+    variants: mapped,
+  });
+}
+
 async function setVariantPrice(
   productId: string,
   variantId: string,
@@ -721,6 +851,19 @@ router.get("/shopify/admin/products", async (req, res): Promise<void> => {
       res,
       error,
       "Shopify products could not be loaded. Check the store connection and try again.",
+    );
+  }
+});
+
+router.get("/shopify/admin/inventory", async (req, res): Promise<void> => {
+  try {
+    res.json(await fetchShopifyInventoryWatch());
+  } catch (error) {
+    respondShopifyError(
+      req,
+      res,
+      error,
+      "Shopify inventory could not be loaded. Refresh and try again.",
     );
   }
 });

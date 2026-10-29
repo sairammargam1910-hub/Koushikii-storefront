@@ -129,6 +129,39 @@ export interface ShopifyAdminInventoryLevel {
   available: number;
 }
 
+export type ShopifyAdminInventoryVariantProductStatus = typeof ShopifyAdminInventoryVariantProductStatus[keyof typeof ShopifyAdminInventoryVariantProductStatus];
+
+
+export const ShopifyAdminInventoryVariantProductStatus = {
+  ACTIVE: 'ACTIVE',
+  DRAFT: 'DRAFT',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export type ShopifyAdminInventoryVariantInventoryPolicy = typeof ShopifyAdminInventoryVariantInventoryPolicy[keyof typeof ShopifyAdminInventoryVariantInventoryPolicy];
+
+
+export const ShopifyAdminInventoryVariantInventoryPolicy = {
+  DENY: 'DENY',
+  CONTINUE: 'CONTINUE',
+} as const;
+
+export interface ShopifyAdminInventoryVariant {
+  productId: string;
+  productTitle: string;
+  productStatus: ShopifyAdminInventoryVariantProductStatus;
+  variantId: string;
+  variantTitle: string;
+  tracked: boolean;
+  inventoryPolicy: ShopifyAdminInventoryVariantInventoryPolicy;
+  locations: ShopifyAdminInventoryLevel[];
+}
+
+export interface ShopifyAdminInventoryResponse {
+  refreshedAt: string;
+  variants: ShopifyAdminInventoryVariant[];
+}
+
 export interface ShopifyAdminVariantOption {
   name: string;
   value: string;

@@ -4,6 +4,7 @@ import {
   useGetShopifyAdminProduct, useUpdateShopifyAdminVariant,
   useCreateShopifyAdminVariant, useDeleteShopifyAdminVariant,
   getGetShopifyAdminProductQueryKey, getGetShopifyAdminProductsQueryKey,
+  getGetShopifyAdminInventoryQueryKey,
   getGetShopifyProductsQueryKey,
   type ShopifyAdminProductVariant, type ShopifyAdminVariantUpdate,
   type ShopifyAdminProductOption, type ShopifyAdminVariantCreate,
@@ -119,6 +120,7 @@ export function VariantEditor({ productId, onClose }: { productId: string; onClo
   const busy = update.isPending || create.isPending || remove.isPending || product.isFetching;
   const invalidate = () => {
     void client.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() });
+    void client.invalidateQueries({ queryKey: getGetShopifyAdminInventoryQueryKey() });
     void client.invalidateQueries({ queryKey: getGetShopifyProductsQueryKey() });
   };
   const refresh = async () => {

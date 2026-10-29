@@ -28,6 +28,7 @@ import type {
   ShopifyAdminDiscountResponse,
   ShopifyAdminDiscountsResponse,
   ShopifyAdminImageResponse,
+  ShopifyAdminInventoryResponse,
   ShopifyAdminProductInput,
   ShopifyAdminProductMediaInput,
   ShopifyAdminProductMediaOrder,
@@ -824,6 +825,84 @@ export const useCreateShopifyAdminProduct = <TError = ErrorType<ApiError>,
       > => {
       return useMutation(getCreateShopifyAdminProductMutationOptions(options));
     }
+
+export const getGetShopifyAdminInventoryUrl = () => {
+
+
+
+
+  return `/api/shopify/admin/inventory`
+}
+
+/**
+ * Reads tracked Shopify available quantities for every variant and location without changing inventory.
+ * @summary Load current variant stock by location
+ */
+export const getShopifyAdminInventory = async ( options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminInventoryResponse> => {
+
+  return customFetch<ShopifyAdminInventoryResponse>(getGetShopifyAdminInventoryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyAdminInventoryQueryKey = () => {
+    return [
+    `/api/shopify/admin/inventory`
+    ] as const;
+    }
+
+
+export const getGetShopifyAdminInventoryQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyAdminInventory>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminInventory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyAdminInventoryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyAdminInventory>>> = ({ signal }) => getShopifyAdminInventory({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminInventory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyAdminInventoryQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyAdminInventory>>>
+export type GetShopifyAdminInventoryQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Load current variant stock by location
+ */
+
+export function useGetShopifyAdminInventory<TData = Awaited<ReturnType<typeof getShopifyAdminInventory>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminInventory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyAdminInventoryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetShopifyAdminProductUrl = (productId: string,) => {
 

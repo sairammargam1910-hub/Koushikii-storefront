@@ -279,6 +279,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/admin/inventory:
+    get:
+      operationId: getShopifyAdminInventory
+      tags: [shopify]
+      summary: Load current variant stock by location
+      description: Reads tracked Shopify available quantities for every variant and location without changing inventory.
+      responses:
+        "200":
+          description: Current variant inventory locations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminInventoryResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify inventory could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/admin/products/{productId}:
     parameters:
       - name: productId
@@ -933,6 +964,41 @@ components:
           type: boolean
         available:
           type: integer
+    ShopifyAdminInventoryVariant:
+      type: object
+      properties:
+        productId:
+          type: string
+        productTitle:
+          type: string
+        productStatus:
+          type: string
+          enum: [ACTIVE, DRAFT, ARCHIVED]
+        variantId:
+          type: string
+        variantTitle:
+          type: string
+        tracked:
+          type: boolean
+        inventoryPolicy:
+          type: string
+          enum: [DENY, CONTINUE]
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminInventoryLevel"
+      required: [productId, productTitle, productStatus, variantId, variantTitle, tracked, inventoryPolicy, locations]
+    ShopifyAdminInventoryResponse:
+      type: object
+      properties:
+        refreshedAt:
+          type: string
+          format: date-time
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminInventoryVariant"
+      required: [refreshedAt, variants]
     ShopifyAdminVariantOption:
       type: object
       required: [name, value]

@@ -126,6 +126,35 @@ body:has(.merchant-app, .auth-gate, .clerk-screen) {
 .tip-icon { width: 35px; height: 35px; flex: 0 0 35px; display: grid; place-items: center; color: #9e7745; background: #fff8ea; border-radius: 50%; }
 .overview-tip b { font: 700 12px Manrope, sans-serif; }
 .overview-tip p { margin: 5px 0 0; color: #887869; font-size: 11px; line-height: 1.5; }
+.stock-watch { display: grid; gap: 13px; margin: 0 0 34px; padding: 19px 20px 16px; border: 1px solid #e9ddd2; border-radius: 8px; background: var(--admin-paper); }
+.stock-watch-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.stock-watch-heading h2 { margin: 5px 0 4px; color: #47343d; font: 700 18px Manrope, sans-serif; letter-spacing: -.03em; }
+.stock-watch-heading p { margin: 0; color: #85777a; font-size: 11px; line-height: 1.5; }
+.stock-watch-heading .button { flex: 0 0 auto; }
+.stock-watch-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: 11px; border-bottom: 1px solid #f0e7e1; }
+.stock-count { display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+.stock-count b { font: 700 11px 'Space Mono', monospace; }
+.stock-count-out { color: #9b3d34; background: #f8e8e3; }.stock-count-low { color: #896324; background: #f8f0de; }
+.stock-checked { margin-left: auto; color: #978a8a; font-size: 10px; }
+.stock-watch-list { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
+.stock-watch-row { display: grid; grid-template-columns: 25px minmax(110px, 1fr) minmax(110px, auto); align-items: center; gap: 9px; min-height: 47px; padding: 7px 3px; border-bottom: 1px solid #f5eeea; }
+.stock-watch-row:last-child { border-bottom: 0; }
+.stock-watch-marker { display: grid; place-items: center; color: #a08073; }
+.stock-watch-item { display: grid; gap: 3px; min-width: 0; }
+.stock-watch-item b { overflow: hidden; color: #514048; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.stock-watch-item small { overflow: hidden; color: #958487; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.stock-watch-badge { justify-self: end; width: max-content; max-width: 100%; padding: 5px 8px; border-radius: 20px; font-size: 9px; font-weight: 700; text-align: center; }
+.stock-badge-out { color: #9b3d34; background: #f8e8e3; }
+.stock-badge-low { color: #896324; background: #f8f0de; }
+.stock-badge-untracked, .stock-badge-unassigned { color: #74676c; background: #eee9e6; }
+.stock-badge-inactive { color: #6d747a; background: #e9eef0; }
+.stock-watch-state { padding: 12px 2px; color: #827579; font-size: 11px; }
+.stock-watch-error { display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-radius: 6px; color: #a2473f; background: #f9eae6; font-size: 11px; }
+.stock-watch-error span { flex: 1; }
+.stock-watch-error .text-button { color: #8f2823; }
+.stock-watch-more { margin: -2px 0 0; color: #8f7f81; font-size: 10px; }
+.stock-watch-footer { display: flex; justify-content: flex-end; padding-top: 2px; }
+.stock-watch-footer .text-link { margin: 0; }
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 15px; margin: 0 0 13px; }
 .section-heading h2 { margin: 5px 0 0; font: 700 18px Manrope, sans-serif; letter-spacing: -.03em; }
 .section-heading .text-link { margin: 0 0 3px; }
@@ -231,6 +260,8 @@ body:has(.merchant-app, .auth-gate, .clerk-screen) {
   .page-heading > .button { padding: 0 11px; min-height: 38px; font-size: 11px; }
   .welcome-banner { min-height: 195px; padding: 25px 22px; }.welcome-banner h2 { font-size: 27px; }.welcome-banner p { max-width: 220px; line-height: 1.5; }.woven-stamp { width: 74px; height: 74px; margin-right: 0; }.woven-stamp b { font-size: 19px; }.woven-stamp span { font-size: 6px; }
   .overview-grid { grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 29px; }.overview-stat { min-height: 121px; padding: 15px; }.stat-value { font-size: 23px; }.stat-value span { display: block; margin-top: 1px; font-size: 10px; }.overview-tip { grid-column: 1 / -1; padding: 13px; min-height: 80px; }
+  .stock-watch { padding: 15px 13px 13px; margin-bottom: 28px; }.stock-watch-heading { flex-direction: column; gap: 10px; }.stock-watch-heading .button { align-self: flex-start; }.stock-watch-heading h2 { font-size: 16px; }
+  .stock-watch-row { grid-template-columns: 20px minmax(90px, 1fr); gap: 7px; }.stock-watch-badge { grid-column: 2; justify-self: start; margin-top: -2px; }.stock-checked { width: 100%; margin-left: 0; }
   .section-heading h2 { font-size: 16px; }.section-heading { align-items: center; }
   .product-row { grid-template-columns: 39px minmax(90px, 1fr) auto; gap: 9px; padding: 10px 11px; min-height: 68px; }
   .product-thumb { width: 38px; height: 44px; }.product-price { font-size: 10px; }.product-row .status-pill { grid-column: 2; grid-row: 2; margin-top: -7px; }.product-row .row-actions { grid-column: 3; grid-row: 1 / 3; flex-direction: column; gap: 2px; align-items: flex-end; }

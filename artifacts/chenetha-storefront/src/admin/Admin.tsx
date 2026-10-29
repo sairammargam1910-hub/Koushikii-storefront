@@ -3,8 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import {
   getGetShopifyAdminProductsQueryKey,
+  getGetShopifyAdminInventoryQueryKey,
   getGetShopifyProductsQueryKey,
   getGetShopifyAdminDiscountsQueryKey,
+  useGetShopifyAdminInventory,
   useGetShopifyAdminProducts,
   useCreateShopifyAdminProduct,
   useUpdateShopifyAdminProduct,
@@ -13,12 +15,13 @@ import {
   useCreateShopifyAdminDiscount,
   useDeactivateShopifyAdminDiscount,
   type ShopifyAdminProduct,
+  type ShopifyAdminInventoryVariant,
   type ShopifyAdminDiscount,
 } from "@workspace/api-client-react";
 import { useClerk } from "@clerk/react";
 import {
   ArrowDownRight, ArrowRight, BadgePercent, Box, Check, CircleAlert,
-  Clock3, ExternalLink, Layers3, LoaderCircle, PackagePlus, Plus, RefreshCw,
+  Clock3, ExternalLink, Layers3, LoaderCircle, MapPin, PackagePlus, Plus, RefreshCw,
   Search, Tag, X,
 } from "lucide-react";
 import "./Admin.css";
@@ -117,6 +120,98 @@ function ErrorPanel({ message, retry }: { message: string; retry: () => void }) 
   </div>;
 }
 
+const LOW_STOCK_THRESHOLD = 3;
+
+type StockWatchRow = {
+  key: string;
+  productId: string;
+  productTitle: string;
+  variantTitle: string;
+  inventoryPolicy: "DENY" | "CONTINUE";
+  locationName?: string;
+  quantity?: number;
+  kind: "out" | "low" | "untracked" | "inactive" | "unassigned";
+};
+
+function stockWatchRows(variants: ShopifyAdminInventoryVariant[]): StockWatchRow[] {
+  const rows: StockWatchRow[] = [];
+  for (const variant of variants) {
+    if (variant.productStatus === "ARCHIVED") continue;
+    const variantTitle = variant.variantTitle === "Default Title" ? "Standard saree" : variant.variantTitle;
+    if (!variant.tracked) {
+      rows.push({ key: `${variant.variantId}:untracked`, productId: variant.productId, productTitle: variant.productTitle, variantTitle, inventoryPolicy: variant.inventoryPolicy, kind: "untracked" });
+      continue;
+    }
+    if (!variant.locations.length) {
+      rows.push({ key: `${variant.variantId}:unassigned`, productId: variant.productId, productTitle: variant.productTitle, variantTitle, inventoryPolicy: variant.inventoryPolicy, kind: "unassigned" });
+      continue;
+    }
+    for (const level of variant.locations) {
+      const base = {
+        key: `${variant.variantId}:${level.locationId}`,
+        productId: variant.productId,
+        productTitle: variant.productTitle,
+        variantTitle,
+        inventoryPolicy: variant.inventoryPolicy,
+        locationName: level.locationName,
+        quantity: level.available,
+      };
+      if (!level.active) rows.push({ ...base, kind: "inactive" });
+      else if (level.available === 0) rows.push({ ...base, kind: "out" });
+      else if (level.available <= LOW_STOCK_THRESHOLD) rows.push({ ...base, kind: "low" });
+    }
+  }
+  const priority = { out: 0, low: 1, untracked: 2, inactive: 3, unassigned: 4 };
+  return rows.sort((a, b) => priority[a.kind] - priority[b.kind] || a.productTitle.localeCompare(b.productTitle));
+}
+
+function StockWatch() {
+  const inventory = useGetShopifyAdminInventory({
+    query: { queryKey: getGetShopifyAdminInventoryQueryKey(), staleTime: 0, refetchOnMount: "always", refetchOnWindowFocus: false, refetchOnReconnect: false },
+  });
+  const rows = inventory.data ? stockWatchRows(inventory.data.variants) : [];
+  const outCount = rows.filter((row) => row.kind === "out").length;
+  const lowCount = rows.filter((row) => row.kind === "low").length;
+  const formatCheckedAt = (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "Time unavailable" : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  };
+  const rowLabel = (row: StockWatchRow) => {
+    if (row.kind === "out") return row.inventoryPolicy === "CONTINUE" ? "0 available · Shopify still allows sales" : "Out of stock";
+    if (row.kind === "low") return `Low stock · ${row.quantity} available`;
+    if (row.kind === "untracked") return "Not tracked in Shopify";
+    if (row.kind === "inactive") return `Inactive location · ${row.quantity} available`;
+    return "No location assigned";
+  };
+  return <section className="stock-watch" aria-labelledby="stock-watch-title" data-testid="panel-stock-watch">
+    <div className="stock-watch-heading">
+      <div><span className="eyebrow">LOCATION-BY-LOCATION</span><h2 id="stock-watch-title">Stock to keep an eye on</h2>
+        <p>Fresh Shopify available quantities. Low stock means 1–{LOW_STOCK_THRESHOLD} pieces; inactive and untracked inventory is not counted as empty.</p></div>
+      <button className="button button-quiet" disabled={inventory.isFetching} onClick={() => void inventory.refetch()} data-testid="button-refresh-stock">
+        <RefreshCw className={inventory.isFetching ? "spin" : ""} size={15}/>{inventory.isFetching ? "Refreshing…" : "Refresh stock"}
+      </button>
+    </div>
+    {inventory.isLoading ? <div className="stock-watch-state" role="status">Loading current Shopify stock by location…</div> :
+      inventory.isError ? <div className="stock-watch-error" role="alert"><CircleAlert size={17}/><span>{readableError(inventory.error, "Could not load current Shopify inventory.")}</span><button className="text-button" onClick={() => void inventory.refetch()}>Try again</button></div> :
+      <>
+        <div className="stock-watch-summary" aria-live="polite">
+          <span className="stock-count stock-count-out"><b>{outCount}</b> out of stock</span>
+          <span className="stock-count stock-count-low"><b>{lowCount}</b> low stock</span>
+          <span className="stock-checked">Checked {formatCheckedAt(inventory.data!.refreshedAt)}</span>
+        </div>
+        {rows.length ? <ul className="stock-watch-list">
+          {rows.slice(0, 10).map((row) => <li key={row.key} className={`stock-watch-row stock-watch-${row.kind}`}>
+            <span className="stock-watch-marker"><MapPin size={15}/></span>
+            <span className="stock-watch-item"><b>{row.productTitle}</b><small>{row.variantTitle}{row.locationName ? ` · ${row.locationName}` : ""}</small></span>
+            <span className={`stock-watch-badge stock-badge-${row.kind}`}>{rowLabel(row)}</span>
+          </li>)}
+        </ul> : <div className="stock-watch-state">{inventory.data!.variants.length ? "No active locations are low or out of stock." : "No Shopify variants were found."}</div>}
+        {rows.length > 10 && <p className="stock-watch-more">Showing 10 of {rows.length} stock notices. Open Products to review the full catalog.</p>}
+        <div className="stock-watch-footer"><Link href="/admin/products" className="text-link" data-testid="link-stock-products">Review products and location stock <ArrowRight size={15}/></Link></div>
+      </>}
+  </section>;
+}
+
 function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode, existingImage, productId }: {
   initial: ProductDraft; onClose: () => void; onSave: (draft: ProductDraft) => void; busy: boolean; error?: string;
   allowVariantEdits: boolean; currencyCode?: string; existingImage?: string | null; productId?: string;
@@ -207,6 +302,7 @@ export function AdminDashboard() {
           <article className="overview-stat accent-stat"><span className="stat-label">OFFERS RUNNING</span><div className="stat-value" data-testid="text-active-discounts">{activeDiscounts}<span> active codes</span></div><Link href="/admin/discounts" className="stat-link" data-testid="link-manage-discounts">Manage discounts <ArrowRight size={15}/></Link></article>
           <article className="overview-tip"><span className="tip-icon"><ArrowDownRight size={19}/></span><div><b>Small update, big difference</b><p>Fresh product photos help shoppers see the detail in every weave.</p></div></article>
         </div>
+        <StockWatch/>
         <div className="section-heading"><div><span className="eyebrow">RECENTLY IN YOUR COLLECTION</span><h2>Products to keep an eye on</h2></div><Link href="/admin/products" className="text-link" data-testid="link-all-products">All products <ArrowRight size={15}/></Link></div>
         {productList.length ? <div className="recent-list">{productList.slice(0, 4).map((product) => <ProductRow key={product.id} product={product} currencyCode={currencyCode} compact/>)}</div> :
           <EmptyPanel icon={<Box size={21}/>} title="Your collection is ready for its first piece" body="Add a product to start building your live handloom catalog." action={<button className="button button-primary" onClick={() => setLocation("/admin/products?create=1")} data-testid="button-add-first-product"><Plus size={16}/> Add your first product</button>}/>}

@@ -314,6 +314,30 @@ export const CreateShopifyAdminProductResponse = zod.object({
 
 
 /**
+ * Reads tracked Shopify available quantities for every variant and location without changing inventory.
+ * @summary Load current variant stock by location
+ */
+export const GetShopifyAdminInventoryResponse = zod.object({
+  "refreshedAt": zod.coerce.date(),
+  "variants": zod.array(zod.object({
+  "productId": zod.string(),
+  "productTitle": zod.string(),
+  "productStatus": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  "variantId": zod.string(),
+  "variantTitle": zod.string(),
+  "tracked": zod.boolean(),
+  "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
+  "locations": zod.array(zod.object({
+  "locationId": zod.string(),
+  "locationName": zod.string(),
+  "active": zod.boolean(),
+  "available": zod.number().int()
+}))
+}))
+})
+
+
+/**
  * @summary Load every variant and inventory location for a product
  */
 export const getShopifyAdminProductPathProductIdMax = 200;
