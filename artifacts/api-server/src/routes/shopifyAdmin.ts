@@ -12,6 +12,7 @@ import {
   UpdateShopifyAdminProductResponse,
 } from "@workspace/api-zod";
 import { requireMerchantAdmin } from "../middlewares/merchantAdminAuth";
+import { invalidateShopifyCatalog } from "./shopify";
 import {
   assertNoUserErrors,
   escapeProductDescription,
@@ -353,7 +354,13 @@ async function setVariantInventory(
   const locations = await shopifyAdminRequest<{
     locations: { nodes: Array<{ id: string; name: string }> };
   }>(INVENTORY_LOCATIONS_QUERY);
-  const location = locations.locations.nodes[0];
+  const existingLocationId =
+    inventoryItem.inventoryLevels.nodes[0]?.location.id;
+  const location = existingLocationId
+    ? locations.locations.nodes.find(
+        (entry) => entry.id === existingLocationId,
+      )
+    : locations.locations.nodes[0];
   if (!location) {
     throw new ShopifyInputError(
       "Set up an active Shopify location before tracking stock.",
@@ -411,18 +418,6 @@ async function publishToWebsite(productId: string): Promise<void> {
     publicationId: publication.id,
   });
   assertNoUserErrors(result.publishablePublish.userErrors);
-}
-
-function validateProductId(productId: string): void {
-  if (!isShopifyProductId(productId)) {
-    throw new ShopifyInputError("The Shopify product ID is invalid.");
-  }
-}
-
-function validateDiscountId(discountId: string): void {
-  if (!isShopifyDiscountId(discountId)) {
-    throw new ShopifyInputError("The Shopify discount ID is invalid.");
-  }
 }
 
 router.use("/shopify/admin", requireMerchantAdmin);
@@ -522,6 +517,8 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
       error,
       "Shopify could not create this product. If it was saved as a draft, refresh the product list before trying again.",
     );
+  } finally {
+    invalidateShopifyCatalog();
   }
 });
 
@@ -558,6 +555,15 @@ router.patch(
       ) {
         throw new ShopifyInputError(
           "Price and stock changes in this dashboard are for single-variant products. Edit this product's variants in Shopify.",
+        );
+      }
+      if (
+        input.inventoryQuantity !== undefined &&
+        (existing.product.variants.nodes[0]?.inventoryItem
+          ?.inventoryLevels.nodes.length ?? 0) > 1
+      ) {
+        throw new ShopifyInputError(
+          "This product has stock at multiple locations. Update its stock in Shopify to keep each location accurate.",
         );
       }
       const productInput: Record<string, unknown> = { id: productId };
@@ -622,6 +628,8 @@ router.patch(
         error,
         "Shopify could not update this product. Check the store connection and try again.",
       );
+    } finally {
+      invalidateShopifyCatalog();
     }
   },
 );
@@ -653,6 +661,8 @@ router.delete(
         error,
         "Shopify could not archive this product. Check the store connection and try again.",
       );
+    } finally {
+      invalidateShopifyCatalog();
     }
   },
 );

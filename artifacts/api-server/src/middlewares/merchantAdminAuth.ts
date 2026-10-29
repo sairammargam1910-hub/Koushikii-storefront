@@ -43,9 +43,9 @@ export const requireMerchantAdmin: RequestHandler = async (
 
   try {
     const user = await clerkClient.users.getUser(userId);
-    const userEmails = user.emailAddresses.map((entry) =>
-      entry.emailAddress.trim().toLowerCase(),
-    );
+    const userEmails = user.emailAddresses
+      .filter((entry) => entry.verification?.status === "verified")
+      .map((entry) => entry.emailAddress.trim().toLowerCase());
     if (!userEmails.some((email) => allowedEmails.includes(email))) {
       res.status(403).json({
         error: "This account is not authorized to manage this store.",

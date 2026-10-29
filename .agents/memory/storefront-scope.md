@@ -8,6 +8,12 @@ The user is designing the complete customer-facing storefront for their client's
 
 **How to apply:** Keep customer browsing, purchase and after-purchase pages visually consistent. Shopify is now the selected commerce system for physical handloom products; do not treat prototype flows as live integrations.
 
+The merchant dashboard is for the handover client who runs this business, not for shoppers. It serves only the current connected Shopify store, not multiple client stores.
+
+**Why:** The user explicitly clarified “the client for whom I will handover this website so they can run the business” and selected the current-store-only setup.
+
+**How to apply:** Keep merchant access separate from customer navigation, authorize store-changing actions on the server, and keep Shopify authoritative for commerce. Public browsing must remain accessible even during a merchant session; signing in must not replace the storefront home with an admin page.
+
 The user selected sarees as the initial Shopify catalog category.
 
 **Why:** The user chose Shopify and answered that the storefront should sell sarees.

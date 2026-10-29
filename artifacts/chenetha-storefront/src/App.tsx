@@ -4,7 +4,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import { Redirect, Route, Switch, useLocation, Router as WouterRouter } from "wouter";
+import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
 import { ClerkProvider, Show, SignIn, SignUp, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -38,7 +38,7 @@ const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/favicon.svg`,
+    logoImageUrl: `${window.location.origin}${basePath}/images/koushikii/wordmark-red.png`,
   },
   variables: {
     colorPrimary: "#B22222",
@@ -53,9 +53,9 @@ const clerkAppearance = {
     borderRadius: "6px",
   },
   elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox: "bg-[#fbf7ef] rounded-xl w-[440px] max-w-full overflow-hidden",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
+    rootBox: { width: "100%", maxWidth: "440px", minWidth: "0" },
+    cardBox: { width: "100%", maxWidth: "440px", minWidth: "0", background: "#fbf7ef", borderRadius: "12px", overflow: "hidden" },
+    card: { width: "100%", maxWidth: "100%", boxSizing: "border-box" as const, boxShadow: "none", border: "0", background: "transparent", borderRadius: "0" },
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-[#332a25] font-semibold",
     headerSubtitle: "text-[#75675e]",
@@ -112,15 +112,6 @@ function ProtectedAdmin({ page }: { page: ReactNode }) {
   return <Show when="signed-in" fallback={<AdminSignInPrompt/>}>{page}</Show>;
 }
 
-function HomeRedirect() {
-  return (
-    <>
-      <Show when="signed-in"><Redirect to="/admin" /></Show>
-      <Show when="signed-out"><Home /></Show>
-    </>
-  );
-}
-
 function SignInPage() {
   return <div className="clerk-screen"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/admin`}/></div>;
 }
@@ -139,7 +130,7 @@ function Router() {
         <Route path="/admin"><ProtectedAdmin page={<AdminDashboard/>}/></Route>
         <Route path="/admin/products"><ProtectedAdmin page={<AdminProducts/>}/></Route>
         <Route path="/admin/discounts"><ProtectedAdmin page={<AdminDiscounts/>}/></Route>
-          <Route path="/" component={HomeRedirect}/>
+          <Route path="/" component={Home}/>
         <Route path="/Home" component={Home}/>
         <Route path="/Collections" component={Collections}/>
         <Route path="/Product" component={Product}/>

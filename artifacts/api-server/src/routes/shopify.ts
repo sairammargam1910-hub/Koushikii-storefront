@@ -230,6 +230,10 @@ let cachedCatalog:
     }
   | undefined;
 
+export function invalidateShopifyCatalog(): void {
+  cachedCatalog = undefined;
+}
+
 const isSaree = (product: ShopifyProduct) => {
   const searchable = [
     product.title,

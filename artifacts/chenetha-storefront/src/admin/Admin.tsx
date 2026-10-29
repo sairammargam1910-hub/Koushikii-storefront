@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import {
   getGetShopifyAdminProductsQueryKey,
+  getGetShopifyProductsQueryKey,
   getGetShopifyAdminDiscountsQueryKey,
   useGetShopifyAdminProducts,
   useCreateShopifyAdminProduct,
@@ -53,6 +54,12 @@ function formatDate(value: string | null) {
   return Number.isNaN(date.getTime()) ? "Not scheduled" : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function readableError(error: unknown, fallback: string) {
+  return error instanceof Error
+    ? error.message.replace(/^HTTP \d+ [^:]*:\s*/, "")
+    : fallback;
+}
+
 function AdminLayout({ children, title, eyebrow, action }: { children: ReactNode; title: string; eyebrow: string; action?: ReactNode }) {
   const [location] = useLocation();
   const { signOut } = useClerk();
@@ -82,7 +89,7 @@ function AdminLayout({ children, title, eyebrow, action }: { children: ReactNode
     </aside>
     <main className="merchant-main">
       <header className="merchant-topbar">
-        <span className="topbar-label"><span className="status-dot"/> SHOPIFY CONNECTED</span>
+        <span className="topbar-label"><span className="status-dot"/> SHOPIFY WORKSPACE</span>
         <div className="topbar-right"><span className="merchant-name">Merchant workspace</span><button className="merchant-signout" onClick={() => void signOut({ redirectUrl: "/" })} data-testid="button-merchant-sign-out">Sign out</button></div>
       </header>
       <section className="merchant-content">
@@ -155,18 +162,21 @@ function ProductForm({ product, onClose, currencyCode }: { product?: ShopifyAdmi
     const input = {
       title: values.title.trim(), description: values.description, productType: values.productType.trim(),
       tags: values.tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
-      ...(product && product.variants.length > 1
-        ? {}
+      ...(product
+        ? {
+            ...(product.variants.length === 1 && Number(values.price) !== Number(product.variants[0].price) ? { price: Number(values.price) } : {}),
+            ...(product.variants.length === 1 && (Number(values.inventoryQuantity) !== product.variants[0].inventoryQuantity || !product.variants[0].inventoryTracked) ? { inventoryQuantity: Number(values.inventoryQuantity) } : {}),
+          }
         : { price: Number(values.price), inventoryQuantity: Number(values.inventoryQuantity) }),
       ...(values.imageUrl.trim() ? { imageUrl: values.imageUrl.trim() } : {}),
       publishToWebsite: values.publishToWebsite,
     };
     const options = {
-      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() }); onClose(); },
+      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetShopifyProductsQueryKey() }); onClose(); },
       onError: (reason: Error) => setError(reason.message || "Please check your details and try again."),
     };
     if (product) update.mutate({ productId: product.id, data: input }, options);
-    else create.mutate({ data: input }, options);
+    else create.mutate({ data: { ...input, price: Number(values.price), inventoryQuantity: Number(values.inventoryQuantity) } }, options);
   };
   return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product || product.variants.length === 1} currencyCode={currencyCode}/>;
 }
@@ -181,8 +191,9 @@ export function AdminDashboard() {
   const activeDiscounts = discounts.data?.discounts.filter((discount) => discount.status === "ACTIVE").length ?? 0;
   return <AdminLayout title="Good day, Koushikii." eyebrow="YOUR WORKROOM · TODAY">
     <div className="welcome-banner"><div><span className="welcome-kicker">A little order in the everyday</span><h2>Your handloom business,<br/><em>at a glance.</em></h2><p>Keep your collection current and your offers ready to share.</p></div><div className="woven-stamp"><span>HAND</span><b>loom</b><span>IN INDIA</span></div></div>
+    <div className="discount-intro"><div><b>Everyday updates here. Store setup in Shopify.</b><p>Manage products and offers in this workroom. Payment providers, shipping rates, fulfillment locations and order shipping are managed in Shopify. Go to Settings → Payments or Settings → Shipping and delivery.</p><a href="https://admin.shopify.com/" target="_blank" rel="noreferrer" className="text-link" data-testid="link-shopify-settings">Open Shopify admin <ExternalLink size={14}/></a></div></div>
     {(products.isLoading || discounts.isLoading) ? <LoadingPanel/> : products.isError || discounts.isError ?
-      <ErrorPanel message="Your Shopify workspace may be momentarily unavailable." retry={() => { void products.refetch(); void discounts.refetch(); }}/> :
+      <ErrorPanel message={readableError(products.error || discounts.error, "Your Shopify workspace may be momentarily unavailable.")} retry={() => { void products.refetch(); void discounts.refetch(); }}/> :
       <>
         <div className="overview-grid">
           <article className="overview-stat"><span className="stat-label">LIVE IN YOUR STORE</span><div className="stat-value" data-testid="text-live-products">{liveCount}<span> / {productList.length} products</span></div><Link href="/admin/products" className="stat-link" data-testid="link-manage-products">Manage collection <ArrowRight size={15}/></Link></article>
@@ -232,14 +243,14 @@ export function AdminProducts() {
     if (!window.confirm(`Archive “${product.title}”? It will be hidden from the storefront, but not permanently deleted.`)) return;
     setNotice("");
     archive.mutate({ productId: product.id }, {
-      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() }); setNotice(`${product.title} was archived.`); },
+      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetShopifyProductsQueryKey() }); setNotice(`${product.title} was archived.`); },
       onError: (error: Error) => setNotice(error.message || "Could not archive this product. Please try again."),
     });
   };
   return <AdminLayout title="Your products" eyebrow="SHOPIFY CATALOG" action={<button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-create-product"><Plus size={17}/> Add product</button>}>
     <div className="catalog-toolbar"><div className="toolbar-count"><b>{products.data?.products.length ?? "—"}</b> products in your catalog</div><label className="search-field"><Search size={17}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a product" aria-label="Find a product" data-testid="input-search-products"/></label></div>
     {notice && <div className={`inline-notice ${notice.includes("Could not") ? "notice-error" : ""}`} role="status" data-testid="status-product-notice"><Check size={16}/>{notice}<button aria-label="Dismiss notice" onClick={() => setNotice("")} data-testid="button-dismiss-notice"><X size={15}/></button></div>}
-    {products.isLoading ? <LoadingPanel/> : products.isError ? <ErrorPanel message="We couldn’t reach your Shopify catalog." retry={() => void products.refetch()}/> :
+    {products.isLoading ? <LoadingPanel/> : products.isError ? <ErrorPanel message={readableError(products.error, "We couldn’t reach your Shopify catalog.")} retry={() => void products.refetch()}/> :
       rows.length ? <div className="catalog-table"><div className="table-head"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>ACTIONS</span></div>{rows.map((product) => <ProductRow key={product.id} product={product} currencyCode={products.data?.currencyCode} onEdit={() => setEditing(product)} onArchive={() => onArchive(product)}/>)}</div> :
         <EmptyPanel icon={<PackagePlus size={22}/>} title={search ? "No matching products" : "Your catalog is still unwoven"} body={search ? "Try another name or tag." : "Add your first saree and keep its price, stock and story together."} action={!search ? <button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-empty-create-product"><Plus size={16}/> Add a product</button> : undefined}/>
     }
@@ -283,7 +294,7 @@ function DiscountRow({ discount, onDeactivate, busy }: { discount: ShopifyAdminD
     <div className="discount-rate" data-testid={`text-discount-percentage-${discount.id}`}>{discount.percentage}% <small>off</small></div>
     <span className={`status-pill status-${label}`} data-testid={`status-discount-${discount.id}`}>{discount.status.charAt(0) + discount.status.slice(1).toLowerCase()}</span>
     <div className="discount-end"><Clock3 size={14}/>{formatDate(discount.endsAt)}</div>
-    {discount.status === "ACTIVE" && <button className="text-button danger-text" disabled={busy} onClick={onDeactivate} data-testid={`button-deactivate-discount-${discount.id}`}>{busy ? "Deactivating…" : "Deactivate"}</button>}
+    {discount.status !== "EXPIRED" && <button className="text-button danger-text" disabled={busy} onClick={onDeactivate} data-testid={`button-deactivate-discount-${discount.id}`}>{busy ? "Deactivating…" : "Deactivate"}</button>}
   </article>;
 }
 
@@ -315,10 +326,10 @@ export function AdminDiscounts() {
   return <AdminLayout title="Offers & discounts" eyebrow="SALES PROMOTIONS" action={<button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-create-discount"><Plus size={17}/> Create discount</button>}>
     <div className="discount-intro"><span className="discount-intro-icon"><BadgePercent size={20}/></span><p>Make a little room for a thank-you. Your percentage codes are created in Shopify and ready for customers at checkout.</p></div>
     {notice && <div className={`inline-notice ${notice.startsWith("Could not") ? "notice-error" : ""}`} role="status" data-testid="status-discount-notice"><Check size={16}/>{notice}<button aria-label="Dismiss notice" onClick={() => setNotice("")} data-testid="button-dismiss-discount-notice"><X size={15}/></button></div>}
-    {discounts.isLoading ? <LoadingPanel/> : discounts.isError ? <ErrorPanel message="We couldn’t reach your Shopify discounts." retry={() => void discounts.refetch()}/> :
+    {discounts.isLoading ? <LoadingPanel/> : discounts.isError ? <ErrorPanel message={readableError(discounts.error, "We couldn’t reach your Shopify discounts.")} retry={() => void discounts.refetch()}/> :
       list.length ? <div className="discount-sections">
         {active.length > 0 && <section><div className="section-heading slim-heading"><div><span className="eyebrow">READY TO USE</span><h2>Active codes <span className="heading-count">{active.length}</span></h2></div></div><div className="discount-list">{active.map((discount) => <DiscountRow key={discount.id} discount={discount} busy={deactivate.isPending} onDeactivate={() => deactivateDiscount(discount)}/>)}</div></section>}
-        {other.length > 0 && <section><div className="section-heading slim-heading"><div><span className="eyebrow">PAST & UPCOMING</span><h2>Other codes <span className="heading-count">{other.length}</span></h2></div></div><div className="discount-list subdued-list">{other.map((discount) => <DiscountRow key={discount.id} discount={discount} busy={false} onDeactivate={() => {}}/>)}</div></section>}
+        {other.length > 0 && <section><div className="section-heading slim-heading"><div><span className="eyebrow">PAST & UPCOMING</span><h2>Other codes <span className="heading-count">{other.length}</span></h2></div></div><div className="discount-list subdued-list">{other.map((discount) => <DiscountRow key={discount.id} discount={discount} busy={deactivate.isPending} onDeactivate={() => deactivateDiscount(discount)}/>)}</div></section>}
       </div> : <EmptyPanel icon={<BadgePercent size={22}/>} title="No codes just yet" body="Create a percentage code for a festive moment, a returning customer, or a little thank-you." action={<button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-empty-create-discount"><Plus size={16}/> Create first code</button>}/>
     }
     {creating && <DiscountModal onClose={() => setCreating(false)} onSubmit={createDiscount} busy={create.isPending} error={formError}/>}

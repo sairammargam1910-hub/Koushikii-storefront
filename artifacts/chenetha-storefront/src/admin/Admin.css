@@ -1,13 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
+body:has(.merchant-app, .auth-gate, .clerk-screen) {
 .merchant-app {
   --admin-ink: #392a31;
   --admin-muted: #85767b;
   --admin-line: #e9ddd7;
   --admin-paper: #fffdf9;
   --admin-bg: #f8f3ed;
-  --admin-plum: #65394c;
-  --admin-red: #a43940;
+  --admin-plum: #B22222;
+  --admin-red: #B22222;
   --admin-gold: #bf9250;
   --admin-soft: #f2e9e1;
   display: flex;
@@ -63,7 +64,7 @@
 .button:hover:not(:disabled) { transform: translateY(-1px); }
 .button:disabled { opacity: .65; cursor: not-allowed; }
 .button-primary { background: var(--admin-plum); color: #fffaf6; box-shadow: 0 3px 8px rgba(75,44,57,.14); }
-.button-primary:hover:not(:disabled) { background: #78495c; box-shadow: 0 5px 14px rgba(75,44,57,.19); }
+.button-primary:hover:not(:disabled) { background: #8f1b1b; box-shadow: 0 5px 14px rgba(75,44,57,.19); }
 .button-quiet { color: #705d62; background: #f5eee8; border-color: #e8dcd3; }
 .button-quiet:hover:not(:disabled) { background: #eee2da; }
 .merchant-footer { border-top: 1px solid var(--admin-line); min-height: 48px; padding: 0 clamp(20px, 4vw, 56px); display: flex; justify-content: space-between; align-items: center; color: #96878a; font-size: 10px; }
@@ -169,12 +170,11 @@
 .form-error { margin: 0; padding: 9px 11px; border-radius: 5px; background: #f9eae6; color: #a2473f; font-size: 11px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; padding-top: 7px; }
 .spin { animation: spin .8s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
-.auth-gate { display: grid; place-items: center; min-height: 100dvh; padding: 22px; background: #f8f3ed; font-family: 'DM Sans', sans-serif; }
+.auth-gate { --admin-plum: #B22222; display: grid; place-items: center; min-height: 100dvh; padding: 22px; background: #f8f3ed; font-family: 'DM Sans', sans-serif; }
 .auth-gate-card { width: min(100%, 390px); display: flex; flex-direction: column; align-items: flex-start; padding: 34px; border: 1px solid #e9ddd7; border-radius: 10px; background: #fffdf9; box-shadow: 0 14px 40px rgba(67,45,52,.08); }
 .auth-gate-card .brand-seal { margin-bottom: 25px; }.auth-gate-card h1 { margin: 8px 0; font: 700 29px Manrope, sans-serif; letter-spacing: -.05em; }
 .auth-gate-card p { margin: 0 0 22px; color: #85767b; font-size: 13px; }.auth-gate-card small { margin-top: 16px; color: #9c8d8c; font-size: 10px; }
-.clerk-screen { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: #f8f3ed; }
-.clerk-screen .cl-rootBox { width: min(100%, 430px); }
+.clerk-screen { min-height: 100dvh; width: 100%; min-width: 0; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding: 24px; background: #f8f3ed; }
 
 @media (max-width: 900px) {
   .merchant-sidebar { width: 215px; flex-basis: 215px; }
@@ -204,4 +204,5 @@
   .discount-row { grid-template-columns: 34px minmax(100px, 1fr) auto; gap: 8px; padding: 12px 10px; }.discount-rate { grid-column: 3; grid-row: 1; font-size: 13px; }.discount-row > .status-pill { grid-column: 2; grid-row: 2; justify-self: start; }.discount-row > .text-button { grid-column: 3; grid-row: 2; }.discount-info { grid-column: 2; }
   .merchant-footer { padding: 0 16px; }.merchant-footer span:last-child { display: none; }
   .admin-modal { padding: 21px 18px; }.form-row { grid-template-columns: 1fr; gap: 13px; }
+}
 }
