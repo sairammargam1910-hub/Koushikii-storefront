@@ -212,7 +212,7 @@ test("shows Shopify cart user errors without clearing the shopper's saved bag", 
   await context.close();
 });
 
-test("uses Shopify's returned checkout URL after a successful cart response", async () => {
+test("uses Shopify's returned checkout URL in the current tab", async () => {
   const { context, page } = await openProduct();
   await page.route("**/api/shopify/cart**", async (route) => {
     if (route.request().method() === "POST") {
@@ -248,15 +248,26 @@ test("uses Shopify's returned checkout URL after a successful cart response", as
   const cartCheckoutLink = page.getByTestId("link-shopify-checkout");
   await cartCheckoutLink.waitFor();
   assert.equal(await cartCheckoutLink.getAttribute("href"), checkoutUrl);
-  assert.equal(await cartCheckoutLink.getAttribute("target"), "_blank");
+  assert.equal(await cartCheckoutLink.getAttribute("target"), null);
+  await page.route("https://chenetha.myshopify.com/checkouts/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<!doctype html><title>Hosted checkout fixture</title>",
+    }),
+  );
+  await Promise.all([page.waitForURL(checkoutUrl), cartCheckoutLink.click()]);
+  assert.equal(page.url(), checkoutUrl);
 
   await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
   const checkoutLink = page.getByTestId("button-continue-shopify-checkout");
   await checkoutLink.waitFor();
   assert.equal(await checkoutLink.getAttribute("href"), checkoutUrl);
-  assert.equal(await checkoutLink.getAttribute("target"), "_blank");
+  assert.equal(await checkoutLink.getAttribute("target"), null);
   await page.getByTestId("text-shopify-checkout-total").waitFor();
   assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,250/);
+  await Promise.all([page.waitForURL(checkoutUrl), checkoutLink.click()]);
+  assert.equal(page.url(), checkoutUrl);
   await context.close();
 });
 

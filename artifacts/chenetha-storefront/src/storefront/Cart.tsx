@@ -263,8 +263,6 @@ function ShopifyBag({
   async function continueWithSavedAddress() {
     if (!cart || !checkoutHref || !selectedAddress) return;
     setCheckoutError("");
-    const checkoutWindow = window.open("about:blank", "_blank");
-    if (checkoutWindow) checkoutWindow.opener = null;
     const email = profile.email.trim() || user?.primaryEmailAddress?.emailAddress.trim() || "";
     const phone = profile.phone.trim() || user?.primaryPhoneNumber?.phoneNumber.trim() || "";
     try {
@@ -284,10 +282,8 @@ function ShopifyBag({
       if (!updatedCheckoutUrl) {
         throw new Error("Shopify did not return a checkout link.");
       }
-      if (checkoutWindow) checkoutWindow.location.replace(updatedCheckoutUrl);
-      else window.location.assign(updatedCheckoutUrl);
+      window.location.assign(updatedCheckoutUrl);
     } catch {
-      checkoutWindow?.close();
       setCheckoutError(
         getCartUpdateErrorMessage(checkoutPrepError) ??
           "Your saved details could not be added to Shopify checkout. Please try again.",
@@ -467,10 +463,10 @@ function ShopifyBag({
         ) : profileLoading && signedIn ? (
           <div>
             <p className="muted" role="status">Loading your saved checkout details…</p>
-            <a className="link" href={checkoutHref!} target="_blank" rel="noopener noreferrer">Continue without prefill</a>
+            <a className="link" href={checkoutHref!}>Continue without prefill</a>
           </div>
         ) : (
-          <a className="btn" style={{ width: "100%", marginTop: 18 }} href={checkoutHref!} target="_blank" rel="noopener noreferrer" data-testid="link-shopify-checkout">
+          <a className="btn" style={{ width: "100%", marginTop: 18 }} href={checkoutHref!} data-testid="link-shopify-checkout">
             Continue to secure Shopify checkout <ArrowRight size={14} />
           </a>
         )}

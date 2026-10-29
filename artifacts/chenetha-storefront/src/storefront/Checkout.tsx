@@ -216,7 +216,7 @@ function ShopifyCheckoutReview({
         ))}
         <p className="muted" style={{ fontSize: 12 }}>Shipping and applicable taxes are calculated by Shopify at checkout.</p>
         {canCheckout ? (
-          <a className="btn" style={{ marginTop: 18 }} href={checkoutHref} target="_blank" rel="noopener noreferrer" data-testid="button-continue-shopify-checkout">
+          <a className="btn" style={{ marginTop: 18 }} href={checkoutHref} data-testid="button-continue-shopify-checkout">
             <ShieldCheck size={16} /> Continue to secure Shopify checkout <ArrowRight size={14} />
           </a>
         ) : (

@@ -14,3 +14,9 @@ For profile-prefill checkout, send saved contact details as buyer identity and t
 **Why:** Shopify Storefront API 2026-04 separates buyer identity from cart delivery addresses; a one-time cart address avoids silently changing the customer's saved Shopify address book. Address-based delivery estimates can also affect the displayed payable amount.
 
 **How to apply:** Verify the live Storefront schema when updating checkout mutations, preserve guest/account separation, and label cart totals as estimates until Shopify's hosted checkout confirms shipping, taxes, and payment.
+
+Open Shopify checkout in the current tab, including after the saved-address prefill request completes.
+
+**Why:** A new-tab checkout can be blocked or appear not to navigate from the embedded Replit preview, leaving shoppers unsure whether checkout started.
+
+**How to apply:** Use a same-tab checkout link for direct checkout and `location.assign` after profile data is applied; keep the shopper on the cart only when the request fails.
