@@ -258,6 +258,17 @@ const SHOPIFY_CART_BUYER_IDENTITY_UPDATE = `#graphql
   }
 `;
 
+const SHOPIFY_CART_DELIVERY_ADDRESSES_REPLACE = `#graphql
+  mutation ReplaceShopifyCartDeliveryAddress($cartId: ID!, $addresses: [CartSelectableAddressInput!]!) {
+    cartDeliveryAddressesReplace(cartId: $cartId, addresses: $addresses) {
+      cart {
+        ${CART_FIELDS}
+      }
+      userErrors { message }
+    }
+  }
+`;
+
 const SHOPIFY_VARIANT_FOR_CART = `#graphql
   query ShopifyVariantForCart($id: ID!) @inContext(country: IN) {
     node(id: $id) {
@@ -334,6 +345,50 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
     discountCodes: cart.discountCodes,
     lines,
   };
+}
+
+const INDIA_PROVINCE_CODES: Record<string, string> = {
+  "andaman and nicobar islands": "AN",
+  "andhra pradesh": "AP",
+  "arunachal pradesh": "AR",
+  assam: "AS",
+  bihar: "BR",
+  chandigarh: "CH",
+  chhattisgarh: "CG",
+  "dadra and nagar haveli and daman and diu": "DN",
+  delhi: "DL",
+  goa: "GA",
+  gujarat: "GJ",
+  haryana: "HR",
+  "himachal pradesh": "HP",
+  "jammu and kashmir": "JK",
+  jharkhand: "JH",
+  karnataka: "KA",
+  kerala: "KL",
+  ladakh: "LA",
+  lakshadweep: "LD",
+  "madhya pradesh": "MP",
+  maharashtra: "MH",
+  manipur: "MN",
+  meghalaya: "ML",
+  mizoram: "MZ",
+  nagaland: "NL",
+  odisha: "OD",
+  puducherry: "PY",
+  punjab: "PB",
+  rajasthan: "RJ",
+  sikkim: "SK",
+  "tamil nadu": "TN",
+  telangana: "TS",
+  tripura: "TR",
+  "uttar pradesh": "UP",
+  uttarakhand: "UK",
+  "west bengal": "WB",
+};
+
+function shopifyIndiaProvinceCode(state: string): string {
+  const normalized = state.trim().toLowerCase().replace(/\s+/g, " ");
+  return INDIA_PROVINCE_CODES[normalized] ?? state.trim().toUpperCase();
 }
 
 async function getShopifyCart(cartId: string) {
@@ -633,7 +688,7 @@ router.post("/shopify/cart/buyer-identity", async (req, res): Promise<void> => {
   try {
     await assertIndiaMarketAvailable();
     const { cartId, email, phone, deliveryAddress } = body.data;
-    const result = await shopifyStorefrontRequest<{
+    const identityResult = await shopifyStorefrontRequest<{
       cartBuyerIdentityUpdate: ShopifyCartMutationResult;
     }>(SHOPIFY_CART_BUYER_IDENTITY_UPDATE, {
       cartId,
@@ -641,28 +696,50 @@ router.post("/shopify/cart/buyer-identity", async (req, res): Promise<void> => {
         countryCode: "IN",
         ...(email ? { email: email.trim() } : {}),
         ...(phone ? { phone: phone.trim() } : {}),
-        deliveryAddressPreferences: [{
-          firstName: deliveryAddress.recipient.trim(),
-          address1: deliveryAddress.street.trim(),
-          city: deliveryAddress.city.trim(),
-          province: deliveryAddress.state.trim(),
-          zip: deliveryAddress.pin,
-          countryCode: "IN",
-          ...(phone ? { phone: phone.trim() } : {}),
-        }],
       },
     });
-    if (result.cartBuyerIdentityUpdate.userErrors.length) {
+    if (identityResult.cartBuyerIdentityUpdate.userErrors.length) {
       res.status(400).json({
-        error: result.cartBuyerIdentityUpdate.userErrors[0].message,
+        error: identityResult.cartBuyerIdentityUpdate.userErrors[0].message,
       });
       return;
     }
-    if (!result.cartBuyerIdentityUpdate.cart) {
+    if (!identityResult.cartBuyerIdentityUpdate.cart) {
       res.status(404).json({ error: "This Shopify cart has expired or could not be found." });
       return;
     }
-    res.json(mapShopifyCart(result.cartBuyerIdentityUpdate.cart));
+
+    const result = await shopifyStorefrontRequest<{
+      cartDeliveryAddressesReplace: ShopifyCartMutationResult;
+    }>(SHOPIFY_CART_DELIVERY_ADDRESSES_REPLACE, {
+      cartId,
+      addresses: [{
+        address: {
+          deliveryAddress: {
+            firstName: deliveryAddress.recipient.trim(),
+            address1: deliveryAddress.street.trim(),
+            city: deliveryAddress.city.trim(),
+            provinceCode: shopifyIndiaProvinceCode(deliveryAddress.state),
+            zip: deliveryAddress.pin,
+            countryCode: "IN",
+            ...(phone ? { phone: phone.trim() } : {}),
+          },
+        },
+        selected: true,
+        oneTimeUse: true,
+      }],
+    });
+    if (result.cartDeliveryAddressesReplace.userErrors.length) {
+      res.status(400).json({
+        error: result.cartDeliveryAddressesReplace.userErrors[0].message,
+      });
+      return;
+    }
+    if (!result.cartDeliveryAddressesReplace.cart) {
+      res.status(404).json({ error: "This Shopify cart has expired or could not be found." });
+      return;
+    }
+    res.json(mapShopifyCart(result.cartDeliveryAddressesReplace.cart));
   } catch {
     // Cart identity contains personal details; keep them out of server logs.
     res.status(502).json({ error: "Shopify could not prepare your saved details for checkout. Please try again." });

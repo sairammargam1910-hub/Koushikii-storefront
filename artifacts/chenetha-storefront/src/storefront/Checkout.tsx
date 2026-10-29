@@ -200,7 +200,7 @@ function ShopifyCheckoutReview({
           <strong data-testid="text-shopify-checkout-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</strong>
         </div>
         <div className="row" style={{ marginTop: 10 }}>
-          <strong>Total after discounts</strong>
+          <strong>Estimated total</strong>
           <strong data-testid="text-shopify-checkout-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
         </div>
         {cart.discountCodes.map((discount) => (

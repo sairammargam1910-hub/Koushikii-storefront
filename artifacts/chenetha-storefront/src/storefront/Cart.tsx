@@ -342,7 +342,7 @@ function ShopifyBag({
           <b data-testid="text-shopify-cart-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</b>
         </div>
         <div className="row" style={{ marginTop: 10 }}>
-          <strong>Total after discounts</strong>
+          <strong>Estimated total</strong>
           <strong data-testid="text-shopify-cart-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
         </div>
         <form
@@ -457,7 +457,7 @@ function ShopifyBag({
             Save a delivery address in <a className="link" href={base + "Profile#saved-addresses"}>My profile</a> to prefill Shopify checkout. Otherwise, Shopify will ask for it there.
           </p>
         ) : null}
-        <p className="muted">Shipping and taxes are added by Shopify at checkout.</p>
+        <p className="muted">Shopify may adjust delivery, taxes, and the final payable amount at checkout.</p>
         {hasUnavailableLine ? (
           <p className="notice" role="alert">A demo or unavailable listing is in this bag. Remove it or update its Shopify details before checkout.</p>
         ) : !canCheckout ? (

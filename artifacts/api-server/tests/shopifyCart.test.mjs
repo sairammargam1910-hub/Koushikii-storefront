@@ -113,6 +113,9 @@ async function harness(run) {
       if (query.includes("mutation UpdateShopifyCartBuyerIdentity")) {
         return { cartBuyerIdentityUpdate: state.cartMutationResult };
       }
+      if (query.includes("mutation ReplaceShopifyCartDeliveryAddress")) {
+        return { cartDeliveryAddressesReplace: state.cartMutationResult };
+      }
       throw new Error(`Unexpected Shopify query: ${query}`);
     },
   );
@@ -288,24 +291,35 @@ test("prefills Shopify checkout with a saved shopper address", async () => {
     });
     assert.equal(saved.status, 200);
     assert.equal(saved.data.checkoutUrl, checkoutUrl);
-    const call = state.calls.at(-1);
-    assert.match(call.query, /cartBuyerIdentityUpdate/);
-    assert.deepEqual(call.variables, {
+    const identityCall = state.calls.find((call) => call.query.includes("cartBuyerIdentityUpdate"));
+    assert.ok(identityCall);
+    assert.deepEqual(identityCall.variables, {
       cartId: "gid://shopify/Cart/cart-123",
       buyerIdentity: {
         countryCode: "IN",
         email: "shopper@example.com",
         phone: "+919876543210",
-        deliveryAddressPreferences: [{
-          firstName: "Asha Rao",
-          address1: "12 Example Road",
-          city: "Chennai",
-          province: "Tamil Nadu",
-          zip: "600001",
-          countryCode: "IN",
-          phone: "+919876543210",
-        }],
       },
+    });
+    const addressCall = state.calls.at(-1);
+    assert.match(addressCall.query, /cartDeliveryAddressesReplace/);
+    assert.deepEqual(addressCall.variables, {
+      cartId: "gid://shopify/Cart/cart-123",
+      addresses: [{
+        address: {
+          deliveryAddress: {
+            firstName: "Asha Rao",
+            address1: "12 Example Road",
+            city: "Chennai",
+            provinceCode: "TN",
+            zip: "600001",
+            countryCode: "IN",
+            phone: "+919876543210",
+          },
+        },
+        selected: true,
+        oneTimeUse: true,
+      }],
     });
 
     const invalid = await postBuyerIdentity({
