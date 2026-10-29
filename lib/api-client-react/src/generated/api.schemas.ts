@@ -175,6 +175,7 @@ export interface ShopifyCartResponse {
   checkoutUrl: string | null;
   totalQuantity: number;
   subtotalAmount: string;
+  discountAmount: string;
   totalAmount: string;
   currencyCode: string;
   discountCodes: ShopifyCartDiscountCode[];

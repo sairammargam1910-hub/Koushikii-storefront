@@ -273,6 +273,7 @@ export const GetShopifyCartResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({
@@ -321,6 +322,7 @@ export const AddShopifyCartLineResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({
@@ -374,6 +376,7 @@ export const UpdateShopifyCartLinesResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({
@@ -421,6 +424,7 @@ export const UpdateShopifyCartDiscountCodesResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({
@@ -485,6 +489,7 @@ export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({

@@ -74,6 +74,7 @@ type ShopifyCartNode = {
     nodes: Array<{
       id: string;
       quantity: number;
+      cost: { subtotalAmount: ShopifyMoney; totalAmount: ShopifyMoney };
       merchandise: ShopifyCartMerchandise | null;
     }>;
   };
@@ -102,6 +103,7 @@ type ShopifyCartApiResponse = {
   checkoutUrl: string | null;
   totalQuantity: number;
   subtotalAmount: string;
+  discountAmount: string;
   totalAmount: string;
   currencyCode: string;
   discountCodes: Array<{ code: string; applicable: boolean }>;
@@ -161,6 +163,10 @@ const CART_FIELDS = `#graphql
     nodes {
       id
       quantity
+      cost {
+        subtotalAmount { amount currencyCode }
+        totalAmount { amount currencyCode }
+      }
       merchandise {
         ... on ProductVariant {
           id
@@ -313,6 +319,57 @@ const isDemoListing = (product: {
     [product.title, product.description, ...product.tags].join(" "),
   ) || /\[[^\]]+\]/.test(`${product.title} ${product.description}`);
 
+function scaledMoneyAmount(amount: string, scale: number): bigint {
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(amount);
+  if (!match) throw new Error(`Invalid Shopify money amount: ${amount}`);
+  const fraction = match[3] ?? "";
+  const value = BigInt(`${match[1]}${match[2]}${fraction.padEnd(scale, "0")}`);
+  return value;
+}
+
+function formatScaledMoneyAmount(amount: bigint, scale: number): string {
+  const negative = amount < 0n;
+  const absolute = negative ? -amount : amount;
+  if (scale === 0) return `${negative ? "-" : ""}${absolute}`;
+  const divisor = 10n ** BigInt(scale);
+  const whole = absolute / divisor;
+  const fraction = (absolute % divisor).toString().padStart(scale, "0");
+  return `${negative ? "-" : ""}${whole}.${fraction}`;
+}
+
+function getCartMerchandiseSubtotalAmount(cart: ShopifyCartNode): string {
+  const amounts = cart.lines.nodes.map((line) => line.cost.subtotalAmount.amount);
+  if (amounts.length === 0) return cart.cost.subtotalAmount.amount;
+  const scale = Math.max(
+    0,
+    ...amounts.map((amount) => amount.split(".")[1]?.length ?? 0),
+  );
+  const subtotal = amounts.reduce(
+    (sum, amount) => sum + scaledMoneyAmount(amount, scale),
+    0n,
+  );
+  return formatScaledMoneyAmount(subtotal, scale);
+}
+
+function getCartDiscountAmount(cart: ShopifyCartNode): string {
+  const amounts = cart.lines.nodes.flatMap(({ cost }) => [
+    cost.subtotalAmount.amount,
+    cost.totalAmount.amount,
+  ]);
+  const scale = Math.max(
+    0,
+    ...amounts.map((amount) => amount.split(".")[1]?.length ?? 0),
+  );
+  const discounted = cart.lines.nodes.reduce(
+    (sum, line) =>
+      sum +
+      scaledMoneyAmount(line.cost.subtotalAmount.amount, scale) -
+      scaledMoneyAmount(line.cost.totalAmount.amount, scale),
+    0n,
+  );
+  return formatScaledMoneyAmount(discounted, scale);
+}
+
 function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
   const lines = cart.lines.nodes.map((line) => {
     const merchandise = line.merchandise;
@@ -339,7 +396,8 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
     id: cart.id,
     checkoutUrl: checkoutAllowed ? cart.checkoutUrl : null,
     totalQuantity: cart.totalQuantity,
-    subtotalAmount: cart.cost.subtotalAmount.amount,
+    subtotalAmount: getCartMerchandiseSubtotalAmount(cart),
+    discountAmount: getCartDiscountAmount(cart),
     totalAmount: cart.cost.totalAmount.amount,
     currencyCode: cart.cost.subtotalAmount.currencyCode,
     discountCodes: cart.discountCodes,

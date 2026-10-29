@@ -337,6 +337,12 @@ function ShopifyBag({
           <span>Subtotal before discounts</span>
           <b data-testid="text-shopify-cart-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</b>
         </div>
+        {Number(cart.discountAmount) > 0 && (
+          <div className="row" style={{ marginTop: 10 }}>
+            <span>Discount savings</span>
+            <b data-testid="text-shopify-cart-discount">-{formatShopifyMoney(cart.discountAmount, cart.currencyCode)}</b>
+          </div>
+        )}
         <div className="row" style={{ marginTop: 10 }}>
           <strong>Estimated total</strong>
           <strong data-testid="text-shopify-cart-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>

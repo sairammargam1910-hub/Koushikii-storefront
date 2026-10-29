@@ -33,6 +33,7 @@ const cartResponse = {
   checkoutUrl,
   totalQuantity: 1,
   subtotalAmount: "1250.00",
+  discountAmount: "0.00",
   totalAmount: "1250.00",
   currencyCode: "INR",
   discountCodes: [],
@@ -297,6 +298,7 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
       contentType: "application/json",
       body: JSON.stringify({
         ...cartResponse,
+        discountAmount: "125.00",
         totalAmount: "1125.00",
         discountCodes: [{ code: "SILK10", applicable: true }],
       }),
@@ -308,7 +310,33 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
   await page.getByTestId("status-shopify-discount").waitFor();
   assert.deepEqual(mutation, { cartId: savedCart.id, discountCodes: ["SILK10"] });
   assert.match(await page.getByTestId("status-shopify-discount").innerText(), /SILK10.*applied/i);
+  assert.match(await page.getByTestId("text-shopify-cart-discount").innerText(), /125/);
   assert.match(await page.getByTestId("text-shopify-cart-total").innerText(), /1,125/);
+  await context.close();
+});
+
+test("shows coupon savings separately from Shopify's address-based estimated total", async () => {
+  const savedCart = { id: "gid://shopify/Cart/address-estimate-cart", totalQuantity: 1 };
+  const { context, page } = await openCheckout({
+    savedCart,
+    onCartRequest: (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...cartResponse,
+        id: savedCart.id,
+        discountAmount: "125.00",
+        totalAmount: "1385.00",
+        discountCodes: [{ code: "SILK10", applicable: true }],
+      }),
+    }),
+  });
+
+  await page.getByTestId("text-shopify-checkout-discount").waitFor();
+  assert.match(await page.getByTestId("text-shopify-checkout-subtotal").innerText(), /1,250/);
+  assert.match(await page.getByTestId("text-shopify-checkout-discount").innerText(), /125/);
+  assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,385/);
+  assert.match(await page.getByText(/Shopify may recalculate delivery and taxes/i).innerText(), /estimated total can change/i);
   await context.close();
 });
 

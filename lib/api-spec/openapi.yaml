@@ -1261,6 +1261,8 @@ components:
           type: integer
         subtotalAmount:
           type: string
+        discountAmount:
+          type: string
         totalAmount:
           type: string
         currencyCode:
@@ -1273,7 +1275,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyCartLine"
-      required: [id, checkoutUrl, totalQuantity, subtotalAmount, totalAmount, currencyCode, discountCodes, lines]
+      required: [id, checkoutUrl, totalQuantity, subtotalAmount, discountAmount, totalAmount, currencyCode, discountCodes, lines]
     ShopifyAdminInventoryLevel:
       type: object
       required: [locationId, locationName, active, available]

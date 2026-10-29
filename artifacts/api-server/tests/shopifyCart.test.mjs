@@ -52,6 +52,10 @@ function cart(overrides = {}) {
       nodes: [{
         id: "gid://shopify/CartLine/line-123",
         quantity: 1,
+        cost: {
+          subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
+          totalAmount: { amount: "1250.00", currencyCode: "INR" },
+        },
         merchandise: {
           id: variantId,
           title: "Default",
@@ -222,7 +226,7 @@ test("forwards Shopify cart user errors and returns Shopify's checkout URL on su
 });
 
 test("applies, validates, and removes discount codes on the Shopify cart", async () => {
-  await harness(async ({ state, postDiscount }) => {
+  await harness(async ({ state, postDiscount, postBuyerIdentity }) => {
     const blank = await postDiscount({
       cartId: "gid://shopify/Cart/cart-123",
       discountCodes: ["   "],
@@ -230,14 +234,24 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     assert.equal(blank.status, 400);
     assert.equal(state.calls.length, 0);
 
-    state.cartMutationResult = {
-      cart: cart({
+    const discountedCart = cart({
         cost: {
-          subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
+          subtotalAmount: { amount: "1125.00", currencyCode: "INR" },
           totalAmount: { amount: "1125.00", currencyCode: "INR" },
         },
         discountCodes: [{ code: "SILK10", applicable: true }],
-      }),
+        lines: {
+          nodes: cart().lines.nodes.map((line) => ({
+            ...line,
+            cost: {
+              subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
+              totalAmount: { amount: "1125.00", currencyCode: "INR" },
+            },
+          })),
+        },
+      });
+    state.cartMutationResult = {
+      cart: discountedCart,
       userErrors: [],
     };
     const applied = await postDiscount({
@@ -247,12 +261,36 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     assert.equal(applied.status, 200);
     assert.deepEqual(applied.data.discountCodes, [{ code: "SILK10", applicable: true }]);
     assert.equal(applied.data.subtotalAmount, "1250.00");
+    assert.equal(applied.data.discountAmount, "125.00");
     assert.equal(applied.data.totalAmount, "1125.00");
     assert.deepEqual(state.calls.at(-1).variables, {
       cartId: "gid://shopify/Cart/cart-123",
       discountCodes: ["SILK10"],
     });
     assert.match(state.calls.at(-1).query, /cartDiscountCodesUpdate/);
+
+    const savedAddressCart = cart({
+      ...discountedCart,
+      cost: {
+        subtotalAmount: { amount: "1125.00", currencyCode: "INR" },
+        totalAmount: { amount: "1385.00", currencyCode: "INR" },
+      },
+    });
+    state.cartMutationResult = { cart: savedAddressCart, userErrors: [] };
+    const withAddress = await postBuyerIdentity({
+      cartId: "gid://shopify/Cart/cart-123",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Chennai",
+        state: "Tamil Nadu",
+        pin: "600001",
+      },
+    });
+    assert.equal(withAddress.status, 200);
+    assert.equal(withAddress.data.subtotalAmount, "1250.00");
+    assert.equal(withAddress.data.discountAmount, "125.00");
+    assert.equal(withAddress.data.totalAmount, "1385.00");
 
     state.cartMutationResult = {
       cart: cart({ discountCodes: [{ code: "EXPIRED", applicable: false }] }),

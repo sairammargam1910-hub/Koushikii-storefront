@@ -199,6 +199,12 @@ function ShopifyCheckoutReview({
           <span>Subtotal before discounts</span>
           <strong data-testid="text-shopify-checkout-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</strong>
         </div>
+        {Number(cart.discountAmount) > 0 && (
+          <div className="row" style={{ marginTop: 10 }}>
+            <span>Discount savings</span>
+            <strong data-testid="text-shopify-checkout-discount">-{formatShopifyMoney(cart.discountAmount, cart.currencyCode)}</strong>
+          </div>
+        )}
         <div className="row" style={{ marginTop: 10 }}>
           <strong>Estimated total</strong>
           <strong data-testid="text-shopify-checkout-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
@@ -214,7 +220,7 @@ function ShopifyCheckoutReview({
               : `Discount code ${discount.code} does not apply to this bag.`}
           </p>
         ))}
-        <p className="muted" style={{ fontSize: 12 }}>Shipping and applicable taxes are calculated by Shopify at checkout.</p>
+        <p className="muted" style={{ fontSize: 12 }}>Shopify may recalculate delivery and taxes at checkout, so your estimated total can change.</p>
         {canCheckout ? (
           <a className="btn" style={{ marginTop: 18 }} href={checkoutHref} data-testid="button-continue-shopify-checkout">
             <ShieldCheck size={16} /> Continue to secure Shopify checkout <ArrowRight size={14} />
