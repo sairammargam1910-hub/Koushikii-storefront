@@ -370,6 +370,14 @@ function getCartDiscountAmount(cart: ShopifyCartNode): string {
   return formatScaledMoneyAmount(discounted, scale);
 }
 
+function createCheckoutUrl(checkoutUrl: string): string {
+  const url = new URL(checkoutUrl);
+  if (process.env["SHOPIFY_DEV_STORE_PREVIEW"] === "true") {
+    url.searchParams.set("channel", "online_store");
+  }
+  return url.toString();
+}
+
 function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
   const lines = cart.lines.nodes.map((line) => {
     const merchandise = line.merchandise;
@@ -394,7 +402,7 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
 
   return {
     id: cart.id,
-    checkoutUrl: checkoutAllowed ? cart.checkoutUrl : null,
+    checkoutUrl: checkoutAllowed ? createCheckoutUrl(cart.checkoutUrl) : null,
     totalQuantity: cart.totalQuantity,
     subtotalAmount: getCartMerchandiseSubtotalAmount(cart),
     discountAmount: getCartDiscountAmount(cart),

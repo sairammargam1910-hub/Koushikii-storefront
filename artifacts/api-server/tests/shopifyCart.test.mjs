@@ -76,7 +76,14 @@ function cart(overrides = {}) {
   };
 }
 
-async function harness(run) {
+async function harness(run, { useDevStorePreview = false } = {}) {
+  const previousDevStorePreview = process.env.SHOPIFY_DEV_STORE_PREVIEW;
+  if (useDevStorePreview) {
+    process.env.SHOPIFY_DEV_STORE_PREVIEW = "true";
+  } else {
+    delete process.env.SHOPIFY_DEV_STORE_PREVIEW;
+  }
+
   const state = {
     availableCountries: ["IN"],
     variant: {
@@ -163,6 +170,11 @@ async function harness(run) {
     await run({ state, post, postDiscount, postBuyerIdentity, getCart });
   } finally {
     await new Promise((resolve) => server.close(resolve));
+    if (previousDevStorePreview === undefined) {
+      delete process.env.SHOPIFY_DEV_STORE_PREVIEW;
+    } else {
+      process.env.SHOPIFY_DEV_STORE_PREVIEW = previousDevStorePreview;
+    }
   }
 }
 
@@ -223,6 +235,20 @@ test("forwards Shopify cart user errors and returns Shopify's checkout URL on su
     assert.equal(successful.data.id, "gid://shopify/Cart/cart-123");
     assert.equal(successful.data.totalAmount, "1250.00");
   });
+});
+
+test("adds the online-store channel to password-protected preview checkout URLs", async () => {
+  await harness(async ({ state, post }) => {
+    state.cartMutationResult.cart.checkoutUrl = `${checkoutUrl}?key=fixture-checkout-key`;
+
+    const result = await post({ merchandiseId: variantId, quantity: 1 });
+
+    assert.equal(result.status, 200);
+    const resultUrl = new URL(result.data.checkoutUrl);
+    assert.equal(resultUrl.pathname, "/checkouts/test-checkout");
+    assert.equal(resultUrl.searchParams.get("key"), "fixture-checkout-key");
+    assert.equal(resultUrl.searchParams.get("channel"), "online_store");
+  }, { useDevStorePreview: true });
 });
 
 test("applies, validates, and removes discount codes on the Shopify cart", async () => {

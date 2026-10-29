@@ -23,3 +23,4 @@ timeoutMs = 20000
 
 [userenv.shared]
 MERCHANT_ADMIN_EMAIL = "sree.koushikii.2025@gmail.com,sairammargam1910@gmail.com"
+SHOPIFY_DEV_STORE_PREVIEW = "true"
