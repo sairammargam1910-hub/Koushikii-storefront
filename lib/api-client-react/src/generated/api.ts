@@ -23,6 +23,14 @@ import type {
   ApiError,
   GetShopifyCartParams,
   HealthStatus,
+  ShopifyAdminArchiveResponse,
+  ShopifyAdminDiscountInput,
+  ShopifyAdminDiscountResponse,
+  ShopifyAdminDiscountsResponse,
+  ShopifyAdminProductInput,
+  ShopifyAdminProductResponse,
+  ShopifyAdminProductUpdate,
+  ShopifyAdminProductsResponse,
   ShopifyCartAddInput,
   ShopifyCartResponse,
   ShopifyCartUpdateInput,
@@ -473,5 +481,579 @@ export const useUpdateShopifyCartLines = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getUpdateShopifyCartLinesMutationOptions(options));
+    }
+
+export const getGetShopifyAdminProductsUrl = () => {
+
+
+
+
+  return `/api/shopify/admin/products`
+}
+
+/**
+ * Lists Shopify products for the authenticated store owner.
+ * @summary List products for the merchant dashboard
+ */
+export const getShopifyAdminProducts = async ( options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductsResponse> => {
+
+  return customFetch<ShopifyAdminProductsResponse>(getGetShopifyAdminProductsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyAdminProductsQueryKey = () => {
+    return [
+    `/api/shopify/admin/products`
+    ] as const;
+    }
+
+
+export const getGetShopifyAdminProductsQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyAdminProducts>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyAdminProductsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyAdminProducts>>> = ({ signal }) => getShopifyAdminProducts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProducts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyAdminProductsQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyAdminProducts>>>
+export type GetShopifyAdminProductsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List products for the merchant dashboard
+ */
+
+export function useGetShopifyAdminProducts<TData = Awaited<ReturnType<typeof getShopifyAdminProducts>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyAdminProductsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateShopifyAdminProductUrl = () => {
+
+
+
+
+  return `/api/shopify/admin/products`
+}
+
+/**
+ * Creates a single-variant saree product and optionally publishes it to the storefront.
+ * @summary Create a Shopify product
+ */
+export const createShopifyAdminProduct = async (shopifyAdminProductInput: ShopifyAdminProductInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyAdminProductResponse>(getCreateShopifyAdminProductUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyAdminProductInput)
+  }
+);}
+
+
+
+
+
+export const getCreateShopifyAdminProductMutationKey = () => ['createShopifyAdminProduct'] as const;
+
+export const getCreateShopifyAdminProductMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopifyAdminProduct>>, TError,CreateShopifyAdminProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShopifyAdminProduct>>, TError,CreateShopifyAdminProductMutationVariables, TContext> => {
+
+const mutationKey = getCreateShopifyAdminProductMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShopifyAdminProduct>>, CreateShopifyAdminProductMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createShopifyAdminProduct(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShopifyAdminProductMutationResult = NonNullable<Awaited<ReturnType<typeof createShopifyAdminProduct>>>
+    export type CreateShopifyAdminProductMutationBody = BodyType<ShopifyAdminProductInput>
+    export type CreateShopifyAdminProductMutationError = ErrorType<ApiError>
+    export type CreateShopifyAdminProductMutationVariables = {data: BodyType<ShopifyAdminProductInput>}
+
+    /**
+ * @summary Create a Shopify product
+ */
+export const useCreateShopifyAdminProduct = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopifyAdminProduct>>, TError,CreateShopifyAdminProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createShopifyAdminProduct>>,
+        TError,
+        CreateShopifyAdminProductMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateShopifyAdminProductMutationOptions(options));
+    }
+
+export const getUpdateShopifyAdminProductUrl = (productId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${productId}`
+}
+
+/**
+ * Updates product details, price, stock, or storefront publication.
+ * @summary Update a Shopify product
+ */
+export const updateShopifyAdminProduct = async (productId: string,
+    shopifyAdminProductUpdate: ShopifyAdminProductUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyAdminProductResponse>(getUpdateShopifyAdminProductUrl(productId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyAdminProductUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateShopifyAdminProductMutationKey = () => ['updateShopifyAdminProduct'] as const;
+
+export const getUpdateShopifyAdminProductMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminProduct>>, TError,UpdateShopifyAdminProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminProduct>>, TError,UpdateShopifyAdminProductMutationVariables, TContext> => {
+
+const mutationKey = getUpdateShopifyAdminProductMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShopifyAdminProduct>>, UpdateShopifyAdminProductMutationVariables> = (props) => {
+          const {productId,data} = props ?? {};
+
+          return  updateShopifyAdminProduct(productId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateShopifyAdminProductMutationResult = NonNullable<Awaited<ReturnType<typeof updateShopifyAdminProduct>>>
+    export type UpdateShopifyAdminProductMutationBody = BodyType<ShopifyAdminProductUpdate>
+    export type UpdateShopifyAdminProductMutationError = ErrorType<ApiError>
+    export type UpdateShopifyAdminProductMutationVariables = {productId: string;data: BodyType<ShopifyAdminProductUpdate>}
+
+    /**
+ * @summary Update a Shopify product
+ */
+export const useUpdateShopifyAdminProduct = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminProduct>>, TError,UpdateShopifyAdminProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateShopifyAdminProduct>>,
+        TError,
+        UpdateShopifyAdminProductMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateShopifyAdminProductMutationOptions(options));
+    }
+
+export const getArchiveShopifyAdminProductUrl = (productId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${productId}`
+}
+
+/**
+ * Archives the product in Shopify so it is hidden without deleting its history.
+ * @summary Archive a Shopify product
+ */
+export const archiveShopifyAdminProduct = async (productId: string, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminArchiveResponse> => {
+
+  return customFetch<ShopifyAdminArchiveResponse>(getArchiveShopifyAdminProductUrl(productId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getArchiveShopifyAdminProductMutationKey = () => ['archiveShopifyAdminProduct'] as const;
+
+export const getArchiveShopifyAdminProductMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveShopifyAdminProduct>>, TError,ArchiveShopifyAdminProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof archiveShopifyAdminProduct>>, TError,ArchiveShopifyAdminProductMutationVariables, TContext> => {
+
+const mutationKey = getArchiveShopifyAdminProductMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archiveShopifyAdminProduct>>, ArchiveShopifyAdminProductMutationVariables> = (props) => {
+          const {productId} = props ?? {};
+
+          return  archiveShopifyAdminProduct(productId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchiveShopifyAdminProductMutationResult = NonNullable<Awaited<ReturnType<typeof archiveShopifyAdminProduct>>>
+
+    export type ArchiveShopifyAdminProductMutationError = ErrorType<ApiError>
+    export type ArchiveShopifyAdminProductMutationVariables = {productId: string}
+
+    /**
+ * @summary Archive a Shopify product
+ */
+export const useArchiveShopifyAdminProduct = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveShopifyAdminProduct>>, TError,ArchiveShopifyAdminProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof archiveShopifyAdminProduct>>,
+        TError,
+        ArchiveShopifyAdminProductMutationVariables,
+        TContext
+      > => {
+      return useMutation(getArchiveShopifyAdminProductMutationOptions(options));
+    }
+
+export const getGetShopifyAdminDiscountsUrl = () => {
+
+
+
+
+  return `/api/shopify/admin/discounts`
+}
+
+/**
+ * Lists discount codes for the authenticated store owner.
+ * @summary List Shopify discount codes
+ */
+export const getShopifyAdminDiscounts = async ( options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminDiscountsResponse> => {
+
+  return customFetch<ShopifyAdminDiscountsResponse>(getGetShopifyAdminDiscountsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyAdminDiscountsQueryKey = () => {
+    return [
+    `/api/shopify/admin/discounts`
+    ] as const;
+    }
+
+
+export const getGetShopifyAdminDiscountsQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyAdminDiscounts>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminDiscounts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyAdminDiscountsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyAdminDiscounts>>> = ({ signal }) => getShopifyAdminDiscounts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminDiscounts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyAdminDiscountsQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyAdminDiscounts>>>
+export type GetShopifyAdminDiscountsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List Shopify discount codes
+ */
+
+export function useGetShopifyAdminDiscounts<TData = Awaited<ReturnType<typeof getShopifyAdminDiscounts>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminDiscounts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyAdminDiscountsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateShopifyAdminDiscountUrl = () => {
+
+
+
+
+  return `/api/shopify/admin/discounts`
+}
+
+/**
+ * Creates a Shopify discount code for all products.
+ * @summary Create a percentage discount code
+ */
+export const createShopifyAdminDiscount = async (shopifyAdminDiscountInput: ShopifyAdminDiscountInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminDiscountResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyAdminDiscountResponse>(getCreateShopifyAdminDiscountUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyAdminDiscountInput)
+  }
+);}
+
+
+
+
+
+export const getCreateShopifyAdminDiscountMutationKey = () => ['createShopifyAdminDiscount'] as const;
+
+export const getCreateShopifyAdminDiscountMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopifyAdminDiscount>>, TError,CreateShopifyAdminDiscountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShopifyAdminDiscount>>, TError,CreateShopifyAdminDiscountMutationVariables, TContext> => {
+
+const mutationKey = getCreateShopifyAdminDiscountMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShopifyAdminDiscount>>, CreateShopifyAdminDiscountMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createShopifyAdminDiscount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShopifyAdminDiscountMutationResult = NonNullable<Awaited<ReturnType<typeof createShopifyAdminDiscount>>>
+    export type CreateShopifyAdminDiscountMutationBody = BodyType<ShopifyAdminDiscountInput>
+    export type CreateShopifyAdminDiscountMutationError = ErrorType<ApiError>
+    export type CreateShopifyAdminDiscountMutationVariables = {data: BodyType<ShopifyAdminDiscountInput>}
+
+    /**
+ * @summary Create a percentage discount code
+ */
+export const useCreateShopifyAdminDiscount = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopifyAdminDiscount>>, TError,CreateShopifyAdminDiscountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createShopifyAdminDiscount>>,
+        TError,
+        CreateShopifyAdminDiscountMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateShopifyAdminDiscountMutationOptions(options));
+    }
+
+export const getDeactivateShopifyAdminDiscountUrl = (discountId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/discounts/${discountId}`
+}
+
+/**
+ * Deactivates the discount code without permanently deleting its record.
+ * @summary Deactivate a Shopify discount code
+ */
+export const deactivateShopifyAdminDiscount = async (discountId: string, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminArchiveResponse> => {
+
+  return customFetch<ShopifyAdminArchiveResponse>(getDeactivateShopifyAdminDiscountUrl(discountId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeactivateShopifyAdminDiscountMutationKey = () => ['deactivateShopifyAdminDiscount'] as const;
+
+export const getDeactivateShopifyAdminDiscountMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateShopifyAdminDiscount>>, TError,DeactivateShopifyAdminDiscountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deactivateShopifyAdminDiscount>>, TError,DeactivateShopifyAdminDiscountMutationVariables, TContext> => {
+
+const mutationKey = getDeactivateShopifyAdminDiscountMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateShopifyAdminDiscount>>, DeactivateShopifyAdminDiscountMutationVariables> = (props) => {
+          const {discountId} = props ?? {};
+
+          return  deactivateShopifyAdminDiscount(discountId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeactivateShopifyAdminDiscountMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateShopifyAdminDiscount>>>
+
+    export type DeactivateShopifyAdminDiscountMutationError = ErrorType<ApiError>
+    export type DeactivateShopifyAdminDiscountMutationVariables = {discountId: string}
+
+    /**
+ * @summary Deactivate a Shopify discount code
+ */
+export const useDeactivateShopifyAdminDiscount = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateShopifyAdminDiscount>>, TError,DeactivateShopifyAdminDiscountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deactivateShopifyAdminDiscount>>,
+        TError,
+        DeactivateShopifyAdminDiscountMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeactivateShopifyAdminDiscountMutationOptions(options));
     }
 

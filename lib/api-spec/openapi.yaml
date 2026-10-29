@@ -150,6 +150,290 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/admin/products:
+    get:
+      operationId: getShopifyAdminProducts
+      tags: [shopify]
+      summary: List products for the merchant dashboard
+      description: Lists Shopify products for the authenticated store owner.
+      responses:
+        "200":
+          description: Shopify product catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductsResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify products could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: createShopifyAdminProduct
+      tags: [shopify]
+      summary: Create a Shopify product
+      description: Creates a single-variant saree product and optionally publishes it to the storefront.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminProductInput"
+      responses:
+        "201":
+          description: Shopify product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductResponse"
+        "400":
+          description: Product details are invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify product could not be created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/admin/products/{productId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+    patch:
+      operationId: updateShopifyAdminProduct
+      tags: [shopify]
+      summary: Update a Shopify product
+      description: Updates product details, price, stock, or storefront publication.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminProductUpdate"
+      responses:
+        "200":
+          description: Shopify product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductResponse"
+        "400":
+          description: Product details are invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify product was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify product could not be updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: archiveShopifyAdminProduct
+      tags: [shopify]
+      summary: Archive a Shopify product
+      description: Archives the product in Shopify so it is hidden without deleting its history.
+      responses:
+        "200":
+          description: Shopify product archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminArchiveResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify product was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify product could not be archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/admin/discounts:
+    get:
+      operationId: getShopifyAdminDiscounts
+      tags: [shopify]
+      summary: List Shopify discount codes
+      description: Lists discount codes for the authenticated store owner.
+      responses:
+        "200":
+          description: Shopify discount codes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminDiscountsResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify discount codes could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: createShopifyAdminDiscount
+      tags: [shopify]
+      summary: Create a percentage discount code
+      description: Creates a Shopify discount code for all products.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminDiscountInput"
+      responses:
+        "201":
+          description: Shopify discount code created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminDiscountResponse"
+        "400":
+          description: Discount details are invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify discount code could not be created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/admin/discounts/{discountId}:
+    parameters:
+      - name: discountId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+    delete:
+      operationId: deactivateShopifyAdminDiscount
+      tags: [shopify]
+      summary: Deactivate a Shopify discount code
+      description: Deactivates the discount code without permanently deleting its record.
+      responses:
+        "200":
+          description: Shopify discount deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminArchiveResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify discount was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify discount could not be deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -327,4 +611,193 @@ components:
           items:
             $ref: "#/components/schemas/ShopifyCartLine"
       required: [id, checkoutUrl, totalQuantity, subtotalAmount, currencyCode, lines]
+    ShopifyAdminProductVariant:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        price:
+          type: string
+        inventoryQuantity:
+          type: ["integer", "null"]
+        inventoryTracked:
+          type: boolean
+      required: [id, title, price, inventoryQuantity, inventoryTracked]
+    ShopifyAdminProduct:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        handle:
+          type: string
+        description:
+          type: string
+        productType:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, DRAFT, ARCHIVED]
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: ["string", "null"]
+          format: uri
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminProductVariant"
+      required: [id, title, handle, description, productType, status, tags, imageUrl, variants]
+    ShopifyAdminProductsResponse:
+      type: object
+      properties:
+        currencyCode:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminProduct"
+      required: [currencyCode, products]
+    ShopifyAdminProductInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 10000
+        productType:
+          type: string
+          maxLength: 100
+        tags:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 100
+        price:
+          type: number
+          exclusiveMinimum: 0
+        inventoryQuantity:
+          type: integer
+          minimum: 0
+        imageUrl:
+          type: ["string", "null"]
+          format: uri
+        publishToWebsite:
+          type: boolean
+      required: [title, description, productType, tags, price, inventoryQuantity, publishToWebsite]
+    ShopifyAdminProductUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 10000
+        productType:
+          type: string
+          maxLength: 100
+        tags:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 100
+        price:
+          type: number
+          exclusiveMinimum: 0
+        inventoryQuantity:
+          type: integer
+          minimum: 0
+        imageUrl:
+          type: ["string", "null"]
+          format: uri
+        publishToWebsite:
+          type: boolean
+    ShopifyAdminProductResponse:
+      type: object
+      properties:
+        currencyCode:
+          type: string
+        product:
+          $ref: "#/components/schemas/ShopifyAdminProduct"
+      required: [currencyCode, product]
+    ShopifyAdminArchiveResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+    ShopifyAdminDiscount:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        code:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, EXPIRED, SCHEDULED]
+        percentage:
+          type: number
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: ["string", "null"]
+          format: date-time
+      required: [id, title, code, status, percentage, startsAt, endsAt]
+    ShopifyAdminDiscountsResponse:
+      type: object
+      properties:
+        discounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminDiscount"
+      required: [discounts]
+    ShopifyAdminDiscountInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        percentage:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 100
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: ["string", "null"]
+          format: date-time
+        usageLimit:
+          type: integer
+          minimum: 1
+        appliesOncePerCustomer:
+          type: boolean
+      required: [title, code, percentage, appliesOncePerCustomer]
+    ShopifyAdminDiscountResponse:
+      type: object
+      properties:
+        discount:
+          $ref: "#/components/schemas/ShopifyAdminDiscount"
+      required: [discount]
 

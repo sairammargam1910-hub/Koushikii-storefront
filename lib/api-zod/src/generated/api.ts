@@ -178,3 +178,231 @@ export const UpdateShopifyCartLinesResponse = zod.object({
 })
 
 
+/**
+ * Lists Shopify products for the authenticated store owner.
+ * @summary List products for the merchant dashboard
+ */
+export const GetShopifyAdminProductsResponse = zod.object({
+  "currencyCode": zod.string(),
+  "products": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "handle": zod.string(),
+  "description": zod.string(),
+  "productType": zod.string(),
+  "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  "tags": zod.array(zod.string()),
+  "imageUrl": zod.string().url().nullable(),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "price": zod.string(),
+  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryTracked": zod.boolean()
+}))
+}))
+})
+
+
+/**
+ * Creates a single-variant saree product and optionally publishes it to the storefront.
+ * @summary Create a Shopify product
+ */
+export const createShopifyAdminProductBodyTitleMax = 255;
+
+export const createShopifyAdminProductBodyDescriptionMax = 10000;
+
+export const createShopifyAdminProductBodyProductTypeMax = 100;
+
+export const createShopifyAdminProductBodyTagsItemMax = 100;
+
+export const createShopifyAdminProductBodyTagsMax = 20;
+
+export const createShopifyAdminProductBodyPriceExclusiveMin = 0;
+
+export const createShopifyAdminProductBodyInventoryQuantityMin = 0;
+
+
+
+export const CreateShopifyAdminProductBody = zod.object({
+  "title": zod.string().min(1).max(createShopifyAdminProductBodyTitleMax),
+  "description": zod.string().max(createShopifyAdminProductBodyDescriptionMax),
+  "productType": zod.string().max(createShopifyAdminProductBodyProductTypeMax),
+  "tags": zod.array(zod.string().max(createShopifyAdminProductBodyTagsItemMax)).max(createShopifyAdminProductBodyTagsMax),
+  "price": zod.number().gt(createShopifyAdminProductBodyPriceExclusiveMin),
+  "inventoryQuantity": zod.number().int().min(createShopifyAdminProductBodyInventoryQuantityMin),
+  "imageUrl": zod.string().url().nullish(),
+  "publishToWebsite": zod.boolean()
+})
+
+export const CreateShopifyAdminProductResponse = zod.object({
+  "currencyCode": zod.string(),
+  "product": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "handle": zod.string(),
+  "description": zod.string(),
+  "productType": zod.string(),
+  "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  "tags": zod.array(zod.string()),
+  "imageUrl": zod.string().url().nullable(),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "price": zod.string(),
+  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryTracked": zod.boolean()
+}))
+})
+})
+
+
+/**
+ * Updates product details, price, stock, or storefront publication.
+ * @summary Update a Shopify product
+ */
+export const updateShopifyAdminProductPathProductIdMax = 200;
+
+
+
+export const UpdateShopifyAdminProductParams = zod.object({
+  "productId": zod.coerce.string().min(1).max(updateShopifyAdminProductPathProductIdMax)
+})
+
+export const updateShopifyAdminProductBodyTitleMax = 255;
+
+export const updateShopifyAdminProductBodyDescriptionMax = 10000;
+
+export const updateShopifyAdminProductBodyProductTypeMax = 100;
+
+export const updateShopifyAdminProductBodyTagsItemMax = 100;
+
+export const updateShopifyAdminProductBodyTagsMax = 20;
+
+export const updateShopifyAdminProductBodyPriceExclusiveMin = 0;
+
+export const updateShopifyAdminProductBodyInventoryQuantityMin = 0;
+
+
+
+export const UpdateShopifyAdminProductBody = zod.object({
+  "title": zod.string().min(1).max(updateShopifyAdminProductBodyTitleMax).optional(),
+  "description": zod.string().max(updateShopifyAdminProductBodyDescriptionMax).optional(),
+  "productType": zod.string().max(updateShopifyAdminProductBodyProductTypeMax).optional(),
+  "tags": zod.array(zod.string().max(updateShopifyAdminProductBodyTagsItemMax)).max(updateShopifyAdminProductBodyTagsMax).optional(),
+  "price": zod.number().gt(updateShopifyAdminProductBodyPriceExclusiveMin).optional(),
+  "inventoryQuantity": zod.number().int().min(updateShopifyAdminProductBodyInventoryQuantityMin).optional(),
+  "imageUrl": zod.string().url().nullish(),
+  "publishToWebsite": zod.boolean().optional()
+})
+
+export const UpdateShopifyAdminProductResponse = zod.object({
+  "currencyCode": zod.string(),
+  "product": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "handle": zod.string(),
+  "description": zod.string(),
+  "productType": zod.string(),
+  "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  "tags": zod.array(zod.string()),
+  "imageUrl": zod.string().url().nullable(),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "price": zod.string(),
+  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryTracked": zod.boolean()
+}))
+})
+})
+
+
+/**
+ * Archives the product in Shopify so it is hidden without deleting its history.
+ * @summary Archive a Shopify product
+ */
+export const archiveShopifyAdminProductPathProductIdMax = 200;
+
+
+
+export const ArchiveShopifyAdminProductParams = zod.object({
+  "productId": zod.coerce.string().min(1).max(archiveShopifyAdminProductPathProductIdMax)
+})
+
+export const ArchiveShopifyAdminProductResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * Lists discount codes for the authenticated store owner.
+ * @summary List Shopify discount codes
+ */
+export const GetShopifyAdminDiscountsResponse = zod.object({
+  "discounts": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "code": zod.string(),
+  "status": zod.enum(['ACTIVE', 'EXPIRED', 'SCHEDULED']),
+  "percentage": zod.number(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date().nullable()
+}))
+})
+
+
+/**
+ * Creates a Shopify discount code for all products.
+ * @summary Create a percentage discount code
+ */
+export const createShopifyAdminDiscountBodyTitleMax = 255;
+
+export const createShopifyAdminDiscountBodyCodeMax = 64;
+
+export const createShopifyAdminDiscountBodyPercentageExclusiveMin = 0;
+export const createShopifyAdminDiscountBodyPercentageMax = 100;
+
+
+
+
+export const CreateShopifyAdminDiscountBody = zod.object({
+  "title": zod.string().min(1).max(createShopifyAdminDiscountBodyTitleMax),
+  "code": zod.string().min(1).max(createShopifyAdminDiscountBodyCodeMax),
+  "percentage": zod.number().gt(createShopifyAdminDiscountBodyPercentageExclusiveMin).max(createShopifyAdminDiscountBodyPercentageMax),
+  "startsAt": zod.coerce.date().optional(),
+  "endsAt": zod.coerce.date().nullish(),
+  "usageLimit": zod.number().int().min(1).optional(),
+  "appliesOncePerCustomer": zod.boolean()
+})
+
+export const CreateShopifyAdminDiscountResponse = zod.object({
+  "discount": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "code": zod.string(),
+  "status": zod.enum(['ACTIVE', 'EXPIRED', 'SCHEDULED']),
+  "percentage": zod.number(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date().nullable()
+})
+})
+
+
+/**
+ * Deactivates the discount code without permanently deleting its record.
+ * @summary Deactivate a Shopify discount code
+ */
+export const deactivateShopifyAdminDiscountPathDiscountIdMax = 200;
+
+
+
+export const DeactivateShopifyAdminDiscountParams = zod.object({
+  "discountId": zod.coerce.string().min(1).max(deactivateShopifyAdminDiscountPathDiscountIdMax)
+})
+
+export const DeactivateShopifyAdminDiscountResponse = zod.object({
+  "success": zod.boolean()
+})
+
+

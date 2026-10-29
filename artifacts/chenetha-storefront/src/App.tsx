@@ -1,10 +1,13 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
+import { Redirect, Route, Switch, useLocation, Router as WouterRouter } from "wouter";
+import { ClerkProvider, Show, SignIn, SignUp, useClerk } from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
+import { shadcn } from "@clerk/themes";
 import { Home } from "./storefront/Home";
 import { Collections } from "./storefront/Collections";
 import { Product } from "./storefront/Product";
@@ -20,14 +23,73 @@ import { Account } from "./storefront/Account";
 import { Profile } from "./storefront/Profile";
 import { Orders } from "./storefront/Orders";
 import { Videos } from "./storefront/Videos";
+import { AdminDashboard, AdminDiscounts, AdminProducts, AdminSignInPrompt } from "./admin/Admin";
 
 const queryClient = new QueryClient();
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const clerkPublishableKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: "clerk",
+  options: {
+    logoPlacement: "inside" as const,
+    logoLinkUrl: basePath || "/",
+    logoImageUrl: `${window.location.origin}${basePath}/favicon.svg`,
+  },
+  variables: {
+    colorPrimary: "#B22222",
+    colorForeground: "#332a25",
+    colorMutedForeground: "#75675e",
+    colorDanger: "#9e2d25",
+    colorBackground: "#fbf7ef",
+    colorInput: "#fffdf9",
+    colorInputForeground: "#332a25",
+    colorNeutral: "#d8cbbb",
+    fontFamily: "'DM Sans', sans-serif",
+    borderRadius: "6px",
+  },
+  elements: {
+    rootBox: "w-full flex justify-center",
+    cardBox: "bg-[#fbf7ef] rounded-xl w-[440px] max-w-full overflow-hidden",
+    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
+    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
+    headerTitle: "text-[#332a25] font-semibold",
+    headerSubtitle: "text-[#75675e]",
+    socialButtonsBlockButtonText: "text-[#332a25] font-medium",
+    formFieldLabel: "text-[#4b3e37] font-medium",
+    footerActionLink: "text-[#9d1d22] font-semibold",
+    footerActionText: "text-[#75675e]",
+    dividerText: "text-[#75675e]",
+    identityPreviewEditButton: "text-[#9d1d22]",
+    formFieldSuccessText: "text-[#3d684b]",
+    alertText: "text-[#332a25]",
+    logoBox: "rounded-lg",
+    logoImage: "object-contain",
+    socialButtonsBlockButton: "border-[#d8cbbb] bg-[#fffdf9] hover:bg-[#f4eee4]",
+    formButtonPrimary: "bg-[#B22222] hover:bg-[#8f1b1b] text-white",
+    formFieldInput: "border-[#d8cbbb] bg-[#fffdf9] text-[#332a25]",
+    footerAction: "text-[#75675e]",
+    dividerLine: "bg-[#d8cbbb]",
+    alert: "border-[#d8cbbb] bg-[#fff8f1]",
+    otpCodeFieldInput: "border-[#d8cbbb] bg-[#fffdf9] text-[#332a25]",
+    formFieldRow: "text-[#332a25]",
+    main: "text-[#332a25]",
+  },
+};
+
 const pageTitles: Record<string,string> = {
   "/": "Home", "/Home": "Home", "/Collections": "Collections", "/Product": "Textile details",
   "/Cart": "Your bag", "/Wishlist": "Wishlist", "/Checkout": "Secure checkout",
   "/Confirmation": "WhatsApp handoff", "/OurStory": "Our story", "/Contact": "Contact",
   "/CustomerCare": "Customer care", "/SareeCare": "Saree care", "/Account": "Saved preferences",
-  "/Profile": "Your details", "/Orders": "Order information", "/Videos": "Videos"
+  "/Profile": "Your details", "/Orders": "Order information", "/Videos": "Videos",
+  "/admin": "Merchant workroom", "/admin/products": "Manage products",
+  "/admin/discounts": "Manage discounts", "/sign-in": "Merchant sign in",
+  "/sign-up": "Merchant account",
 };
 
 function Metadata() {
@@ -46,12 +108,38 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
+function ProtectedAdmin({ page }: { page: ReactNode }) {
+  return <Show when="signed-in" fallback={<AdminSignInPrompt/>}>{page}</Show>;
+}
+
+function HomeRedirect() {
+  return (
+    <>
+      <Show when="signed-in"><Redirect to="/admin" /></Show>
+      <Show when="signed-out"><Home /></Show>
+    </>
+  );
+}
+
+function SignInPage() {
+  return <div className="clerk-screen"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/admin`}/></div>;
+}
+
+function SignUpPage() {
+  return <div className="clerk-screen"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={`${basePath}/admin`}/></div>;
+}
+
 function Router() {
   return <>
     <Metadata/>
     <RoutedErrorBoundary>
       <Switch>
-        <Route path="/" component={Home}/>
+        <Route path="/sign-in/*?" component={SignInPage}/>
+        <Route path="/sign-up/*?" component={SignUpPage}/>
+        <Route path="/admin"><ProtectedAdmin page={<AdminDashboard/>}/></Route>
+        <Route path="/admin/products"><ProtectedAdmin page={<AdminProducts/>}/></Route>
+        <Route path="/admin/discounts"><ProtectedAdmin page={<AdminDiscounts/>}/></Route>
+          <Route path="/" component={HomeRedirect}/>
         <Route path="/Home" component={Home}/>
         <Route path="/Collections" component={Collections}/>
         <Route path="/Product" component={Product}/>
@@ -73,10 +161,58 @@ function Router() {
   </>;
 }
 
+function ClerkCacheInvalidator() {
+  const { addListener } = useClerk();
+  const previousUserId = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (
+        previousUserId.current !== undefined &&
+        previousUserId.current !== userId
+      ) {
+        queryClient.clear();
+      }
+      previousUserId.current = userId;
+    });
+    return unsubscribe;
+  }, [addListener]);
+
+  return null;
+}
+
+function ClerkApp() {
+  const [, setLocation] = useLocation();
+  const stripBase = (path: string) =>
+    basePath && path.startsWith(basePath)
+      ? path.slice(basePath.length) || "/"
+      : path;
+
+  return (
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      proxyUrl={clerkProxyUrl}
+      appearance={clerkAppearance}
+      signInUrl={`${basePath}/sign-in`}
+      signUpUrl={`${basePath}/sign-up`}
+      localization={{
+        signIn: { start: { title: "Welcome back", subtitle: "Sign in to manage the Chenetha store" } },
+        signUp: { start: { title: "Merchant account", subtitle: "Create an account to request store access" } },
+      }}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
+      <ClerkCacheInvalidator />
+      <Router />
+    </ClerkProvider>
+  );
+}
+
 function App() {
   return <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <WouterRouter><Router/></WouterRouter>
+      <WouterRouter base={basePath}><ClerkApp/></WouterRouter>
       <Toaster/>
     </TooltipProvider>
   </QueryClientProvider>;

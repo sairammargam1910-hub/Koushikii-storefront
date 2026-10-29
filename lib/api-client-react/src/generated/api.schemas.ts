@@ -118,6 +118,151 @@ export interface ShopifyCartResponse {
   lines: ShopifyCartLine[];
 }
 
+export interface ShopifyAdminProductVariant {
+  id: string;
+  title: string;
+  price: string;
+  /** @nullable */
+  inventoryQuantity: number | null;
+  inventoryTracked: boolean;
+}
+
+export type ShopifyAdminProductStatus = typeof ShopifyAdminProductStatus[keyof typeof ShopifyAdminProductStatus];
+
+
+export const ShopifyAdminProductStatus = {
+  ACTIVE: 'ACTIVE',
+  DRAFT: 'DRAFT',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+export interface ShopifyAdminProduct {
+  id: string;
+  title: string;
+  handle: string;
+  description: string;
+  productType: string;
+  status: ShopifyAdminProductStatus;
+  tags: string[];
+  /** @nullable */
+  imageUrl: string | null;
+  variants: ShopifyAdminProductVariant[];
+}
+
+export interface ShopifyAdminProductsResponse {
+  currencyCode: string;
+  products: ShopifyAdminProduct[];
+}
+
+export interface ShopifyAdminProductInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  title: string;
+  /** @maxLength 10000 */
+  description: string;
+  /** @maxLength 100 */
+  productType: string;
+  /**
+     * @maxItems 20
+     * @items.maxLength 100
+     */
+  tags: string[];
+  /** @exclusiveMinimum 0 */
+  price: number;
+  /** @minimum 0 */
+  inventoryQuantity: number;
+  /** @nullable */
+  imageUrl?: string | null;
+  publishToWebsite: boolean;
+}
+
+export interface ShopifyAdminProductUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  title?: string;
+  /** @maxLength 10000 */
+  description?: string;
+  /** @maxLength 100 */
+  productType?: string;
+  /**
+     * @maxItems 20
+     * @items.maxLength 100
+     */
+  tags?: string[];
+  /** @exclusiveMinimum 0 */
+  price?: number;
+  /** @minimum 0 */
+  inventoryQuantity?: number;
+  /** @nullable */
+  imageUrl?: string | null;
+  publishToWebsite?: boolean;
+}
+
+export interface ShopifyAdminProductResponse {
+  currencyCode: string;
+  product: ShopifyAdminProduct;
+}
+
+export interface ShopifyAdminArchiveResponse {
+  success: boolean;
+}
+
+export type ShopifyAdminDiscountStatus = typeof ShopifyAdminDiscountStatus[keyof typeof ShopifyAdminDiscountStatus];
+
+
+export const ShopifyAdminDiscountStatus = {
+  ACTIVE: 'ACTIVE',
+  EXPIRED: 'EXPIRED',
+  SCHEDULED: 'SCHEDULED',
+} as const;
+
+export interface ShopifyAdminDiscount {
+  id: string;
+  title: string;
+  code: string;
+  status: ShopifyAdminDiscountStatus;
+  percentage: number;
+  startsAt: string;
+  /** @nullable */
+  endsAt: string | null;
+}
+
+export interface ShopifyAdminDiscountsResponse {
+  discounts: ShopifyAdminDiscount[];
+}
+
+export interface ShopifyAdminDiscountInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 64
+     */
+  code: string;
+  /**
+     * @maximum 100
+     * @exclusiveMinimum 0
+     */
+  percentage: number;
+  startsAt?: string;
+  /** @nullable */
+  endsAt?: string | null;
+  /** @minimum 1 */
+  usageLimit?: number;
+  appliesOncePerCustomer: boolean;
+}
+
+export interface ShopifyAdminDiscountResponse {
+  discount: ShopifyAdminDiscount;
+}
+
 export type GetShopifyCartParams = {
 /**
  * @minLength 1
