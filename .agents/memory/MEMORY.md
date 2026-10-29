@@ -2,3 +2,4 @@
 - [Artifact workflow ports](artifact-workflow-ports.md) — if a restart hits EADDRINUSE, stop the managed service and confirm its port is clear before restarting.
 - [Shopify API contracts](shopify-api-version-contracts.md) — verify inventory examples against the connected version; newer schemas require different comparison and idempotency inputs.
 - [Browser API fixtures](browser-api-fixtures.md) — mock APIs before navigation and wrap storefront pages with their Clerk and router providers.
+- [Clerk redirect routing](clerk-auth-routing.md) — Clerk may convert relative redirect targets to absolute same-origin URLs when auth screens switch.

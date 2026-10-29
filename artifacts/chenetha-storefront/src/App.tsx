@@ -88,8 +88,8 @@ const pageTitles: Record<string,string> = {
   "/CustomerCare": "Customer care", "/SareeCare": "Saree care", "/Account": "Saved preferences",
   "/Profile": "Your details", "/Orders": "Order information", "/Videos": "Videos",
   "/admin": "Merchant workroom", "/admin/products": "Manage products",
-  "/admin/discounts": "Manage discounts", "/sign-in": "Merchant sign in",
-  "/sign-up": "Merchant account",
+  "/admin/discounts": "Manage discounts", "/sign-in": "Account sign in",
+  "/sign-up": "Create an account",
 };
 
 function Metadata() {
@@ -113,24 +113,42 @@ function ProtectedAdmin({ page }: { page: ReactNode }) {
 }
 
 function SignInPage() {
-  const redirectUrl = authRedirectUrl();
-  return <div className="clerk-screen"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={redirectUrl}/></div>;
+  const redirectPath = authRedirectPath();
+  return <div className="clerk-screen"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={authWidgetUrl("/sign-up", redirectPath)} forceRedirectUrl={`${basePath}${redirectPath}`}/></div>;
 }
 
 function SignUpPage() {
-  const redirectUrl = authRedirectUrl();
-  return <div className="clerk-screen"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={redirectUrl}/></div>;
+  const redirectPath = authRedirectPath();
+  return <div className="clerk-screen"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={authWidgetUrl("/sign-in", redirectPath)} forceRedirectUrl={`${basePath}${redirectPath}`}/></div>;
 }
 
-function authRedirectUrl(): string {
+function authRedirectPath(): string {
   const destination = new URLSearchParams(window.location.search).get("redirect_url");
-  const safeDestination =
-    destination?.startsWith("/") &&
-    !destination.startsWith("//") &&
-    !destination.includes("://")
-      ? destination
-      : "/Account";
-  return `${basePath}${safeDestination}`;
+  if (!destination) return "/Account";
+
+  let internalPath: string;
+  if (destination.startsWith("/") && !destination.startsWith("//")) {
+    internalPath = destination;
+  } else {
+    try {
+      const parsedDestination = new URL(destination);
+      if (parsedDestination.origin !== window.location.origin) return "/Account";
+      internalPath = `${parsedDestination.pathname}${parsedDestination.search}${parsedDestination.hash}`;
+    } catch {
+      return "/Account";
+    }
+  }
+
+  if (basePath && (internalPath === basePath || internalPath.startsWith(`${basePath}/`))) {
+    internalPath = internalPath.slice(basePath.length) || "/";
+  }
+  return internalPath.startsWith("/") && !internalPath.startsWith("//")
+    ? internalPath
+    : "/Account";
+}
+
+function authWidgetUrl(route: "/sign-in" | "/sign-up", redirectPath: string): string {
+  return `${basePath}${route}?redirect_url=${encodeURIComponent(redirectPath)}`;
 }
 
 function Router() {
@@ -202,7 +220,7 @@ function ClerkApp() {
       signUpUrl={`${basePath}/sign-up`}
       localization={{
         signIn: { start: { title: "Welcome back", subtitle: "Sign in to your Chenetha account" } },
-        signUp: { start: { title: "Merchant account", subtitle: "Create an account to request store access" } },
+        signUp: { start: { title: "Create your Chenetha account", subtitle: "Save your preferences or request store access" } },
       }}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}

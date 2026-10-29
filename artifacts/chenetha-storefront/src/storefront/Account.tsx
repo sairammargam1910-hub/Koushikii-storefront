@@ -70,6 +70,7 @@ function SignedOutAccount() {
       </div>
       <p className="muted account-recovery-note">
         Forgot your password? Choose “Forgot password” on the sign-in page.
+        After resetting it, sign in to return to your account.
       </p>
     </section>
   );
