@@ -8,6 +8,7 @@
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "test:photo-browser": "node --test --test-concurrency=1 tests/browser/product-photo.browser.test.mjs",
+    "test:checkout-browser": "node --test --test-concurrency=1 tests/browser/shopify-checkout.browser.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
