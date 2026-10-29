@@ -29,6 +29,10 @@ import type {
   ShopifyAdminDiscountsResponse,
   ShopifyAdminImageResponse,
   ShopifyAdminProductInput,
+  ShopifyAdminProductMediaInput,
+  ShopifyAdminProductMediaOrder,
+  ShopifyAdminProductMediaResponse,
+  ShopifyAdminProductMediaUpdateResponse,
   ShopifyAdminProductResponse,
   ShopifyAdminProductUpdate,
   ShopifyAdminProductsResponse,
@@ -1072,6 +1076,341 @@ export const useUpdateShopifyAdminVariant = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getUpdateShopifyAdminVariantMutationOptions(options));
+    }
+
+export const getGetShopifyAdminProductMediaUrl = (productId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}/media`
+}
+
+/**
+ * Returns every media item, including its processing status and any Shopify media errors.
+ * @summary List all media for a Shopify product
+ */
+export const getShopifyAdminProductMedia = async (productId: string, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductMediaResponse> => {
+
+  return customFetch<ShopifyAdminProductMediaResponse>(getGetShopifyAdminProductMediaUrl(productId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyAdminProductMediaQueryKey = (productId: string,) => {
+    return [
+    `/api/shopify/admin/products/${productId}/media`
+    ] as const;
+    }
+
+
+export const getGetShopifyAdminProductMediaQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyAdminProductMedia>>, TError = ErrorType<void>>(productId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProductMedia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyAdminProductMediaQueryKey(productId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyAdminProductMedia>>> = ({ signal }) => getShopifyAdminProductMedia(productId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: productId !== null && productId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProductMedia>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyAdminProductMediaQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyAdminProductMedia>>>
+export type GetShopifyAdminProductMediaQueryError = ErrorType<void>
+
+
+/**
+ * @summary List all media for a Shopify product
+ */
+
+export function useGetShopifyAdminProductMedia<TData = Awaited<ReturnType<typeof getShopifyAdminProductMedia>>, TError = ErrorType<void>>(
+ productId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProductMedia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyAdminProductMediaQueryOptions(productId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateShopifyAdminProductMediaUrl = (productId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}/media`
+}
+
+/**
+ * Adds a staged image, optionally removing only the selected image after the new image has been accepted by Shopify.
+ * @summary Add or replace one product photo
+ */
+export const updateShopifyAdminProductMedia = async (productId: string,
+    shopifyAdminProductMediaInput: ShopifyAdminProductMediaInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductMediaUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyAdminProductMediaUpdateResponse>(getUpdateShopifyAdminProductMediaUrl(productId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyAdminProductMediaInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateShopifyAdminProductMediaMutationKey = () => ['updateShopifyAdminProductMedia'] as const;
+
+export const getUpdateShopifyAdminProductMediaMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminProductMedia>>, TError,UpdateShopifyAdminProductMediaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminProductMedia>>, TError,UpdateShopifyAdminProductMediaMutationVariables, TContext> => {
+
+const mutationKey = getUpdateShopifyAdminProductMediaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShopifyAdminProductMedia>>, UpdateShopifyAdminProductMediaMutationVariables> = (props) => {
+          const {productId,data} = props ?? {};
+
+          return  updateShopifyAdminProductMedia(productId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateShopifyAdminProductMediaMutationResult = NonNullable<Awaited<ReturnType<typeof updateShopifyAdminProductMedia>>>
+    export type UpdateShopifyAdminProductMediaMutationBody = BodyType<ShopifyAdminProductMediaInput>
+    export type UpdateShopifyAdminProductMediaMutationError = ErrorType<void>
+    export type UpdateShopifyAdminProductMediaMutationVariables = {productId: string;data: BodyType<ShopifyAdminProductMediaInput>}
+
+    /**
+ * @summary Add or replace one product photo
+ */
+export const useUpdateShopifyAdminProductMedia = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminProductMedia>>, TError,UpdateShopifyAdminProductMediaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateShopifyAdminProductMedia>>,
+        TError,
+        UpdateShopifyAdminProductMediaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateShopifyAdminProductMediaMutationOptions(options));
+    }
+
+export const getReorderShopifyAdminProductMediaUrl = (productId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}/media/order`
+}
+
+/**
+ * Reorders the complete gallery; the first image becomes the featured image.
+ * @summary Reorder all media for a Shopify product
+ */
+export const reorderShopifyAdminProductMedia = async (productId: string,
+    shopifyAdminProductMediaOrder: ShopifyAdminProductMediaOrder, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductMediaResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyAdminProductMediaResponse>(getReorderShopifyAdminProductMediaUrl(productId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyAdminProductMediaOrder)
+  }
+);}
+
+
+
+
+
+export const getReorderShopifyAdminProductMediaMutationKey = () => ['reorderShopifyAdminProductMedia'] as const;
+
+export const getReorderShopifyAdminProductMediaMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderShopifyAdminProductMedia>>, TError,ReorderShopifyAdminProductMediaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reorderShopifyAdminProductMedia>>, TError,ReorderShopifyAdminProductMediaMutationVariables, TContext> => {
+
+const mutationKey = getReorderShopifyAdminProductMediaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reorderShopifyAdminProductMedia>>, ReorderShopifyAdminProductMediaMutationVariables> = (props) => {
+          const {productId,data} = props ?? {};
+
+          return  reorderShopifyAdminProductMedia(productId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReorderShopifyAdminProductMediaMutationResult = NonNullable<Awaited<ReturnType<typeof reorderShopifyAdminProductMedia>>>
+    export type ReorderShopifyAdminProductMediaMutationBody = BodyType<ShopifyAdminProductMediaOrder>
+    export type ReorderShopifyAdminProductMediaMutationError = ErrorType<void>
+    export type ReorderShopifyAdminProductMediaMutationVariables = {productId: string;data: BodyType<ShopifyAdminProductMediaOrder>}
+
+    /**
+ * @summary Reorder all media for a Shopify product
+ */
+export const useReorderShopifyAdminProductMedia = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderShopifyAdminProductMedia>>, TError,ReorderShopifyAdminProductMediaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reorderShopifyAdminProductMedia>>,
+        TError,
+        ReorderShopifyAdminProductMediaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReorderShopifyAdminProductMediaMutationOptions(options));
+    }
+
+export const getDeleteShopifyAdminProductMediaUrl = (productId: string,
+    mediaId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}/media/${encodeURIComponent(String(mediaId))}`
+}
+
+/**
+ * Removes only the selected media item; all other gallery items are preserved.
+ * @summary Remove one item from a Shopify product gallery
+ */
+export const deleteShopifyAdminProductMedia = async (productId: string,
+    mediaId: string, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductMediaResponse> => {
+
+  return customFetch<ShopifyAdminProductMediaResponse>(getDeleteShopifyAdminProductMediaUrl(productId,mediaId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteShopifyAdminProductMediaMutationKey = () => ['deleteShopifyAdminProductMedia'] as const;
+
+export const getDeleteShopifyAdminProductMediaMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteShopifyAdminProductMedia>>, TError,DeleteShopifyAdminProductMediaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteShopifyAdminProductMedia>>, TError,DeleteShopifyAdminProductMediaMutationVariables, TContext> => {
+
+const mutationKey = getDeleteShopifyAdminProductMediaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteShopifyAdminProductMedia>>, DeleteShopifyAdminProductMediaMutationVariables> = (props) => {
+          const {productId,mediaId} = props ?? {};
+
+          return  deleteShopifyAdminProductMedia(productId,mediaId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteShopifyAdminProductMediaMutationResult = NonNullable<Awaited<ReturnType<typeof deleteShopifyAdminProductMedia>>>
+
+    export type DeleteShopifyAdminProductMediaMutationError = ErrorType<void>
+    export type DeleteShopifyAdminProductMediaMutationVariables = {productId: string;mediaId: string}
+
+    /**
+ * @summary Remove one item from a Shopify product gallery
+ */
+export const useDeleteShopifyAdminProductMedia = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteShopifyAdminProductMedia>>, TError,DeleteShopifyAdminProductMediaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteShopifyAdminProductMedia>>,
+        TError,
+        DeleteShopifyAdminProductMediaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteShopifyAdminProductMediaMutationOptions(options));
     }
 
 export const getGetShopifyAdminDiscountsUrl = () => {

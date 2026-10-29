@@ -479,6 +479,130 @@ export const UpdateShopifyAdminVariantResponse = zod.object({
 
 
 /**
+ * Returns every media item, including its processing status and any Shopify media errors.
+ * @summary List all media for a Shopify product
+ */
+export const GetShopifyAdminProductMediaParams = zod.object({
+  "productId": zod.coerce.string()
+})
+
+export const GetShopifyAdminProductMediaResponse = zod.object({
+  "featuredMediaId": zod.string().nullable(),
+  "replacementStatus": zod.union([zod.literal('REPLACED'),zod.literal('PROCESSING'),zod.literal('FAILED'),zod.literal(null)]).nullable(),
+  "media": zod.array(zod.object({
+  "id": zod.string(),
+  "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
+  "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
+  "alt": zod.string().nullable(),
+  "imageUrl": zod.string().url().nullable(),
+  "errors": zod.array(zod.object({
+  "code": zod.string().nullable(),
+  "message": zod.string(),
+  "details": zod.string().nullable()
+}))
+}))
+})
+
+
+/**
+ * Adds a staged image, optionally removing only the selected image after the new image has been accepted by Shopify.
+ * @summary Add or replace one product photo
+ */
+export const UpdateShopifyAdminProductMediaParams = zod.object({
+  "productId": zod.coerce.string()
+})
+
+export const updateShopifyAdminProductMediaBodyReplaceMediaIdMax = 200;
+
+
+
+export const UpdateShopifyAdminProductMediaBody = zod.object({
+  "resourceUrl": zod.string().url(),
+  "replaceMediaId": zod.string().min(1).max(updateShopifyAdminProductMediaBodyReplaceMediaIdMax).optional()
+})
+
+export const UpdateShopifyAdminProductMediaResponse = zod.object({
+  "featuredMediaId": zod.string().nullable(),
+  "replacementStatus": zod.union([zod.literal('REPLACED'),zod.literal('PROCESSING'),zod.literal('FAILED'),zod.literal(null)]).nullable(),
+  "media": zod.array(zod.object({
+  "id": zod.string(),
+  "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
+  "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
+  "alt": zod.string().nullable(),
+  "imageUrl": zod.string().url().nullable(),
+  "errors": zod.array(zod.object({
+  "code": zod.string().nullable(),
+  "message": zod.string(),
+  "details": zod.string().nullable()
+}))
+}))
+})
+
+
+/**
+ * Reorders the complete gallery; the first image becomes the featured image.
+ * @summary Reorder all media for a Shopify product
+ */
+export const ReorderShopifyAdminProductMediaParams = zod.object({
+  "productId": zod.coerce.string()
+})
+
+export const reorderShopifyAdminProductMediaBodyMediaIdsItemMax = 200;
+
+export const reorderShopifyAdminProductMediaBodyMediaIdsMax = 250;
+
+
+
+export const ReorderShopifyAdminProductMediaBody = zod.object({
+  "mediaIds": zod.array(zod.string().min(1).max(reorderShopifyAdminProductMediaBodyMediaIdsItemMax)).min(1).max(reorderShopifyAdminProductMediaBodyMediaIdsMax)
+})
+
+export const ReorderShopifyAdminProductMediaResponse = zod.object({
+  "featuredMediaId": zod.string().nullable(),
+  "replacementStatus": zod.union([zod.literal('REPLACED'),zod.literal('PROCESSING'),zod.literal('FAILED'),zod.literal(null)]).nullable(),
+  "media": zod.array(zod.object({
+  "id": zod.string(),
+  "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
+  "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
+  "alt": zod.string().nullable(),
+  "imageUrl": zod.string().url().nullable(),
+  "errors": zod.array(zod.object({
+  "code": zod.string().nullable(),
+  "message": zod.string(),
+  "details": zod.string().nullable()
+}))
+}))
+})
+
+
+/**
+ * Removes only the selected media item; all other gallery items are preserved.
+ * @summary Remove one item from a Shopify product gallery
+ */
+export const DeleteShopifyAdminProductMediaParams = zod.object({
+  "productId": zod.coerce.string(),
+  "mediaId": zod.coerce.string()
+})
+
+export const DeleteShopifyAdminProductMediaResponse = zod.object({
+  "featuredMediaId": zod.string().nullable(),
+  "replacementStatus": zod.union([zod.literal('REPLACED'),zod.literal('PROCESSING'),zod.literal('FAILED'),zod.literal(null)]).nullable(),
+  "media": zod.array(zod.object({
+  "id": zod.string(),
+  "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
+  "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
+  "alt": zod.string().nullable(),
+  "imageUrl": zod.string().url().nullable(),
+  "errors": zod.array(zod.object({
+  "code": zod.string().nullable(),
+  "message": zod.string(),
+  "details": zod.string().nullable()
+}))
+}))
+})
+
+
+/**
  * Lists discount codes for the authenticated store owner.
  * @summary List Shopify discount codes
  */

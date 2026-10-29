@@ -13,3 +13,9 @@ Validate requested GraphQL query cost against Shopify when changing nested conne
 **Why:** Small fixture catalogs cannot reveal requested-cost failures for large variant/location page sizes. Shopify budgets by requested connection sizes, not just the records that happen to exist.
 
 **How to apply:** Keep nested previews small, paginate remaining inventory separately, and inspect the live API's requested-cost metadata for list, detail and continuation queries.
+
+Do not remove a product's previous photo until Shopify reports the replacement media as `READY`.
+
+**Why:** Shopify media creation can return a processing or failed item without failing the mutation. Removing the existing image immediately can leave the product without a usable photo when the replacement later fails.
+
+**How to apply:** Keep the prior media in place while a replacement is `UPLOADED` or `PROCESSING`; retain it on `FAILED`, and remove it only when the replacement is `READY`.

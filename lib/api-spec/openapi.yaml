@@ -399,6 +399,132 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/admin/products/{productId}/media:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getShopifyAdminProductMedia
+      tags: [shopify]
+      summary: List all media for a Shopify product
+      description: Returns every media item, including its processing status and any Shopify media errors.
+      responses:
+        "200":
+          description: Product gallery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductMediaResponse"
+        "400":
+          description: Product ID is invalid
+        "401":
+          description: Sign-in required
+        "403":
+          description: Store owner access required
+        "404":
+          description: Product was not found
+        "502":
+          description: Product media could not be loaded
+    post:
+      operationId: updateShopifyAdminProductMedia
+      tags: [shopify]
+      summary: Add or replace one product photo
+      description: Adds a staged image, optionally removing only the selected image after the new image has been accepted by Shopify.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminProductMediaInput"
+      responses:
+        "200":
+          description: Updated product gallery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductMediaUpdateResponse"
+        "400":
+          description: Media input is invalid
+        "401":
+          description: Sign-in required
+        "403":
+          description: Store owner access required
+        "404":
+          description: Product or selected media was not found
+        "502":
+          description: Shopify could not update the gallery
+  /shopify/admin/products/{productId}/media/order:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: reorderShopifyAdminProductMedia
+      tags: [shopify]
+      summary: Reorder all media for a Shopify product
+      description: Reorders the complete gallery; the first image becomes the featured image.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminProductMediaOrder"
+      responses:
+        "200":
+          description: Reordered product gallery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductMediaResponse"
+        "400":
+          description: Media order is invalid
+        "401":
+          description: Sign-in required
+        "403":
+          description: Store owner access required
+        "404":
+          description: Product was not found
+        "502":
+          description: Shopify could not reorder the gallery
+  /shopify/admin/products/{productId}/media/{mediaId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: mediaId
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      operationId: deleteShopifyAdminProductMedia
+      tags: [shopify]
+      summary: Remove one item from a Shopify product gallery
+      description: Removes only the selected media item; all other gallery items are preserved.
+      responses:
+        "200":
+          description: Updated product gallery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductMediaResponse"
+        "400":
+          description: Product or media ID is invalid
+        "401":
+          description: Sign-in required
+        "403":
+          description: Store owner access required
+        "404":
+          description: Product or media was not found
+        "502":
+          description: Shopify could not remove the media
   /shopify/admin/discounts:
     get:
       operationId: getShopifyAdminDiscounts
@@ -803,6 +929,76 @@ components:
           items:
             $ref: "#/components/schemas/ShopifyAdminProduct"
       required: [currencyCode, products]
+    ShopifyAdminProductMediaError:
+      type: object
+      properties:
+        code:
+          type: ["string", "null"]
+        message:
+          type: string
+        details:
+          type: ["string", "null"]
+      required: [code, message, details]
+    ShopifyAdminProductMedia:
+      type: object
+      properties:
+        id:
+          type: string
+        mediaContentType:
+          type: string
+          enum: [IMAGE, VIDEO, EXTERNAL_VIDEO, MODEL_3D]
+        status:
+          type: string
+          enum: [UPLOADED, PROCESSING, READY, FAILED]
+        alt:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+          format: uri
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminProductMediaError"
+      required: [id, mediaContentType, status, alt, imageUrl, errors]
+    ShopifyAdminProductMediaResponse:
+      type: object
+      properties:
+        featuredMediaId:
+          type: ["string", "null"]
+        replacementStatus:
+          type: ["string", "null"]
+          enum: [REPLACED, PROCESSING, FAILED, null]
+        media:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminProductMedia"
+      required: [featuredMediaId, replacementStatus, media]
+    ShopifyAdminProductMediaUpdateResponse:
+      allOf:
+        - $ref: "#/components/schemas/ShopifyAdminProductMediaResponse"
+    ShopifyAdminProductMediaInput:
+      type: object
+      properties:
+        resourceUrl:
+          type: string
+          format: uri
+        replaceMediaId:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required: [resourceUrl]
+    ShopifyAdminProductMediaOrder:
+      type: object
+      properties:
+        mediaIds:
+          type: array
+          minItems: 1
+          maxItems: 250
+          items:
+            type: string
+            minLength: 1
+            maxLength: 200
+      required: [mediaIds]
     ShopifyAdminImageInput:
       type: string
       format: binary

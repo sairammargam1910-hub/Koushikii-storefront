@@ -117,9 +117,9 @@ function ErrorPanel({ message, retry }: { message: string; retry: () => void }) 
   </div>;
 }
 
-function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode, existingImage }: {
+function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode, existingImage, productId }: {
   initial: ProductDraft; onClose: () => void; onSave: (draft: ProductDraft) => void; busy: boolean; error?: string;
-  allowVariantEdits: boolean; currencyCode?: string; existingImage?: string | null;
+  allowVariantEdits: boolean; currencyCode?: string; existingImage?: string | null; productId?: string;
 }) {
   const [draft, setDraft] = useState(initial);
   const [uploading, setUploading] = useState(false);
@@ -141,7 +141,7 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
         <label>Weave / product type<input maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Saree" data-testid="input-product-type"/></label>
         <label>Short description<textarea maxLength={10000} rows={3} value={draft.description} onChange={(e) => change("description", e.target.value)} placeholder="What makes this piece special?" data-testid="input-product-description"/></label>
         <label>Tags <span className="label-hint">Separate with commas</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="silk, festive, handwoven" data-testid="input-product-tags"/></label>
-        <ProductPhotoPicker existingImage={existingImage} disabled={busy} onUploading={setUploading} onPending={setPhotoPending} onImage={(url) => { setPhotoUrl(url); change("imageUrl", ""); }}/>
+        <ProductPhotoPicker productId={productId} existingImage={existingImage} disabled={busy} onUploading={setUploading} onPending={setPhotoPending} onImage={(url) => { setPhotoUrl(url); change("imageUrl", ""); }}/>
         <label>Or add a public image URL <span className="label-hint">Optional; existing images stay</span><input type="url" disabled={busy || uploading || photoPending || !!photoUrl} value={draft.imageUrl} onChange={(e) => change("imageUrl", e.target.value)} placeholder="https://…" data-testid="input-product-image-url"/></label>
         <label className="check-line"><input type="checkbox" checked={draft.publishToWebsite} onChange={(e) => change("publishToWebsite", e.target.checked)} data-testid="input-product-publish"/><span><b>Publish to website</b><small>Publishes this item to the Replit sales channel.</small></span></label>
         {error && <p className="form-error" role="alert" data-testid="text-product-form-error">{error}</p>}
@@ -185,7 +185,7 @@ function ProductForm({ product, onClose, currencyCode }: { product?: ShopifyAdmi
       },
     }, options);
   };
-  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product} currencyCode={currencyCode} existingImage={product?.imageUrl}/>;
+  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product} currencyCode={currencyCode} existingImage={product?.imageUrl} productId={product?.id}/>;
 }
 
 export function AdminDashboard() {

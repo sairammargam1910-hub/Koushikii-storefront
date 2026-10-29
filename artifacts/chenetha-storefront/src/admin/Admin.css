@@ -7,6 +7,31 @@
 .merchant-app .product-photo-picker input[type="file"] { min-height: 48px; max-width: 100%; padding: 10px; }
 .merchant-app .product-photo-picker progress { width: 100%; accent-color: #B22222; }
 .merchant-app .photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.merchant-app .product-gallery { display: grid; gap: 12px; min-width: 0; padding: 14px; border: 1px solid #e5d8cf; border-radius: 8px; }
+.gallery-heading { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.gallery-heading > div { min-width: 0; }.gallery-heading b { color: #47363d; font-size: 13px; }
+.gallery-heading .field-note { margin: 4px 0 0; }.gallery-heading .button { flex: 0 0 auto; }
+.gallery-file-input { display: none; }
+.gallery-uploading { display: grid; grid-template-columns: minmax(80px, 1fr) auto; align-items: center; gap: 10px; color: #786b63; font-size: 11px; }
+.gallery-uploading progress { width: 100%; accent-color: #B22222; }
+.gallery-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.gallery-item { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: 0; padding: 9px; border: 1px solid #eee4dc; border-radius: 6px; background: #fffdf9; }
+.gallery-thumb { width: 56px; height: 66px; overflow: hidden; display: grid; place-items: center; border-radius: 4px; background: #f5eee6; color: #947b72; }
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }.gallery-thumb > span { display: grid; justify-items: center; gap: 4px; padding: 4px; text-align: center; font-size: 8px; }
+.gallery-item-info { display: grid; align-content: center; gap: 5px; min-width: 0; }
+.gallery-item-label { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; min-width: 0; }
+.gallery-item-label b { overflow: hidden; max-width: 100%; color: #47363d; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.gallery-featured { display: inline-flex; align-items: center; gap: 3px; color: #946925; font-size: 9px; font-weight: 700; white-space: nowrap; }
+.gallery-status { width: max-content; color: #6b7560; font-size: 9px; font-weight: 700; }
+.gallery-status-processing, .gallery-status-uploaded { color: #977445; }.gallery-status-failed { color: #a34a4a; }
+.gallery-media-error { color: #a34a4a; font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+.gallery-item-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 3px; }
+.gallery-item-actions .icon-button { width: 30px; height: 30px; }.gallery-item-actions .text-button { display: inline-flex; align-items: center; gap: 4px; padding-inline: 5px; white-space: nowrap; }
+.gallery-item-actions .danger-text { color: #a34a4a; }
+.gallery-empty, .gallery-state { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding: 17px 12px; border: 1px dashed #e5d8cf; border-radius: 6px; color: #82736f; font-size: 11px; }
+.gallery-error { border-color: #e8c9c1; color: #a34a4a; }.gallery-state button { margin-left: auto; }
+.gallery-message { display: flex; align-items: flex-start; gap: 7px; margin: 0; font-size: 11px; line-height: 1.5; }
+.gallery-success { color: #55734d; }.gallery-message button { display: grid; place-items: center; margin-left: auto; border: 0; background: transparent; color: inherit; }
 
 body:has(.merchant-app, .auth-gate, .clerk-screen) {
 .merchant-app {
@@ -212,5 +237,9 @@ body:has(.merchant-app, .auth-gate, .clerk-screen) {
   .discount-row { grid-template-columns: 34px minmax(100px, 1fr) auto; gap: 8px; padding: 12px 10px; }.discount-rate { grid-column: 3; grid-row: 1; font-size: 13px; }.discount-row > .status-pill { grid-column: 2; grid-row: 2; justify-self: start; }.discount-row > .text-button { grid-column: 3; grid-row: 2; }.discount-info { grid-column: 2; }
   .merchant-footer { padding: 0 16px; }.merchant-footer span:last-child { display: none; }
   .admin-modal { padding: 21px 18px; }.form-row { grid-template-columns: 1fr; gap: 13px; }
+  .gallery-heading { align-items: flex-start; flex-direction: column; }.gallery-heading .button { align-self: flex-start; }
+  .gallery-item { grid-template-columns: 45px minmax(0, 1fr); gap: 8px; }.gallery-thumb { width: 45px; height: 56px; }
+  .gallery-item-actions { grid-column: 1 / -1; justify-content: flex-start; padding-top: 5px; border-top: 1px solid #f0e7e1; }
+  .gallery-uploading { grid-template-columns: 1fr; gap: 4px; }
 }
 }

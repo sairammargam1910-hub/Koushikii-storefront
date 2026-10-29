@@ -198,6 +198,86 @@ export interface ShopifyAdminProductsResponse {
   products: ShopifyAdminProduct[];
 }
 
+export interface ShopifyAdminProductMediaError {
+  /** @nullable */
+  code: string | null;
+  message: string;
+  /** @nullable */
+  details: string | null;
+}
+
+export type ShopifyAdminProductMediaMediaContentType = typeof ShopifyAdminProductMediaMediaContentType[keyof typeof ShopifyAdminProductMediaMediaContentType];
+
+
+export const ShopifyAdminProductMediaMediaContentType = {
+  IMAGE: 'IMAGE',
+  VIDEO: 'VIDEO',
+  EXTERNAL_VIDEO: 'EXTERNAL_VIDEO',
+  MODEL_3D: 'MODEL_3D',
+} as const;
+
+export type ShopifyAdminProductMediaStatus = typeof ShopifyAdminProductMediaStatus[keyof typeof ShopifyAdminProductMediaStatus];
+
+
+export const ShopifyAdminProductMediaStatus = {
+  UPLOADED: 'UPLOADED',
+  PROCESSING: 'PROCESSING',
+  READY: 'READY',
+  FAILED: 'FAILED',
+} as const;
+
+export interface ShopifyAdminProductMedia {
+  id: string;
+  mediaContentType: ShopifyAdminProductMediaMediaContentType;
+  status: ShopifyAdminProductMediaStatus;
+  /** @nullable */
+  alt: string | null;
+  /** @nullable */
+  imageUrl: string | null;
+  errors: ShopifyAdminProductMediaError[];
+}
+
+/**
+ * @nullable
+ */
+export type ShopifyAdminProductMediaResponseReplacementStatus = typeof ShopifyAdminProductMediaResponseReplacementStatus[keyof typeof ShopifyAdminProductMediaResponseReplacementStatus] | null;
+
+
+export const ShopifyAdminProductMediaResponseReplacementStatus = {
+  REPLACED: 'REPLACED',
+  PROCESSING: 'PROCESSING',
+  FAILED: 'FAILED',
+} as const;
+
+export interface ShopifyAdminProductMediaResponse {
+  /** @nullable */
+  featuredMediaId: string | null;
+  /** @nullable */
+  replacementStatus: ShopifyAdminProductMediaResponseReplacementStatus;
+  media: ShopifyAdminProductMedia[];
+}
+
+export type ShopifyAdminProductMediaUpdateResponse = ShopifyAdminProductMediaResponse;
+
+export interface ShopifyAdminProductMediaInput {
+  resourceUrl: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  replaceMediaId?: string;
+}
+
+export interface ShopifyAdminProductMediaOrder {
+  /**
+     * @minItems 1
+     * @maxItems 250
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
+  mediaIds: string[];
+}
+
 export type ShopifyAdminImageInput = Blob;
 
 export interface ShopifyAdminImageResponse {
