@@ -650,6 +650,34 @@ paths:
           description: Product or media was not found
         "502":
           description: Shopify could not remove the media
+    patch:
+      operationId: updateShopifyAdminProductMediaAlt
+      tags: [shopify]
+      summary: Update one product image description
+      description: Saves alternative text for one image in the product gallery without changing other media.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminProductMediaAltUpdate"
+      responses:
+        "200":
+          description: Updated product gallery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductMediaResponse"
+        "400":
+          description: Product, media ID, or alternative text is invalid
+        "401":
+          description: Sign-in required
+        "403":
+          description: Store owner access required
+        "404":
+          description: Product or image was not found
+        "502":
+          description: Shopify could not update the image description
   /shopify/admin/discounts:
     get:
       operationId: getShopifyAdminDiscounts
@@ -1204,6 +1232,13 @@ components:
             minLength: 1
             maxLength: 200
       required: [mediaIds]
+    ShopifyAdminProductMediaAltUpdate:
+      type: object
+      properties:
+        alt:
+          type: string
+          maxLength: 512
+      required: [alt]
     ShopifyAdminImageInput:
       type: string
       format: binary

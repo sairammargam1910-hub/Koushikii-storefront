@@ -337,6 +337,11 @@ export interface ShopifyAdminProductMediaOrder {
   mediaIds: string[];
 }
 
+export interface ShopifyAdminProductMediaAltUpdate {
+  /** @maxLength 512 */
+  alt: string;
+}
+
 export type ShopifyAdminImageInput = Blob;
 
 export interface ShopifyAdminImageResponse {

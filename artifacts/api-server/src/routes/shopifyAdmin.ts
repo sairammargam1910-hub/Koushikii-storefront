@@ -19,6 +19,7 @@ import {
   GetShopifyAdminProductResponse,
   UpdateShopifyAdminProductMediaBody,
   UpdateShopifyAdminProductMediaResponse,
+  UpdateShopifyAdminProductMediaAltBody,
   ReorderShopifyAdminProductMediaBody,
   CreateShopifyAdminVariantBody,
   CreateShopifyAdminVariantResponse,
@@ -229,6 +230,15 @@ const ADMIN_PRODUCT_DELETE_MEDIA = `#graphql
   mutation MerchantProductDeleteMedia($productId: ID!, $mediaIds: [ID!]!) {
     productDeleteMedia(productId: $productId, mediaIds: $mediaIds) {
       deletedMediaIds
+      mediaUserErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_PRODUCT_UPDATE_MEDIA_ALT = `#graphql
+  mutation MerchantProductUpdateMediaAlt($productId: ID!, $media: [UpdateMediaInput!]!) {
+    productUpdateMedia(productId: $productId, media: $media) {
+      media { id alt }
       mediaUserErrors { field message }
     }
   }
@@ -990,6 +1000,40 @@ router.patch("/shopify/admin/products/:productId/media/order", async (req, res):
     res.json(await fetchProductMedia(productId));
   } catch (error) {
     respondShopifyError(req, res, error, "Shopify could not reorder this gallery. Refresh before trying again.");
+  } finally {
+    invalidateShopifyCatalog();
+  }
+});
+
+router.patch("/shopify/admin/products/:productId/media/:mediaId", async (req, res): Promise<void> => {
+  const productId = String(req.params.productId);
+  const mediaId = String(req.params.mediaId);
+  const parsed = UpdateShopifyAdminProductMediaAltBody.safeParse(req.body);
+  if (!isShopifyProductId(productId) || !/^gid:\/\/shopify\/[A-Za-z0-9]+\/\d+$/.test(mediaId) ||
+      !parsed.success) {
+    res.status(400).json({ error: "Choose a valid product image and provide alternative text up to 512 characters." });
+    return;
+  }
+  try {
+    const gallery = await fetchProductMedia(productId);
+    const selected = gallery.media.find((entry) => entry.id === mediaId);
+    if (!selected) throw new ShopifyNotFoundError("This media item does not belong to this product.");
+    if (selected.mediaContentType !== "IMAGE") {
+      throw new ShopifyInputError("Alternative text can only be changed for product images.");
+    }
+    const result = await shopifyAdminRequest<{
+      productUpdateMedia: { media: Array<{ id: string; alt: string | null }>; mediaUserErrors: ShopifyUserErrors };
+    }>(ADMIN_PRODUCT_UPDATE_MEDIA_ALT, {
+      productId,
+      media: [{ id: mediaId, alt: parsed.data.alt }],
+    });
+    assertNoUserErrors(result.productUpdateMedia.mediaUserErrors);
+    if (!result.productUpdateMedia.media?.some((entry) => entry.id === mediaId)) {
+      throw new ShopifyAdminError("Shopify did not confirm the image description update.");
+    }
+    res.json(await fetchProductMedia(productId));
+  } catch (error) {
+    respondShopifyError(req, res, error, "Shopify could not save this image description. Refresh and try again.");
   } finally {
     invalidateShopifyCatalog();
   }

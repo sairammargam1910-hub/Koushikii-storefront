@@ -28,6 +28,9 @@
 .gallery-item-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 3px; }
 .gallery-item-actions .icon-button { width: 30px; height: 30px; }.gallery-item-actions .text-button { display: inline-flex; align-items: center; gap: 4px; padding-inline: 5px; white-space: nowrap; }
 .gallery-item-actions .danger-text { color: #a34a4a; }
+.gallery-alt-editor { display: grid; gap: 5px; min-width: 0; }.gallery-alt-editor label { color: #47363d; font-size: 10px; font-weight: 700; }
+.gallery-alt-editor textarea { width: 100%; min-height: 58px; resize: vertical; padding: 8px; border: 1px solid #d9c7bd; border-radius: 5px; background: #fff; color: #392a31; font: inherit; font-size: 12px; }
+.gallery-alt-editor .field-note { margin: 0; font-size: 10px; }.gallery-alt-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .gallery-empty, .gallery-state { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding: 17px 12px; border: 1px dashed #e5d8cf; border-radius: 6px; color: #82736f; font-size: 11px; }
 .gallery-error { border-color: #e8c9c1; color: #a34a4a; }.gallery-state button { margin-left: auto; }
 .gallery-message { display: flex; align-items: flex-start; gap: 7px; margin: 0; font-size: 11px; line-height: 1.5; }

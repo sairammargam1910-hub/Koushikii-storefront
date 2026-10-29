@@ -8,6 +8,7 @@ import {
   useGetShopifyAdminProductMedia,
   useReorderShopifyAdminProductMedia,
   useUpdateShopifyAdminProductMedia,
+  useUpdateShopifyAdminProductMediaAlt,
   type ShopifyAdminImageResponse,
   type ShopifyAdminProductMedia,
 } from "@workspace/api-client-react";
@@ -139,6 +140,7 @@ function ProductGalleryManager({ productId, disabled, onUploading, onPending }: 
     query: { queryKey: getGetShopifyAdminProductMediaQueryKey(productId), staleTime: 0, refetchOnWindowFocus: true },
   });
   const addOrReplace = useUpdateShopifyAdminProductMedia();
+  const updateAlt = useUpdateShopifyAdminProductMediaAlt();
   const reorder = useReorderShopifyAdminProductMedia();
   const remove = useDeleteShopifyAdminProductMedia();
   const queryClient = useQueryClient();
@@ -148,8 +150,10 @@ function ProductGalleryManager({ productId, disabled, onUploading, onPending }: 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [editingAltId, setEditingAltId] = useState<string | null>(null);
+  const [altDraft, setAltDraft] = useState("");
   const items = gallery.data?.media ?? [];
-  const busy = disabled || uploading || addOrReplace.isPending || reorder.isPending || remove.isPending;
+  const busy = disabled || uploading || addOrReplace.isPending || updateAlt.isPending || reorder.isPending || remove.isPending;
   const featuredId = items.find((item) => item.id === gallery.data?.featuredMediaId && item.mediaContentType === "IMAGE")?.id ?? null;
   useEffect(() => {
     onUploading(busy);
@@ -244,6 +248,31 @@ function ProductGalleryManager({ productId, disabled, onUploading, onPending }: 
       onError: (reason: Error) => { refreshGallery(); setError(reason.message || "Could not remove this media."); },
     });
   };
+  const editAlt = (item: ShopifyAdminProductMedia) => {
+    setError("");
+    setNotice("");
+    setEditingAltId(item.id);
+    setAltDraft(item.alt ?? "");
+  };
+  const saveAlt = (item: ShopifyAdminProductMedia) => {
+    if (altDraft === (item.alt ?? "")) {
+      setEditingAltId(null);
+      return;
+    }
+    setError("");
+    setNotice("");
+    updateAlt.mutate({ productId, mediaId: item.id, data: { alt: altDraft } }, {
+      onSuccess: () => {
+        setEditingAltId(null);
+        refreshGallery();
+        setNotice("Image description saved.");
+      },
+      onError: (reason: Error) => {
+        refreshGallery();
+        setError(reason.message || "Could not save this image description.");
+      },
+    });
+  };
   const readableStatus = (status: ShopifyAdminProductMedia["status"]) =>
     status === "READY" ? "Ready" : status === "FAILED" ? "Failed" : status === "PROCESSING" ? "Processing" : "Uploaded";
 
@@ -275,6 +304,19 @@ function ProductGalleryManager({ productId, disabled, onUploading, onPending }: 
               <b>{item.mediaContentType === "IMAGE" ? item.alt || `Photo ${index + 1}` : item.mediaContentType.replaceAll("_", " ")}</b>
               {item.id === featuredId && <span className="gallery-featured"><Star size={12} fill="currentColor"/> Featured</span>}
             </div>
+            {item.mediaContentType === "IMAGE" && editingAltId === item.id
+              ? <div className="gallery-alt-editor">
+                  <label htmlFor={`gallery-alt-${index}`}>Alternative text</label>
+                  <textarea id={`gallery-alt-${index}`} value={altDraft} maxLength={512} rows={2} disabled={busy}
+                    aria-describedby={`gallery-alt-help-${index}`}
+                    onChange={(event) => setAltDraft(event.target.value)} data-testid={`input-gallery-alt-${index}`}/>
+                  <span id={`gallery-alt-help-${index}`} className="field-note">Describe the image for people who cannot see it. Leave blank to remove its description.</span>
+                  <div className="gallery-alt-actions">
+                    <button type="button" className="button button-primary" disabled={busy} onClick={() => saveAlt(item)} data-testid={`button-save-gallery-alt-${index}`}>Save description</button>
+                    <button type="button" className="button button-quiet" disabled={busy} onClick={() => setEditingAltId(null)}>Cancel</button>
+                  </div>
+                </div>
+              : null}
             <span className={`gallery-status gallery-status-${item.status.toLowerCase()}`}>{readableStatus(item.status)}</span>
             {item.errors.map((mediaError, errorIndex) => <span className="gallery-media-error" key={`${mediaError.code}-${errorIndex}`}>{mediaError.message}{mediaError.details ? ` — ${mediaError.details}` : ""}</span>)}
           </div>
@@ -282,6 +324,7 @@ function ProductGalleryManager({ productId, disabled, onUploading, onPending }: 
             <button type="button" className="icon-button" aria-label={`Move item ${index + 1} up`} title="Move up" disabled={busy || index === 0} onClick={() => changeOrder(index, index - 1)} data-testid={`button-gallery-up-${index}`}><ArrowUp size={15}/></button>
             <button type="button" className="icon-button" aria-label={`Move item ${index + 1} down`} title="Move down" disabled={busy || index === items.length - 1} onClick={() => changeOrder(index, index + 1)} data-testid={`button-gallery-down-${index}`}><ArrowDown size={15}/></button>
             {item.mediaContentType === "IMAGE" && item.id !== featuredId && <button type="button" className="text-button" disabled={busy} onClick={() => changeOrder(index, 0)} data-testid={`button-gallery-feature-${index}`}><Star size={13}/> Feature</button>}
+            {item.mediaContentType === "IMAGE" && editingAltId !== item.id && <button type="button" className="text-button" disabled={busy} onClick={() => editAlt(item)} data-testid={`button-edit-gallery-alt-${index}`}>Edit description</button>}
             {item.mediaContentType === "IMAGE" && <button type="button" className="text-button" disabled={busy} onClick={() => openPicker(item.id)} data-testid={`button-gallery-replace-${index}`}><Upload size={13}/> Replace</button>}
             <button type="button" className="icon-button danger-text" aria-label={`Remove item ${index + 1}`} title="Remove" disabled={busy} onClick={() => removeItem(item)} data-testid={`button-gallery-remove-${index}`}><Trash2 size={15}/></button>
           </div>

@@ -340,6 +340,74 @@ test("staged photos reach the update gallery and saving details keeps the existi
   await context.close();
 });
 
+test("merchant can edit one photo description and sees the saved Shopify value after reload", async () => {
+  let savedAlt = "Existing gallery photo";
+  const saves = [];
+  const { context, page } = await openForm({
+    edit: true,
+    setup: async (targetPage) => {
+      await targetPage.route("**/api/shopify/admin/products/**/media**", async (route) => {
+        const request = route.request();
+        if (request.method() === "GET") {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              featuredMediaId: "existing-photo",
+              replacementStatus: null,
+              media: [{
+                id: "existing-photo",
+                mediaContentType: "IMAGE",
+                status: "READY",
+                alt: savedAlt,
+                imageUrl: "https://cdn.example.test/existing-gallery-photo.jpg",
+                errors: [],
+              }],
+            }),
+          });
+          return;
+        }
+        if (request.method() === "PATCH") {
+          const body = request.postDataJSON();
+          saves.push(body);
+          savedAlt = body.alt;
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              featuredMediaId: "existing-photo",
+              replacementStatus: null,
+              media: [{
+                id: "existing-photo",
+                mediaContentType: "IMAGE",
+                status: "READY",
+                alt: savedAlt,
+                imageUrl: "https://cdn.example.test/existing-gallery-photo.jpg",
+                errors: [],
+              }],
+            }),
+          });
+          return;
+        }
+        await route.continue();
+      });
+    },
+  });
+
+  await page.getByTestId("button-edit-gallery-alt-0").click();
+  const input = page.getByTestId("input-gallery-alt-0");
+  assert.equal(await input.inputValue(), "Existing gallery photo", "editing must start with the saved description");
+  await input.fill("Blue silk saree with a gold zari border");
+  await page.getByTestId("button-save-gallery-alt-0").click();
+  await page.getByText("Image description saved.", { exact: false }).waitFor();
+  assert.deepEqual(saves, [{ alt: "Blue silk saree with a gold zari border" }]);
+  await page.reload();
+  await page.getByRole("dialog").waitFor();
+  await page.getByTestId("gallery-item-0").getByText("Blue silk saree with a gold zari border").waitFor();
+  assert.equal(savedAlt, "Blue silk saree with a gold zari border");
+  await context.close();
+});
+
 test("a failed gallery photo upload can be retried without losing existing media", async () => {
   const galleryCalls = [];
   const { context, page } = await openForm({

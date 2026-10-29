@@ -793,6 +793,41 @@ export const DeleteShopifyAdminProductMediaResponse = zod.object({
 
 
 /**
+ * Saves alternative text for one image in the product gallery without changing other media.
+ * @summary Update one product image description
+ */
+export const UpdateShopifyAdminProductMediaAltParams = zod.object({
+  "productId": zod.coerce.string(),
+  "mediaId": zod.coerce.string()
+})
+
+export const updateShopifyAdminProductMediaAltBodyAltMax = 512;
+
+
+
+export const UpdateShopifyAdminProductMediaAltBody = zod.object({
+  "alt": zod.string().max(updateShopifyAdminProductMediaAltBodyAltMax)
+})
+
+export const UpdateShopifyAdminProductMediaAltResponse = zod.object({
+  "featuredMediaId": zod.string().nullable(),
+  "replacementStatus": zod.union([zod.literal('REPLACED'),zod.literal('PROCESSING'),zod.literal('FAILED'),zod.literal(null)]).nullable(),
+  "media": zod.array(zod.object({
+  "id": zod.string(),
+  "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
+  "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
+  "alt": zod.string().nullable(),
+  "imageUrl": zod.string().url().nullable(),
+  "errors": zod.array(zod.object({
+  "code": zod.string().nullable(),
+  "message": zod.string(),
+  "details": zod.string().nullable()
+}))
+}))
+})
+
+
+/**
  * Lists discount codes for the authenticated store owner.
  * @summary List Shopify discount codes
  */

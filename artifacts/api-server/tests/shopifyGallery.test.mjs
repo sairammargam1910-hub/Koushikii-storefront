@@ -45,6 +45,7 @@ async function harness(run, options = {}) {
     calls: [],
     failCreate: false,
     failDelete: false,
+    failUpdateAlt: false,
     reorderPending: false,
     createStatus: options.createStatus ?? "PROCESSING",
   };
@@ -80,6 +81,17 @@ async function harness(run, options = {}) {
         } else {
           state.media = state.media.filter((item) => !ids.includes(item.id));
           data = { productDeleteMedia: { deletedMediaIds: ids, mediaUserErrors: [] } };
+        }
+      } else if (query.includes("mutation MerchantProductUpdateMediaAlt")) {
+        if (state.failUpdateAlt) {
+          data = { productUpdateMedia: { media: [], mediaUserErrors: [{ message: "Shopify rejected the description" }] } };
+        } else {
+          const updated = variables.media.map((input) => {
+            const item = state.media.find((entry) => entry.id === input.id);
+            if (item) item.alt = input.alt;
+            return item && { id: item.id, alt: item.alt };
+          }).filter(Boolean);
+          data = { productUpdateMedia: { media: updated, mediaUserErrors: [] } };
         }
       } else if (query.includes("mutation MerchantProductReorderMedia")) {
         const positions = new Map(variables.moves.map((move) => [move.id, move.newPosition]));
@@ -128,6 +140,42 @@ test("loads every media page and exposes Shopify processing errors", async () =>
     });
     assert.equal(state.calls.filter((call) => call.query.includes("MerchantProductMedia")).length, 2);
   }, { media: entries });
+});
+
+test("saves image alternative text in Shopify and returns it on a later gallery load", async () => {
+  await harness(async ({ request, state }) => {
+    const oldDescriptions = state.media.map((item) => item.alt);
+    const result = await request("PATCH", `/media/${encodeURIComponent(gid("MediaImage", 2))}`, {
+      alt: "Indigo silk saree with a gold woven border",
+    });
+    assert.equal(result.status, 200);
+    assert.equal(result.data.media.find((item) => item.id === gid("MediaImage", 2)).alt, "Indigo silk saree with a gold woven border");
+    assert.equal(state.media[0].alt, oldDescriptions[0], "other Shopify descriptions must remain unchanged");
+    assert.equal(state.media[2].alt, oldDescriptions[2], "other Shopify descriptions must remain unchanged");
+    const savedInput = state.calls.find((call) => call.query.includes("mutation MerchantProductUpdateMediaAlt"));
+    assert.deepEqual(savedInput.variables.media, [{
+      id: gid("MediaImage", 2),
+      alt: "Indigo silk saree with a gold woven border",
+    }]);
+    const reloaded = await request("GET", "/media");
+    assert.equal(reloaded.data.media.find((item) => item.id === gid("MediaImage", 2)).alt, "Indigo silk saree with a gold woven border");
+  });
+});
+
+test("validates image ownership, image type, description length, and Shopify update errors", async () => {
+  await harness(async ({ request, state }) => {
+    const imageUrl = `/media/${encodeURIComponent(gid("MediaImage", 2))}`;
+    assert.equal((await request("PATCH", imageUrl, { alt: "x".repeat(513) })).status, 400);
+    assert.equal((await request("PATCH", `/media/${encodeURIComponent(gid("MediaImage", 99))}`, { alt: "Description" })).status, 404);
+    state.media[1] = media(2, { mediaContentType: "VIDEO" });
+    assert.equal((await request("PATCH", imageUrl, { alt: "Description" })).status, 400);
+    state.media[1] = media(2);
+    state.failUpdateAlt = true;
+    const failed = await request("PATCH", imageUrl, { alt: "Description" });
+    assert.equal(failed.status, 400);
+    assert.equal(state.media[1].alt, "Photo 2", "Shopify rejection must not overwrite the saved description");
+    assert.equal((await request("PATCH", imageUrl, { alt: "" }, false)).status, 403);
+  });
 });
 
 test("replaces only the selected image after Shopify accepts its replacement", async () => {
@@ -232,6 +280,7 @@ test("generated media routes keep Shopify GIDs inside encoded path segments", as
   assert.equal(module.exports.getUpdateShopifyAdminProductMediaUrl(productId), `/api/shopify/admin/products/${encodeURIComponent(productId)}/media`);
   assert.equal(module.exports.getReorderShopifyAdminProductMediaUrl(productId), `/api/shopify/admin/products/${encodeURIComponent(productId)}/media/order`);
   assert.equal(module.exports.getDeleteShopifyAdminProductMediaUrl(productId, mediaId), `/api/shopify/admin/products/${encodeURIComponent(productId)}/media/${encodeURIComponent(mediaId)}`);
+  assert.equal(module.exports.getUpdateShopifyAdminProductMediaAltUrl(productId, mediaId), `/api/shopify/admin/products/${encodeURIComponent(productId)}/media/${encodeURIComponent(mediaId)}`);
 });
 
 test("removes only a media item belonging to the requested product", async () => {

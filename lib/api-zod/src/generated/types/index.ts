@@ -25,6 +25,7 @@ export * from './shopifyAdminInventoryVariantProductStatus';
 export * from './shopifyAdminProduct';
 export * from './shopifyAdminProductInput';
 export * from './shopifyAdminProductMedia';
+export * from './shopifyAdminProductMediaAltUpdate';
 export * from './shopifyAdminProductMediaError';
 export * from './shopifyAdminProductMediaInput';
 export * from './shopifyAdminProductMediaMediaContentType';
