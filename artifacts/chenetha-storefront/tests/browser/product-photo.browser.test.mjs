@@ -167,6 +167,60 @@ async function mockSuccessfulUpload(page, { delay } = {}) {
   });
 }
 
+async function mockReplacementFlow(page, replacementStatuses) {
+  const original = {
+    id: "existing-photo",
+    mediaContentType: "IMAGE",
+    status: "READY",
+    alt: "Existing gallery photo",
+    imageUrl: "https://cdn.example.test/existing-gallery-photo.jpg",
+    errors: [],
+  };
+  let media = [original];
+  let replacementCount = 0;
+  const replacements = [];
+  await page.route("**/api/shopify/admin/products/**/media**", async (route) => {
+    const request = route.request();
+    if (request.method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ featuredMediaId: media[0]?.id ?? null, replacementStatus: null, media }),
+      });
+      return;
+    }
+    if (request.method() === "POST") {
+      const body = request.postDataJSON();
+      replacements.push(body);
+      const replacementStatus = replacementStatuses[replacementCount++];
+      assert.ok(replacementStatus, "each mocked replacement should have an outcome");
+      const replacement = {
+        id: `replacement-photo-${replacementCount}`,
+        mediaContentType: "IMAGE",
+        status: replacementStatus === "REPLACED" ? "READY" : replacementStatus,
+        alt: "Replacement gallery photo",
+        imageUrl: replacementStatus === "REPLACED"
+          ? `https://cdn.example.test/replacement-${replacementCount}.jpg`
+          : null,
+        errors: replacementStatus === "FAILED" ? [{ code: "PROCESSING_ERROR", message: "Shopify could not process this image.", details: null }] : [],
+      };
+      media = replacementStatus === "REPLACED" ? [replacement] : [...media, replacement];
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          featuredMediaId: media[0]?.id ?? null,
+          replacementStatus,
+          media,
+        }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+  return replacements;
+}
+
 test("mobile file selection previews the photo and rejects unsupported or oversized files", async () => {
   const { context, page } = await openForm({ mobile: true });
   const uploadRequests = [];
@@ -443,5 +497,67 @@ test("a failed gallery photo upload can be retried without losing existing media
   assert.equal(galleryCalls.length, 1);
   assert.equal(galleryCalls[0].body.resourceUrl, uploadUrl);
   await page.getByTestId("gallery-item-0").getByText("Existing gallery photo").waitFor();
+  await context.close();
+});
+
+test("a failed gallery replacement keeps the original until a retry is ready", async () => {
+  const { context, page, setupResult: replacements } = await openForm({
+    edit: true,
+    setup: (targetPage) => mockReplacementFlow(targetPage, ["FAILED", "REPLACED"]),
+  });
+  page.on("dialog", (dialog) => dialog.accept());
+  await mockSuccessfulUpload(page);
+  await page.getByTestId("gallery-item-0").getByText("Existing gallery photo").waitFor();
+
+  const picker = page.getByLabel("Choose a product gallery photo");
+  await page.getByTestId("button-gallery-replace-0").click();
+  await picker.setInputFiles({ name: "failed-replacement.jpg", mimeType: "image/jpeg", buffer: imageBytes });
+  await page.getByTestId("text-gallery-error").getByText(/Shopify could not process the replacement/).waitFor();
+
+  const originalImage = page.locator('img[src="https://cdn.example.test/existing-gallery-photo.jpg"]');
+  await originalImage.waitFor({ state: "visible" });
+  await page.getByTestId("gallery-item-1").getByText("Failed", { exact: true }).waitFor();
+  assert.equal(replacements.length, 1);
+  assert.equal(replacements[0].replaceMediaId, "existing-photo");
+
+  await page.getByTestId("button-gallery-replace-0").click();
+  await picker.setInputFiles({ name: "ready-replacement.jpg", mimeType: "image/jpeg", buffer: imageBytes });
+  await page.getByText("The selected image was replaced.", { exact: false }).waitFor();
+
+  assert.equal(replacements.length, 2);
+  assert.equal(replacements[1].replaceMediaId, "existing-photo");
+  await originalImage.waitFor({ state: "detached" });
+  await page.locator('img[src="https://cdn.example.test/replacement-2.jpg"]').waitFor({ state: "visible" });
+  await context.close();
+});
+
+test("a processing gallery replacement leaves the original available for recovery", async () => {
+  const { context, page, setupResult: replacements } = await openForm({
+    edit: true,
+    setup: (targetPage) => mockReplacementFlow(targetPage, ["PROCESSING", "REPLACED"]),
+  });
+  page.on("dialog", (dialog) => dialog.accept());
+  await mockSuccessfulUpload(page);
+  await page.getByTestId("gallery-item-0").getByText("Existing gallery photo").waitFor();
+
+  const picker = page.getByLabel("Choose a product gallery photo");
+  const originalImage = page.locator('img[src="https://cdn.example.test/existing-gallery-photo.jpg"]');
+  await page.getByTestId("button-gallery-replace-0").click();
+  await picker.setInputFiles({ name: "processing-replacement.jpg", mimeType: "image/jpeg", buffer: imageBytes });
+  await page.getByText(/The new photo is processing\. The previous image was kept/).waitFor();
+
+  await originalImage.waitFor({ state: "visible" });
+  await page.getByTestId("gallery-item-1").getByText("Processing", { exact: true }).waitFor();
+  assert.equal(replacements.length, 1);
+  assert.equal(replacements[0].replaceMediaId, "existing-photo");
+
+  await page.getByTestId("button-gallery-replace-0").click();
+  await picker.setInputFiles({ name: "recovered-replacement.jpg", mimeType: "image/jpeg", buffer: imageBytes });
+  await page.getByText("The selected image was replaced.", { exact: false }).waitFor();
+
+  assert.equal(replacements.length, 2);
+  assert.equal(replacements[1].replaceMediaId, "existing-photo");
+  await originalImage.waitFor({ state: "detached" });
+  await page.locator('img[src="https://cdn.example.test/replacement-2.jpg"]').waitFor({ state: "visible" });
   await context.close();
 });
