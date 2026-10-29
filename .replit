@@ -18,3 +18,8 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+MERCHANT_ADMIN_EMAIL = "sree.koushikii.2025@gmail.com"
