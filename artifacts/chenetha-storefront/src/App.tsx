@@ -24,6 +24,7 @@ import { Profile } from "./storefront/Profile";
 import { Orders } from "./storefront/Orders";
 import { Videos } from "./storefront/Videos";
 import { AdminDashboard, AdminDiscounts, AdminProducts, AdminSignInPrompt } from "./admin/Admin";
+import { ShopperPreferencesProvider } from "./storefront/ShopperPreferences";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -226,7 +227,9 @@ function ClerkApp() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <ClerkCacheInvalidator />
-      <Router />
+      <ShopperPreferencesProvider>
+        <Router />
+      </ShopperPreferencesProvider>
     </ClerkProvider>
   );
 }

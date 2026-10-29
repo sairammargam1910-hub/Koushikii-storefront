@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: shopify
     description: Shopify storefront operations
+  - name: shopper
+    description: Signed-in shopper preferences
 paths:
   /healthz:
     get:
@@ -60,6 +62,125 @@ paths:
                 $ref: "#/components/schemas/ShopifyCustomerAccountResponse"
         "502":
           description: Shopify account page could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopper/preferences:
+    get:
+      operationId: getShopperPreferences
+      tags: [shopper]
+      summary: Get the signed-in shopper's saved preferences
+      description: Returns wishlist and profile preferences stored privately for the authenticated Clerk user.
+      responses:
+        "200":
+          description: Shopper preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopperPreferencesResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Shopper preferences could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: clearShopperPreferences
+      tags: [shopper]
+      summary: Clear all saved shopper preferences
+      description: Removes the authenticated shopper's saved wishlist and profile preferences.
+      responses:
+        "204":
+          description: Preferences cleared
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Shopper preferences could not be cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopper/preferences/wishlist:
+    put:
+      operationId: updateShopperWishlist
+      tags: [shopper]
+      summary: Replace the signed-in shopper's wishlist
+      description: Saves wishlist product identifiers to the authenticated shopper's private account metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopperWishlistUpdate"
+      responses:
+        "200":
+          description: Updated shopper preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopperPreferencesResponse"
+        "400":
+          description: Wishlist is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Shopper wishlist could not be saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopper/preferences/profile:
+    put:
+      operationId: updateShopperProfile
+      tags: [shopper]
+      summary: Replace the signed-in shopper's profile preferences
+      description: Saves optional contact details and saved addresses to the authenticated shopper's private account metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopperProfileUpdate"
+      responses:
+        "200":
+          description: Updated shopper preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopperPreferencesResponse"
+        "400":
+          description: Profile preferences are invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Shopper profile could not be saved
           content:
             application/json:
               schema:
@@ -1390,4 +1511,88 @@ components:
         discount:
           $ref: "#/components/schemas/ShopifyAdminDiscount"
       required: [discount]
+    ShopperAddress:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 100
+        label:
+          type: string
+          maxLength: 160
+        recipient:
+          type: string
+          maxLength: 160
+        street:
+          type: string
+          maxLength: 500
+        city:
+          type: string
+          maxLength: 160
+        state:
+          type: string
+          maxLength: 160
+        pin:
+          type: string
+          maxLength: 12
+      required: [id, label, recipient, street, city, state, pin]
+    ShopperProfile:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        email:
+          type: string
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 40
+        addresses:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ShopperAddress"
+      required: [name, email, phone, addresses]
+    ShopperProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 80
+        email:
+          type: string
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 40
+        addresses:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ShopperAddress"
+      required: [name, email, phone, addresses]
+    ShopperWishlistUpdate:
+      type: object
+      properties:
+        ids:
+          type: array
+          maxItems: 500
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 250
+      required: [ids]
+    ShopperPreferencesResponse:
+      type: object
+      properties:
+        wishlist:
+          type: array
+          items:
+            type: string
+        profile:
+          $ref: "#/components/schemas/ShopperProfile"
+      required: [wishlist, profile]
 

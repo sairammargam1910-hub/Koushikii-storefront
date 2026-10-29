@@ -460,6 +460,62 @@ export interface ShopifyAdminDiscountResponse {
   discount: ShopifyAdminDiscount;
 }
 
+export interface ShopperAddress {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  id: string;
+  /** @maxLength 160 */
+  label: string;
+  /** @maxLength 160 */
+  recipient: string;
+  /** @maxLength 500 */
+  street: string;
+  /** @maxLength 160 */
+  city: string;
+  /** @maxLength 160 */
+  state: string;
+  /** @maxLength 12 */
+  pin: string;
+}
+
+export interface ShopperProfile {
+  /** @maxLength 80 */
+  name: string;
+  /** @maxLength 254 */
+  email: string;
+  /** @maxLength 40 */
+  phone: string;
+  /** @maxItems 20 */
+  addresses: ShopperAddress[];
+}
+
+export interface ShopperProfileUpdate {
+  /** @maxLength 80 */
+  name: string;
+  /** @maxLength 254 */
+  email: string;
+  /** @maxLength 40 */
+  phone: string;
+  /** @maxItems 20 */
+  addresses: ShopperAddress[];
+}
+
+export interface ShopperWishlistUpdate {
+  /**
+     * @maxItems 500
+     * @items.minLength 1
+     * @items.maxLength 250
+     */
+  ids: string[];
+}
+
+export interface ShopperPreferencesResponse {
+  wishlist: string[];
+  profile: ShopperProfile;
+}
+
 export type GetShopifyCartParams = {
 /**
  * @minLength 1

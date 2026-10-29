@@ -60,6 +60,203 @@ export const GetShopifyCustomerAccountResponse = zod.object({
 
 
 /**
+ * Returns wishlist and profile preferences stored privately for the authenticated Clerk user.
+ * @summary Get the signed-in shopper's saved preferences
+ */
+export const getShopperPreferencesResponseProfileNameMax = 80;
+
+export const getShopperPreferencesResponseProfileEmailMax = 254;
+
+export const getShopperPreferencesResponseProfilePhoneMax = 40;
+
+export const getShopperPreferencesResponseProfileAddressesItemIdMax = 100;
+
+export const getShopperPreferencesResponseProfileAddressesItemLabelMax = 160;
+
+export const getShopperPreferencesResponseProfileAddressesItemRecipientMax = 160;
+
+export const getShopperPreferencesResponseProfileAddressesItemStreetMax = 500;
+
+export const getShopperPreferencesResponseProfileAddressesItemCityMax = 160;
+
+export const getShopperPreferencesResponseProfileAddressesItemStateMax = 160;
+
+export const getShopperPreferencesResponseProfileAddressesItemPinMax = 12;
+
+export const getShopperPreferencesResponseProfileAddressesMax = 20;
+
+
+
+export const GetShopperPreferencesResponse = zod.object({
+  "wishlist": zod.array(zod.string()),
+  "profile": zod.object({
+  "name": zod.string().max(getShopperPreferencesResponseProfileNameMax),
+  "email": zod.string().max(getShopperPreferencesResponseProfileEmailMax),
+  "phone": zod.string().max(getShopperPreferencesResponseProfilePhoneMax),
+  "addresses": zod.array(zod.object({
+  "id": zod.string().min(1).max(getShopperPreferencesResponseProfileAddressesItemIdMax),
+  "label": zod.string().max(getShopperPreferencesResponseProfileAddressesItemLabelMax),
+  "recipient": zod.string().max(getShopperPreferencesResponseProfileAddressesItemRecipientMax),
+  "street": zod.string().max(getShopperPreferencesResponseProfileAddressesItemStreetMax),
+  "city": zod.string().max(getShopperPreferencesResponseProfileAddressesItemCityMax),
+  "state": zod.string().max(getShopperPreferencesResponseProfileAddressesItemStateMax),
+  "pin": zod.string().max(getShopperPreferencesResponseProfileAddressesItemPinMax)
+})).max(getShopperPreferencesResponseProfileAddressesMax)
+})
+})
+
+
+/**
+ * Removes the authenticated shopper's saved wishlist and profile preferences.
+ * @summary Clear all saved shopper preferences
+ */
+export const ClearShopperPreferencesResponse = zod.void()
+
+
+/**
+ * Saves wishlist product identifiers to the authenticated shopper's private account metadata.
+ * @summary Replace the signed-in shopper's wishlist
+ */
+export const updateShopperWishlistBodyIdsItemMax = 250;
+
+export const updateShopperWishlistBodyIdsMax = 500;
+
+
+
+export const UpdateShopperWishlistBody = zod.object({
+  "ids": zod.array(zod.string().min(1).max(updateShopperWishlistBodyIdsItemMax)).max(updateShopperWishlistBodyIdsMax)
+})
+
+export const updateShopperWishlistResponseProfileNameMax = 80;
+
+export const updateShopperWishlistResponseProfileEmailMax = 254;
+
+export const updateShopperWishlistResponseProfilePhoneMax = 40;
+
+export const updateShopperWishlistResponseProfileAddressesItemIdMax = 100;
+
+export const updateShopperWishlistResponseProfileAddressesItemLabelMax = 160;
+
+export const updateShopperWishlistResponseProfileAddressesItemRecipientMax = 160;
+
+export const updateShopperWishlistResponseProfileAddressesItemStreetMax = 500;
+
+export const updateShopperWishlistResponseProfileAddressesItemCityMax = 160;
+
+export const updateShopperWishlistResponseProfileAddressesItemStateMax = 160;
+
+export const updateShopperWishlistResponseProfileAddressesItemPinMax = 12;
+
+export const updateShopperWishlistResponseProfileAddressesMax = 20;
+
+
+
+export const UpdateShopperWishlistResponse = zod.object({
+  "wishlist": zod.array(zod.string()),
+  "profile": zod.object({
+  "name": zod.string().max(updateShopperWishlistResponseProfileNameMax),
+  "email": zod.string().max(updateShopperWishlistResponseProfileEmailMax),
+  "phone": zod.string().max(updateShopperWishlistResponseProfilePhoneMax),
+  "addresses": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateShopperWishlistResponseProfileAddressesItemIdMax),
+  "label": zod.string().max(updateShopperWishlistResponseProfileAddressesItemLabelMax),
+  "recipient": zod.string().max(updateShopperWishlistResponseProfileAddressesItemRecipientMax),
+  "street": zod.string().max(updateShopperWishlistResponseProfileAddressesItemStreetMax),
+  "city": zod.string().max(updateShopperWishlistResponseProfileAddressesItemCityMax),
+  "state": zod.string().max(updateShopperWishlistResponseProfileAddressesItemStateMax),
+  "pin": zod.string().max(updateShopperWishlistResponseProfileAddressesItemPinMax)
+})).max(updateShopperWishlistResponseProfileAddressesMax)
+})
+})
+
+
+/**
+ * Saves optional contact details and saved addresses to the authenticated shopper's private account metadata.
+ * @summary Replace the signed-in shopper's profile preferences
+ */
+export const updateShopperProfileBodyNameMax = 80;
+
+export const updateShopperProfileBodyEmailMax = 254;
+
+export const updateShopperProfileBodyPhoneMax = 40;
+
+export const updateShopperProfileBodyAddressesItemIdMax = 100;
+
+export const updateShopperProfileBodyAddressesItemLabelMax = 160;
+
+export const updateShopperProfileBodyAddressesItemRecipientMax = 160;
+
+export const updateShopperProfileBodyAddressesItemStreetMax = 500;
+
+export const updateShopperProfileBodyAddressesItemCityMax = 160;
+
+export const updateShopperProfileBodyAddressesItemStateMax = 160;
+
+export const updateShopperProfileBodyAddressesItemPinMax = 12;
+
+export const updateShopperProfileBodyAddressesMax = 20;
+
+
+
+export const UpdateShopperProfileBody = zod.object({
+  "name": zod.string().max(updateShopperProfileBodyNameMax),
+  "email": zod.string().max(updateShopperProfileBodyEmailMax),
+  "phone": zod.string().max(updateShopperProfileBodyPhoneMax),
+  "addresses": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateShopperProfileBodyAddressesItemIdMax),
+  "label": zod.string().max(updateShopperProfileBodyAddressesItemLabelMax),
+  "recipient": zod.string().max(updateShopperProfileBodyAddressesItemRecipientMax),
+  "street": zod.string().max(updateShopperProfileBodyAddressesItemStreetMax),
+  "city": zod.string().max(updateShopperProfileBodyAddressesItemCityMax),
+  "state": zod.string().max(updateShopperProfileBodyAddressesItemStateMax),
+  "pin": zod.string().max(updateShopperProfileBodyAddressesItemPinMax)
+})).max(updateShopperProfileBodyAddressesMax)
+})
+
+export const updateShopperProfileResponseProfileNameMax = 80;
+
+export const updateShopperProfileResponseProfileEmailMax = 254;
+
+export const updateShopperProfileResponseProfilePhoneMax = 40;
+
+export const updateShopperProfileResponseProfileAddressesItemIdMax = 100;
+
+export const updateShopperProfileResponseProfileAddressesItemLabelMax = 160;
+
+export const updateShopperProfileResponseProfileAddressesItemRecipientMax = 160;
+
+export const updateShopperProfileResponseProfileAddressesItemStreetMax = 500;
+
+export const updateShopperProfileResponseProfileAddressesItemCityMax = 160;
+
+export const updateShopperProfileResponseProfileAddressesItemStateMax = 160;
+
+export const updateShopperProfileResponseProfileAddressesItemPinMax = 12;
+
+export const updateShopperProfileResponseProfileAddressesMax = 20;
+
+
+
+export const UpdateShopperProfileResponse = zod.object({
+  "wishlist": zod.array(zod.string()),
+  "profile": zod.object({
+  "name": zod.string().max(updateShopperProfileResponseProfileNameMax),
+  "email": zod.string().max(updateShopperProfileResponseProfileEmailMax),
+  "phone": zod.string().max(updateShopperProfileResponseProfilePhoneMax),
+  "addresses": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateShopperProfileResponseProfileAddressesItemIdMax),
+  "label": zod.string().max(updateShopperProfileResponseProfileAddressesItemLabelMax),
+  "recipient": zod.string().max(updateShopperProfileResponseProfileAddressesItemRecipientMax),
+  "street": zod.string().max(updateShopperProfileResponseProfileAddressesItemStreetMax),
+  "city": zod.string().max(updateShopperProfileResponseProfileAddressesItemCityMax),
+  "state": zod.string().max(updateShopperProfileResponseProfileAddressesItemStateMax),
+  "pin": zod.string().max(updateShopperProfileResponseProfileAddressesItemPinMax)
+})).max(updateShopperProfileResponseProfileAddressesMax)
+})
+})
+
+
+/**
  * Returns the current Shopify cart and its hosted checkout URL.
  * @summary Get a Shopify cart
  */

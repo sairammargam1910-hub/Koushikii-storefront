@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Heart } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addShopifyCartLine,
@@ -11,7 +12,8 @@ import {
   type ShopifyProduct,
   updateShopifyCartLines,
 } from "@workspace/api-client-react";
-import { base, Empty, Qty, Shell } from "./_shared";
+import { base, Empty, Qty, Shell, useStore } from "./_shared";
+import { useShopperPreferences } from "./ShopperPreferences";
 import type { CatalogFilters } from "./_shared/catalog-filter";
 import { normalizeRegion, regions } from "./_shared/catalog-filter";
 import {
@@ -20,13 +22,14 @@ import {
 } from "./shopifyCartState";
 import "./ShopifyCatalog.css";
 
-export function useShopifyCatalog() {
+export function useShopifyCatalog(enabled = true) {
   return useQuery({
     queryKey: getGetShopifyProductsQueryKey(),
     queryFn: ({ signal }) => getShopifyProducts({ signal }),
     staleTime: 60_000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    enabled,
   });
 }
 
@@ -165,6 +168,10 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
   const price = productPrice(product);
   const demo = isDemoProduct(product);
   const href = `${base}Product?shopify=${encodeURIComponent(product.handle)}`;
+  const wishlist = useStore("kq-wish");
+  const { toggleWishlist, loading, error } = useShopperPreferences();
+  const [wishlistError, setWishlistError] = useState(false);
+  const saved = wishlist.some((item) => item.id === product.id);
 
   return (
     <article
@@ -184,6 +191,20 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
           {demo ? "Demo only" : "Shopify"}
         </span>
       </a>
+      <button
+        className="heart"
+        type="button"
+        disabled={loading || Boolean(error)}
+        data-testid={`button-wishlist-shopify-${product.handle}`}
+        aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
+        aria-pressed={saved}
+        onClick={() => {
+          setWishlistError(false);
+          void toggleWishlist(product.id).catch(() => setWishlistError(true));
+        }}
+      >
+        <Heart size={16} fill={saved ? "var(--red)" : "none"} />
+      </button>
       <a href={href} className="shopify-product-title">
         <h3>{product.title}</h3>
       </a>
@@ -193,6 +214,7 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
         {price || "Price to be confirmed"}
       </span>
       {demo && <small className="shopify-card-note">Not for sale · Replace demo details first</small>}
+      {wishlistError && <small role="alert">Wishlist could not be saved. Please try again.</small>}
     </article>
   );
 }

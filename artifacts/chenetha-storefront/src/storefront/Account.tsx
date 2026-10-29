@@ -96,7 +96,7 @@ export function Account() {
             <span className="eyebrow">Account resources</span>
             <h3 style={{ margin: "16px 0" }}>A place for the pieces you love.</h3>
             <p className="muted">
-              Your wishlist and bag remain saved in this browser.
+              Your wishlist and profile preferences sync with your signed-in account. Guest preferences stay in this browser, and your bag remains browser-local.
             </p>
             <nav className="support-links" aria-label="Account resources">
               <a href={base + "Wishlist"}>Your wishlist →</a>

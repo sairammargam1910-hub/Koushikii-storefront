@@ -44,7 +44,10 @@ import type {
   ShopifyCartResponse,
   ShopifyCartUpdateInput,
   ShopifyCustomerAccountResponse,
-  ShopifyProductsResponse
+  ShopifyProductsResponse,
+  ShopperPreferencesResponse,
+  ShopperProfileUpdate,
+  ShopperWishlistUpdate
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -307,6 +310,337 @@ export function useGetShopifyCustomerAccount<TData = Awaited<ReturnType<typeof g
 
 
 
+
+export const getGetShopperPreferencesUrl = () => {
+
+
+
+
+  return `/api/shopper/preferences`
+}
+
+/**
+ * Returns wishlist and profile preferences stored privately for the authenticated Clerk user.
+ * @summary Get the signed-in shopper's saved preferences
+ */
+export const getShopperPreferences = async ( options?: Parameters<typeof customFetch>[1]): Promise<ShopperPreferencesResponse> => {
+
+  return customFetch<ShopperPreferencesResponse>(getGetShopperPreferencesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopperPreferencesQueryKey = () => {
+    return [
+    `/api/shopper/preferences`
+    ] as const;
+    }
+
+
+export const getGetShopperPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getShopperPreferences>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopperPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopperPreferencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopperPreferences>>> = ({ signal }) => getShopperPreferences({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopperPreferences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopperPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getShopperPreferences>>>
+export type GetShopperPreferencesQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get the signed-in shopper's saved preferences
+ */
+
+export function useGetShopperPreferences<TData = Awaited<ReturnType<typeof getShopperPreferences>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopperPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopperPreferencesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getClearShopperPreferencesUrl = () => {
+
+
+
+
+  return `/api/shopper/preferences`
+}
+
+/**
+ * Removes the authenticated shopper's saved wishlist and profile preferences.
+ * @summary Clear all saved shopper preferences
+ */
+export const clearShopperPreferences = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getClearShopperPreferencesUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getClearShopperPreferencesMutationKey = () => ['clearShopperPreferences'] as const;
+
+export const getClearShopperPreferencesMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearShopperPreferences>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearShopperPreferences>>, TError,void, TContext> => {
+
+const mutationKey = getClearShopperPreferencesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearShopperPreferences>>, void> = () => {
+
+
+          return  clearShopperPreferences(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearShopperPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof clearShopperPreferences>>>
+
+    export type ClearShopperPreferencesMutationError = ErrorType<ApiError>
+
+
+    /**
+ * @summary Clear all saved shopper preferences
+ */
+export const useClearShopperPreferences = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearShopperPreferences>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof clearShopperPreferences>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getClearShopperPreferencesMutationOptions(options));
+    }
+
+export const getUpdateShopperWishlistUrl = () => {
+
+
+
+
+  return `/api/shopper/preferences/wishlist`
+}
+
+/**
+ * Saves wishlist product identifiers to the authenticated shopper's private account metadata.
+ * @summary Replace the signed-in shopper's wishlist
+ */
+export const updateShopperWishlist = async (shopperWishlistUpdate: ShopperWishlistUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ShopperPreferencesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopperPreferencesResponse>(getUpdateShopperWishlistUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopperWishlistUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateShopperWishlistMutationKey = () => ['updateShopperWishlist'] as const;
+
+export const getUpdateShopperWishlistMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopperWishlist>>, TError,UpdateShopperWishlistMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateShopperWishlist>>, TError,UpdateShopperWishlistMutationVariables, TContext> => {
+
+const mutationKey = getUpdateShopperWishlistMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShopperWishlist>>, UpdateShopperWishlistMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateShopperWishlist(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateShopperWishlistMutationResult = NonNullable<Awaited<ReturnType<typeof updateShopperWishlist>>>
+    export type UpdateShopperWishlistMutationBody = BodyType<ShopperWishlistUpdate>
+    export type UpdateShopperWishlistMutationError = ErrorType<ApiError>
+    export type UpdateShopperWishlistMutationVariables = {data: BodyType<ShopperWishlistUpdate>}
+
+    /**
+ * @summary Replace the signed-in shopper's wishlist
+ */
+export const useUpdateShopperWishlist = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopperWishlist>>, TError,UpdateShopperWishlistMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateShopperWishlist>>,
+        TError,
+        UpdateShopperWishlistMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateShopperWishlistMutationOptions(options));
+    }
+
+export const getUpdateShopperProfileUrl = () => {
+
+
+
+
+  return `/api/shopper/preferences/profile`
+}
+
+/**
+ * Saves optional contact details and saved addresses to the authenticated shopper's private account metadata.
+ * @summary Replace the signed-in shopper's profile preferences
+ */
+export const updateShopperProfile = async (shopperProfileUpdate: ShopperProfileUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ShopperPreferencesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopperPreferencesResponse>(getUpdateShopperProfileUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopperProfileUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateShopperProfileMutationKey = () => ['updateShopperProfile'] as const;
+
+export const getUpdateShopperProfileMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopperProfile>>, TError,UpdateShopperProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateShopperProfile>>, TError,UpdateShopperProfileMutationVariables, TContext> => {
+
+const mutationKey = getUpdateShopperProfileMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShopperProfile>>, UpdateShopperProfileMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateShopperProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateShopperProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateShopperProfile>>>
+    export type UpdateShopperProfileMutationBody = BodyType<ShopperProfileUpdate>
+    export type UpdateShopperProfileMutationError = ErrorType<ApiError>
+    export type UpdateShopperProfileMutationVariables = {data: BodyType<ShopperProfileUpdate>}
+
+    /**
+ * @summary Replace the signed-in shopper's profile preferences
+ */
+export const useUpdateShopperProfile = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopperProfile>>, TError,UpdateShopperProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateShopperProfile>>,
+        TError,
+        UpdateShopperProfileMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateShopperProfileMutationOptions(options));
+    }
 
 export const getGetShopifyCartUrl = (params: GetShopifyCartParams,) => {
   const normalizedParams = new URLSearchParams();

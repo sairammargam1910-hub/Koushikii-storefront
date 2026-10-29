@@ -57,3 +57,8 @@ export * from './shopifyOption';
 export * from './shopifyProduct';
 export * from './shopifyProductsResponse';
 export * from './shopifyVariant';
+export * from './shopperAddress';
+export * from './shopperPreferencesResponse';
+export * from './shopperProfile';
+export * from './shopperProfileUpdate';
+export * from './shopperWishlistUpdate';
