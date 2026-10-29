@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShopifyAdminProductOption } from './shopifyAdminProductOption';
 import type { ShopifyAdminProductStatus } from './shopifyAdminProductStatus';
 import type { ShopifyAdminProductVariant } from './shopifyAdminProductVariant';
 
@@ -19,4 +20,5 @@ export interface ShopifyAdminProduct {
   /** @nullable */
   imageUrl: string | null;
   variants: ShopifyAdminProductVariant[];
+  options: ShopifyAdminProductOption[];
 }

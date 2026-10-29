@@ -228,6 +228,14 @@ export const GetShopifyAdminProductsResponse = zod.object({
   "active": zod.boolean(),
   "available": zod.number().int()
 }))
+})),
+  "options": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "values": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))
 }))
 }))
 })
@@ -292,6 +300,14 @@ export const CreateShopifyAdminProductResponse = zod.object({
   "active": zod.boolean(),
   "available": zod.number().int()
 }))
+})),
+  "options": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "values": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))
 }))
 })
 })
@@ -335,6 +351,14 @@ export const GetShopifyAdminProductResponse = zod.object({
   "locationName": zod.string(),
   "active": zod.boolean(),
   "available": zod.number().int()
+}))
+})),
+  "options": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "values": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
 }))
 }))
 })
@@ -401,6 +425,14 @@ export const UpdateShopifyAdminProductResponse = zod.object({
   "locationName": zod.string(),
   "active": zod.boolean(),
   "available": zod.number().int()
+}))
+})),
+  "options": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "values": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
 }))
 }))
 })
@@ -481,6 +513,131 @@ export const UpdateShopifyAdminVariantResponse = zod.object({
   "locationName": zod.string(),
   "active": zod.boolean(),
   "available": zod.number().int()
+}))
+})),
+  "options": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "values": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))
+}))
+})
+})
+
+
+/**
+ * Permanently deletes the selected variant. The product's last and default variants cannot be deleted.
+ * @summary Retire a Shopify product variant
+ */
+export const DeleteShopifyAdminVariantParams = zod.object({
+  "productId": zod.coerce.string(),
+  "variantId": zod.coerce.string()
+})
+
+export const DeleteShopifyAdminVariantResponse = zod.object({
+  "currencyCode": zod.string(),
+  "product": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "handle": zod.string(),
+  "description": zod.string(),
+  "productType": zod.string(),
+  "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  "tags": zod.array(zod.string()),
+  "imageUrl": zod.string().url().nullable(),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "price": zod.string(),
+  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryTracked": zod.boolean(),
+  "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})),
+  "inventoryLevels": zod.array(zod.object({
+  "locationId": zod.string(),
+  "locationName": zod.string(),
+  "active": zod.boolean(),
+  "available": zod.number().int()
+}))
+})),
+  "options": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "values": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))
+}))
+})
+})
+
+
+/**
+ * Adds missing values to existing options and creates one variant. It does not enable inventory tracking or set stock.
+ * @summary Create a Shopify variant from product options
+ */
+export const createShopifyAdminVariantPathProductIdMax = 200;
+
+
+
+export const CreateShopifyAdminVariantParams = zod.object({
+  "productId": zod.coerce.string().min(1).max(createShopifyAdminVariantPathProductIdMax)
+})
+
+export const createShopifyAdminVariantBodyPriceExclusiveMin = 0;
+
+export const createShopifyAdminVariantBodySelectedOptionsMax = 3;
+
+
+
+export const CreateShopifyAdminVariantBody = zod.object({
+  "price": zod.number().gt(createShopifyAdminVariantBodyPriceExclusiveMin),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})).min(1).max(createShopifyAdminVariantBodySelectedOptionsMax)
+})
+
+export const CreateShopifyAdminVariantResponse = zod.object({
+  "currencyCode": zod.string(),
+  "product": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "handle": zod.string(),
+  "description": zod.string(),
+  "productType": zod.string(),
+  "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  "tags": zod.array(zod.string()),
+  "imageUrl": zod.string().url().nullable(),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "price": zod.string(),
+  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryTracked": zod.boolean(),
+  "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})),
+  "inventoryLevels": zod.array(zod.object({
+  "locationId": zod.string(),
+  "locationName": zod.string(),
+  "active": zod.boolean(),
+  "available": zod.number().int()
+}))
+})),
+  "options": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "values": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
 }))
 }))
 })

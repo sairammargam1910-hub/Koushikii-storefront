@@ -418,6 +418,81 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteShopifyAdminVariant
+      tags: [shopify]
+      summary: Retire a Shopify product variant
+      description: Permanently deletes the selected variant. The product's last and default variants cannot be deleted.
+      responses:
+        "200":
+          description: Fresh Shopify product after deletion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductResponse"
+        "400":
+          description: The variant cannot be deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: The product or variant was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify could not delete the variant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/admin/products/{productId}/variants:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+    post:
+      operationId: createShopifyAdminVariant
+      tags: [shopify]
+      summary: Create a Shopify variant from product options
+      description: Adds missing values to existing options and creates one variant. It does not enable inventory tracking or set stock.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminVariantCreate"
+      responses:
+        "200":
+          description: Fresh Shopify product after creation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductResponse"
+        "400":
+          description: The option combination or price is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify product was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify could not create the variant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/admin/products/{productId}/media:
     parameters:
       - name: productId
@@ -866,6 +941,40 @@ components:
           type: string
         value:
           type: string
+    ShopifyAdminProductOptionValue:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    ShopifyAdminProductOption:
+      type: object
+      required: [id, name, values]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        values:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminProductOptionValue"
+    ShopifyAdminVariantCreate:
+      type: object
+      required: [price, selectedOptions]
+      additionalProperties: false
+      properties:
+        price:
+          type: number
+          exclusiveMinimum: 0
+        selectedOptions:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/ShopifyAdminVariantOption"
     ShopifyAdminVariantUpdate:
       type: object
       properties:
@@ -944,7 +1053,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyAdminProductVariant"
-      required: [id, title, handle, description, productType, status, tags, imageUrl, variants]
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminProductOption"
+      required: [id, title, handle, description, productType, status, tags, imageUrl, variants, options]
     ShopifyAdminProductsResponse:
       type: object
       properties:

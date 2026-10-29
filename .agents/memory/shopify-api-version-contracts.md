@@ -14,6 +14,12 @@ Validate requested GraphQL query cost against Shopify when changing nested conne
 
 **How to apply:** Keep nested previews small, paginate remaining inventory separately, and inspect the live API's requested-cost metadata for list, detail and continuation queries.
 
+For Shopify Admin API 2026-04, `productOptionUpdate` uses `OptionUpdateInput`; variant creation can use Shopify-issued option/value IDs, and should explicitly select `PRESERVE_STANDALONE_VARIANT`.
+
+**Why:** The live schema differs from plausible generated type names, and variant-create strategies can affect a product's standalone variant. Mocks do not validate either contract.
+
+**How to apply:** Introspect the pinned Shopify version before changing option/variant mutations; resolve IDs from Shopify and preserve the standalone variant unless the merchant explicitly requests otherwise.
+
 Do not remove a product's previous photo until Shopify reports the replacement media as `READY`.
 
 **Why:** Shopify media creation can return a processing or failed item without failing the mutation. Removing the existing image immediately can leave the product without a usable photo when the replacement later fails.

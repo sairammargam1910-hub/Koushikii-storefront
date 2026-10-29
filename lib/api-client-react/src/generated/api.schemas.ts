@@ -134,6 +134,27 @@ export interface ShopifyAdminVariantOption {
   value: string;
 }
 
+export interface ShopifyAdminProductOptionValue {
+  id: string;
+  name: string;
+}
+
+export interface ShopifyAdminProductOption {
+  id: string;
+  name: string;
+  values: ShopifyAdminProductOptionValue[];
+}
+
+export interface ShopifyAdminVariantCreate {
+  /** @exclusiveMinimum 0 */
+  price: number;
+  /**
+     * @minItems 1
+     * @maxItems 3
+     */
+  selectedOptions: ShopifyAdminVariantOption[];
+}
+
 export interface ShopifyAdminStockUpdate {
   locationId: string;
   /**
@@ -195,6 +216,7 @@ export interface ShopifyAdminProduct {
   /** @nullable */
   imageUrl: string | null;
   variants: ShopifyAdminProductVariant[];
+  options: ShopifyAdminProductOption[];
 }
 
 export interface ShopifyAdminProductsResponse {

@@ -19,6 +19,10 @@ import {
   UpdateShopifyAdminProductMediaBody,
   UpdateShopifyAdminProductMediaResponse,
   ReorderShopifyAdminProductMediaBody,
+  CreateShopifyAdminVariantBody,
+  CreateShopifyAdminVariantResponse,
+  DeleteShopifyAdminVariantParams,
+  DeleteShopifyAdminVariantResponse,
 } from "@workspace/api-zod";
 import { requireMerchantAdmin } from "../middlewares/merchantAdminAuth";
 import { invalidateShopifyCatalog } from "./shopify";
@@ -63,6 +67,7 @@ type AdminProduct = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   tags: string[];
   featuredMedia: { image: { url: string; altText: string | null } | null } | null;
+  options: Array<{ id: string; name: string; optionValues: Array<{ id: string; name: string }> }>;
   variants: { nodes: AdminVariant[]; pageInfo: { hasNextPage: boolean; endCursor: string } };
 };
 
@@ -88,6 +93,11 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
     ... on MediaImage {
       image { url altText }
     }
+  }
+  options {
+    id
+    name
+    optionValues { id name }
   }
   variants(first: 2) {
     pageInfo { hasNextPage endCursor }
@@ -213,6 +223,47 @@ const ADMIN_PRODUCT_VARIANT_UPDATE = `#graphql
     $variants: [ProductVariantsBulkInput!]!
   ) {
     productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+      userErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_PRODUCT_OPTION_UPDATE = `#graphql
+  mutation MerchantProductOptionUpdate(
+    $productId: ID!
+    $option: OptionUpdateInput!
+    $optionValuesToAdd: [OptionValueCreateInput!]
+    $variantStrategy: ProductOptionUpdateVariantStrategy
+  ) {
+    productOptionUpdate(
+      productId: $productId
+      option: $option
+      optionValuesToAdd: $optionValuesToAdd
+      variantStrategy: $variantStrategy
+    ) {
+      productOption { id optionValues { id name } }
+      userErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_PRODUCT_VARIANT_CREATE = `#graphql
+  mutation MerchantProductVariantCreate(
+    $productId: ID!
+    $variants: [ProductVariantsBulkInput!]!
+    $strategy: ProductVariantsBulkCreateStrategy
+  ) {
+    productVariantsBulkCreate(productId: $productId, variants: $variants, strategy: $strategy) {
+      productVariants { id }
+      userErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_PRODUCT_VARIANT_DELETE = `#graphql
+  mutation MerchantProductVariantDelete($productId: ID!, $variantsIds: [ID!]!) {
+    productVariantsBulkDelete(productId: $productId, variantsIds: $variantsIds) {
+      product { id }
       userErrors { field message }
     }
   }
@@ -412,6 +463,11 @@ function mapProduct(
     status: product.status,
     tags: product.tags,
     imageUrl: product.featuredMedia?.image?.url ?? null,
+    options: product.options.map((option) => ({
+      id: option.id,
+      name: option.name,
+      values: option.optionValues,
+    })),
     variants: product.variants.nodes.map((variant) => ({
       id: variant.id,
       title: variant.title,
@@ -882,6 +938,136 @@ router.patch("/shopify/admin/products/:productId/variants/:variantId", async (re
     res.json(UpdateShopifyAdminVariantResponse.parse({ currencyCode: updated.currencyCode, product: mapProduct(updated.product) }));
   } catch (error) {
     respondShopifyError(req, res, error, "Shopify could not complete the update. Some changes may have saved; refresh before retrying.");
+  } finally {
+    invalidateShopifyCatalog();
+  }
+});
+
+router.post("/shopify/admin/products/:productId/variants", async (req, res): Promise<void> => {
+  const productId = String(req.params.productId);
+  const parsed = CreateShopifyAdminVariantBody.safeParse(req.body);
+  if (!isShopifyProductId(productId) || !parsed.success) {
+    res.status(400).json({ error: "Choose a valid price and a value for every product option." });
+    return;
+  }
+  const input = parsed.data;
+  try {
+    const existing = await fetchProduct(productId);
+    const product = existing.product;
+    const options = product.options;
+    if (!options.length || options.some((option) => option.name === "Title")) {
+      throw new ShopifyInputError("Add a real product option, such as Size or Color, in Shopify before creating variants.");
+    }
+    if (options.length !== input.selectedOptions.length ||
+      options.length > 3 || new Set(input.selectedOptions.map((option) => option.name)).size !== options.length ||
+      options.some((option) => !input.selectedOptions.some((selected) => selected.name === option.name))) {
+      throw new ShopifyInputError("Use every existing product option exactly once. Add option types in Shopify before creating variants.");
+    }
+    if (product.variants.nodes.length >= 2048) {
+      throw new ShopifyInputError("Shopify's 2,048-variant product limit has been reached.");
+    }
+    if (input.selectedOptions.some((option) => !option.value.trim() || option.value.length > 255)) {
+      throw new ShopifyInputError("Every option value must contain 1–255 characters.");
+    }
+
+    const normalized = (value: string) => value.trim().toLocaleLowerCase();
+    const selectedByName = new Map(input.selectedOptions.map((option) => [option.name, normalized(option.value)]));
+    const duplicate = product.variants.nodes.some((variant) =>
+      variant.selectedOptions.length === options.length &&
+      variant.selectedOptions.every((option) => selectedByName.get(option.name) === normalized(option.value)),
+    );
+    if (duplicate) {
+      throw new ShopifyInputError("This size/color combination already exists.");
+    }
+
+    let addedOptionValue = false;
+    for (const selected of input.selectedOptions) {
+      const option = options.find((entry) => entry.name === selected.name)!;
+      const knownValue = option.optionValues.find((entry) => normalized(entry.name) === normalized(selected.value));
+      if (knownValue) continue;
+      const result = await shopifyAdminRequest<{
+        productOptionUpdate: { userErrors: ShopifyUserErrors };
+      }>(ADMIN_PRODUCT_OPTION_UPDATE, {
+        productId,
+        option: { id: option.id },
+        optionValuesToAdd: [{ name: selected.value.trim() }],
+        variantStrategy: "LEAVE_AS_IS",
+      });
+      assertNoUserErrors(result.productOptionUpdate.userErrors);
+      addedOptionValue = true;
+    }
+
+    // Refresh after Shopify creates any missing option values; variant creation must use Shopify-issued IDs.
+    const resolved = addedOptionValue ? await fetchProduct(productId) : existing;
+    const variantOptionValues = input.selectedOptions.map((selected) => {
+      const option = resolved.product.options.find((entry) => entry.name === selected.name);
+      const value = option?.optionValues.find((entry) => normalized(entry.name) === normalized(selected.value));
+      if (!option || !value) {
+        throw new ShopifyInputError(`Shopify did not return an ID for ${selected.name}: ${selected.value}. Refresh and try again.`);
+      }
+      return { optionId: option.id, id: value.id };
+    });
+    const created = await shopifyAdminRequest<{
+      productVariantsBulkCreate: { productVariants: Array<{ id: string }> | null; userErrors: ShopifyUserErrors };
+    }>(ADMIN_PRODUCT_VARIANT_CREATE, {
+      productId,
+      variants: [{ price: input.price.toFixed(2), optionValues: variantOptionValues }],
+      strategy: "PRESERVE_STANDALONE_VARIANT",
+    });
+    assertNoUserErrors(created.productVariantsBulkCreate.userErrors);
+    if (!created.productVariantsBulkCreate.productVariants?.length) {
+      throw new ShopifyAdminError("Shopify did not confirm the new variant.");
+    }
+
+    const updated = await fetchProduct(productId);
+    const refreshedVariantIds = new Set(updated.product.variants.nodes.map((variant) => variant.id));
+    if (created.productVariantsBulkCreate.productVariants.some((variant) => !refreshedVariantIds.has(variant.id))) {
+      throw new ShopifyAdminError("Shopify created the variant but did not return it in the refreshed product.");
+    }
+    res.json(CreateShopifyAdminVariantResponse.parse({
+      currencyCode: updated.currencyCode,
+      product: mapProduct(updated.product),
+    }));
+  } catch (error) {
+    respondShopifyError(req, res, error, "Shopify could not create this variant. Some option values may have saved; refresh before retrying.");
+  } finally {
+    invalidateShopifyCatalog();
+  }
+});
+
+router.delete("/shopify/admin/products/:productId/variants/:variantId", async (req, res): Promise<void> => {
+  const params = DeleteShopifyAdminVariantParams.safeParse(req.params);
+  if (!params.success || !isShopifyProductId(params.data.productId) ||
+    !/^gid:\/\/shopify\/ProductVariant\/\d+$/.test(params.data.variantId)) {
+    res.status(400).json({ error: "Choose a valid Shopify product and variant." });
+    return;
+  }
+  const { productId, variantId } = params.data;
+  try {
+    const current = await fetchProduct(productId);
+    const variant = current.product.variants.nodes.find((entry) => entry.id === variantId);
+    if (!variant) throw new ShopifyNotFoundError("This variant does not belong to this product.");
+    if (current.product.variants.nodes.length <= 1) {
+      throw new ShopifyInputError("A product must keep at least one variant.");
+    }
+    if (variant.title === "Default Title" || variant.selectedOptions.some((option) =>
+      option.name === "Title" && option.value === "Default Title")) {
+      throw new ShopifyInputError("Shopify's default variant cannot be deleted.");
+    }
+    const result = await shopifyAdminRequest<{
+      productVariantsBulkDelete: { product: { id: string } | null; userErrors: ShopifyUserErrors };
+    }>(ADMIN_PRODUCT_VARIANT_DELETE, { productId, variantsIds: [variant.id] });
+    assertNoUserErrors(result.productVariantsBulkDelete.userErrors);
+    const updated = await fetchProduct(productId);
+    if (updated.product.variants.nodes.some((entry) => entry.id === variantId)) {
+      throw new ShopifyAdminError("Shopify did not remove the selected variant.");
+    }
+    res.json(DeleteShopifyAdminVariantResponse.parse({
+      currencyCode: updated.currencyCode,
+      product: mapProduct(updated.product),
+    }));
+  } catch (error) {
+    respondShopifyError(req, res, error, "Shopify could not delete this variant. Refresh before retrying.");
   } finally {
     invalidateShopifyCatalog();
   }

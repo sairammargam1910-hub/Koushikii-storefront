@@ -34,6 +34,7 @@ function fixture() {
   return {
     id: productId, title: "Saree", handle: "saree", description: "", productType: "Saree",
     status: "ACTIVE", tags: [], featuredMedia: null,
+    options: [{ id: gid("ProductOption", 30), name: "Size", optionValues: [11, 12, 13].map((id) => ({ id: gid("ProductOptionValue", id), name: String(id) })) }],
     variants: { nodes: [11, 12, 13].map((id) => ({
       id: gid("ProductVariant", id), title: `Size ${id}`, price: "100.00",
       selectedOptions: [{ name: "Size", value: String(id) }], inventoryQuantity: 12,
@@ -49,7 +50,7 @@ function fixture() {
   };
 }
 async function harness(run, configure = () => {}) {
-  const state = { product: fixture(), calls: [], conflict: false, mutationError: false, inventoryPage: false };
+  const state = { product: fixture(), calls: [], conflict: false, mutationError: false, inventoryPage: false, nextOptionValueId: 31, nextVariantId: 100 };
   configure(state);
   const module = { exports: {} };
   new Function("require", "module", "exports", "sdkProxy", compiled.outputFiles[0].text)(
@@ -81,6 +82,30 @@ async function harness(run, configure = () => {}) {
         if (input.inventoryPolicy) variant.inventoryPolicy = input.inventoryPolicy;
         if (input.optionValues) variant.selectedOptions = input.optionValues.map((option) => ({ name: option.optionName, value: option.name }));
         data = { productVariantsBulkUpdate: { userErrors: [] } };
+      } else if (query.includes("mutation MerchantProductOptionUpdate")) {
+        const option = state.product.options.find((entry) => entry.id === v.option.id);
+        const name = v.optionValuesToAdd[0].name;
+        const id = gid("ProductOptionValue", state.nextOptionValueId++);
+        option.optionValues.push({ id, name });
+        data = { productOptionUpdate: { productOption: structuredClone(option), userErrors: [] } };
+      } else if (query.includes("mutation MerchantProductVariantCreate")) {
+        const selectedOptions = v.variants[0].optionValues.map(({ optionId, id }) => {
+          const option = state.product.options.find((entry) => entry.id === optionId);
+          const value = option.optionValues.find((entry) => entry.id === id);
+          assert.ok(value, "variant creation uses a Shopify-issued option value ID");
+          return { name: option.name, value: value.name };
+        });
+        const createdId = gid("ProductVariant", state.nextVariantId++);
+        state.product.variants.nodes.push({
+          id: createdId, title: selectedOptions.map((option) => option.value).join(" / "),
+          price: v.variants[0].price, selectedOptions, inventoryQuantity: null,
+          inventoryPolicy: "DENY", inventoryItem: { id: gid("InventoryItem", 200), tracked: false, inventoryLevels: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
+        });
+        data = { productVariantsBulkCreate: { productVariants: [{ id: createdId }], userErrors: [] } };
+      } else if (query.includes("mutation MerchantProductVariantDelete")) {
+        const deletedId = v.variantsIds[0];
+        state.product.variants.nodes = state.product.variants.nodes.filter((entry) => entry.id !== deletedId);
+        data = { productVariantsBulkDelete: { product: { id: productId }, userErrors: [] } };
       } else if (query.includes("mutation MerchantInventorySetQuantity")) {
         const input = v.input.quantities[0];
         assert.equal(v.input.ignoreCompareQuantity, undefined);
@@ -107,9 +132,9 @@ async function harness(run, configure = () => {}) {
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
   const base = `http://127.0.0.1:${server.address().port}/api/shopify/admin/products/${encodeURIComponent(productId)}`;
-  const request = async (body, suffix = `/variants/${encodeURIComponent(variantId)}`, admin = true) => {
+  const request = async (body, suffix = `/variants/${encodeURIComponent(variantId)}`, admin = true, methodOverride) => {
     const response = await fetch(base + suffix, {
-      method: body === undefined ? "GET" : "PATCH",
+      method: methodOverride ?? (body === undefined ? "GET" : "PATCH"),
       headers: { "Content-Type": "application/json", ...(admin ? { "x-test-admin": "yes" } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
@@ -182,6 +207,63 @@ test("edits existing size/color values and price without changing any stock", as
     assert.equal((await request({ selectedOptions: [{ name: "Size", value: " " }] })).status, 400);
   });
 });
+test("creates a variant from Shopify-resolved option IDs and adds missing values without inventing stock", async () => {
+  await harness(async ({ request, state }) => {
+    const result = await request({
+      price: 250,
+      selectedOptions: [{ name: "Size", value: "XXL" }],
+    }, "/variants", true, "POST");
+    assert.equal(result.status, 200);
+    assert.equal(result.data.product.variants.length, 4);
+    assert.deepEqual(result.data.product.variants[3].selectedOptions, [{ name: "Size", value: "XXL" }]);
+    assert.equal(result.data.product.variants[3].inventoryTracked, false);
+    assert.deepEqual(result.data.product.variants[3].inventoryLevels, []);
+    const createCall = state.calls.find((call) => call.query.includes("mutation MerchantProductVariantCreate"));
+    assert.deepEqual(createCall.variables.variants[0].optionValues, [{
+      optionId: gid("ProductOption", 30),
+      id: gid("ProductOptionValue", 31),
+    }]);
+    assert.ok(state.calls.some((call) => call.query.includes("MerchantProductOptionUpdate")));
+    assert.equal(state.calls.filter((call) => call.query.includes("query MerchantProduct(")).length, 3, "loads before, after adding the value, and after variant creation");
+  });
+});
+test("rejects duplicate combinations and option mismatches without creating variants", async () => {
+  await harness(async ({ request, state }) => {
+    const duplicate = await request({ price: 200, selectedOptions: [{ name: "Size", value: "11" }] }, "/variants", true, "POST");
+    assert.equal(duplicate.status, 400);
+    const invalid = await request({ price: 200, selectedOptions: [{ name: "Colour", value: "Red" }] }, "/variants", true, "POST");
+    assert.equal(invalid.status, 400);
+    assert.equal(state.calls.some((call) => call.query.includes("mutation MerchantProductVariantCreate")), false);
+  });
+});
+test("requires real size/color product options instead of Shopify's standalone Title option", async () => {
+  await harness(async ({ request, state }) => {
+    state.product.options = [{ id: gid("ProductOption", 30), name: "Title", optionValues: [{ id: gid("ProductOptionValue", 31), name: "Default Title" }] }];
+    state.product.variants.nodes = [{
+      ...state.product.variants.nodes[0],
+      title: "Default Title",
+      selectedOptions: [{ name: "Title", value: "Default Title" }],
+    }];
+    const result = await request({ price: 200, selectedOptions: [{ name: "Title", value: "New" }] }, "/variants", true, "POST");
+    assert.equal(result.status, 400);
+    assert.match(result.data.error, /real product option/);
+    assert.equal(state.calls.some((call) => call.query.includes("mutation MerchantProductVariantCreate")), false);
+  });
+});
+test("deletes selected variant and protects the last and default variants", async () => {
+  await harness(async ({ request, state }) => {
+    const result = await request(undefined, `/variants/${encodeURIComponent(variantId)}`, true, "DELETE");
+    assert.equal(result.status, 200);
+    assert.equal(result.data.product.variants.length, 2);
+    assert.equal(result.data.product.variants.some((variant) => variant.id === variantId), false);
+    assert.deepEqual(state.calls.find((call) => call.query.includes("mutation MerchantProductVariantDelete")).variables.variantsIds, [variantId]);
+    state.product.variants.nodes = [state.product.variants.nodes[0]];
+    assert.equal((await request(undefined, `/variants/${encodeURIComponent(state.product.variants.nodes[0].id)}`, true, "DELETE")).status, 400);
+    state.product.variants.nodes.push({ ...fixture().variants.nodes[1], id: gid("ProductVariant", 99), title: "Default Title", selectedOptions: [{ name: "Title", value: "Default Title" }] });
+    const defaultVariant = state.product.variants.nodes[1];
+    assert.equal((await request(undefined, `/variants/${encodeURIComponent(defaultVariant.id)}`, true, "DELETE")).status, 400);
+  });
+});
 test("old aggregate stock endpoint is rejected; merchant authorization gates new routes", async () => {
   await harness(async ({ request, state }) => {
     assert.equal((await request({ inventoryQuantity: 99 }, "")).status, 400);
@@ -210,4 +292,6 @@ test("generated client keeps Shopify GIDs inside single encoded path segments", 
   );
   assert.equal(module.exports.getGetShopifyAdminProductUrl(productId), `/api/shopify/admin/products/${encodeURIComponent(productId)}`);
   assert.equal(module.exports.getUpdateShopifyAdminVariantUrl(productId, variantId), `/api/shopify/admin/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`);
+  assert.equal(module.exports.getCreateShopifyAdminVariantUrl(productId), `/api/shopify/admin/products/${encodeURIComponent(productId)}/variants`);
+  assert.equal(module.exports.getDeleteShopifyAdminVariantUrl(productId, variantId), `/api/shopify/admin/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`);
 });
