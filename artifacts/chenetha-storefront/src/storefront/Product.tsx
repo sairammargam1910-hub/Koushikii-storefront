@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Heart, Check, ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 import { Shell, products, format, addItem, toggleWish, ProductGrid, base, useStore, Qty, Empty } from "./_shared";
+import { ShopifyProductRoute } from "./ShopifyCatalog";
 
 export function Product() {
  const [location] = useLocation();
@@ -9,7 +10,7 @@ export function Product() {
  const params = new URLSearchParams(search);
  const shopifyHandle = params.get("shopify");
  return shopifyHandle
-  ? <Shell><main className="wrap content"><Empty title="This Shopify listing is not shown here." copy="The product remains in Shopify. Browse the sample catalog to explore the design preview."/></main></Shell>
+   ? <ShopifyProductRoute key={shopifyHandle} handle={shopifyHandle}/>
   : <SampleProductRoute id={params.get("id") || "nila"}/>;
 }
 

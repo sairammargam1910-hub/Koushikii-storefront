@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, products, ProductGrid, base } from "./_shared";
+import { isNewArrival, isPremiumProduct, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import "./HomeMakingJourney.css";
 import "./Home.css";
@@ -140,14 +141,36 @@ function MakingJourney(){
 }
 function ProductCarousel({title,copy,offset=0}:{title:string;copy:string;offset?:number}){
  const [slide,setSlide]=useState(0);
+  const catalog=useShopifyCatalog();
  const order=[...products.slice(offset),...products.slice(0,offset)];
+  const liveProducts=catalog.data?.products||[];
+  const isNewArrivals=offset>0;
+  const visibleLive=isNewArrivals?liveProducts.filter(isNewArrival):liveProducts;
+  const useSamples=!catalog.isLoading&&liveProducts.length===0;
+  const pageCount=useSamples?2:Math.max(1,Math.ceil(visibleLive.length/4));
+  const activeSlide=Math.min(slide,pageCount-1);
  return <section className="section home-product-section"><div className="wrap">
   <div className="section-head"><div><h2>{title}</h2><p>{copy}</p></div><div className="carousel-controls">
-   <button aria-label={"Previous "+title} onClick={()=>setSlide((slide+1)%2)}><ArrowLeft size={15}/></button><span>{slide+1} / 2</span><button aria-label={"Next "+title} onClick={()=>setSlide((slide+1)%2)}><ArrowRight size={15}/></button>
+    <button aria-label={"Previous "+title} disabled={pageCount<=1} onClick={()=>setSlide((activeSlide+pageCount-1)%pageCount)}><ArrowLeft size={15}/></button><span>{activeSlide+1} / {pageCount}</span><button aria-label={"Next "+title} disabled={pageCount<=1} onClick={()=>setSlide((activeSlide+1)%pageCount)}><ArrowRight size={15}/></button>
   </div></div>
-  <div role="region" aria-roledescription="carousel" aria-label={title}><ProductGrid items={order.slice(slide*4,slide*4+4)}/></div>
-  <p className="muted" style={{fontSize:10,marginBottom:0}}>Sample catalog · Pattern swatches illustrate the proposed collection.</p>
+   <div role="region" aria-roledescription="carousel" aria-label={title}>
+    {catalog.isLoading&&!catalog.data?<p className="shopify-catalog-status" role="status">Loading published sarees from Shopify…</p>
+     :useSamples?<ProductGrid items={order.slice(activeSlide*4,activeSlide*4+4)}/>
+     :visibleLive.length?<div className="products">{visibleLive.slice(activeSlide*4,activeSlide*4+4).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
+     :<div className="shopify-catalog-status"><strong>No new-arrival sarees are tagged yet.</strong><br/>Add the Shopify tag <code>new-arrival</code> to feature a product here.</div>}
+   </div>
+   <p className="muted" style={{fontSize:10,marginBottom:0}}>
+    {catalog.isError&&catalog.data?"Showing the most recently loaded Shopify products.":catalog.isError?"Shopify could not load; showing clearly marked sample placeholders.":useSamples?"Sample catalog · Pattern swatches are illustrative placeholders.":isNewArrivals?"Shopify products tagged new-arrival appear in this section.":"Published Shopify products · Updates appear after publishing to the Replit sales channel."}
+   </p>
  </div></section>
+}
+function PremiumFeature(){
+ const catalog=useShopifyCatalog();
+ const premiumProducts=(catalog.data?.products||[]).filter(isPremiumProduct);
+ return <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Premium Collection</span><h2>For the days<br/>you will remember.</h2><p>Celebratory silks, intricate borders and cloth to keep close. Discover the premium edit.</p><a className="btn gold" href={base+"Collections?edit=premium"}>Explore Premium <ArrowRight size={14}/></a></div>
+  {premiumProducts.length?<div className="shopify-premium-products">{premiumProducts.slice(0,2).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
+  :<div><div className="mini-swatches">{["s3","s1","s1"].map((s,i)=><a key={i} href={base+"Product?id="+["surya","ambar","nila"][i]}><Textile pattern={s} label={["Kanchipuram silk","Banarasi silk","Ikat cotton-silk"][i]}/><span style={{display:"block",marginTop:9,fontSize:11}}>{["Kanchipuram","Banarasi","Ikat"][i]}</span></a>)}</div><p className="shopify-placement-note">Sample placeholders · Add the Shopify tag <code>premium</code> to feature products here.</p></div>}
+ </div></div></section>
 }
 function IndiaWeaves(){
  const [selected,setSelected]=useState("tn");
@@ -239,9 +262,9 @@ export function Home(){
   <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
    <div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>
   </div></section>
-   <ProductCarousel title="The Collection Edit" copy="Colours, borders and textures to begin with · Sample selection"/>
-   <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Premium Collection</span><h2>For the days<br/>you will remember.</h2><p>Celebratory silks, intricate borders and cloth to keep close. Discover the premium edit.</p><a className="btn gold" href={base+"Collections?edit=premium"}>Explore Premium <ArrowRight size={14}/></a></div><div className="mini-swatches">{["s3","s1","s1"].map((s,i)=><a key={i} href={base+"Product?id="+["surya","ambar","nila"][i]}><Textile pattern={s} label={["Kanchipuram silk","Banarasi silk","Ikat cotton-silk"][i]}/><span style={{display:"block",marginTop:9,fontSize:11}}>{["Kanchipuram","Banarasi","Ikat"][i]}</span></a>)}</div></div></div></section>
-  <ProductCarousel title="New Arrivals" copy="A fresh chapter from the loom · Sample selection" offset={4}/>
+    <ProductCarousel title="The Collection Edit" copy="Published sarees from the connected Shopify catalog."/>
+    <PremiumFeature/>
+   <ProductCarousel title="New Arrivals" copy="Tag a Shopify product new-arrival to feature it here." offset={4}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
   <IndiaWeaves/>
   <Reviews/>

@@ -111,7 +111,7 @@ export function Footer(){
     <small>No newsletter provider is connected.</small>
    </section>
   </div>
-  <div className="home-footer-bottom"><span>© Chenetha by Koushikii · Sample catalogue and illustrative textile swatches.</span><a href={base+"Checkout"}>Payment & delivery details at checkout <ArrowRight size={12}/></a></div>
+   <div className="home-footer-bottom"><span>© Chenetha by Koushikii · Shopify product listings with clearly marked sample placeholders.</span><a href={base+"Checkout"}>Payment & delivery details at checkout <ArrowRight size={12}/></a></div>
  </div></div></footer>
 }
 export function Shell({children}:{children:React.ReactNode}){

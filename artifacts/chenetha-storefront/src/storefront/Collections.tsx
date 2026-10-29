@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Shell, PageHero, products, ProductGrid, cottonWeaves } from "./_shared";
 import { defaultFilters, filterCatalog, normalizeRegion, normalizeWeave, regions } from "./_shared/catalog-filter";
 import type { CatalogFilters } from "./_shared/catalog-filter";
+import { filterShopifyProducts, getShopifyTagValue, ShopifyProductGrid, useShopifyCatalog } from "./ShopifyCatalog";
 
 function readFilters():CatalogFilters {
  const params=new URLSearchParams(window.location.search);
@@ -13,6 +14,7 @@ function readFilters():CatalogFilters {
 }
 export function Collections(){
  const [filters,setFilters]=useState<CatalogFilters>(readFilters);
+  const catalog=useShopifyCatalog();
  const [location]=useLocation();
  const {query,fabric,weave,category,region,edit,sort}=filters;
  const update=(values:Partial<CatalogFilters>)=>setFilters(f=>({...f,...values}));
@@ -24,9 +26,12 @@ export function Collections(){
   window.history.replaceState(null,"",window.location.pathname+(search?"?"+search:"")+window.location.hash);
  },[filters]);
  const filtered=useMemo(()=>filterCatalog(products,filters),[filters]);
- const weaves=Array.from(new Set([...products.map(p=>p.weave),...cottonWeaves.map(normalizeWeave),weave])).filter(w=>w!=="All weaves");
+  const liveProducts=catalog.data?.products||[];
+  const liveFiltered=useMemo(()=>filterShopifyProducts(liveProducts,filters),[liveProducts,filters]);
+  const weaves=Array.from(new Set([...products.map(p=>p.weave),...liveProducts.map(p=>getShopifyTagValue(p,"weave")).filter(Boolean),...cottonWeaves.map(normalizeWeave),weave])).filter(w=>w!=="All weaves");
  const active=Object.entries(filters).filter(([key,value])=>value!==defaultFilters[key as keyof CatalogFilters]);
-  return <Shell><PageHero eyebrow="The collection · Sample catalog" title={edit==="premium"?"The Premium Collection":edit==="new"?"New Arrivals":"Cloth with a place. Weaves with a story."} subtitle="Explore South Indian temple borders and the textile traditions of India. Choose a region, fabric or weave to find your thread."/>
+  const showingSamples=!catalog.isLoading&&liveProducts.length===0;
+   return <Shell><PageHero eyebrow="The collection · Shopify and samples" title={edit==="premium"?"The Premium Collection":edit==="new"?"New Arrivals":"Cloth with a place. Weaves with a story."} subtitle="Published sarees from Shopify appear in this collection. Clearly marked sample pieces remain as a fallback."/>
  <main className="content wrap">
   <div className="toolbar collection-toolbar">{["All pieces","Sarees","Dupattas"].map(c=><button key={c} className="btn small outline" aria-pressed={category===c} style={{background:category===c?"#efe2c8":"transparent"}} onClick={()=>update({category:c})}>{c}</button>)}
   <label style={{marginLeft:"auto",fontSize:12}}>Collection edit <select value={edit} onChange={e=>update({edit:e.target.value})}><option value="all">All collections</option><option value="premium">Premium Collection</option><option value="new">New Arrivals</option>{!["all","premium","new"].includes(edit)&&<option value={edit}>Unknown edit: {edit}</option>}</select></label></div>
@@ -37,8 +42,11 @@ export function Collections(){
     <select data-testid="select-weave-filter" aria-label="Filter by weave" value={weave} onChange={e=>update({weave:e.target.value})}><option>All weaves</option>{weaves.map(w=><option key={w}>{w}</option>)}</select>
     <select data-testid="select-collection-sort" aria-label="Sort collection" value={sort} onChange={e=>update({sort:e.target.value})}><option>Featured</option><option>Price: low to high</option><option>Price: high to low</option></select>
   </div>
-  <div className="active-filters" aria-live="polite"><strong>{filtered.length} sample {filtered.length===1?"piece":"pieces"}</strong>{active.map(([key,value])=><span className="pill" key={key}>{key==="region"?"Region: "+(regions[value]||"Unknown ("+value+")"):key+": "+value}</span>)}{active.length>0&&<button className="btn small outline" onClick={()=>setFilters({...defaultFilters})}>Clear all filters</button>}</div>
-  {filtered.length?<ProductGrid items={filtered}/>:<div className="empty"><span className="eyebrow">A collection to discover</span><h2 style={{marginTop:15}}>No sample pieces match.</h2><p>{region?`There are no sample ${category==="Sarees"?"sarees":"pieces"} for ${regions[region]||"this unrecognised region"} with the selected filters.`:"Try changing a filter to discover another textile."} No other regions have been substituted.</p><button className="btn" onClick={()=>setFilters({...defaultFilters})}>Reset to all pieces</button></div>}
-  <p className="muted" style={{fontSize:11,marginTop:25}}>Design preview · Sample products, prices and illustrative pattern swatches. Regional assignments support collection discovery only; they do not certify origin, fibre or handloom production.</p>
+   <div className="active-filters" aria-live="polite"><strong>{catalog.isLoading?"Checking Shopify…":showingSamples?`${filtered.length} sample ${filtered.length===1?"piece":"pieces"}`:`${liveFiltered.length} published Shopify ${liveFiltered.length===1?"saree":"sarees"}`}</strong>{active.map(([key,value])=><span className="pill" key={key}>{key==="region"?"Region: "+(regions[value]||"Unknown ("+value+")"):key+": "+value}</span>)}{active.length>0&&<button className="btn small outline" onClick={()=>setFilters({...defaultFilters})}>Clear all filters</button>}</div>
+   {catalog.isLoading&&!catalog.data?<p role="status" className="shopify-catalog-status">Loading published sarees from Shopify…</p>
+    :liveProducts.length?liveFiltered.length?<ShopifyProductGrid products={liveFiltered}/>:<div className="empty"><span className="eyebrow">Shopify catalog</span><h2 style={{marginTop:15}}>No published Shopify sarees match these filters.</h2><p>Update your Shopify tags for fabric, weave, region or collection, or clear the filters.</p><button className="btn" onClick={()=>setFilters({...defaultFilters})}>Reset filters</button></div>
+    :catalog.isError?<><p role="status" className="shopify-catalog-status">Shopify could not be reached. Showing sample placeholders instead.</p>{filtered.length?<ProductGrid items={filtered}/>:<div className="empty"><h2>No sample pieces match.</h2><p>Try changing a filter to discover another textile.</p><button className="btn" onClick={()=>setFilters({...defaultFilters})}>Reset all filters</button></div>}</>
+    :filtered.length?<ProductGrid items={filtered}/>:<div className="empty"><span className="eyebrow">A collection to discover</span><h2 style={{marginTop:15}}>No sample pieces match.</h2><p>{region?`There are no sample ${category==="Sarees"?"sarees":"pieces"} for ${regions[region]||"this unrecognised region"} with the selected filters.`:"Try changing a filter to discover another textile."} No other regions have been substituted.</p><button className="btn" onClick={()=>setFilters({...defaultFilters})}>Reset to all pieces</button></div>}
+   <p className="muted" style={{fontSize:11,marginTop:25}}>{catalog.isError?"Sample products and prices are illustrative placeholders.":liveProducts.length?"Live product names, photos, variants and prices are read from Shopify. Use product tags to fill fabric, weave, region and collection filters.":"Sample products, prices and illustrative pattern swatches. Publish a saree to the Replit sales channel in Shopify to replace these placeholders."} Regional assignments support collection discovery only; they do not certify origin, fibre or handloom production.</p>
  </main></Shell>;
 }

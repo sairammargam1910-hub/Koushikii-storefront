@@ -14,11 +14,11 @@ The user selected sarees as the initial Shopify catalog category.
 
 **How to apply:** Use published Shopify product and variant IDs for the live catalog and checkout. Do not create products or inventory without real product details and explicit approval.
 
-Until the client supplies or publishes a real catalogue, the current storefront's sample pieces and prices remain illustrative. Its WhatsApp enquiry flow is not a completed order or payment.
+Published Shopify sarees replace the storefront's sample product cards; drafts are not visible through the buyer catalog. Sample pieces remain only as a fallback when Shopify has no published sarees. Demo or placeholder products must be clearly marked and never presented as real stock or verified offers. WhatsApp enquiries are not completed orders or payments.
 
-**Why:** The connected Shopify Store currently has no published saree products, and the demo catalog is not verified inventory.
+**Why:** The user wants products entered in Shopify to appear in the storefront, while preserving sample content for preview and avoiding accidental sale of placeholder details.
 
-**How to apply:** Keep sample items clearly separate from Shopify products, and never present them as available stock or confirmed pricing. Opening a WhatsApp draft must not clear the customer's cart.
+**How to apply:** Display only products returned by the published Storefront catalog, label demo content, and do not imply checkout or availability until those flows are actually connected.
 
 The user explicitly rejected a modern-looking storefront and repeatedly emphasized that the design should resemble Indian culture very deeply, especially South Indian culture. Render and visually inspect supplied HTML references, not only extract their text. Preserve their traditional motifs and page structure while applying the organisation logo colours.
 
