@@ -152,7 +152,7 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
   </div>;
 }
 
-function ProductForm({ product, onClose, currencyCode }: { product?: ShopifyAdminProduct; onClose: () => void; currencyCode?: string }) {
+export function ProductForm({ product, onClose, currencyCode }: { product?: ShopifyAdminProduct; onClose: () => void; currencyCode?: string }) {
   const queryClient = useQueryClient();
   const create = useCreateShopifyAdminProduct();
   const update = useUpdateShopifyAdminProduct();
