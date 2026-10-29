@@ -47,6 +47,8 @@ export * from './shopifyAdminVariantCreate';
 export * from './shopifyAdminVariantOption';
 export * from './shopifyAdminVariantUpdate';
 export * from './shopifyCartAddInput';
+export * from './shopifyCartDiscountCode';
+export * from './shopifyCartDiscountCodesInput';
 export * from './shopifyCartLine';
 export * from './shopifyCartLineUpdate';
 export * from './shopifyCartResponse';

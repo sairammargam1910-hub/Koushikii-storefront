@@ -196,6 +196,17 @@ function ShopifyCheckoutReview({
           <span>Shopify subtotal</span>
           <strong data-testid="text-shopify-checkout-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</strong>
         </div>
+        {cart.discountCodes.map((discount) => (
+          <p
+            className={discount.applicable ? "muted" : "notice"}
+            role={discount.applicable ? "status" : "alert"}
+            key={discount.code}
+          >
+            {discount.applicable
+              ? `Discount code ${discount.code} will be included at Shopify checkout.`
+              : `Discount code ${discount.code} does not apply to this bag.`}
+          </p>
+        ))}
         <p className="muted" style={{ fontSize: 12 }}>Shipping, applicable taxes, and final total are calculated by Shopify at checkout.</p>
         {canCheckout ? (
           <a className="btn" style={{ marginTop: 18 }} href={checkoutHref} data-testid="button-continue-shopify-checkout">

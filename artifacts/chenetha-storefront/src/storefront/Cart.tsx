@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, RefreshCw, Trash2 } from "lucide-react";
-import { updateShopifyCartLines } from "@workspace/api-client-react";
+import { updateShopifyCartDiscountCodes, updateShopifyCartLines } from "@workspace/api-client-react";
 import {
   Shell,
   PageHero,
@@ -38,11 +39,18 @@ export function Cart() {
     }) => updateShopifyCartLines(data),
     onSuccess: (updatedCart) => updateShopifyCartCache(queryClient, updatedCart),
   });
+  const updateDiscountCodes = useMutation({
+    mutationFn: (data: Parameters<typeof updateShopifyCartDiscountCodes>[0]) =>
+      updateShopifyCartDiscountCodes(data),
+    onSuccess: (updatedCart) => updateShopifyCartCache(queryClient, updatedCart),
+  });
+  const displayedShopifyQuantity =
+    shopifyCart.data?.totalQuantity ?? meta?.totalQuantity ?? 0;
 
   return (
     <Shell>
       <PageHero
-        eyebrow={meta ? "Your bag · Shopify" : "Your bag · Sample selection"}
+        eyebrow={meta ? `Your bag · Shopify (${displayedShopifyQuantity})` : "Your bag · Sample selection"}
         title="A little goodness, gathered."
         subtitle={
           meta
@@ -58,8 +66,13 @@ export function Cart() {
             isError={shopifyCart.isError}
             isUpdating={updateLine.isPending}
             updateError={updateLine.error}
+            isApplyingDiscount={updateDiscountCodes.isPending}
+            discountError={updateDiscountCodes.error}
             onRetry={() => shopifyCart.refetch()}
             onClear={clearShopifyCartMeta}
+            onDiscountCodesChange={(cartId, discountCodes) =>
+              updateDiscountCodes.mutate({ cartId, discountCodes })
+            }
             onQuantityChange={(lineId, quantity) => {
               if (!shopifyCart.data) return;
               updateLine.mutate({
@@ -143,19 +156,27 @@ function ShopifyBag({
   isError,
   isUpdating,
   updateError,
+  isApplyingDiscount,
+  discountError,
   onRetry,
   onClear,
   onQuantityChange,
+  onDiscountCodesChange,
 }: {
   cart: ReturnType<typeof useShopifyCart>["data"];
   isLoading: boolean;
   isError: boolean;
   isUpdating: boolean;
   updateError: unknown;
+  isApplyingDiscount: boolean;
+  discountError: unknown;
   onRetry: () => void;
   onClear: () => void;
   onQuantityChange: (lineId: string, quantity: number) => void;
+  onDiscountCodesChange: (cartId: string, discountCodes: string[]) => void;
 }) {
+  const [discountCode, setDiscountCode] = useState("");
+
   if (isLoading) {
     return <div className="shopify-catalog-status" role="status">Refreshing your Shopify bag…</div>;
   }
@@ -187,6 +208,7 @@ function ShopifyBag({
 
   const hasUnavailableLine = cart.lines.some((line) => !line.availableForSale || line.isDemo);
   const updateErrorMessage = getCartUpdateErrorMessage(updateError);
+  const discountErrorMessage = getCartUpdateErrorMessage(discountError);
 
   return (
     <div className="two-col">
@@ -234,6 +256,65 @@ function ShopifyBag({
           <span>Subtotal</span>
           <b data-testid="text-shopify-cart-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</b>
         </div>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const code = discountCode.trim();
+            if (code) onDiscountCodesChange(cart.id, [code]);
+          }}
+          style={{ display: "grid", gap: 8, marginTop: 20 }}
+          aria-label="Apply a discount code"
+        >
+          <label htmlFor="shopify-discount-code" className="eyebrow">Discount code</label>
+          <div className="row" style={{ gap: 8 }}>
+            <input
+              id="shopify-discount-code"
+              data-testid="input-shopify-discount-code"
+              value={discountCode}
+              onChange={(event) => setDiscountCode(event.currentTarget.value)}
+              autoComplete="off"
+              maxLength={128}
+              placeholder="Enter your code"
+              style={{ flex: 1, minWidth: 0, padding: "11px 12px", border: "1px solid var(--line)", background: "#fffaf2" }}
+            />
+            <button
+              className="btn small"
+              data-testid="button-apply-shopify-discount"
+              type="submit"
+              disabled={!discountCode.trim() || isApplyingDiscount}
+            >
+              {isApplyingDiscount ? "Applying…" : "Apply"}
+            </button>
+          </div>
+        </form>
+        {discountErrorMessage && (
+          <p className="notice" role="alert" data-testid="notice-shopify-discount-error">
+            Shopify couldn’t update this code: {discountErrorMessage}
+          </p>
+        )}
+        {cart.discountCodes.map((discount) => (
+          <p
+            className={discount.applicable ? "muted" : "notice"}
+            role={discount.applicable ? "status" : "alert"}
+            data-testid={discount.applicable ? "status-shopify-discount" : "notice-shopify-discount"}
+            key={discount.code}
+          >
+            {discount.applicable
+              ? `Code ${discount.code} is applied to this Shopify bag.`
+              : `Shopify says code ${discount.code} does not apply to this bag.`}
+          </p>
+        ))}
+        {cart.discountCodes.length > 0 && (
+          <button
+            className="link"
+            data-testid="button-remove-shopify-discount"
+            type="button"
+            disabled={isApplyingDiscount}
+            onClick={() => onDiscountCodesChange(cart.id, [])}
+          >
+            Remove discount code
+          </button>
+        )}
         <p className="muted">Shopify calculates shipping, taxes, and the final amount at checkout.</p>
         {hasUnavailableLine ? (
           <p className="notice" role="alert">A demo or unavailable listing is in this bag. Remove it or update its Shopify details before checkout.</p>

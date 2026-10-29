@@ -16,7 +16,7 @@ const productResponse = {
     title: "Kanchipuram silk saree",
     description: "Handwoven silk",
     productType: "Saree",
-    tags: ["saree"],
+    tags: ["kanchipooram", "new arrival", "Silk"],
     images: [],
     variants: [{
       id: variantId,
@@ -34,6 +34,7 @@ const cartResponse = {
   totalQuantity: 1,
   subtotalAmount: "1250.00",
   currencyCode: "INR",
+  discountCodes: [],
   lines: [{
     id: "gid://shopify/CartLine/browser-line-123",
     merchandiseId: variantId,
@@ -109,13 +110,14 @@ async function openProduct({ savedCart } = {}) {
     await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
   }
   const page = await context.newPage();
+  page.on("pageerror", (error) => console.error("[shopify-browser-page-error]", error.message));
   await page.route("**/api/shopify/products", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
     body: JSON.stringify(productResponse),
   }));
   await page.goto(`${origin}${fixtureUrl}?screen=product`);
-  await page.getByTestId("button-add-shopify-to-cart").waitFor();
+  await page.getByTestId("button-add-shopify-to-cart").waitFor({ timeout: 5000 });
   return { context, page };
 }
 
@@ -123,6 +125,7 @@ async function openCart({ savedCart }) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
   const page = await context.newPage();
+  page.on("pageerror", (error) => console.error("[shopify-browser-page-error]", error.message));
   await page.route("**/api/shopify/cart**", async (route) => {
     if (route.request().method() === "GET") {
       await route.fulfill({
@@ -135,7 +138,7 @@ async function openCart({ savedCart }) {
     await route.continue();
   });
   await page.goto(`${origin}${fixtureUrl}?screen=cart`);
-  await page.getByRole("heading", { name: "Kanchipuram silk saree" }).waitFor();
+  await page.getByRole("heading", { name: "Kanchipuram silk saree" }).waitFor({ timeout: 5000 });
   return { context, page };
 }
 
@@ -232,11 +235,59 @@ test("uses Shopify's returned checkout URL after a successful cart response", as
     await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),
     { id: cartResponse.id, totalQuantity: 1 },
   );
+  const headerCount = page.getByTestId("header-cart-count");
+  await headerCount.waitFor();
+  assert.equal(await headerCount.innerText(), "1");
+  const viewBagLink = page.getByRole("link", { name: "View bag →" });
+  assert.equal(await viewBagLink.getAttribute("href"), "/Cart");
+  await viewBagLink.click();
+  await page.waitForURL("**/Cart", { timeout: 5000 });
+  await page.getByText("Your bag · Shopify (1)", { exact: true }).waitFor({ timeout: 5000 });
+  await page.getByText("Shopify products (1)", { exact: true }).waitFor({ timeout: 5000 });
 
   await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
   const checkoutLink = page.getByTestId("button-continue-shopify-checkout");
   await checkoutLink.waitFor();
   assert.equal(await checkoutLink.getAttribute("href"), checkoutUrl);
+  await context.close();
+});
+
+test("shows a bare Silk catalog tag under the Silk and Kanchipuram filters", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await page.route("**/api/shopify/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(productResponse),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=collections&fabric=Silk&weave=Kanchipuram`);
+  const productTitle = page.getByText("Kanchipuram silk saree", { exact: true });
+  await productTitle.waitFor();
+  assert.equal(await productTitle.isVisible(), true);
+  await context.close();
+});
+
+test("applies shopper-entered discount codes to the Shopify bag", async () => {
+  const savedCart = { id: "gid://shopify/Cart/browser-cart-123", totalQuantity: 1 };
+  const { context, page } = await openCart({ savedCart });
+  let mutation;
+  await page.route("**/api/shopify/cart/discount-codes", async (route) => {
+    mutation = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...cartResponse,
+        discountCodes: [{ code: "SILK10", applicable: true }],
+      }),
+    });
+  });
+
+  await page.getByTestId("input-shopify-discount-code").fill("SILK10");
+  await page.getByTestId("button-apply-shopify-discount").click();
+  await page.getByTestId("status-shopify-discount").waitFor();
+  assert.deepEqual(mutation, { cartId: savedCart.id, discountCodes: ["SILK10"] });
+  assert.match(await page.getByTestId("status-shopify-discount").innerText(), /SILK10.*applied/i);
   await context.close();
 });
 

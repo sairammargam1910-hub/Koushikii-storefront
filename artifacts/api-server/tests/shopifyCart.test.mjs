@@ -44,6 +44,7 @@ function cart(overrides = {}) {
     checkoutUrl,
     totalQuantity: 1,
     cost: { subtotalAmount: { amount: "1250.00", currencyCode: "INR" } },
+    discountCodes: [],
     lines: {
       nodes: [{
         id: "gid://shopify/CartLine/line-123",
@@ -92,6 +93,9 @@ async function harness(run) {
       if (query.includes("mutation AddShopifyCartLines")) {
         return { cartLinesAdd: state.cartMutationResult };
       }
+      if (query.includes("mutation UpdateShopifyCartDiscountCodes")) {
+        return { cartDiscountCodesUpdate: state.cartMutationResult };
+      }
       throw new Error(`Unexpected Shopify query: ${query}`);
     },
   );
@@ -111,8 +115,16 @@ async function harness(run) {
     });
     return { status: response.status, data: await response.json() };
   };
+  const postDiscount = async (body) => {
+    const response = await fetch(`${endpoint}/discount-codes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, data: await response.json() };
+  };
   try {
-    await run({ state, post });
+    await run({ state, post, postDiscount });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -173,5 +185,51 @@ test("forwards Shopify cart user errors and returns Shopify's checkout URL on su
     assert.equal(successful.status, 200);
     assert.equal(successful.data.checkoutUrl, checkoutUrl);
     assert.equal(successful.data.id, "gid://shopify/Cart/cart-123");
+  });
+});
+
+test("applies, validates, and removes discount codes on the Shopify cart", async () => {
+  await harness(async ({ state, postDiscount }) => {
+    const blank = await postDiscount({
+      cartId: "gid://shopify/Cart/cart-123",
+      discountCodes: ["   "],
+    });
+    assert.equal(blank.status, 400);
+    assert.equal(state.calls.length, 0);
+
+    state.cartMutationResult = {
+      cart: cart({ discountCodes: [{ code: "SILK10", applicable: true }] }),
+      userErrors: [],
+    };
+    const applied = await postDiscount({
+      cartId: "gid://shopify/Cart/cart-123",
+      discountCodes: [" SILK10 "],
+    });
+    assert.equal(applied.status, 200);
+    assert.deepEqual(applied.data.discountCodes, [{ code: "SILK10", applicable: true }]);
+    assert.deepEqual(state.calls.at(-1).variables, {
+      cartId: "gid://shopify/Cart/cart-123",
+      discountCodes: ["SILK10"],
+    });
+    assert.match(state.calls.at(-1).query, /cartDiscountCodesUpdate/);
+
+    state.cartMutationResult = {
+      cart: cart({ discountCodes: [{ code: "EXPIRED", applicable: false }] }),
+      userErrors: [],
+    };
+    const rejectedByShopify = await postDiscount({
+      cartId: "gid://shopify/Cart/cart-123",
+      discountCodes: ["EXPIRED"],
+    });
+    assert.equal(rejectedByShopify.status, 200);
+    assert.deepEqual(rejectedByShopify.data.discountCodes, [{ code: "EXPIRED", applicable: false }]);
+
+    state.cartMutationResult = { cart: cart({ discountCodes: [] }), userErrors: [] };
+    const removed = await postDiscount({
+      cartId: "gid://shopify/Cart/cart-123",
+      discountCodes: [],
+    });
+    assert.equal(removed.status, 200);
+    assert.deepEqual(removed.data.discountCodes, []);
   });
 });

@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShopifyCartDiscountCode } from './shopifyCartDiscountCode';
 import type { ShopifyCartLine } from './shopifyCartLine';
 
 export interface ShopifyCartResponse {
@@ -14,5 +15,6 @@ export interface ShopifyCartResponse {
   totalQuantity: number;
   subtotalAmount: string;
   currencyCode: string;
+  discountCodes: ShopifyCartDiscountCode[];
   lines: ShopifyCartLine[];
 }

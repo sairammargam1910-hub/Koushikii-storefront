@@ -290,6 +290,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/cart/discount-codes:
+    post:
+      operationId: updateShopifyCartDiscountCodes
+      tags: [shopify]
+      summary: Apply or remove discount codes from a Shopify cart
+      description: Updates the discount codes stored on the Shopify cart and returns Shopify's applicability result.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyCartDiscountCodesInput"
+      responses:
+        "200":
+          description: Updated Shopify cart and discount status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCartResponse"
+        "400":
+          description: Invalid cart or discount code input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify cart could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify could not update the cart discounts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/admin/images:
     post:
       operationId: uploadShopifyAdminImage
@@ -1056,6 +1093,29 @@ components:
           items:
             $ref: "#/components/schemas/ShopifyCartLineUpdate"
       required: [cartId, lines]
+    ShopifyCartDiscountCodesInput:
+      type: object
+      properties:
+        cartId:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        discountCodes:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+      required: [cartId, discountCodes]
+    ShopifyCartDiscountCode:
+      type: object
+      properties:
+        code:
+          type: string
+        applicable:
+          type: boolean
+      required: [code, applicable]
     ShopifyCartLine:
       type: object
       properties:
@@ -1098,11 +1158,15 @@ components:
           type: string
         currencyCode:
           type: string
+        discountCodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyCartDiscountCode"
         lines:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyCartLine"
-      required: [id, checkoutUrl, totalQuantity, subtotalAmount, currencyCode, lines]
+      required: [id, checkoutUrl, totalQuantity, subtotalAmount, currencyCode, discountCodes, lines]
     ShopifyAdminInventoryLevel:
       type: object
       required: [locationId, locationName, active, available]

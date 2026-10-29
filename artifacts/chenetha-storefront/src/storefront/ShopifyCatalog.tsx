@@ -12,10 +12,10 @@ import {
   type ShopifyProduct,
   updateShopifyCartLines,
 } from "@workspace/api-client-react";
-import { base, Empty, Qty, Shell, useStore } from "./_shared";
+import { base, cottonWeaves, Empty, Qty, Shell, useStore } from "./_shared";
 import { useShopperPreferences } from "./ShopperPreferences";
 import type { CatalogFilters } from "./_shared/catalog-filter";
-import { normalizeRegion, regions } from "./_shared/catalog-filter";
+import { normalizeRegion, normalizeWeave, regions } from "./_shared/catalog-filter";
 import {
   readShopifyCartMeta,
   saveShopifyCartMeta,
@@ -57,13 +57,67 @@ export function updateShopifyCartCache(
 }
 
 export function getShopifyTagValue(product: ShopifyProduct, key: string) {
-  const prefix = `${key.toLowerCase()}:`;
+  const normalizedKey = key.toLowerCase();
+  const prefix = `${normalizedKey}:`;
   const tag = product.tags.find((value) => value.toLowerCase().startsWith(prefix));
-  return tag?.slice(prefix.length).trim() ?? "";
+  if (tag) {
+    const value = tag.slice(prefix.length).trim();
+    return normalizedKey === "weave" ? normalizeWeave(value) : canonicalFabric(value) ?? value;
+  }
+
+  if (normalizedKey === "fabric") {
+    return product.tags
+      .map((value) => canonicalFabric(value))
+      .find((value): value is string => Boolean(value)) ?? "";
+  }
+  if (normalizedKey === "weave") {
+    return product.tags
+      .map((value) => canonicalWeave(value))
+      .find((value): value is string => Boolean(value)) ?? "";
+  }
+  return "";
 }
 
 function normalizedTag(value: string) {
   return value.trim().toLowerCase().replace(/[\s_]+/g, "-");
+}
+
+function canonicalFabric(value: string): string | undefined {
+  const fabrics: Record<string, string> = {
+    cotton: "Cotton",
+    silk: "Silk",
+    "cotton-silk": "Cotton-Silk",
+    "silk-cotton": "Cotton-Silk",
+    "other-blend": "Other blends",
+    "other-blends": "Other blends",
+  };
+  return fabrics[normalizedTag(value)];
+}
+
+const weaveTags = new Map(
+  [
+    ...cottonWeaves,
+    "Ikat",
+    "Jamdani",
+    "Kanchipuram",
+    "Kanchipooram",
+    "Banarasi",
+    "Banaras",
+    "Pashmina",
+    "Moirang Phee",
+    "Patola",
+    "Paithani",
+    "Gadwal",
+    "Venkatagiri",
+    "Narayanpet",
+    "Mangalagiri",
+    "Chettinad",
+    "Kota",
+  ].map((value) => [normalizedTag(value), normalizeWeave(value)] as const),
+);
+
+function canonicalWeave(value: string): string | undefined {
+  return weaveTags.get(normalizedTag(value));
 }
 
 function hasTag(product: ShopifyProduct, ...values: string[]) {
@@ -96,23 +150,25 @@ export function filterShopifyProducts(
   filters: CatalogFilters,
 ) {
   const query = filters.query.trim().toLowerCase();
-  const wantedWeave = filters.weave.toLowerCase();
+  const wantedWeave = normalizeWeave(filters.weave).toLowerCase();
   const wantedRegion = normalizeRegion(filters.region);
 
   return products
     .filter((product) => {
-      const fabric = getShopifyTagValue(product, "fabric").toLowerCase();
-      const weave = getShopifyTagValue(product, "weave").toLowerCase();
+      const fabric = normalizedTag(getShopifyTagValue(product, "fabric"));
+      const weave = normalizeWeave(getShopifyTagValue(product, "weave")).toLowerCase();
       const region = getShopifyTagValue(product, "region");
       const searchable = [
         product.title,
         product.description,
         product.productType,
+        fabric,
+        weave,
         ...product.tags,
       ].join(" ").toLowerCase();
 
       if (query && !searchable.includes(query)) return false;
-      if (filters.fabric !== "All fabrics" && fabric !== filters.fabric.toLowerCase()) return false;
+      if (filters.fabric !== "All fabrics" && fabric !== normalizedTag(filters.fabric)) return false;
       if (filters.weave !== "All weaves" && weave !== wantedWeave) return false;
       if (filters.region && (!regions[wantedRegion] || normalizeRegion(region) !== wantedRegion)) return false;
       if (filters.category === "Dupattas") return false;

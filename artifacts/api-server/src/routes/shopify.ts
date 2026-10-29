@@ -3,6 +3,7 @@ import {
   AddShopifyCartLineBody,
   GetShopifyCartQueryParams,
   GetShopifyCustomerAccountResponse,
+  UpdateShopifyCartDiscountCodesBody,
   UpdateShopifyCartLinesBody,
 } from "@workspace/api-zod";
 import {
@@ -67,6 +68,7 @@ type ShopifyCartNode = {
   checkoutUrl: string;
   totalQuantity: number;
   cost: { subtotalAmount: ShopifyMoney };
+  discountCodes: Array<{ code: string; applicable: boolean }>;
   lines: {
     nodes: Array<{
       id: string;
@@ -93,6 +95,7 @@ type ShopifyCartApiResponse = {
   totalQuantity: number;
   subtotalAmount: string;
   currencyCode: string;
+  discountCodes: Array<{ code: string; applicable: boolean }>;
   lines: Array<{
     id: string;
     merchandiseId: string;
@@ -141,6 +144,7 @@ const CART_FIELDS = `#graphql
   checkoutUrl
   totalQuantity
   cost { subtotalAmount { amount currencyCode } }
+  discountCodes { code applicable }
   lines(first: 50) {
     nodes {
       id
@@ -204,6 +208,17 @@ const SHOPIFY_CART_ADD_LINES = `#graphql
 const SHOPIFY_CART_UPDATE_LINES = `#graphql
   mutation UpdateShopifyCartLines($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
     cartLinesUpdate(cartId: $cartId, lines: $lines) {
+      cart {
+        ${CART_FIELDS}
+      }
+      userErrors { message }
+    }
+  }
+`;
+
+const SHOPIFY_CART_DISCOUNT_CODES_UPDATE = `#graphql
+  mutation UpdateShopifyCartDiscountCodes($cartId: ID!, $discountCodes: [String!]!) {
+    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
       cart {
         ${CART_FIELDS}
       }
@@ -284,6 +299,7 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
     totalQuantity: cart.totalQuantity,
     subtotalAmount: cart.cost.subtotalAmount.amount,
     currencyCode: cart.cost.subtotalAmount.currencyCode,
+    discountCodes: cart.discountCodes,
     lines,
   };
 }
@@ -521,5 +537,34 @@ router.patch("/shopify/cart", async (req, res): Promise<void> => {
   }
 });
 
+router.post("/shopify/cart/discount-codes", async (req, res): Promise<void> => {
+  const body = UpdateShopifyCartDiscountCodesBody.safeParse(req.body);
+  if (!body.success || body.data.discountCodes.some((code) => !code.trim())) {
+    res.status(400).json({ error: "Enter a valid discount code." });
+    return;
+  }
+  const discountCodes = [...new Set(body.data.discountCodes.map((code) => code.trim()))];
+  try {
+    const result = await shopifyStorefrontRequest<{
+      cartDiscountCodesUpdate: ShopifyCartMutationResult;
+    }>(SHOPIFY_CART_DISCOUNT_CODES_UPDATE, {
+      cartId: body.data.cartId,
+      discountCodes,
+    });
+    if (result.cartDiscountCodesUpdate.userErrors.length) {
+      res.status(400).json({ error: result.cartDiscountCodesUpdate.userErrors[0].message });
+      return;
+    }
+    if (!result.cartDiscountCodesUpdate.cart) {
+      res.status(404).json({ error: "This Shopify cart has expired or could not be found." });
+      return;
+    }
+    res.setHeader("Cache-Control", "no-store");
+    res.json(mapShopifyCart(result.cartDiscountCodesUpdate.cart));
+  } catch (error) {
+    logger.error({ err: error }, "Shopify cart discount codes could not be updated");
+    res.status(502).json({ error: "Shopify could not apply this discount code. Please try again." });
+  }
+});
 
 export default router;

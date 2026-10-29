@@ -88,7 +88,7 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
      <Show when="signed-out"><a href={base+"Account"} className="text-action" aria-label="Sign in to your account" data-testid="link-customer-sign-in"><UserRound size={16}/>Sign in</a></Show>
    <WhatsAppHeaderIcon language={language}/>
    <a href={base+"Wishlist"} className="iconbtn optional" data-testid="link-wishlist" aria-label={`Wishlist${wish.length?`, ${wish.length} saved pieces`:""}`}><Heart size={17}/>{wish.length>0&&<span className="count">{wish.length}</span>}</a>
-    <a href={base+"Cart"} className="iconbtn" data-testid="link-cart" aria-label={`Shopping bag${cartCount?`, ${cartCount} items`:""}`}><ShoppingBag size={18}/>{cartCount>0&&<span className="count">{cartCount}</span>}</a></div>
+    <a href={base+"Cart"} className="iconbtn" data-testid="link-cart" aria-label={`Shopping bag${cartCount?`, ${cartCount} items`:""}`}><ShoppingBag size={18}/>{cartCount>0&&<span className="count" data-testid="header-cart-count">{cartCount}</span>}</a></div>
   </div>{search&&<div className="wrap searchline active"><form style={{display:"flex",width:"100%"}} onSubmit={event=>{event.preventDefault();const query=String(new FormData(event.currentTarget).get("q")||"").trim();setLocation(base+"Collections"+(query?"?q="+encodeURIComponent(query):""));setSearch(false)}}><input data-testid="input-header-search" name="q" aria-label="Search textiles" placeholder="Search Ikat, cotton, Kanchipuram…" autoFocus/><button className="btn small" data-testid="button-submit-search">Search</button></form></div>}</header></>
 }
 export function Footer(){

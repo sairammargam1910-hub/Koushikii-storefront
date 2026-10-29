@@ -98,6 +98,25 @@ export interface ShopifyCartUpdateInput {
   lines: ShopifyCartLineUpdate[];
 }
 
+export interface ShopifyCartDiscountCodesInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  cartId: string;
+  /**
+     * @maxItems 5
+     * @items.minLength 1
+     * @items.maxLength 128
+     */
+  discountCodes: string[];
+}
+
+export interface ShopifyCartDiscountCode {
+  code: string;
+  applicable: boolean;
+}
+
 export interface ShopifyCartLine {
   id: string;
   merchandiseId: string;
@@ -119,6 +138,7 @@ export interface ShopifyCartResponse {
   totalQuantity: number;
   subtotalAmount: string;
   currencyCode: string;
+  discountCodes: ShopifyCartDiscountCode[];
   lines: ShopifyCartLine[];
 }
 

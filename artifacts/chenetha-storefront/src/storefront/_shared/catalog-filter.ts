@@ -15,7 +15,7 @@ export function normalizeRegion(value:string):string {
 }
 export function normalizeWeave(value:string):string {
  const key=value.trim().replace(/ Cottons?$/i,"");
- const aliases:Record<string,string>={"pochampally":"Ikat","pochampally ikat":"Ikat","kanchipuram silk":"Kanchipuram","banaras":"Banarasi","banaras cottons":"Banarasi","banaras cotton":"Banarasi"};
+ const aliases:Record<string,string>={"pochampally":"Ikat","pochampally ikat":"Ikat","kanchipooram":"Kanchipuram","kanchipooram silk":"Kanchipuram","kanchipuram silk":"Kanchipuram","banaras":"Banarasi","banaras cottons":"Banarasi","banaras cotton":"Banarasi"};
  return aliases[value.toLowerCase()] || aliases[key.toLowerCase()] || key;
 }
 export interface CatalogFilters {query:string;fabric:string;weave:string;category:string;region:string;edit:string;sort:string}

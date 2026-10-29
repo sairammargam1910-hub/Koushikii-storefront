@@ -274,6 +274,10 @@ export const GetShopifyCartResponse = zod.object({
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
   "currencyCode": zod.string(),
+  "discountCodes": zod.array(zod.object({
+  "code": zod.string(),
+  "applicable": zod.boolean()
+})),
   "lines": zod.array(zod.object({
   "id": zod.string(),
   "merchandiseId": zod.string(),
@@ -317,6 +321,10 @@ export const AddShopifyCartLineResponse = zod.object({
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
   "currencyCode": zod.string(),
+  "discountCodes": zod.array(zod.object({
+  "code": zod.string(),
+  "applicable": zod.boolean()
+})),
   "lines": zod.array(zod.object({
   "id": zod.string(),
   "merchandiseId": zod.string(),
@@ -365,6 +373,56 @@ export const UpdateShopifyCartLinesResponse = zod.object({
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
   "currencyCode": zod.string(),
+  "discountCodes": zod.array(zod.object({
+  "code": zod.string(),
+  "applicable": zod.boolean()
+})),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "merchandiseId": zod.string(),
+  "productHandle": zod.string(),
+  "productTitle": zod.string(),
+  "variantTitle": zod.string(),
+  "quantity": zod.number().int(),
+  "unitPrice": zod.string(),
+  "currencyCode": zod.string(),
+  "availableForSale": zod.boolean(),
+  "isDemo": zod.boolean(),
+  "image": zod.union([zod.object({
+  "url": zod.string().url(),
+  "altText": zod.string().nullable()
+}),zod.null()])
+}))
+})
+
+
+/**
+ * Updates the discount codes stored on the Shopify cart and returns Shopify's applicability result.
+ * @summary Apply or remove discount codes from a Shopify cart
+ */
+export const updateShopifyCartDiscountCodesBodyCartIdMax = 1000;
+
+export const updateShopifyCartDiscountCodesBodyDiscountCodesItemMax = 128;
+
+export const updateShopifyCartDiscountCodesBodyDiscountCodesMax = 5;
+
+
+
+export const UpdateShopifyCartDiscountCodesBody = zod.object({
+  "cartId": zod.string().min(1).max(updateShopifyCartDiscountCodesBodyCartIdMax),
+  "discountCodes": zod.array(zod.string().min(1).max(updateShopifyCartDiscountCodesBodyDiscountCodesItemMax)).max(updateShopifyCartDiscountCodesBodyDiscountCodesMax)
+})
+
+export const UpdateShopifyCartDiscountCodesResponse = zod.object({
+  "id": zod.string(),
+  "checkoutUrl": zod.string().url().nullable(),
+  "totalQuantity": zod.number().int(),
+  "subtotalAmount": zod.string(),
+  "currencyCode": zod.string(),
+  "discountCodes": zod.array(zod.object({
+  "code": zod.string(),
+  "applicable": zod.boolean()
+})),
   "lines": zod.array(zod.object({
   "id": zod.string(),
   "merchandiseId": zod.string(),
