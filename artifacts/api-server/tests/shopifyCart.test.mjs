@@ -71,6 +71,7 @@ function cart(overrides = {}) {
 
 async function harness(run) {
   const state = {
+    availableCountries: ["IN"],
     variant: {
       id: variantId,
       availableForSale: true,
@@ -86,6 +87,16 @@ async function harness(run) {
     module.exports,
     async (query, variables) => {
       state.calls.push({ query, variables });
+      if (query.includes("query ShopifyCartMarket")) {
+        return {
+          localization: {
+            availableCountries: state.availableCountries.map((isoCode) => ({ isoCode })),
+          },
+        };
+      }
+      if (query.includes("query ShopifyCart")) {
+        return { cart: state.cartMutationResult.cart };
+      }
       if (query.includes("ShopifyVariantForCart")) return { node: state.variant };
       if (query.includes("mutation CreateShopifyCart")) {
         return { cartCreate: state.cartMutationResult };
@@ -123,8 +134,12 @@ async function harness(run) {
     });
     return { status: response.status, data: await response.json() };
   };
+  const getCart = async (cartId) => {
+    const response = await fetch(`${endpoint}?cartId=${encodeURIComponent(cartId)}`);
+    return { status: response.status, data: await response.json() };
+  };
   try {
-    await run({ state, post, postDiscount });
+    await run({ state, post, postDiscount, getCart });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -231,5 +246,27 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     });
     assert.equal(removed.status, 200);
     assert.deepEqual(removed.data.discountCodes, []);
+  });
+});
+
+test("blocks Indian cart and coupon requests until the Shopify market is enabled", async () => {
+  await harness(async ({ state, post, postDiscount, getCart }) => {
+    state.availableCountries = ["US"];
+
+    const add = await post({ merchandiseId: variantId, quantity: 1 });
+    assert.equal(add.status, 409);
+    assert.match(add.data.error, /set up to deliver to India/i);
+
+    const cartLoad = await getCart("gid://shopify/Cart/cart-123");
+    assert.equal(cartLoad.status, 409);
+    assert.match(cartLoad.data.error, /set up to deliver to India/i);
+
+    const coupon = await postDiscount({
+      cartId: "gid://shopify/Cart/cart-123",
+      discountCodes: ["KOU1234"],
+    });
+    assert.equal(coupon.status, 409);
+    assert.match(coupon.data.error, /set up to deliver to India/i);
+    assert.equal(state.calls.some((call) => call.query.includes("mutation ")), false);
   });
 });

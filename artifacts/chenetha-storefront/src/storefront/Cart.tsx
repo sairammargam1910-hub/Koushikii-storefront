@@ -64,6 +64,7 @@ export function Cart() {
             cart={shopifyCart.data}
             isLoading={shopifyCart.isLoading}
             isError={shopifyCart.isError}
+            loadError={shopifyCart.error}
             isUpdating={updateLine.isPending}
             updateError={updateLine.error}
             isApplyingDiscount={updateDiscountCodes.isPending}
@@ -154,6 +155,7 @@ function ShopifyBag({
   cart,
   isLoading,
   isError,
+  loadError,
   isUpdating,
   updateError,
   isApplyingDiscount,
@@ -166,6 +168,7 @@ function ShopifyBag({
   cart: ReturnType<typeof useShopifyCart>["data"];
   isLoading: boolean;
   isError: boolean;
+  loadError: unknown;
   isUpdating: boolean;
   updateError: unknown;
   isApplyingDiscount: boolean;
@@ -185,7 +188,9 @@ function ShopifyBag({
     return (
       <div className="panel" role="alert">
         <span className="eyebrow">Shopify bag unavailable</span>
-        <p className="muted">Your saved Shopify cart may have expired, or Shopify could not be reached.</p>
+        <p className="muted" data-testid="error-shopify-cart-load">
+          {getCartUpdateErrorMessage(loadError) || "Your saved Shopify cart may have expired, or Shopify could not be reached."}
+        </p>
         <div className="actions">
           <button className="btn outline" type="button" onClick={onRetry}><RefreshCw size={14} /> Try again</button>
           <button className="link" type="button" onClick={onClear}>Clear this saved bag</button>
@@ -194,7 +199,7 @@ function ShopifyBag({
     );
   }
 
-  if (!cart.lines.length) {
+  if (cart.totalQuantity < 1 || !cart.lines.some((line) => line.quantity > 0)) {
     return (
       <div className="empty">
         <span className="eyebrow">Shopify bag</span>

@@ -218,6 +218,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "409":
+          description: India is not enabled as a Shopify selling market
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "502":
           description: Shopify cart could not be loaded
           content:
@@ -244,6 +250,12 @@ paths:
                 $ref: "#/components/schemas/ShopifyCartResponse"
         "400":
           description: Product cannot be purchased or cart input is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: India is not enabled as a Shopify selling market
           content:
             application/json:
               schema:
@@ -284,6 +296,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "409":
+          description: India is not enabled as a Shopify selling market
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "502":
           description: Shopify cart could not be updated
           content:
@@ -317,6 +335,12 @@ paths:
                 $ref: "#/components/schemas/ApiError"
         "404":
           description: Shopify cart could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: India is not enabled as a Shopify selling market
           content:
             application/json:
               schema:

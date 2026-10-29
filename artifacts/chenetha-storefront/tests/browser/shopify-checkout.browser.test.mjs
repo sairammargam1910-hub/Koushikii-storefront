@@ -291,6 +291,36 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
   await context.close();
 });
 
+test("explains the India market setup blocker instead of showing an empty checkout", async () => {
+  const savedCart = { id: "gid://shopify/Cart/india-market-cart", totalQuantity: 0 };
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
+  const page = await context.newPage();
+  await page.route("**/api/shopify/cart**", (route) => route.fulfill({
+    status: 409,
+    contentType: "application/json",
+    body: JSON.stringify({ error: "This store is not currently set up to deliver to India. Please contact the store owner." }),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=cart`);
+  await page.getByTestId("error-shopify-cart-load").getByText(/not currently set up to deliver to India/i).waitFor();
+  assert.equal(await page.getByTestId("link-shopify-checkout").count(), 0);
+  await context.close();
+});
+
+test("does not claim a product was added when Shopify blocks the India market", async () => {
+  const { context, page } = await openProduct();
+  await page.route("**/api/shopify/cart", (route) => route.fulfill({
+    status: 409,
+    contentType: "application/json",
+    body: JSON.stringify({ error: "This store is not currently set up to deliver to India. Please contact the store owner." }),
+  }));
+
+  await page.getByTestId("button-add-shopify-to-cart").click();
+  await page.getByRole("alert").getByText(/not currently set up to deliver to India/i).waitFor();
+  assert.equal(await page.evaluate(() => localStorage.getItem("kq-shopify-cart")), null);
+  await context.close();
+});
+
 test("retries a failed checkout cart refresh with the same saved cart ID", async () => {
   const savedCart = { id: "gid://shopify/Cart/retry-saved-cart", totalQuantity: 1 };
   const requestedCartIds = [];
@@ -317,7 +347,7 @@ test("retries a failed checkout cart refresh with the same saved cart ID", async
     },
   });
 
-  await page.getByRole("alert").getByText(/We could not refresh this bag/).waitFor();
+  await page.getByRole("alert").getByText(/Shopify is temporarily unavailable/).waitFor();
   assert.equal(await page.getByTestId("button-retry-shopify-cart-refresh").isVisible(), true);
   await page.getByTestId("button-retry-shopify-cart-refresh").click();
 

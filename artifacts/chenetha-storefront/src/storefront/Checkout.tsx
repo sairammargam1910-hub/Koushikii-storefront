@@ -65,7 +65,9 @@ export function Checkout() {
           ) : shopifyCart.isError || !shopifyCart.data ? (
             <div className="panel" role="alert">
               <span className="eyebrow">Shopify checkout unavailable</span>
-              <p className="muted">We could not refresh this bag. Try again here, or return to your bag.</p>
+              <p className="muted" data-testid="error-shopify-checkout-load">
+                {getCartErrorMessage(shopifyCart.error) || "We could not refresh this bag. Try again here, or return to your bag."}
+              </p>
               <button
                 className="btn outline"
                 type="button"
@@ -176,7 +178,8 @@ function ShopifyCheckoutReview({
   }
   const canCheckout = Boolean(checkoutHref) &&
     cart.lines.length > 0 &&
-    cart.lines.every((line) => line.availableForSale && !line.isDemo);
+    cart.totalQuantity > 0 &&
+    cart.lines.every((line) => line.quantity > 0 && line.availableForSale && !line.isDemo);
 
   return (
     <div className="two-col">
@@ -227,4 +230,11 @@ function ShopifyCheckoutReview({
       </aside>
     </div>
   );
+}
+
+function getCartErrorMessage(error: unknown): string | null {
+  if (!error || typeof error !== "object" || !("data" in error)) return null;
+  const data = error.data;
+  if (!data || typeof data !== "object" || !("error" in data)) return null;
+  return typeof data.error === "string" && data.error.trim() ? data.error.trim() : null;
 }

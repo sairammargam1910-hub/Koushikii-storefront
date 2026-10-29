@@ -83,6 +83,13 @@ type ShopifyCartMutationResult = {
   userErrors: Array<{ message: string }>;
 };
 
+class IndiaMarketUnavailableError extends Error {
+  constructor() {
+    super("This store is not currently set up to deliver to India. Please contact the store owner.");
+    this.name = "IndiaMarketUnavailableError";
+  }
+}
+
 type ShopifyVariantForCart = {
   id: string;
   availableForSale: boolean;
@@ -165,6 +172,14 @@ const CART_FIELDS = `#graphql
           }
         }
       }
+    }
+  }
+`;
+
+const SHOPIFY_CART_MARKET = `#graphql
+  query ShopifyCartMarket {
+    localization {
+      availableCountries { isoCode }
     }
   }
 `;
@@ -312,6 +327,22 @@ async function getShopifyCart(cartId: string) {
   return result.cart;
 }
 
+async function assertIndiaMarketAvailable() {
+  const result = await shopifyStorefrontRequest<{
+    localization: { availableCountries: Array<{ isoCode: string }> };
+  }>(SHOPIFY_CART_MARKET);
+  if (!result.localization.availableCountries.some((country) => country.isoCode === "IN")) {
+    throw new IndiaMarketUnavailableError();
+  }
+}
+
+function respondToCartError(res: import("express").Response, error: unknown) {
+  if (!(error instanceof IndiaMarketUnavailableError)) return false;
+  res.setHeader("Cache-Control", "no-store");
+  res.status(409).json({ error: error.message });
+  return true;
+}
+
 async function validatePurchasableVariant(variantId: string) {
   const result = await shopifyStorefrontRequest<{
     node: ShopifyVariantForCart | null;
@@ -445,6 +476,7 @@ router.get("/shopify/cart", async (req, res): Promise<void> => {
     return;
   }
   try {
+    await assertIndiaMarketAvailable();
     const cart = await getShopifyCart(params.data.cartId);
     if (!cart) {
       res.status(404).json({ error: "This Shopify cart has expired or could not be found." });
@@ -453,6 +485,7 @@ router.get("/shopify/cart", async (req, res): Promise<void> => {
     res.setHeader("Cache-Control", "no-store");
     res.json(mapShopifyCart(cart));
   } catch (error) {
+    if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart could not be loaded");
     res.status(502).json({ error: "Your Shopify bag could not be loaded. Please try again." });
   }
@@ -474,6 +507,7 @@ router.post("/shopify/cart", async (req, res): Promise<void> => {
       res.status(400).json({ error: purchasable.error });
       return;
     }
+    await assertIndiaMarketAvailable();
 
     const result = body.data.cartId
       ? await shopifyStorefrontRequest<{ cartLinesAdd: ShopifyCartMutationResult }>(
@@ -503,6 +537,7 @@ router.post("/shopify/cart", async (req, res): Promise<void> => {
     res.setHeader("Cache-Control", "no-store");
     res.json(mapShopifyCart(result.cart));
   } catch (error) {
+    if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart line could not be added");
     res.status(502).json({ error: "This product could not be added to your Shopify bag. Please try again." });
   }
@@ -515,6 +550,7 @@ router.patch("/shopify/cart", async (req, res): Promise<void> => {
     return;
   }
   try {
+    await assertIndiaMarketAvailable();
     const result = await shopifyStorefrontRequest<{
       cartLinesUpdate: ShopifyCartMutationResult;
     }>(SHOPIFY_CART_UPDATE_LINES, {
@@ -532,6 +568,7 @@ router.patch("/shopify/cart", async (req, res): Promise<void> => {
     res.setHeader("Cache-Control", "no-store");
     res.json(mapShopifyCart(result.cartLinesUpdate.cart));
   } catch (error) {
+    if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart quantities could not be updated");
     res.status(502).json({ error: "Your Shopify bag could not be updated. Please try again." });
   }
@@ -545,6 +582,7 @@ router.post("/shopify/cart/discount-codes", async (req, res): Promise<void> => {
   }
   const discountCodes = [...new Set(body.data.discountCodes.map((code) => code.trim()))];
   try {
+    await assertIndiaMarketAvailable();
     const result = await shopifyStorefrontRequest<{
       cartDiscountCodesUpdate: ShopifyCartMutationResult;
     }>(SHOPIFY_CART_DISCOUNT_CODES_UPDATE, {
@@ -562,6 +600,7 @@ router.post("/shopify/cart/discount-codes", async (req, res): Promise<void> => {
     res.setHeader("Cache-Control", "no-store");
     res.json(mapShopifyCart(result.cartDiscountCodesUpdate.cart));
   } catch (error) {
+    if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart discount codes could not be updated");
     res.status(502).json({ error: "Shopify could not apply this discount code. Please try again." });
   }
