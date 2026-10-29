@@ -246,8 +246,9 @@ test("does not delete the previous image or any other media when Shopify rejects
 
 test("reorders the full gallery so the first image becomes featured", async () => {
   await harness(async ({ request, state }) => {
-    const ids = state.media.map((item) => item.id).reverse();
-    const result = await request("PATCH", "/media/order", { mediaIds: ids });
+    const expectedMediaIds = state.media.map((item) => item.id);
+    const ids = [...expectedMediaIds].reverse();
+    const result = await request("PATCH", "/media/order", { expectedMediaIds, mediaIds: ids });
     assert.equal(result.status, 200);
     assert.deepEqual(result.data.media.map((item) => item.id), ids);
     assert.deepEqual(state.calls.find((call) => call.query.includes("MerchantProductReorderMedia")).variables.moves.map((move) => move.newPosition), [0, 1, 2]);
@@ -255,9 +256,26 @@ test("reorders the full gallery so the first image becomes featured", async () =
   });
 });
 
+test("rejects a reorder based on a stale gallery order without writing", async () => {
+  await harness(async ({ request, state }) => {
+    const expectedMediaIds = state.media.map((item) => item.id);
+    state.media.reverse();
+    const currentIds = state.media.map((item) => item.id);
+    const result = await request("PATCH", "/media/order", {
+      expectedMediaIds,
+      mediaIds: [...expectedMediaIds].reverse(),
+    });
+    assert.equal(result.status, 409);
+    assert.match(result.data.error, /changed in another session.*Refresh/i);
+    assert.deepEqual(state.media.map((item) => item.id), currentIds);
+    assert.equal(state.calls.some((call) => call.query.includes("mutation MerchantProductReorderMedia")), false);
+  });
+});
+
 test("rejects partial order writes and protects all gallery changes with merchant authorization", async () => {
   await harness(async ({ request, state }) => {
-    assert.equal((await request("PATCH", "/media/order", { mediaIds: [gid("MediaImage", 1)] })).status, 400);
+    const expectedMediaIds = state.media.map((item) => item.id);
+    assert.equal((await request("PATCH", "/media/order", { expectedMediaIds, mediaIds: [gid("MediaImage", 1)] })).status, 400);
     assert.equal((await request("GET", "/media", undefined, false)).status, 403);
     assert.equal((await request("DELETE", `/media/${encodeURIComponent(gid("MediaImage", 1))}`, undefined, false)).status, 403);
     assert.equal((await request("POST", "/media", { resourceUrl: "https://storage.googleapis.com/photo.jpg" }, false)).status, 403);

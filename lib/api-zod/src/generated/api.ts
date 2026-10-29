@@ -737,6 +737,10 @@ export const ReorderShopifyAdminProductMediaParams = zod.object({
   "productId": zod.coerce.string()
 })
 
+export const reorderShopifyAdminProductMediaBodyExpectedMediaIdsItemMax = 200;
+
+export const reorderShopifyAdminProductMediaBodyExpectedMediaIdsMax = 250;
+
 export const reorderShopifyAdminProductMediaBodyMediaIdsItemMax = 200;
 
 export const reorderShopifyAdminProductMediaBodyMediaIdsMax = 250;
@@ -744,6 +748,7 @@ export const reorderShopifyAdminProductMediaBodyMediaIdsMax = 250;
 
 
 export const ReorderShopifyAdminProductMediaBody = zod.object({
+  "expectedMediaIds": zod.array(zod.string().min(1).max(reorderShopifyAdminProductMediaBodyExpectedMediaIdsItemMax)).min(1).max(reorderShopifyAdminProductMediaBodyExpectedMediaIdsMax),
   "mediaIds": zod.array(zod.string().min(1).max(reorderShopifyAdminProductMediaBodyMediaIdsItemMax)).min(1).max(reorderShopifyAdminProductMediaBodyMediaIdsMax)
 })
 

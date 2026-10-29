@@ -979,7 +979,12 @@ router.patch("/shopify/admin/products/:productId/media/order", async (req, res):
   try {
     const current = await fetchProductMedia(productId);
     const requestedIds = parsed.data.mediaIds;
+    const expectedIds = parsed.data.expectedMediaIds;
     const currentIds = current.media.map((entry) => entry.id);
+    if (expectedIds.length !== currentIds.length ||
+      expectedIds.some((id, index) => currentIds[index] !== id)) {
+      throw new ShopifyStockConflictError("The gallery order changed in another session. Refresh the gallery and try again.");
+    }
     if (requestedIds.length !== currentIds.length ||
       new Set(requestedIds).size !== requestedIds.length ||
       requestedIds.some((id) => !currentIds.includes(id))) {

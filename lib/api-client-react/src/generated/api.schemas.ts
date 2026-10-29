@@ -334,6 +334,13 @@ export interface ShopifyAdminProductMediaOrder {
      * @items.minLength 1
      * @items.maxLength 200
      */
+  expectedMediaIds: string[];
+  /**
+     * @minItems 1
+     * @maxItems 250
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
   mediaIds: string[];
 }
 

@@ -608,6 +608,8 @@ paths:
                 $ref: "#/components/schemas/ShopifyAdminProductMediaResponse"
         "400":
           description: Media order is invalid
+        "409":
+          description: Gallery order changed since the merchant loaded it
         "401":
           description: Sign-in required
         "403":
@@ -1223,6 +1225,14 @@ components:
     ShopifyAdminProductMediaOrder:
       type: object
       properties:
+        expectedMediaIds:
+          type: array
+          minItems: 1
+          maxItems: 250
+          items:
+            type: string
+            minLength: 1
+            maxLength: 200
         mediaIds:
           type: array
           minItems: 1
@@ -1231,7 +1241,7 @@ components:
             type: string
             minLength: 1
             maxLength: 200
-      required: [mediaIds]
+      required: [expectedMediaIds, mediaIds]
     ShopifyAdminProductMediaAltUpdate:
       type: object
       properties:

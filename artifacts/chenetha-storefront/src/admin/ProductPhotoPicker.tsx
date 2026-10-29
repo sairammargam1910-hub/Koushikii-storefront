@@ -229,14 +229,20 @@ function ProductGalleryManager({ productId, disabled, onUploading, onPending }: 
   };
   const changeOrder = (index: number, destination: number) => {
     if (destination < 0 || destination >= items.length || busy) return;
-    const mediaIds = items.map((item) => item.id);
+    const expectedMediaIds = items.map((item) => item.id);
+    const mediaIds = [...expectedMediaIds];
     const [moved] = mediaIds.splice(index, 1);
     mediaIds.splice(destination, 0, moved);
     setError("");
     setNotice("");
-    reorder.mutate({ productId, data: { mediaIds } }, {
+    reorder.mutate({ productId, data: { expectedMediaIds, mediaIds } }, {
       onSuccess: () => { refreshGallery(); setNotice("Gallery order saved."); },
-      onError: (reason: Error) => { refreshGallery(); setError(reason.message || "Could not reorder the gallery."); },
+      onError: (reason: Error) => {
+        refreshGallery();
+        setError((reason as Error & { status?: number }).status === 409
+          ? "The gallery order changed in another session. Refresh the gallery and try again."
+          : reason.message || "Could not reorder the gallery.");
+      },
     });
   };
   const removeItem = (item: ShopifyAdminProductMedia) => {
