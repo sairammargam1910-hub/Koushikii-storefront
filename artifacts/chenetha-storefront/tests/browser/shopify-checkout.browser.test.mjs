@@ -119,6 +119,59 @@ async function openProduct({ savedCart } = {}) {
   return { context, page };
 }
 
+async function openCart({ savedCart }) {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
+  const page = await context.newPage();
+  await page.route("**/api/shopify/cart**", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+  await page.goto(`${origin}${fixtureUrl}?screen=cart`);
+  await page.getByRole("heading", { name: "Kanchipuram silk saree" }).waitFor();
+  return { context, page };
+}
+
+test("shows Shopify quantity errors and keeps the saved bag visible", async () => {
+  const savedCart = { id: "gid://shopify/Cart/already-saved", totalQuantity: 1 };
+  const { context, page } = await openCart({ savedCart });
+  let mutation;
+  await page.route("**/api/shopify/cart**", async (route) => {
+    if (route.request().method() !== "PATCH") {
+      await route.continue();
+      return;
+    }
+    mutation = route.request().postDataJSON();
+    await route.fulfill({
+      status: 400,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "This item is no longer available." }),
+    });
+  });
+
+  await page.getByTestId("button-increase-quantity").click();
+  await page.getByRole("alert").getByText(/This item is no longer available/).waitFor();
+
+  assert.deepEqual(mutation, {
+    cartId: savedCart.id,
+    lines: [{ id: cartResponse.lines[0].id, quantity: 2 }],
+  });
+  assert.equal(await page.getByTestId("text-quantity").innerText(), "1");
+  assert.equal(await page.getByRole("heading", { name: "Kanchipuram silk saree" }).isVisible(), true);
+  assert.deepEqual(
+    await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),
+    savedCart,
+  );
+  await context.close();
+});
+
 test("shows Shopify cart user errors without clearing the shopper's saved bag", async () => {
   const savedCart = { id: "gid://shopify/Cart/already-saved", totalQuantity: 2 };
   const { context, page } = await openProduct({ savedCart });

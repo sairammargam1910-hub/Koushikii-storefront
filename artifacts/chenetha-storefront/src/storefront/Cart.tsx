@@ -57,6 +57,7 @@ export function Cart() {
             isLoading={shopifyCart.isLoading}
             isError={shopifyCart.isError}
             isUpdating={updateLine.isPending}
+            updateError={updateLine.error}
             onRetry={() => shopifyCart.refetch()}
             onClear={clearShopifyCartMeta}
             onQuantityChange={(lineId, quantity) => {
@@ -141,6 +142,7 @@ function ShopifyBag({
   isLoading,
   isError,
   isUpdating,
+  updateError,
   onRetry,
   onClear,
   onQuantityChange,
@@ -149,6 +151,7 @@ function ShopifyBag({
   isLoading: boolean;
   isError: boolean;
   isUpdating: boolean;
+  updateError: unknown;
   onRetry: () => void;
   onClear: () => void;
   onQuantityChange: (lineId: string, quantity: number) => void;
@@ -183,6 +186,7 @@ function ShopifyBag({
   }
 
   const hasUnavailableLine = cart.lines.some((line) => !line.availableForSale || line.isDemo);
+  const updateErrorMessage = getCartUpdateErrorMessage(updateError);
 
   return (
     <div className="two-col">
@@ -191,6 +195,11 @@ function ShopifyBag({
           <span className="eyebrow">Shopify products ({cart.totalQuantity})</span>
           <a className="link" href={base + "Collections"}>Continue exploring</a>
         </div>
+        {updateErrorMessage && (
+          <p className="notice" role="alert">
+            Shopify couldn’t update your bag: {updateErrorMessage} Your saved bag is unchanged. Please try again.
+          </p>
+        )}
         {cart.lines.map((line) => (
           <article className="cartrow shopify-cart-row" key={line.id}>
             <a href={`${base}Product?shopify=${encodeURIComponent(line.productHandle)}`} aria-label={`View ${line.productTitle}`}>
@@ -237,4 +246,13 @@ function ShopifyBag({
       </aside>
     </div>
   );
+}
+
+function getCartUpdateErrorMessage(error: unknown): string | null {
+  if (!error || typeof error !== "object" || !("data" in error)) return null;
+  const data = error.data;
+  if (!data || typeof data !== "object" || !("error" in data)) return null;
+  return typeof data.error === "string" && data.error.trim()
+    ? data.error.trim()
+    : null;
 }

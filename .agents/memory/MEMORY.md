@@ -1,4 +1,4 @@
 - [Storefront scope](storefront-scope.md) — client-led handloom storefront, logo palette, language needs, and careful handling of customer reviews.
 - [Artifact workflow ports](artifact-workflow-ports.md) — if a restart hits EADDRINUSE, stop the managed service and confirm its port is clear before restarting.
 - [Shopify API contracts](shopify-api-version-contracts.md) — verify inventory examples against the connected version; newer schemas require different comparison and idempotency inputs.
-- [Browser API fixtures](browser-api-fixtures.md) — install route mocks before navigation when components issue queries during their initial render.
+- [Browser API fixtures](browser-api-fixtures.md) — mock APIs before navigation and wrap storefront pages with their Clerk and router providers.
