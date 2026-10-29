@@ -27,6 +27,8 @@ export default defineConfig({
       client: "react-query",
       mode: "split",
       baseUrl: "/api",
+      // Shopify GIDs contain slashes and must remain a single route parameter.
+      urlEncodeParameters: true,
       clean: true,
       prettier: true,
       override: {

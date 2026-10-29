@@ -207,7 +207,18 @@ export const GetShopifyAdminProductsResponse = zod.object({
   "title": zod.string(),
   "price": zod.string(),
   "inventoryQuantity": zod.number().int().nullable(),
-  "inventoryTracked": zod.boolean()
+  "inventoryTracked": zod.boolean(),
+  "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})),
+  "inventoryLevels": zod.array(zod.object({
+  "locationId": zod.string(),
+  "locationName": zod.string(),
+  "active": zod.boolean(),
+  "available": zod.number().int()
+}))
 }))
 }))
 })
@@ -260,14 +271,69 @@ export const CreateShopifyAdminProductResponse = zod.object({
   "title": zod.string(),
   "price": zod.string(),
   "inventoryQuantity": zod.number().int().nullable(),
-  "inventoryTracked": zod.boolean()
+  "inventoryTracked": zod.boolean(),
+  "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})),
+  "inventoryLevels": zod.array(zod.object({
+  "locationId": zod.string(),
+  "locationName": zod.string(),
+  "active": zod.boolean(),
+  "available": zod.number().int()
+}))
 }))
 })
 })
 
 
 /**
- * Updates product details, price, stock, or storefront publication.
+ * @summary Load every variant and inventory location for a product
+ */
+export const getShopifyAdminProductPathProductIdMax = 200;
+
+
+
+export const GetShopifyAdminProductParams = zod.object({
+  "productId": zod.coerce.string().min(1).max(getShopifyAdminProductPathProductIdMax)
+})
+
+export const GetShopifyAdminProductResponse = zod.object({
+  "currencyCode": zod.string(),
+  "product": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "handle": zod.string(),
+  "description": zod.string(),
+  "productType": zod.string(),
+  "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  "tags": zod.array(zod.string()),
+  "imageUrl": zod.string().url().nullable(),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "price": zod.string(),
+  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryTracked": zod.boolean(),
+  "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})),
+  "inventoryLevels": zod.array(zod.object({
+  "locationId": zod.string(),
+  "locationName": zod.string(),
+  "active": zod.boolean(),
+  "available": zod.number().int()
+}))
+}))
+})
+})
+
+
+/**
+ * Updates shared product details or storefront publication. Use the variant endpoint for existing prices and location stock.
  * @summary Update a Shopify product
  */
 export const updateShopifyAdminProductPathProductIdMax = 200;
@@ -288,10 +354,6 @@ export const updateShopifyAdminProductBodyTagsItemMax = 100;
 
 export const updateShopifyAdminProductBodyTagsMax = 20;
 
-export const updateShopifyAdminProductBodyPriceExclusiveMin = 0;
-
-export const updateShopifyAdminProductBodyInventoryQuantityMin = 0;
-
 
 
 export const UpdateShopifyAdminProductBody = zod.object({
@@ -299,8 +361,6 @@ export const UpdateShopifyAdminProductBody = zod.object({
   "description": zod.string().max(updateShopifyAdminProductBodyDescriptionMax).optional(),
   "productType": zod.string().max(updateShopifyAdminProductBodyProductTypeMax).optional(),
   "tags": zod.array(zod.string().max(updateShopifyAdminProductBodyTagsItemMax)).max(updateShopifyAdminProductBodyTagsMax).optional(),
-  "price": zod.number().gt(updateShopifyAdminProductBodyPriceExclusiveMin).optional(),
-  "inventoryQuantity": zod.number().int().min(updateShopifyAdminProductBodyInventoryQuantityMin).optional(),
   "imageUrl": zod.string().url().nullish(),
   "publishToWebsite": zod.boolean().optional()
 })
@@ -321,7 +381,18 @@ export const UpdateShopifyAdminProductResponse = zod.object({
   "title": zod.string(),
   "price": zod.string(),
   "inventoryQuantity": zod.number().int().nullable(),
-  "inventoryTracked": zod.boolean()
+  "inventoryTracked": zod.boolean(),
+  "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})),
+  "inventoryLevels": zod.array(zod.object({
+  "locationId": zod.string(),
+  "locationName": zod.string(),
+  "active": zod.boolean(),
+  "available": zod.number().int()
+}))
 }))
 })
 })
@@ -341,6 +412,69 @@ export const ArchiveShopifyAdminProductParams = zod.object({
 
 export const ArchiveShopifyAdminProductResponse = zod.object({
   "success": zod.boolean()
+})
+
+
+/**
+ * @summary Update a variant price or compare-and-set stock at one location
+ */
+export const UpdateShopifyAdminVariantParams = zod.object({
+  "productId": zod.coerce.string(),
+  "variantId": zod.coerce.string()
+})
+
+export const updateShopifyAdminVariantBodyPriceExclusiveMin = 0;
+
+export const updateShopifyAdminVariantBodyStockQuantityMin = 0;
+export const updateShopifyAdminVariantBodyStockQuantityMax = 1000000;
+
+export const updateShopifyAdminVariantBodySelectedOptionsMax = 3;
+
+
+
+export const UpdateShopifyAdminVariantBody = zod.object({
+  "price": zod.number().gt(updateShopifyAdminVariantBodyPriceExclusiveMin).optional(),
+  "stock": zod.object({
+  "locationId": zod.string(),
+  "quantity": zod.number().int().min(updateShopifyAdminVariantBodyStockQuantityMin).max(updateShopifyAdminVariantBodyStockQuantityMax),
+  "compareQuantity": zod.number().int()
+}).optional(),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})).min(1).max(updateShopifyAdminVariantBodySelectedOptionsMax).optional()
+})
+
+export const UpdateShopifyAdminVariantResponse = zod.object({
+  "currencyCode": zod.string(),
+  "product": zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "handle": zod.string(),
+  "description": zod.string(),
+  "productType": zod.string(),
+  "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
+  "tags": zod.array(zod.string()),
+  "imageUrl": zod.string().url().nullable(),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "price": zod.string(),
+  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryTracked": zod.boolean(),
+  "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
+  "selectedOptions": zod.array(zod.object({
+  "name": zod.string(),
+  "value": zod.string()
+})),
+  "inventoryLevels": zod.array(zod.object({
+  "locationId": zod.string(),
+  "locationName": zod.string(),
+  "active": zod.boolean(),
+  "available": zod.number().int()
+}))
+}))
+})
 })
 
 

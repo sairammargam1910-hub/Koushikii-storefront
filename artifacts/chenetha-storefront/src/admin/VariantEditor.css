@@ -1,0 +1,19 @@
+.merchant-app .variant-modal { width: min(880px, 95vw); }
+.variant-content { padding: 0 28px 28px; overflow-y: auto; }
+.variant-content > .field-note { margin: 16px 0; }
+.variant-card { margin-top: 20px; padding: 20px; border: 1px solid #e3d9ca; border-radius: 8px; background: #fffdf8; }
+.variant-card h3 { margin: 0 0 16px; font-size: 20px; }
+.variant-details { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding: 0 !important; }
+.variant-details label { flex: 1 1 140px; }
+.location-stock { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; padding-top: 16px; margin-top: 16px; border-top: 1px solid #e3d9ca; }
+.location-stock > div { flex: 1 1 180px; align-self: center; }
+.location-stock small { display: block; margin-top: 5px; color: #726657; }
+.location-stock label { display: grid; gap: 6px; font-size: 12px; }
+.location-stock input { width: 125px; padding: 9px; border: 1px solid #d8cebf; border-radius: 4px; }
+.location-stock input:disabled { opacity: .6; }
+.merchant-app .row-actions { flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .variant-content { padding: 0 16px 16px; }
+  .variant-card { padding: 14px; }
+  .location-stock > div { flex-basis: 100%; }
+}

@@ -118,6 +118,47 @@ export interface ShopifyCartResponse {
   lines: ShopifyCartLine[];
 }
 
+export interface ShopifyAdminInventoryLevel {
+  locationId: string;
+  locationName: string;
+  active: boolean;
+  available: number;
+}
+
+export interface ShopifyAdminVariantOption {
+  name: string;
+  value: string;
+}
+
+export interface ShopifyAdminStockUpdate {
+  locationId: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  quantity: number;
+  compareQuantity: number;
+}
+
+export interface ShopifyAdminVariantUpdate {
+  /** @exclusiveMinimum 0 */
+  price?: number;
+  stock?: ShopifyAdminStockUpdate;
+  /**
+     * @minItems 1
+     * @maxItems 3
+     */
+  selectedOptions?: ShopifyAdminVariantOption[];
+}
+
+export type ShopifyAdminProductVariantInventoryPolicy = typeof ShopifyAdminProductVariantInventoryPolicy[keyof typeof ShopifyAdminProductVariantInventoryPolicy];
+
+
+export const ShopifyAdminProductVariantInventoryPolicy = {
+  DENY: 'DENY',
+  CONTINUE: 'CONTINUE',
+} as const;
+
 export interface ShopifyAdminProductVariant {
   id: string;
   title: string;
@@ -125,6 +166,9 @@ export interface ShopifyAdminProductVariant {
   /** @nullable */
   inventoryQuantity: number | null;
   inventoryTracked: boolean;
+  inventoryPolicy: ShopifyAdminProductVariantInventoryPolicy;
+  selectedOptions: ShopifyAdminVariantOption[];
+  inventoryLevels: ShopifyAdminInventoryLevel[];
 }
 
 export type ShopifyAdminProductStatus = typeof ShopifyAdminProductStatus[keyof typeof ShopifyAdminProductStatus];
@@ -199,10 +243,6 @@ export interface ShopifyAdminProductUpdate {
      * @items.maxLength 100
      */
   tags?: string[];
-  /** @exclusiveMinimum 0 */
-  price?: number;
-  /** @minimum 0 */
-  inventoryQuantity?: number;
   /** @nullable */
   imageUrl?: string | null;
   publishToWebsite?: boolean;

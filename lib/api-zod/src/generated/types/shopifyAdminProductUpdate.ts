@@ -21,10 +21,6 @@ export interface ShopifyAdminProductUpdate {
      * @items.maxLength 100
      */
   tags?: string[];
-  /** @exclusiveMinimum 0 */
-  price?: number;
-  /** @minimum 0 */
-  inventoryQuantity?: number;
   /** @nullable */
   imageUrl?: string | null;
   publishToWebsite?: boolean;

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import "./Admin.css";
 import { ProductPhotoPicker } from "./ProductPhotoPicker";
+import { VariantEditor } from "./VariantEditor";
 
 type ProductDraft = {
   title: string;
@@ -132,11 +133,11 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
         <button className="icon-button" disabled={busy || uploading} onClick={onClose} aria-label="Close" data-testid="button-close-product-form"><X size={18}/></button></header>
       <form onSubmit={submit} className="admin-form">
         <label>Product name<input required maxLength={255} value={draft.title} onChange={(e) => change("title", e.target.value)} placeholder="e.g. Kanchipuram silk in marigold" data-testid="input-product-title"/></label>
-        <div className="form-row">
+        {allowVariantEdits && <div className="form-row">
           <label>Price{currencyCode ? ` (${currencyCode})` : ""}<input type="number" min="0.01" step="0.01" required={allowVariantEdits} disabled={!allowVariantEdits} value={draft.price} onChange={(e) => change("price", e.target.value)} placeholder="0.00" data-testid="input-product-price"/></label>
           <label>Available pieces<input type="number" min="0" step="1" required={allowVariantEdits} disabled={!allowVariantEdits} value={draft.inventoryQuantity} onChange={(e) => change("inventoryQuantity", e.target.value)} data-testid="input-product-inventory"/></label>
-        </div>
-        {!allowVariantEdits && <p className="field-note">This product has multiple variants. Price and stock are managed in Shopify; you can still update the shared product details here.</p>}
+        </div>}
+        {!allowVariantEdits && <p className="field-note">Edit prices, size/color values and stock per location using “Variants & stock” in the product list.</p>}
         <label>Weave / product type<input maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Saree" data-testid="input-product-type"/></label>
         <label>Short description<textarea maxLength={10000} rows={3} value={draft.description} onChange={(e) => change("description", e.target.value)} placeholder="What makes this piece special?" data-testid="input-product-description"/></label>
         <label>Tags <span className="label-hint">Separate with commas</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="silk, festive, handwoven" data-testid="input-product-tags"/></label>
@@ -167,12 +168,7 @@ function ProductForm({ product, onClose, currencyCode }: { product?: ShopifyAdmi
     const input = {
       title: values.title.trim(), description: values.description, productType: values.productType.trim(),
       tags: values.tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
-      ...(product
-        ? {
-            ...(product.variants.length === 1 && Number(values.price) !== Number(product.variants[0].price) ? { price: Number(values.price) } : {}),
-            ...(product.variants.length === 1 && (Number(values.inventoryQuantity) !== product.variants[0].inventoryQuantity || !product.variants[0].inventoryTracked) ? { inventoryQuantity: Number(values.inventoryQuantity) } : {}),
-          }
-        : { price: Number(values.price), inventoryQuantity: Number(values.inventoryQuantity) }),
+      ...(!product ? { price: Number(values.price), inventoryQuantity: Number(values.inventoryQuantity) } : {}),
       ...(values.imageUrl.trim() ? { imageUrl: values.imageUrl.trim() } : {}),
       publishToWebsite: values.publishToWebsite,
     };
@@ -189,7 +185,7 @@ function ProductForm({ product, onClose, currencyCode }: { product?: ShopifyAdmi
       },
     }, options);
   };
-  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product || product.variants.length === 1} currencyCode={currencyCode} existingImage={product?.imageUrl}/>;
+  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product} currencyCode={currencyCode} existingImage={product?.imageUrl}/>;
 }
 
 export function AdminDashboard() {
@@ -219,16 +215,16 @@ export function AdminDashboard() {
   </AdminLayout>;
 }
 
-function ProductRow({ product, currencyCode, compact, onEdit, onArchive }: {
-  product: ShopifyAdminProduct; currencyCode?: string; compact?: boolean; onEdit?: () => void; onArchive?: () => void;
+function ProductRow({ product, currencyCode, compact, onEdit, onArchive, onVariants }: {
+  product: ShopifyAdminProduct; currencyCode?: string; compact?: boolean; onEdit?: () => void; onArchive?: () => void; onVariants?: () => void;
 }) {
   const price = product.variants[0]?.price ?? "—";
   return <article className="product-row" data-testid={`row-product-${product.id}`}>
     <div className="product-thumb">{product.imageUrl ? <img src={product.imageUrl} alt="" loading="lazy"/> : <span><Tag size={20}/></span>}</div>
     <div className="product-info"><b data-testid={`text-product-title-${product.id}`}>{product.title}</b><small>{product.productType || "Handloom"}{product.tags.length ? ` · ${product.tags.slice(0, 2).join(", ")}` : ""}</small></div>
-    <div className="product-price" data-testid={`text-product-price-${product.id}`}>{currency(price, currencyCode)}</div>
+    <div className="product-price" data-testid={`text-product-price-${product.id}`}>{product.variants.length > 1 ? "By variant" : currency(price, currencyCode)}</div>
     <StatusPill status={product.status} productId={product.id}/>
-    {!compact && <div className="row-actions">{product.status !== "ARCHIVED" && <><button className="text-button" onClick={onEdit} data-testid={`button-edit-product-${product.id}`}>Edit</button><button className="text-button danger-text" onClick={onArchive} data-testid={`button-archive-product-${product.id}`}>Archive</button></>}</div>}
+    {!compact && <div className="row-actions">{product.status !== "ARCHIVED" && <><button className="text-button" onClick={onEdit} data-testid={`button-edit-product-${product.id}`}>Edit</button><button className="text-button" onClick={onVariants} data-testid={`button-variants-product-${product.id}`}>Variants & stock</button><button className="text-button danger-text" onClick={onArchive} data-testid={`button-archive-product-${product.id}`}>Archive</button></>}</div>}
   </article>;
 }
 
@@ -243,6 +239,7 @@ function EmptyPanel({ icon, title, body, action }: { icon: ReactNode; title: str
 export function AdminProducts() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<ShopifyAdminProduct | null>(null);
+  const [variantProduct, setVariantProduct] = useState<ShopifyAdminProduct | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState("");
   const queryClient = useQueryClient();
@@ -262,11 +259,12 @@ export function AdminProducts() {
     <div className="catalog-toolbar"><div className="toolbar-count"><b>{products.data?.products.length ?? "—"}</b> products in your catalog</div><label className="search-field"><Search size={17}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a product" aria-label="Find a product" data-testid="input-search-products"/></label></div>
     {notice && <div className={`inline-notice ${notice.includes("Could not") ? "notice-error" : ""}`} role="status" data-testid="status-product-notice"><Check size={16}/>{notice}<button aria-label="Dismiss notice" onClick={() => setNotice("")} data-testid="button-dismiss-notice"><X size={15}/></button></div>}
     {products.isLoading ? <LoadingPanel/> : products.isError ? <ErrorPanel message={readableError(products.error, "We couldn’t reach your Shopify catalog.")} retry={() => void products.refetch()}/> :
-      rows.length ? <div className="catalog-table"><div className="table-head"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>ACTIONS</span></div>{rows.map((product) => <ProductRow key={product.id} product={product} currencyCode={products.data?.currencyCode} onEdit={() => setEditing(product)} onArchive={() => onArchive(product)}/>)}</div> :
+      rows.length ? <div className="catalog-table"><div className="table-head"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>ACTIONS</span></div>{rows.map((product) => <ProductRow key={product.id} product={product} currencyCode={products.data?.currencyCode} onEdit={() => setEditing(product)} onVariants={() => setVariantProduct(product)} onArchive={() => onArchive(product)}/>)}</div> :
         <EmptyPanel icon={<PackagePlus size={22}/>} title={search ? "No matching products" : "Your catalog is still unwoven"} body={search ? "Try another name or tag." : "Add your first saree and keep its price, stock and story together."} action={!search ? <button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-empty-create-product"><Plus size={16}/> Add a product</button> : undefined}/>
     }
     {(creating || createRequested) && <ProductForm onClose={() => { setCreating(false); if (createRequested) window.history.replaceState({}, "", "/admin/products"); }} currencyCode={products.data?.currencyCode}/>}
     {editing && <ProductForm product={editing} onClose={() => setEditing(null)} currencyCode={products.data?.currencyCode}/>}
+    {variantProduct && <VariantEditor productId={variantProduct.id} onClose={() => setVariantProduct(null)}/>}
   </AdminLayout>;
 }
 

@@ -269,11 +269,22 @@ paths:
           type: string
           minLength: 1
           maxLength: 200
+    get:
+      operationId: getShopifyAdminProduct
+      tags: [shopify]
+      summary: Load every variant and inventory location for a product
+      responses:
+        "200":
+          description: Current Shopify product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductResponse"
     patch:
       operationId: updateShopifyAdminProduct
       tags: [shopify]
       summary: Update a Shopify product
-      description: Updates product details, price, stock, or storefront publication.
+      description: Updates shared product details or storefront publication. Use the variant endpoint for existing prices and location stock.
       requestBody:
         required: true
         content:
@@ -349,6 +360,41 @@ paths:
                 $ref: "#/components/schemas/ApiError"
         "502":
           description: Shopify product could not be archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/admin/products/{productId}/variants/{variantId}:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: variantId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: updateShopifyAdminVariant
+      tags: [shopify]
+      summary: Update a variant price or compare-and-set stock at one location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminVariantUpdate"
+      responses:
+        "200":
+          description: Fresh Shopify product after update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductResponse"
+        "409":
+          description: Stock changed since it was loaded; refresh before retrying
           content:
             application/json:
               schema:
@@ -648,6 +694,52 @@ components:
           items:
             $ref: "#/components/schemas/ShopifyCartLine"
       required: [id, checkoutUrl, totalQuantity, subtotalAmount, currencyCode, lines]
+    ShopifyAdminInventoryLevel:
+      type: object
+      required: [locationId, locationName, active, available]
+      properties:
+        locationId:
+          type: string
+        locationName:
+          type: string
+        active:
+          type: boolean
+        available:
+          type: integer
+    ShopifyAdminVariantOption:
+      type: object
+      required: [name, value]
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+    ShopifyAdminVariantUpdate:
+      type: object
+      properties:
+        price:
+          type: number
+          exclusiveMinimum: 0
+        stock:
+          $ref: "#/components/schemas/ShopifyAdminStockUpdate"
+        selectedOptions:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/ShopifyAdminVariantOption"
+    ShopifyAdminStockUpdate:
+      type: object
+      required: [locationId, quantity, compareQuantity]
+      properties:
+        locationId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+        compareQuantity:
+          type: integer
     ShopifyAdminProductVariant:
       type: object
       properties:
@@ -661,7 +753,18 @@ components:
           type: ["integer", "null"]
         inventoryTracked:
           type: boolean
-      required: [id, title, price, inventoryQuantity, inventoryTracked]
+        inventoryPolicy:
+          type: string
+          enum: [DENY, CONTINUE]
+        selectedOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminVariantOption"
+        inventoryLevels:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminInventoryLevel"
+      required: [id, title, price, inventoryQuantity, inventoryTracked, inventoryPolicy, selectedOptions, inventoryLevels]
     ShopifyAdminProduct:
       type: object
       properties:
@@ -760,12 +863,6 @@ components:
           items:
             type: string
             maxLength: 100
-        price:
-          type: number
-          exclusiveMinimum: 0
-        inventoryQuantity:
-          type: integer
-          minimum: 0
         imageUrl:
           type: ["string", "null"]
           format: uri

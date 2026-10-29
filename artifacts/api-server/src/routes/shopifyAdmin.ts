@@ -1,4 +1,5 @@
 import { Router, raw, type IRouter, type Request, type Response, type RequestHandler } from "express";
+import { randomUUID } from "node:crypto";
 import {
   ArchiveShopifyAdminProductResponse,
   CreateShopifyAdminDiscountBody,
@@ -11,6 +12,9 @@ import {
   UpdateShopifyAdminProductBody,
   UpdateShopifyAdminProductResponse,
   UploadShopifyAdminImageResponse,
+  UpdateShopifyAdminVariantBody,
+  UpdateShopifyAdminVariantResponse,
+  GetShopifyAdminProductResponse,
 } from "@workspace/api-zod";
 import { requireMerchantAdmin } from "../middlewares/merchantAdminAuth";
 import { invalidateShopifyCatalog } from "./shopify";
@@ -34,11 +38,14 @@ type AdminVariant = {
   title: string;
   price: string;
   inventoryQuantity: number | null;
+  inventoryPolicy: "DENY" | "CONTINUE";
+  selectedOptions: Array<{ name: string; value: string }>;
   inventoryItem: {
     id: string;
     tracked: boolean;
     inventoryLevels: {
-      nodes: Array<{ location: { id: string } }>;
+      nodes: Array<{ location: { id: string; name: string; isActive: boolean }; quantities: Array<{ name: string; quantity: number }> }>;
+      pageInfo: { hasNextPage: boolean; endCursor: string };
     };
   } | null;
 };
@@ -52,7 +59,7 @@ type AdminProduct = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   tags: string[];
   featuredMedia: { image: { url: string; altText: string | null } | null } | null;
-  variants: { nodes: AdminVariant[] };
+  variants: { nodes: AdminVariant[]; pageInfo: { hasNextPage: boolean; endCursor: string } };
 };
 
 type ProductQueryResult = {
@@ -79,16 +86,20 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
     }
   }
   variants(first: 2) {
+    pageInfo { hasNextPage endCursor }
     nodes {
       id
       title
       price
       inventoryQuantity
+      inventoryPolicy
+      selectedOptions { name value }
       inventoryItem {
         id
         tracked
-        inventoryLevels(first: 20) {
-          nodes { location { id } }
+        inventoryLevels(first: 1) {
+          pageInfo { hasNextPage endCursor }
+          nodes { location { id name isActive } quantities(names: ["available"]) { name quantity } }
         }
       }
     }
@@ -174,8 +185,8 @@ const INVENTORY_ACTIVATE = `#graphql
 `;
 
 const INVENTORY_SET_QUANTITY = `#graphql
-  mutation MerchantInventorySetQuantity($input: InventorySetQuantitiesInput!) {
-    inventorySetQuantities(input: $input) {
+  mutation MerchantInventorySetQuantity($input: InventorySetQuantitiesInput!, $idempotencyKey: String!) {
+    inventorySetQuantities(input: $input) @idempotent(key: $idempotencyKey) {
       userErrors { field message }
     }
   }
@@ -259,6 +270,7 @@ const ADMIN_DISCOUNT_DEACTIVATE = `#graphql
 type ShopifyUserErrors = Array<{ field?: string[] | null; message: string }>;
 
 class ShopifyNotFoundError extends Error {}
+class ShopifyStockConflictError extends Error {}
 
 function mapProduct(
   product: AdminProduct,
@@ -278,6 +290,14 @@ function mapProduct(
       price: variant.price,
       inventoryQuantity: variant.inventoryQuantity ?? null,
       inventoryTracked: variant.inventoryItem?.tracked ?? false,
+      inventoryPolicy: variant.inventoryPolicy,
+      selectedOptions: variant.selectedOptions,
+      inventoryLevels: variant.inventoryItem?.inventoryLevels.nodes.map((level) => ({
+        locationId: level.location.id,
+        locationName: level.location.name,
+        active: level.location.isActive,
+        available: level.quantities.find((entry) => entry.name === "available")!.quantity,
+      })) ?? [],
     })),
   };
 }
@@ -288,6 +308,10 @@ function respondShopifyError(
   error: unknown,
   fallback: string,
 ) {
+  if (error instanceof ShopifyStockConflictError) {
+    res.status(409).json({ error: error.message });
+    return;
+  }
   if (error instanceof ShopifyInputError) {
     res.status(400).json({ error: error.message });
     return;
@@ -319,6 +343,35 @@ async function fetchProduct(id: string): Promise<{
     { id },
   );
   if (!result.product) throw new ShopifyNotFoundError("Product not found.");
+  // Never mistake the catalog's two-variant preview for a complete product.
+  const variants = result.product.variants;
+  while (variants.pageInfo.hasNextPage) {
+    const page = await shopifyAdminRequest<{ product: { variants: AdminProduct["variants"] } | null }>(
+      `query MerchantVariantPage($id: ID!, $after: String!) {
+        product(id: $id) { ${ADMIN_PRODUCT_FIELDS.replace("variants(first: 2)", "variants(first: 25, after: $after)")} }
+      }`, { id, after: variants.pageInfo.endCursor },
+    );
+    if (!page.product) throw new ShopifyNotFoundError("Product not found.");
+    variants.nodes.push(...page.product.variants.nodes);
+    variants.pageInfo = page.product.variants.pageInfo;
+  }
+  for (const variant of variants.nodes) {
+    const item = variant.inventoryItem;
+    if (!item) continue;
+    while (item.inventoryLevels.pageInfo.hasNextPage) {
+      const page = await shopifyAdminRequest<{ inventoryItem: { inventoryLevels: NonNullable<AdminVariant["inventoryItem"]>["inventoryLevels"] } | null }>(
+        `query MerchantInventoryPage($id: ID!, $after: String!) {
+          inventoryItem(id: $id) { inventoryLevels(first: 100, after: $after) {
+            pageInfo { hasNextPage endCursor }
+            nodes { location { id name isActive } quantities(names: ["available"]) { name quantity } }
+          } }
+        }`, { id: item.id, after: item.inventoryLevels.pageInfo.endCursor },
+      );
+      if (!page.inventoryItem) throw new ShopifyInputError("Inventory changed. Reload this product.");
+      item.inventoryLevels.nodes.push(...page.inventoryItem.inventoryLevels.nodes);
+      item.inventoryLevels.pageInfo = page.inventoryItem.inventoryLevels.pageInfo;
+    }
+  }
   return { product: result.product, currencyCode: result.shop.currencyCode };
 }
 
@@ -386,6 +439,7 @@ async function setVariantInventory(
   const quantityResult = await shopifyAdminRequest<{
     inventorySetQuantities: { userErrors: ShopifyUserErrors };
   }>(INVENTORY_SET_QUANTITY, {
+    idempotencyKey: randomUUID(),
     input: {
       name: "available",
       reason: "correction",
@@ -394,6 +448,7 @@ async function setVariantInventory(
           inventoryItemId: inventoryItem.id,
           locationId: location.id,
           quantity,
+          changeFromQuantity: inventoryItem.inventoryLevels.nodes.find((level) => level.location.id === location.id)?.quantities.find((entry) => entry.name === "available")?.quantity ?? 0,
         },
       ],
     },
@@ -483,6 +538,87 @@ router.get("/shopify/admin/products", async (req, res): Promise<void> => {
       error,
       "Shopify products could not be loaded. Check the store connection and try again.",
     );
+  }
+});
+
+router.get("/shopify/admin/products/:productId", async (req, res): Promise<void> => {
+  const productId = String(req.params.productId);
+  if (!isShopifyProductId(productId)) {
+    res.status(400).json({ error: "The Shopify product ID is invalid." });
+    return;
+  }
+  try {
+    const result = await fetchProduct(productId);
+    res.json(GetShopifyAdminProductResponse.parse({ currencyCode: result.currencyCode, product: mapProduct(result.product) }));
+  } catch (error) {
+    respondShopifyError(req, res, error, "Could not load this product's variants. Reload and try again.");
+  }
+});
+
+router.patch("/shopify/admin/products/:productId/variants/:variantId", async (req, res): Promise<void> => {
+  const productId = String(req.params.productId);
+  const variantId = String(req.params.variantId);
+  const parsed = UpdateShopifyAdminVariantBody.safeParse(req.body);
+  if (!isShopifyProductId(productId) || !/^gid:\/\/shopify\/ProductVariant\/\d+$/.test(variantId) ||
+      !parsed.success || !Object.keys(parsed.data ?? {}).length) {
+    res.status(400).json({ error: "Choose a valid variant and a price, option or location quantity to update." });
+    return;
+  }
+  const input = parsed.data;
+  try {
+    const existing = await fetchProduct(productId);
+    const variant = existing.product.variants.nodes.find((entry) => entry.id === variantId);
+    if (!variant) throw new ShopifyNotFoundError("This variant does not belong to this product.");
+    const stock = input.stock;
+    const item = variant.inventoryItem;
+    if (stock) {
+      const level = item?.inventoryLevels.nodes.find((entry) => entry.location.id === stock.locationId);
+      if (!item?.tracked || !level?.location.isActive) {
+        throw new ShopifyInputError("Enable inventory tracking and stock this variant at an active location in Shopify first, then refresh.");
+      }
+      if (level.quantities.find((entry) => entry.name === "available")?.quantity !== stock.compareQuantity) {
+        throw new ShopifyStockConflictError("Stock changed in Shopify. Refresh quantities and review your change before saving again.");
+      }
+    }
+    if (input.selectedOptions && (
+      input.selectedOptions.length !== variant.selectedOptions.length ||
+      new Set(input.selectedOptions.map((option) => option.name)).size !== variant.selectedOptions.length ||
+      input.selectedOptions.some((option) => !option.value.trim() || option.value.length > 255 ||
+        !variant.selectedOptions.some((current) => current.name === option.name))
+    )) throw new ShopifyInputError("Keep the existing option names and provide a value for every size/color option.");
+
+    if (input.price !== undefined || input.selectedOptions || stock) {
+      const result = await shopifyAdminRequest<{ productVariantsBulkUpdate: { userErrors: ShopifyUserErrors } }>(
+        ADMIN_PRODUCT_VARIANT_UPDATE,
+        { productId, variants: [{
+          id: variant.id,
+          ...(input.price !== undefined ? { price: input.price.toFixed(2) } : {}),
+          ...(input.selectedOptions ? { optionValues: input.selectedOptions.map((option) => ({ optionName: option.name, name: option.value.trim() })) } : {}),
+          // A stock correction must not leave "continue selling when out of stock" enabled.
+          ...(stock ? { inventoryPolicy: "DENY" } : {}),
+        }] },
+      );
+      assertNoUserErrors(result.productVariantsBulkUpdate.userErrors);
+    }
+    if (stock && item) {
+      const result = await shopifyAdminRequest<{ inventorySetQuantities: { userErrors: Array<{ field?: string[] | null; message: string; code?: string }> } }>(
+        INVENTORY_SET_QUANTITY.replace("userErrors { field message }", "userErrors { field message code }"),
+        { idempotencyKey: randomUUID(), input: {
+          name: "available", reason: "correction",
+          quantities: [{ inventoryItemId: item.id, locationId: stock.locationId, quantity: stock.quantity, changeFromQuantity: stock.compareQuantity }],
+        } },
+      );
+      if (result.inventorySetQuantities.userErrors.some((error) => error.code === "CHANGE_FROM_QUANTITY_STALE" || error.code === "COMPARE_QUANTITY_STALE")) {
+        throw new ShopifyStockConflictError("Stock changed during the save. Refresh quantities before retrying. Any price/option changes or overselling protection may already be saved.");
+      }
+      assertNoUserErrors(result.inventorySetQuantities.userErrors);
+    }
+    const updated = await fetchProduct(productId);
+    res.json(UpdateShopifyAdminVariantResponse.parse({ currencyCode: updated.currencyCode, product: mapProduct(updated.product) }));
+  } catch (error) {
+    respondShopifyError(req, res, error, "Shopify could not complete the update. Some changes may have saved; refresh before retrying.");
+  } finally {
+    invalidateShopifyCatalog();
   }
 });
 
@@ -577,6 +713,10 @@ router.patch(
       return;
     }
 
+    if (req.body?.price !== undefined || req.body?.inventoryQuantity !== undefined) {
+      res.status(400).json({ error: "Use the variant editor to update prices and location stock. Aggregate stock updates are not supported." });
+      return;
+    }
     const parsed = UpdateShopifyAdminProductBody.safeParse(req.body);
     if (!parsed.success || !Object.keys(parsed.data ?? {}).length) {
       res.status(400).json({
@@ -591,24 +731,6 @@ router.patch(
     try {
       validatePublicImageUrl(input.imageUrl);
       const existing = await fetchProduct(productId);
-      if (
-        (input.price !== undefined ||
-          input.inventoryQuantity !== undefined) &&
-        existing.product.variants.nodes.length !== 1
-      ) {
-        throw new ShopifyInputError(
-          "Price and stock changes in this dashboard are for single-variant products. Edit this product's variants in Shopify.",
-        );
-      }
-      if (
-        input.inventoryQuantity !== undefined &&
-        (existing.product.variants.nodes[0]?.inventoryItem
-          ?.inventoryLevels.nodes.length ?? 0) > 1
-      ) {
-        throw new ShopifyInputError(
-          "This product has stock at multiple locations. Update its stock in Shopify to keep each location accurate.",
-        );
-      }
       const productInput: Record<string, unknown> = { id: productId };
       if (input.title !== undefined) productInput.title = input.title.trim();
       if (input.description !== undefined) {
@@ -639,19 +761,6 @@ router.patch(
         productUpdate: { userErrors: ShopifyUserErrors };
       }>(ADMIN_PRODUCT_UPDATE, { product: productInput, media });
       assertNoUserErrors(updateResult.productUpdate.userErrors);
-
-      if (
-        input.price !== undefined ||
-        input.inventoryQuantity !== undefined
-      ) {
-        const variant = existing.product.variants.nodes[0];
-        if (input.price !== undefined) {
-          await setVariantPrice(productId, variant.id, input.price);
-        }
-        if (input.inventoryQuantity !== undefined) {
-          await setVariantInventory(variant, input.inventoryQuantity);
-        }
-      }
 
       if (input.publishToWebsite === true) {
         await publishToWebsite(productId);

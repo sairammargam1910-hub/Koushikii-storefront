@@ -5,6 +5,9 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShopifyAdminInventoryLevel } from './shopifyAdminInventoryLevel';
+import type { ShopifyAdminProductVariantInventoryPolicy } from './shopifyAdminProductVariantInventoryPolicy';
+import type { ShopifyAdminVariantOption } from './shopifyAdminVariantOption';
 
 export interface ShopifyAdminProductVariant {
   id: string;
@@ -13,4 +16,7 @@ export interface ShopifyAdminProductVariant {
   /** @nullable */
   inventoryQuantity: number | null;
   inventoryTracked: boolean;
+  inventoryPolicy: ShopifyAdminProductVariantInventoryPolicy;
+  selectedOptions: ShopifyAdminVariantOption[];
+  inventoryLevels: ShopifyAdminInventoryLevel[];
 }

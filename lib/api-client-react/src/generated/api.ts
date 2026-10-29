@@ -32,6 +32,7 @@ import type {
   ShopifyAdminProductResponse,
   ShopifyAdminProductUpdate,
   ShopifyAdminProductsResponse,
+  ShopifyAdminVariantUpdate,
   ShopifyCartAddInput,
   ShopifyCartResponse,
   ShopifyCartUpdateInput,
@@ -740,16 +741,93 @@ export const useCreateShopifyAdminProduct = <TError = ErrorType<ApiError>,
       return useMutation(getCreateShopifyAdminProductMutationOptions(options));
     }
 
+export const getGetShopifyAdminProductUrl = (productId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}`
+}
+
+/**
+ * @summary Load every variant and inventory location for a product
+ */
+export const getShopifyAdminProduct = async (productId: string, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductResponse> => {
+
+  return customFetch<ShopifyAdminProductResponse>(getGetShopifyAdminProductUrl(productId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyAdminProductQueryKey = (productId: string,) => {
+    return [
+    `/api/shopify/admin/products/${productId}`
+    ] as const;
+    }
+
+
+export const getGetShopifyAdminProductQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyAdminProduct>>, TError = ErrorType<unknown>>(productId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProduct>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyAdminProductQueryKey(productId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyAdminProduct>>> = ({ signal }) => getShopifyAdminProduct(productId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: productId !== null && productId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProduct>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyAdminProductQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyAdminProduct>>>
+export type GetShopifyAdminProductQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Load every variant and inventory location for a product
+ */
+
+export function useGetShopifyAdminProduct<TData = Awaited<ReturnType<typeof getShopifyAdminProduct>>, TError = ErrorType<unknown>>(
+ productId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminProduct>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyAdminProductQueryOptions(productId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getUpdateShopifyAdminProductUrl = (productId: string,) => {
 
 
 
 
-  return `/api/shopify/admin/products/${productId}`
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}`
 }
 
 /**
- * Updates product details, price, stock, or storefront publication.
+ * Updates shared product details or storefront publication. Use the variant endpoint for existing prices and location stock.
  * @summary Update a Shopify product
  */
 export const updateShopifyAdminProduct = async (productId: string,
@@ -835,7 +913,7 @@ export const getArchiveShopifyAdminProductUrl = (productId: string,) => {
 
 
 
-  return `/api/shopify/admin/products/${productId}`
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}`
 }
 
 /**
@@ -903,6 +981,97 @@ export const useArchiveShopifyAdminProduct = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getArchiveShopifyAdminProductMutationOptions(options));
+    }
+
+export const getUpdateShopifyAdminVariantUrl = (productId: string,
+    variantId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}/variants/${encodeURIComponent(String(variantId))}`
+}
+
+/**
+ * @summary Update a variant price or compare-and-set stock at one location
+ */
+export const updateShopifyAdminVariant = async (productId: string,
+    variantId: string,
+    shopifyAdminVariantUpdate: ShopifyAdminVariantUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyAdminProductResponse>(getUpdateShopifyAdminVariantUrl(productId,variantId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyAdminVariantUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateShopifyAdminVariantMutationKey = () => ['updateShopifyAdminVariant'] as const;
+
+export const getUpdateShopifyAdminVariantMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminVariant>>, TError,UpdateShopifyAdminVariantMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminVariant>>, TError,UpdateShopifyAdminVariantMutationVariables, TContext> => {
+
+const mutationKey = getUpdateShopifyAdminVariantMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShopifyAdminVariant>>, UpdateShopifyAdminVariantMutationVariables> = (props) => {
+          const {productId,variantId,data} = props ?? {};
+
+          return  updateShopifyAdminVariant(productId,variantId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateShopifyAdminVariantMutationResult = NonNullable<Awaited<ReturnType<typeof updateShopifyAdminVariant>>>
+    export type UpdateShopifyAdminVariantMutationBody = BodyType<ShopifyAdminVariantUpdate>
+    export type UpdateShopifyAdminVariantMutationError = ErrorType<ApiError>
+    export type UpdateShopifyAdminVariantMutationVariables = {productId: string;variantId: string;data: BodyType<ShopifyAdminVariantUpdate>}
+
+    /**
+ * @summary Update a variant price or compare-and-set stock at one location
+ */
+export const useUpdateShopifyAdminVariant = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyAdminVariant>>, TError,UpdateShopifyAdminVariantMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateShopifyAdminVariant>>,
+        TError,
+        UpdateShopifyAdminVariantMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateShopifyAdminVariantMutationOptions(options));
     }
 
 export const getGetShopifyAdminDiscountsUrl = () => {
@@ -1077,7 +1246,7 @@ export const getDeactivateShopifyAdminDiscountUrl = (discountId: string,) => {
 
 
 
-  return `/api/shopify/admin/discounts/${discountId}`
+  return `/api/shopify/admin/discounts/${encodeURIComponent(String(discountId))}`
 }
 
 /**
