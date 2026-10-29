@@ -154,6 +154,12 @@ export interface ShopifyAdminProductsResponse {
   products: ShopifyAdminProduct[];
 }
 
+export type ShopifyAdminImageInput = Blob;
+
+export interface ShopifyAdminImageResponse {
+  resourceUrl: string;
+}
+
 export interface ShopifyAdminProductInput {
   /**
      * @minLength 1

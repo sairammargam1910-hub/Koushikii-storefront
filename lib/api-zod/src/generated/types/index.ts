@@ -15,6 +15,8 @@ export * from './shopifyAdminDiscountInput';
 export * from './shopifyAdminDiscountResponse';
 export * from './shopifyAdminDiscountsResponse';
 export * from './shopifyAdminDiscountStatus';
+export * from './shopifyAdminImageInput';
+export * from './shopifyAdminImageResponse';
 export * from './shopifyAdminProduct';
 export * from './shopifyAdminProductInput';
 export * from './shopifyAdminProductResponse';

@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response } from "express";
+import { Router, raw, type IRouter, type Request, type Response, type RequestHandler } from "express";
 import {
   ArchiveShopifyAdminProductResponse,
   CreateShopifyAdminDiscountBody,
@@ -10,6 +10,7 @@ import {
   GetShopifyAdminProductsResponse,
   UpdateShopifyAdminProductBody,
   UpdateShopifyAdminProductResponse,
+  UploadShopifyAdminImageResponse,
 } from "@workspace/api-zod";
 import { requireMerchantAdmin } from "../middlewares/merchantAdminAuth";
 import { invalidateShopifyCatalog } from "./shopify";
@@ -24,6 +25,7 @@ import {
   shopifyAdminRequest,
   validatePublicImageUrl,
 } from "../lib/shopifyAdminClient";
+import { MAX_IMAGE_BYTES, stageProductImage } from "../lib/shopifyImageUpload";
 
 const router: IRouter = Router();
 
@@ -421,6 +423,47 @@ async function publishToWebsite(productId: string): Promise<void> {
 }
 
 router.use("/shopify/admin", requireMerchantAdmin);
+
+// Bound simultaneous in-memory uploads, including body parsing and decoding.
+let activeImageUploads = 0;
+const imageUploadSlot: RequestHandler = (req, res, next) => {
+  if (activeImageUploads >= 3) {
+    res.status(429).json({ error: "Other photos are uploading. Please try again shortly." });
+    return;
+  }
+  activeImageUploads++;
+  let released = false;
+  const release = () => { if (!released) { released = true; activeImageUploads--; } };
+  res.locals.releaseImageUpload = release;
+  res.once("finish", release);
+  res.once("close", () => { if (!req.complete) release(); });
+  next();
+};
+const parseImage = raw({ type: ["image/jpeg", "image/png", "image/webp"], limit: MAX_IMAGE_BYTES });
+router.post("/shopify/admin/images", imageUploadSlot, (req, res, next) => {
+  parseImage(req, res, (error) => {
+    if (error) {
+      res.status(error.type === "entity.too.large" ? 413 : 400).json({
+        error: error.type === "entity.too.large" ? "Choose a photo no larger than 10 MB." : "This photo could not be read.",
+      });
+      return;
+    }
+    next();
+  });
+}, async (req, res): Promise<void> => {
+  if (!Buffer.isBuffer(req.body)) {
+    res.status(400).json({ error: "Choose a JPEG, PNG, or WebP photo." });
+    return;
+  }
+  try {
+    const resourceUrl = await stageProductImage(req.body, req.get("content-type")?.split(";")[0].toLowerCase() ?? "");
+    res.status(201).json(UploadShopifyAdminImageResponse.parse({ resourceUrl }));
+  } catch (error) {
+    respondShopifyError(req, res, error, "The photo could not be uploaded to Shopify. Check the store connection and try again.");
+  } finally {
+    res.locals.releaseImageUpload();
+  }
+});
 
 router.get("/shopify/admin/products", async (req, res): Promise<void> => {
   try {

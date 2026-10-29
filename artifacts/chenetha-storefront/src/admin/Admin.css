@@ -1,5 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
+.merchant-app .product-photo-picker { display: grid; gap: 10px; padding: 14px; border: 1px solid #e5d8cf; border-radius: 8px; min-width: 0; }
+.merchant-app .product-photo-picker figure { margin: 0; min-width: 0; }
+.merchant-app .photo-preview { width: 112px; height: 136px; object-fit: contain; border-radius: 6px; background: #f5eee6; }
+.merchant-app .product-photo-picker figcaption { font-size: 12px; overflow-wrap: anywhere; margin-top: 5px; }
+.merchant-app .product-photo-picker input[type="file"] { min-height: 48px; max-width: 100%; padding: 10px; }
+.merchant-app .product-photo-picker progress { width: 100%; accent-color: #B22222; }
+.merchant-app .photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
 body:has(.merchant-app, .auth-gate, .clerk-screen) {
 .merchant-app {
   --admin-ink: #392a31;

@@ -22,6 +22,7 @@ import {
   Search, Tag, X,
 } from "lucide-react";
 import "./Admin.css";
+import { ProductPhotoPicker } from "./ProductPhotoPicker";
 
 type ProductDraft = {
   title: string;
@@ -115,17 +116,20 @@ function ErrorPanel({ message, retry }: { message: string; retry: () => void }) 
   </div>;
 }
 
-function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode }: {
+function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode, existingImage }: {
   initial: ProductDraft; onClose: () => void; onSave: (draft: ProductDraft) => void; busy: boolean; error?: string;
-  allowVariantEdits: boolean; currencyCode?: string;
+  allowVariantEdits: boolean; currencyCode?: string; existingImage?: string | null;
 }) {
   const [draft, setDraft] = useState(initial);
+  const [uploading, setUploading] = useState(false);
+  const [photoPending, setPhotoPending] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
   const change = (key: keyof ProductDraft, value: string | boolean) => setDraft((old) => ({ ...old, [key]: value }));
-  const submit = (event: FormEvent) => { event.preventDefault(); onSave(draft); };
-  return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+  const submit = (event: FormEvent) => { event.preventDefault(); if (!busy && !uploading && !photoPending) onSave({ ...draft, imageUrl: photoUrl || draft.imageUrl }); };
+  return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy && !uploading) onClose(); }}>
     <section className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
       <header className="modal-head"><div><span className="eyebrow">CATALOG DETAILS</span><h2 id="product-modal-title">{initial.title ? "Edit product" : "Add a product"}</h2></div>
-        <button className="icon-button" onClick={onClose} aria-label="Close" data-testid="button-close-product-form"><X size={18}/></button></header>
+        <button className="icon-button" disabled={busy || uploading} onClick={onClose} aria-label="Close" data-testid="button-close-product-form"><X size={18}/></button></header>
       <form onSubmit={submit} className="admin-form">
         <label>Product name<input required maxLength={255} value={draft.title} onChange={(e) => change("title", e.target.value)} placeholder="e.g. Kanchipuram silk in marigold" data-testid="input-product-title"/></label>
         <div className="form-row">
@@ -136,11 +140,12 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
         <label>Weave / product type<input maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Saree" data-testid="input-product-type"/></label>
         <label>Short description<textarea maxLength={10000} rows={3} value={draft.description} onChange={(e) => change("description", e.target.value)} placeholder="What makes this piece special?" data-testid="input-product-description"/></label>
         <label>Tags <span className="label-hint">Separate with commas</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="silk, festive, handwoven" data-testid="input-product-tags"/></label>
-        <label>{initial.title ? "Add another image URL" : "Image URL"} <span className="label-hint">Public HTTPS URL; existing images stay</span><input type="url" value={draft.imageUrl} onChange={(e) => change("imageUrl", e.target.value)} placeholder="https://…" data-testid="input-product-image-url"/></label>
+        <ProductPhotoPicker existingImage={existingImage} disabled={busy} onUploading={setUploading} onPending={setPhotoPending} onImage={(url) => { setPhotoUrl(url); change("imageUrl", ""); }}/>
+        <label>Or add a public image URL <span className="label-hint">Optional; existing images stay</span><input type="url" disabled={busy || uploading || photoPending || !!photoUrl} value={draft.imageUrl} onChange={(e) => change("imageUrl", e.target.value)} placeholder="https://…" data-testid="input-product-image-url"/></label>
         <label className="check-line"><input type="checkbox" checked={draft.publishToWebsite} onChange={(e) => change("publishToWebsite", e.target.checked)} data-testid="input-product-publish"/><span><b>Publish to website</b><small>Publishes this item to the Replit sales channel.</small></span></label>
         {error && <p className="form-error" role="alert" data-testid="text-product-form-error">{error}</p>}
-        <div className="modal-actions"><button type="button" className="button button-quiet" onClick={onClose} data-testid="button-cancel-product">Cancel</button>
-          <button type="submit" className="button button-primary" disabled={busy} data-testid="button-save-product">{busy ? <LoaderCircle className="spin" size={16}/> : <Check size={16}/>} {busy ? "Saving…" : "Save product"}</button></div>
+        <div className="modal-actions"><button type="button" className="button button-quiet" disabled={busy || uploading} onClick={onClose} data-testid="button-cancel-product">Cancel</button>
+          <button type="submit" className="button button-primary" disabled={busy || uploading || photoPending} data-testid="button-save-product">{busy || uploading ? <LoaderCircle className="spin" size={16}/> : <Check size={16}/>} {uploading ? "Uploading photo…" : busy ? "Saving…" : "Save product"}</button></div>
       </form>
     </section>
   </div>;
@@ -184,7 +189,7 @@ function ProductForm({ product, onClose, currencyCode }: { product?: ShopifyAdmi
       },
     }, options);
   };
-  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product || product.variants.length === 1} currencyCode={currencyCode}/>;
+  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product || product.variants.length === 1} currencyCode={currencyCode} existingImage={product?.imageUrl}/>;
 }
 
 export function AdminDashboard() {

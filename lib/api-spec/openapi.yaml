@@ -150,6 +150,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/admin/images:
+    post:
+      operationId: uploadShopifyAdminImage
+      summary: Stage a product photo in Shopify (merchant only)
+      description: Upload one JPEG, PNG, or WebP image up to 10 MiB. Returns a temporary source for the product create/update imageUrl field. No existing product media is changed.
+      tags: [ShopifyAdmin]
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminImageInput"
+          image/png:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminImageInput"
+          image/webp:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminImageInput"
+      responses:
+        "201":
+          description: Image uploaded to Shopify staging storage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminImageResponse"
+        "400":
+          description: Invalid, empty, corrupt, or unsupported image
+        "401":
+          description: Sign-in required
+        "403":
+          description: Merchant access required
+        "413":
+          description: Image exceeds 10 MiB
+        "429":
+          description: Too many concurrent uploads
+        "502":
+          description: Shopify upload failed
   /shopify/admin/products:
     get:
       operationId: getShopifyAdminProducts
@@ -663,6 +700,16 @@ components:
           items:
             $ref: "#/components/schemas/ShopifyAdminProduct"
       required: [currencyCode, products]
+    ShopifyAdminImageInput:
+      type: string
+      format: binary
+    ShopifyAdminImageResponse:
+      type: object
+      required: [resourceUrl]
+      properties:
+        resourceUrl:
+          type: string
+          format: uri
     ShopifyAdminProductInput:
       type: object
       properties:

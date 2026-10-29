@@ -179,6 +179,15 @@ export const UpdateShopifyCartLinesResponse = zod.object({
 
 
 /**
+ * Upload one JPEG, PNG, or WebP image up to 10 MiB. Returns a temporary source for the product create/update imageUrl field. No existing product media is changed.
+ * @summary Stage a product photo in Shopify (merchant only)
+ */
+export const UploadShopifyAdminImageResponse = zod.object({
+  "resourceUrl": zod.string().url()
+})
+
+
+/**
  * Lists Shopify products for the authenticated store owner.
  * @summary List products for the merchant dashboard
  */

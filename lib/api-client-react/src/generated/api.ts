@@ -27,6 +27,7 @@ import type {
   ShopifyAdminDiscountInput,
   ShopifyAdminDiscountResponse,
   ShopifyAdminDiscountsResponse,
+  ShopifyAdminImageResponse,
   ShopifyAdminProductInput,
   ShopifyAdminProductResponse,
   ShopifyAdminProductUpdate,
@@ -481,6 +482,95 @@ export const useUpdateShopifyCartLines = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getUpdateShopifyCartLinesMutationOptions(options));
+    }
+
+export const getUploadShopifyAdminImageUrl = () => {
+
+
+
+
+  return `/api/shopify/admin/images`
+}
+
+/**
+ * Upload one JPEG, PNG, or WebP image up to 10 MiB. Returns a temporary source for the product create/update imageUrl field. No existing product media is changed.
+ * @summary Stage a product photo in Shopify (merchant only)
+ */
+export const uploadShopifyAdminImage = async (uploadShopifyAdminImageBody: Blob, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminImageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyAdminImageResponse>(getUploadShopifyAdminImageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'image/jpeg', ...getHeaders(options?.headers) },
+    body: uploadShopifyAdminImageBody
+  }
+);}
+
+
+
+
+
+export const getUploadShopifyAdminImageMutationKey = () => ['uploadShopifyAdminImage'] as const;
+
+export const getUploadShopifyAdminImageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadShopifyAdminImage>>, TError,UploadShopifyAdminImageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadShopifyAdminImage>>, TError,UploadShopifyAdminImageMutationVariables, TContext> => {
+
+const mutationKey = getUploadShopifyAdminImageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadShopifyAdminImage>>, UploadShopifyAdminImageMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadShopifyAdminImage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadShopifyAdminImageMutationResult = NonNullable<Awaited<ReturnType<typeof uploadShopifyAdminImage>>>
+    export type UploadShopifyAdminImageMutationBody = BodyType<Blob>
+    export type UploadShopifyAdminImageMutationError = ErrorType<void>
+    export type UploadShopifyAdminImageMutationVariables = {data: BodyType<Blob>}
+
+    /**
+ * @summary Stage a product photo in Shopify (merchant only)
+ */
+export const useUploadShopifyAdminImage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadShopifyAdminImage>>, TError,UploadShopifyAdminImageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadShopifyAdminImage>>,
+        TError,
+        UploadShopifyAdminImageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUploadShopifyAdminImageMutationOptions(options));
     }
 
 export const getGetShopifyAdminProductsUrl = () => {
