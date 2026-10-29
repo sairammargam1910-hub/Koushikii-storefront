@@ -83,8 +83,8 @@ const clerkAppearance = {
 
 const pageTitles: Record<string,string> = {
   "/": "Home", "/Home": "Home", "/Collections": "Collections", "/Product": "Textile details",
-  "/Cart": "Your bag", "/Wishlist": "Wishlist", "/Checkout": "Secure checkout",
-  "/Confirmation": "WhatsApp handoff", "/OurStory": "Our story", "/Contact": "Contact",
+  "/Cart": "Your bag", "/Wishlist": "Wishlist", "/Checkout": "Shopify checkout",
+  "/Confirmation": "Order confirmation", "/OurStory": "Our story", "/Contact": "Contact",
   "/CustomerCare": "Customer care", "/SareeCare": "Saree care", "/Account": "Saved preferences",
   "/Profile": "Your details", "/Orders": "Order information", "/Videos": "Videos",
   "/admin": "Merchant workroom", "/admin/products": "Manage products",

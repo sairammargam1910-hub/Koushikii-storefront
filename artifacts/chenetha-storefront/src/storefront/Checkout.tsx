@@ -8,18 +8,17 @@ import {
   format,
   moneySub,
   base,
+  whatsappOrderUrl,
 } from "./_shared";
 import { formatShopifyMoney, useShopifyCart } from "./ShopifyCatalog";
 import { useShopifyCartMeta } from "./shopifyCartState";
-
-const businessNumber = "916309741049";
 
 export function Checkout() {
   const meta = useShopifyCartMeta();
   const shopifyCart = useShopifyCart(meta?.id);
   const sampleCart = useStore("kq-cart");
-  const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [note, setNote] = useState("");
   const selected = useMemo(
     () =>
       products.flatMap((product) => {
@@ -49,11 +48,7 @@ export function Checkout() {
     ]
       .filter(Boolean)
       .join("\n");
-    window.open(
-      `https://wa.me/${businessNumber}?text=${encodeURIComponent(text)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
+    window.open(whatsappOrderUrl(text), "_blank", "noopener,noreferrer");
   };
 
   if (meta) {
@@ -162,7 +157,14 @@ function ShopifyCheckoutReview({
 }: {
   cart: NonNullable<ReturnType<typeof useShopifyCart>["data"]>;
 }) {
-  const canCheckout = Boolean(cart.checkoutUrl) &&
+  let checkoutHref: string | undefined;
+  try {
+    const url = cart.checkoutUrl ? new URL(cart.checkoutUrl) : undefined;
+    if (url?.protocol === "https:") checkoutHref = url.toString();
+  } catch {
+    checkoutHref = undefined;
+  }
+  const canCheckout = Boolean(checkoutHref) &&
     cart.lines.length > 0 &&
     cart.lines.every((line) => line.availableForSale && !line.isDemo);
 
@@ -186,7 +188,7 @@ function ShopifyCheckoutReview({
         </div>
         <p className="muted" style={{ fontSize: 12 }}>Shipping, applicable taxes, and final total are calculated by Shopify at checkout.</p>
         {canCheckout ? (
-          <a className="btn" style={{ marginTop: 18 }} href={cart.checkoutUrl!} data-testid="button-continue-shopify-checkout">
+          <a className="btn" style={{ marginTop: 18 }} href={checkoutHref} data-testid="button-continue-shopify-checkout">
             <ShieldCheck size={16} /> Continue to secure Shopify checkout <ArrowRight size={14} />
           </a>
         ) : (

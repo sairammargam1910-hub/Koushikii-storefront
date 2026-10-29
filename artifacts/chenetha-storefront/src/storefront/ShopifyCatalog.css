@@ -21,6 +21,17 @@
 .kq .shopify-detail-price{display:block;margin:16px 0}
 .kq .shopify-product-notice{margin:16px 0}
 .kq .shopify-product-notice.is-demo{border-left-color:#b77927;background:#fff3d8}
+.kq .shopify-add-row{display:flex;align-items:end;gap:12px;margin:18px 0 22px}
+.kq .shopify-add-row>.btn{flex:1;justify-content:center;min-height:46px}
+.kq .shopify-add-row>.btn:disabled{opacity:.5;cursor:not-allowed}
+.kq .shopify-quantity{display:grid;gap:7px;font-size:12px}
+.kq .shopify-quantity input{width:82px;padding:11px;border:1px solid var(--line);background:#fffaf2;color:var(--ink)}
+.kq .shopify-product-notice{margin:16px 0}
+.kq .shopify-product-notice.is-demo{border-left-color:#b77927;background:#fff3d8}
+.kq .shopify-cart-warning{color:#7c311d;font-size:12px;line-height:1.6}
+.kq .shopify-cart-legacy{background:#faf3e8}
+.kq .shopify-cart-legacy .shopify-cart-warning{display:inline-block;margin-top:8px}
+.kq .shopify-catalog-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .kq .shopify-catalog-status{padding:18px 20px;border:1px solid var(--line);background:#fbf6ed;color:var(--muted);font-size:12px;line-height:1.7}
 .kq .shopify-catalog-status code,.kq .shopify-placement-note code{padding:2px 5px;background:#efe5d1;color:var(--red);font-family:monospace}
 .kq .shopify-premium-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
@@ -40,6 +51,7 @@
 .kq .shopify-demo-badge-inline{margin:4px 0 8px;background:#fff5de;color:#7c311d}
 .kq .shopify-sample-selections{margin-top:28px}
 @media(max-width:650px){.kq .shopify-thumbs{grid-template-columns:repeat(3,minmax(0,1fr))}.kq .shopify-thumbs button img{height:74px}}
+@media(max-width:480px){.kq .shopify-add-row{align-items:stretch;flex-direction:column}.kq .shopify-quantity input{width:100%}}
 @media(max-width:760px){.kq .shopify-premium-products{grid-template-columns:1fr 1fr}.kq .shopify-premium-products .product-img{height:160px}}
 @media(max-width:650px){
   .kq .shopify-buy-controls{grid-template-columns:1fr 1.5fr;gap:10px}

@@ -89,7 +89,12 @@ export function Cart() {
                     <div style={{ textAlign: "right" }}>
                       <b>{format(product.price * row.qty)}</b>
                       <br />
-                      <button className="link" style={{ marginTop: 14, border: 0, background: "none" }} onClick={() => saveItems("kq-cart", sampleCart.filter((item) => item.id !== product.id))}>
+                      <button
+                        className="link"
+                        style={{ marginTop: 14, border: 0, background: "none" }}
+                        type="button"
+                        onClick={() => saveItems("kq-cart", sampleCart.filter((item) => item.id !== product.id))}
+                      >
                         <Trash2 size={13} /> Remove
                       </button>
                     </div>
@@ -120,7 +125,7 @@ export function Cart() {
               return (
                 <div className="row" key={product.id} style={{ padding: "10px 0", borderTop: "1px solid var(--line)" }}>
                   <span>{product.name} · {row.qty} × {format(product.price)}</span>
-                  <button className="link" onClick={() => saveItems("kq-cart", sampleCart.filter((item) => item.id !== product.id))}>Remove</button>
+                  <button className="link" type="button" onClick={() => saveItems("kq-cart", sampleCart.filter((item) => item.id !== product.id))}>Remove</button>
                 </div>
               );
             })}
@@ -158,8 +163,8 @@ function ShopifyBag({
         <span className="eyebrow">Shopify bag unavailable</span>
         <p className="muted">Your saved Shopify cart may have expired, or Shopify could not be reached.</p>
         <div className="actions">
-          <button className="btn outline" onClick={onRetry}><RefreshCw size={14} /> Try again</button>
-          <button className="link" onClick={onClear}>Clear this saved bag</button>
+          <button className="btn outline" type="button" onClick={onRetry}><RefreshCw size={14} /> Try again</button>
+          <button className="link" type="button" onClick={onClear}>Clear this saved bag</button>
         </div>
       </div>
     );
@@ -171,7 +176,7 @@ function ShopifyBag({
         <span className="eyebrow">Shopify bag</span>
         <h2>Your Shopify bag is empty.</h2>
         <p>Add an available product from the collection to continue.</p>
-        <button className="link" onClick={onClear}>Clear this saved bag</button>
+        <button className="link" type="button" onClick={onClear}>Clear this saved bag</button>
         <a className="btn" href={base + "Collections"}>Browse sarees <ArrowRight size={14} /></a>
       </div>
     );
@@ -204,7 +209,7 @@ function ShopifyBag({
             <div className="shopify-cart-line-total">
               <b>{formatShopifyMoney(String(Number(line.unitPrice) * line.quantity), line.currencyCode)}</b>
               <br />
-              <button className="link" disabled={isUpdating} onClick={() => onQuantityChange(line.id, 0)}>
+              <button className="link" type="button" disabled={isUpdating} onClick={() => onQuantityChange(line.id, 0)}>
                 <Trash2 size={13} /> Remove
               </button>
             </div>

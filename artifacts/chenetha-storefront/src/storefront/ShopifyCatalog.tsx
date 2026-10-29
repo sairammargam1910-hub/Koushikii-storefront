@@ -145,6 +145,16 @@ export function formatShopifyMoney(amount: string, currencyCode: string) {
   }
 }
 
+export function isShopifyVariantPurchasable(variant: ShopifyProduct["variants"][number] | undefined) {
+  return Boolean(
+    variant &&
+    variant.availableForSale &&
+    variant.id.startsWith("gid://shopify/ProductVariant/") &&
+    Number.isFinite(Number(variant.price)) &&
+    Number(variant.price) > 0,
+  );
+}
+
 function productPrice(product: ShopifyProduct) {
   const variant = product.variants.find((item) => Number(item.price) > 0);
   return variant ? formatShopifyMoney(variant.price, variant.currencyCode) : "";
@@ -213,6 +223,9 @@ export function ShopifyProductRoute({ handle }: { handle: string }) {
       <Shell>
         <main className="wrap content">
           <Empty title="This Shopify product could not load." copy="Please try again shortly or return to the collection." />
+          <p style={{ textAlign: "center" }}>
+            <button className="btn outline" type="button" onClick={() => catalog.refetch()}>Try again</button>
+          </p>
         </main>
       </Shell>
     );
@@ -265,7 +278,12 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
       setCartMessage("");
     },
   });
-  const canPurchase = Boolean(variant?.availableForSale && !demo);
+  const purchasable = !demo && isShopifyVariantPurchasable(variant);
+  const canPurchase = purchasable;
+  const variantLabel = (item: ShopifyProduct["variants"][number]) =>
+    item.selectedOptions.length
+      ? item.selectedOptions.map((option) => `${option.name}: ${option.value}`).join(" · ")
+      : item.title;
 
   return (
     <Shell>
@@ -308,15 +326,13 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
             <span className="eyebrow">{product.productType || "Saree"} · Shopify listing</span>
             <h1>{product.title}</h1>
             <p>{product.description || "Product details will appear here after you add them in Shopify."}</p>
-            {product.variants.length > 1 && (
+            {product.variants.length > 0 && (
               <label className="shopify-variant-select">
-                Choose an option
+                {product.variants.length > 1 ? "Choose an option" : "Selected option"}
                 <select value={variant?.id ?? ""} onChange={(event) => setVariantId(event.target.value)}>
                   {product.variants.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.selectedOptions.length
-                        ? item.selectedOptions.map((option) => `${option.name}: ${option.value}`).join(" · ")
-                        : item.title}
+                    <option key={item.id} value={item.id} disabled={!isShopifyVariantPurchasable(item)}>
+                      {variantLabel(item)}{!item.availableForSale ? " · Unavailable" : ""}
                     </option>
                   ))}
                 </select>
@@ -335,7 +351,11 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
                 </>
               ) : (
                 <>
-                  <strong>Live product details from Shopify</strong>
+                  <strong>{purchasable ? "Live product details from Shopify" : "This option is not available to purchase"}</strong>
+                  <br />
+                  {purchasable
+                    ? "Your selected Shopify variant and current price will be checked again before checkout."
+                    : "Choose an available option. Availability and price come from the current Shopify catalog."}
                   <br />
                   Shipping and payment are completed securely on Shopify.
                 </>

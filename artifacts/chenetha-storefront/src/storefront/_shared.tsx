@@ -26,6 +26,14 @@ export const products=[
 export type Item={id:string;qty:number};
 export function getItems(key:string):Item[]{try{return JSON.parse(localStorage.getItem(key)||"[]")}catch{return []}}
 export function saveItems(key:string,items:Item[]){localStorage.setItem(key,JSON.stringify(items));window.dispatchEvent(new Event("kq-storage"))}
+export const SHOPIFY_CART_PREFIX="shopify:";
+export function shopifyCartItemId(variantId:string){return `${SHOPIFY_CART_PREFIX}${variantId}`}
+export function isShopifyCartItem(item:Item){return item.id.startsWith(SHOPIFY_CART_PREFIX)}
+export function addShopifyVariant(variantId:string,quantity=1){
+ const id=shopifyCartItemId(variantId),list=getItems("kq-cart"),found=list.find(item=>item.id===id);
+ if(found)found.qty=Math.min(250,found.qty+quantity);else list.push({id,qty:Math.min(250,quantity)});
+ saveItems("kq-cart",list);
+}
 export function format(n:number){return `₹${n.toLocaleString("en-IN")}`}
 const WHATSAPP_BUSINESS_NUMBER="916309741049";
 export function whatsappOrderUrl(message:string){return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(message)}`}

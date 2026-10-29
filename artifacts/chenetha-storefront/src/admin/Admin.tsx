@@ -176,7 +176,13 @@ function ProductForm({ product, onClose, currencyCode }: { product?: ShopifyAdmi
       onError: (reason: Error) => setError(reason.message || "Please check your details and try again."),
     };
     if (product) update.mutate({ productId: product.id, data: input }, options);
-    else create.mutate({ data: { ...input, price: Number(values.price), inventoryQuantity: Number(values.inventoryQuantity) } }, options);
+    else create.mutate({
+      data: {
+        ...input,
+        price: Number(values.price),
+        inventoryQuantity: Number(values.inventoryQuantity),
+      },
+    }, options);
   };
   return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product || product.variants.length === 1} currencyCode={currencyCode}/>;
 }
