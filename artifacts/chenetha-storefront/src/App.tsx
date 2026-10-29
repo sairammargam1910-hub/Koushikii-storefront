@@ -113,11 +113,24 @@ function ProtectedAdmin({ page }: { page: ReactNode }) {
 }
 
 function SignInPage() {
-  return <div className="clerk-screen"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={`${basePath}/admin`}/></div>;
+  const redirectUrl = authRedirectUrl();
+  return <div className="clerk-screen"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} forceRedirectUrl={redirectUrl}/></div>;
 }
 
 function SignUpPage() {
-  return <div className="clerk-screen"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={`${basePath}/admin`}/></div>;
+  const redirectUrl = authRedirectUrl();
+  return <div className="clerk-screen"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} forceRedirectUrl={redirectUrl}/></div>;
+}
+
+function authRedirectUrl(): string {
+  const destination = new URLSearchParams(window.location.search).get("redirect_url");
+  const safeDestination =
+    destination?.startsWith("/") &&
+    !destination.startsWith("//") &&
+    !destination.includes("://")
+      ? destination
+      : "/Account";
+  return `${basePath}${safeDestination}`;
 }
 
 function Router() {
@@ -188,7 +201,7 @@ function ClerkApp() {
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
       localization={{
-        signIn: { start: { title: "Welcome back", subtitle: "Sign in to manage the Chenetha store" } },
+        signIn: { start: { title: "Welcome back", subtitle: "Sign in to your Chenetha account" } },
         signUp: { start: { title: "Merchant account", subtitle: "Create an account to request store access" } },
       }}
       routerPush={(to) => setLocation(stripBase(to))}

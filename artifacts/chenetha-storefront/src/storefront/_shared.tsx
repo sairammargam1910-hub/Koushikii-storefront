@@ -11,6 +11,7 @@ import "./_storefront-pattern.css";
 import "./_mobile.css";
 import { useLocation } from "wouter";
 import { useShopifyCartMeta } from "./shopifyCartState";
+import { Show } from "@clerk/react";
 
 export const base="/";
 export const products=[
@@ -83,7 +84,8 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
     <a href={base+"OurStory"}>About Us</a><a href={base+"Videos"}>Videos</a><a href={base+"Contact"}>Contact Us</a>
   </nav>
    <div className="head-actions"><LanguageSelect language={language} onChange={onLanguageChange}/><button className="text-action" data-testid="button-toggle-search" aria-label="Search" aria-expanded={search} onClick={()=>setSearch(!search)}><Search size={16}/>Search</button>
-    <a href={base+"Profile"} className="text-action" aria-label="Saved preferences"><UserRound size={16}/>My details</a>
+     <Show when="signed-in"><a href={base+"Account"} className="text-action" aria-label="My account" data-testid="link-customer-account"><UserRound size={16}/>My account</a></Show>
+     <Show when="signed-out"><a href={base+"Account"} className="text-action" aria-label="Sign in to your account" data-testid="link-customer-sign-in"><UserRound size={16}/>Sign in</a></Show>
    <WhatsAppHeaderIcon language={language}/>
    <a href={base+"Wishlist"} className="iconbtn optional" data-testid="link-wishlist" aria-label={`Wishlist${wish.length?`, ${wish.length} saved pieces`:""}`}><Heart size={17}/>{wish.length>0&&<span className="count">{wish.length}</span>}</a>
     <a href={base+"Cart"} className="iconbtn" data-testid="link-cart" aria-label={`Shopping bag${cartCount?`, ${cartCount} items`:""}`}><ShoppingBag size={18}/>{cartCount>0&&<span className="count">{cartCount}</span>}</a></div>

@@ -208,6 +208,8 @@ body:has(.merchant-app, .auth-gate, .clerk-screen) {
 .auth-gate-card .brand-seal { margin-bottom: 25px; }.auth-gate-card h1 { margin: 8px 0; font: 700 29px Manrope, sans-serif; letter-spacing: -.05em; }
 .auth-gate-card p { margin: 0 0 22px; color: #85767b; font-size: 13px; }.auth-gate-card small { margin-top: 16px; color: #9c8d8c; font-size: 10px; }
 .clerk-screen { min-height: 100dvh; width: 100%; min-width: 0; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding: 24px; background: #f8f3ed; }
+.clerk-screen .cl-socialButtonsBlock, .clerk-screen .cl-dividerRow,
+.clerk-screen [class*="socialButtons"], .clerk-screen [class*="dividerRow"] { display: none !important; }
 
 @media (max-width: 900px) {
   .merchant-sidebar { width: 215px; flex-basis: 215px; }

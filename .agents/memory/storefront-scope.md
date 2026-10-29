@@ -14,6 +14,12 @@ The merchant dashboard is for the handover client who runs this business, not fo
 
 **How to apply:** Keep merchant access separate from customer navigation, authorize store-changing actions on the server, and keep Shopify authoritative for commerce. Public browsing must remain accessible even during a merchant session; signing in must not replace the storefront home with an admin page.
 
+The user wants sign-in and sign-out for both shoppers and the merchant. Shopper site accounts use Replit-managed Clerk; Shopify checkout, payments, shipping and order identity remain separate. Phone sign-in is not supported by the managed Clerk integration.
+
+**Why:** The user explicitly chose “Shoppers and merchant” and asked for email or phone with password and password recovery.
+
+**How to apply:** Make shopper account access visible from the storefront and provide logout, while preserving the merchant email allowlist for admin mutations. Never imply that a Clerk login is a Shopify customer account or that it automatically links Shopify order history.
+
 The user selected sarees as the initial Shopify catalog category.
 
 **Why:** The user chose Shopify and answered that the storefront should sell sarees.

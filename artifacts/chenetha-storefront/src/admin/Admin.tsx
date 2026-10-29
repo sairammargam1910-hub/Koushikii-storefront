@@ -346,6 +346,6 @@ export function AdminDiscounts() {
 }
 
 export function AdminSignInPrompt() {
-  return <div className="auth-gate"><div className="auth-gate-card"><span className="brand-seal">C</span><span className="eyebrow">MERCHANT WORKROOM</span><h1>Welcome back.</h1><p>Sign in to tend your collection and offers.</p><Link href="/sign-in" className="button button-primary" data-testid="link-admin-sign-in">Sign in to continue <ArrowRight size={16}/></Link><small>Your shoppers will never see this workspace.</small></div></div>;
+  return <div className="auth-gate"><div className="auth-gate-card"><span className="brand-seal">C</span><span className="eyebrow">MERCHANT WORKROOM</span><h1>Welcome back.</h1><p>Sign in to tend your collection and offers.</p><Link href="/sign-in?redirect_url=%2Fadmin" className="button button-primary" data-testid="link-admin-sign-in">Sign in to continue <ArrowRight size={16}/></Link><small>Your shoppers will never see this workspace.</small></div></div>;
 }
 
