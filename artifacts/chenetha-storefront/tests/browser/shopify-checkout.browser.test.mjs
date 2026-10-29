@@ -33,6 +33,7 @@ const cartResponse = {
   checkoutUrl,
   totalQuantity: 1,
   subtotalAmount: "1250.00",
+  totalAmount: "1250.00",
   currencyCode: "INR",
   discountCodes: [],
   lines: [{
@@ -244,11 +245,18 @@ test("uses Shopify's returned checkout URL after a successful cart response", as
   await page.waitForURL("**/Cart", { timeout: 5000 });
   await page.getByText("Your bag · Shopify (1)", { exact: true }).waitFor({ timeout: 5000 });
   await page.getByText("Shopify products (1)", { exact: true }).waitFor({ timeout: 5000 });
+  const cartCheckoutLink = page.getByTestId("link-shopify-checkout");
+  await cartCheckoutLink.waitFor();
+  assert.equal(await cartCheckoutLink.getAttribute("href"), checkoutUrl);
+  assert.equal(await cartCheckoutLink.getAttribute("target"), "_blank");
 
   await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
   const checkoutLink = page.getByTestId("button-continue-shopify-checkout");
   await checkoutLink.waitFor();
   assert.equal(await checkoutLink.getAttribute("href"), checkoutUrl);
+  assert.equal(await checkoutLink.getAttribute("target"), "_blank");
+  await page.getByTestId("text-shopify-checkout-total").waitFor();
+  assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,250/);
   await context.close();
 });
 
@@ -278,6 +286,7 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
       contentType: "application/json",
       body: JSON.stringify({
         ...cartResponse,
+        totalAmount: "1125.00",
         discountCodes: [{ code: "SILK10", applicable: true }],
       }),
     });
@@ -288,6 +297,7 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
   await page.getByTestId("status-shopify-discount").waitFor();
   assert.deepEqual(mutation, { cartId: savedCart.id, discountCodes: ["SILK10"] });
   assert.match(await page.getByTestId("status-shopify-discount").innerText(), /SILK10.*applied/i);
+  assert.match(await page.getByTestId("text-shopify-cart-total").innerText(), /1,125/);
   await context.close();
 });
 

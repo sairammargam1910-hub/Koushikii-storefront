@@ -351,6 +351,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/cart/buyer-identity:
+    post:
+      operationId: updateShopifyCartBuyerIdentity
+      tags: [shopify]
+      summary: Prefill a Shopify cart with saved shopper details
+      description: Sends the signed-in shopper's selected saved delivery address and optional contact details to Shopify for checkout.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyCartBuyerIdentityInput"
+      responses:
+        "200":
+          description: Updated Shopify cart ready for checkout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCartResponse"
+        "400":
+          description: Invalid cart identity or saved address details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify cart could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: India is not enabled as a Shopify selling market
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify checkout details could not be updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/admin/images:
     post:
       operationId: uploadShopifyAdminImage
@@ -1132,6 +1175,44 @@ components:
             minLength: 1
             maxLength: 128
       required: [cartId, discountCodes]
+    ShopifyCartBuyerIdentityInput:
+      type: object
+      properties:
+        cartId:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 40
+        deliveryAddress:
+          type: object
+          properties:
+            recipient:
+              type: string
+              minLength: 1
+              maxLength: 160
+            street:
+              type: string
+              minLength: 1
+              maxLength: 500
+            city:
+              type: string
+              minLength: 1
+              maxLength: 160
+            state:
+              type: string
+              minLength: 1
+              maxLength: 160
+            pin:
+              type: string
+              pattern: "^[1-9][0-9]{5}$"
+          required: [recipient, street, city, state, pin]
+      required: [cartId, deliveryAddress]
     ShopifyCartDiscountCode:
       type: object
       properties:
@@ -1180,6 +1261,8 @@ components:
           type: integer
         subtotalAmount:
           type: string
+        totalAmount:
+          type: string
         currencyCode:
           type: string
         discountCodes:
@@ -1190,7 +1273,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyCartLine"
-      required: [id, checkoutUrl, totalQuantity, subtotalAmount, currencyCode, discountCodes, lines]
+      required: [id, checkoutUrl, totalQuantity, subtotalAmount, totalAmount, currencyCode, discountCodes, lines]
     ShopifyAdminInventoryLevel:
       type: object
       required: [locationId, locationName, active, available]

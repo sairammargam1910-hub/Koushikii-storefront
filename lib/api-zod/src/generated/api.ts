@@ -273,6 +273,7 @@ export const GetShopifyCartResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
@@ -320,6 +321,7 @@ export const AddShopifyCartLineResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
@@ -372,6 +374,7 @@ export const UpdateShopifyCartLinesResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
@@ -418,6 +421,71 @@ export const UpdateShopifyCartDiscountCodesResponse = zod.object({
   "checkoutUrl": zod.string().url().nullable(),
   "totalQuantity": zod.number().int(),
   "subtotalAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "currencyCode": zod.string(),
+  "discountCodes": zod.array(zod.object({
+  "code": zod.string(),
+  "applicable": zod.boolean()
+})),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "merchandiseId": zod.string(),
+  "productHandle": zod.string(),
+  "productTitle": zod.string(),
+  "variantTitle": zod.string(),
+  "quantity": zod.number().int(),
+  "unitPrice": zod.string(),
+  "currencyCode": zod.string(),
+  "availableForSale": zod.boolean(),
+  "isDemo": zod.boolean(),
+  "image": zod.union([zod.object({
+  "url": zod.string().url(),
+  "altText": zod.string().nullable()
+}),zod.null()])
+}))
+})
+
+
+/**
+ * Sends the signed-in shopper's selected saved delivery address and optional contact details to Shopify for checkout.
+ * @summary Prefill a Shopify cart with saved shopper details
+ */
+export const updateShopifyCartBuyerIdentityBodyCartIdMax = 1000;
+
+export const updateShopifyCartBuyerIdentityBodyEmailMax = 254;
+
+export const updateShopifyCartBuyerIdentityBodyPhoneMax = 40;
+
+export const updateShopifyCartBuyerIdentityBodyDeliveryAddressRecipientMax = 160;
+
+export const updateShopifyCartBuyerIdentityBodyDeliveryAddressStreetMax = 500;
+
+export const updateShopifyCartBuyerIdentityBodyDeliveryAddressCityMax = 160;
+
+export const updateShopifyCartBuyerIdentityBodyDeliveryAddressStateMax = 160;
+
+export const updateShopifyCartBuyerIdentityBodyDeliveryAddressPinRegExp = new RegExp('^[1-9][0-9]{5}$');
+
+
+export const UpdateShopifyCartBuyerIdentityBody = zod.object({
+  "cartId": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyCartIdMax),
+  "email": zod.string().email().max(updateShopifyCartBuyerIdentityBodyEmailMax).optional(),
+  "phone": zod.string().max(updateShopifyCartBuyerIdentityBodyPhoneMax).optional(),
+  "deliveryAddress": zod.object({
+  "recipient": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressRecipientMax),
+  "street": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressStreetMax),
+  "city": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressCityMax),
+  "state": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressStateMax),
+  "pin": zod.string().regex(updateShopifyCartBuyerIdentityBodyDeliveryAddressPinRegExp)
+})
+})
+
+export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
+  "id": zod.string(),
+  "checkoutUrl": zod.string().url().nullable(),
+  "totalQuantity": zod.number().int(),
+  "subtotalAmount": zod.string(),
+  "totalAmount": zod.string(),
   "currencyCode": zod.string(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),

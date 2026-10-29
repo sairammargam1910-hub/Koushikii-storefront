@@ -260,7 +260,7 @@ export function Profile() {
               )}
               <p className="muted" style={{ fontSize: 11 }}>
                 {signedIn ? "Stored privately with your account." : "Stored locally in this browser."}
-                {" "}This does not update a Shopify customer record.
+                {" "}It is sent to Shopify only when you choose to continue with saved details at checkout. This does not update a Shopify customer record.
               </p>
             </section>
 
@@ -331,7 +331,7 @@ export function Profile() {
                 <div className="guide-note">
                   <h3>No addresses, yet.</h3>
                   <p className="muted">
-                    Save an address for your reference. It is not sent to the brand or used for delivery.
+                    Add a saved delivery address to prefill Shopify checkout after you sign in. You can also enter an address directly in Shopify checkout.
                   </p>
                 </div>
               )}
@@ -343,7 +343,9 @@ export function Profile() {
                 >
                   <h3>{address.id ? "Edit" : "Add"} a saved address</h3>
                   <p className="muted" style={{ fontSize: 11 }}>
-                    Saved privately with your account or locally in this browser. This address is not submitted for delivery.
+                    {signedIn
+                      ? "Saved privately with your account. It is sent to Shopify only when you choose saved details at checkout."
+                      : "Saved locally in this browser. Sign in to save it to your account and prefill Shopify checkout."}
                   </p>
                   {(
                     [

@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, RefreshCw, Trash2 } from "lucide-react";
-import { updateShopifyCartDiscountCodes, updateShopifyCartLines } from "@workspace/api-client-react";
+import {
+  updateShopifyCartBuyerIdentity,
+  updateShopifyCartDiscountCodes,
+  updateShopifyCartLines,
+  type ShopifyCartBuyerIdentityInput,
+  type ShopifyCartResponse,
+} from "@workspace/api-client-react";
+import { useUser } from "@clerk/react";
 import {
   Shell,
   PageHero,
@@ -23,8 +30,10 @@ import {
   clearShopifyCartMeta,
   useShopifyCartMeta,
 } from "./shopifyCartState";
+import { useShopperPreferences } from "./ShopperPreferences";
 
 export function Cart() {
+  const shopper = useShopperPreferences();
   const sampleCart = useStore("kq-cart");
   const sampleProducts = products.filter((product) =>
     sampleCart.some((item) => item.id === product.id),
@@ -42,6 +51,10 @@ export function Cart() {
   const updateDiscountCodes = useMutation({
     mutationFn: (data: Parameters<typeof updateShopifyCartDiscountCodes>[0]) =>
       updateShopifyCartDiscountCodes(data),
+    onSuccess: (updatedCart) => updateShopifyCartCache(queryClient, updatedCart),
+  });
+  const updateBuyerIdentity = useMutation({
+    mutationFn: (data: ShopifyCartBuyerIdentityInput) => updateShopifyCartBuyerIdentity(data),
     onSuccess: (updatedCart) => updateShopifyCartCache(queryClient, updatedCart),
   });
   const displayedShopifyQuantity =
@@ -69,11 +82,17 @@ export function Cart() {
             updateError={updateLine.error}
             isApplyingDiscount={updateDiscountCodes.isPending}
             discountError={updateDiscountCodes.error}
+            profile={shopper.profile}
+            profileLoading={shopper.loading}
+            signedIn={shopper.signedIn}
+            isPreparingCheckout={updateBuyerIdentity.isPending}
+            checkoutPrepError={updateBuyerIdentity.error}
             onRetry={() => shopifyCart.refetch()}
             onClear={clearShopifyCartMeta}
             onDiscountCodesChange={(cartId, discountCodes) =>
               updateDiscountCodes.mutate({ cartId, discountCodes })
             }
+            onPrepareCheckout={(data) => updateBuyerIdentity.mutateAsync(data)}
             onQuantityChange={(lineId, quantity) => {
               if (!shopifyCart.data) return;
               updateLine.mutate({
@@ -160,6 +179,12 @@ function ShopifyBag({
   updateError,
   isApplyingDiscount,
   discountError,
+  profile,
+  profileLoading,
+  signedIn,
+  isPreparingCheckout,
+  checkoutPrepError,
+  onPrepareCheckout,
   onRetry,
   onClear,
   onQuantityChange,
@@ -173,12 +198,21 @@ function ShopifyBag({
   updateError: unknown;
   isApplyingDiscount: boolean;
   discountError: unknown;
+  profile: ReturnType<typeof useShopperPreferences>["profile"];
+  profileLoading: boolean;
+  signedIn: boolean;
+  isPreparingCheckout: boolean;
+  checkoutPrepError: unknown;
   onRetry: () => void;
   onClear: () => void;
   onQuantityChange: (lineId: string, quantity: number) => void;
   onDiscountCodesChange: (cartId: string, discountCodes: string[]) => void;
+  onPrepareCheckout: (data: ShopifyCartBuyerIdentityInput) => Promise<ShopifyCartResponse>;
 }) {
   const [discountCode, setDiscountCode] = useState("");
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+  const { user } = useUser();
 
   if (isLoading) {
     return <div className="shopify-catalog-status" role="status">Refreshing your Shopify bag…</div>;
@@ -212,8 +246,54 @@ function ShopifyBag({
   }
 
   const hasUnavailableLine = cart.lines.some((line) => !line.availableForSale || line.isDemo);
+  const checkoutHref = getShopifyCheckoutHref(cart.checkoutUrl);
+  const canCheckout = Boolean(checkoutHref) &&
+    cart.totalQuantity > 0 &&
+    cart.lines.length > 0 &&
+    cart.lines.every((line) => line.quantity > 0 && line.availableForSale && !line.isDemo);
   const updateErrorMessage = getCartUpdateErrorMessage(updateError);
   const discountErrorMessage = getCartUpdateErrorMessage(discountError);
+  const checkoutPrepErrorMessage = getCartUpdateErrorMessage(checkoutPrepError);
+  const savedAddresses = signedIn ? profile.addresses : [];
+  const selectedAddress =
+    savedAddresses.find((address) => address.id === selectedAddressId) ??
+    savedAddresses[0] ??
+    null;
+
+  async function continueWithSavedAddress() {
+    if (!cart || !checkoutHref || !selectedAddress) return;
+    setCheckoutError("");
+    const checkoutWindow = window.open("about:blank", "_blank");
+    if (checkoutWindow) checkoutWindow.opener = null;
+    const email = profile.email.trim() || user?.primaryEmailAddress?.emailAddress.trim() || "";
+    const phone = profile.phone.trim() || user?.primaryPhoneNumber?.phoneNumber.trim() || "";
+    try {
+      const updatedCart = await onPrepareCheckout({
+        cartId: cart.id,
+        ...(email ? { email } : {}),
+        ...(phone ? { phone } : {}),
+        deliveryAddress: {
+          recipient: selectedAddress.recipient,
+          street: selectedAddress.street,
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          pin: selectedAddress.pin,
+        },
+      });
+      const updatedCheckoutUrl = getShopifyCheckoutHref(updatedCart.checkoutUrl);
+      if (!updatedCheckoutUrl) {
+        throw new Error("Shopify did not return a checkout link.");
+      }
+      if (checkoutWindow) checkoutWindow.location.replace(updatedCheckoutUrl);
+      else window.location.assign(updatedCheckoutUrl);
+    } catch {
+      checkoutWindow?.close();
+      setCheckoutError(
+        getCartUpdateErrorMessage(checkoutPrepError) ??
+          "Your saved details could not be added to Shopify checkout. Please try again.",
+      );
+    }
+  }
 
   return (
     <div className="two-col">
@@ -258,8 +338,12 @@ function ShopifyBag({
         <span className="eyebrow">Shopify order summary</span>
         <h3 style={{ margin: "10px 0 22px" }}>Your selected sarees</h3>
         <div className="row">
-          <span>Subtotal</span>
+          <span>Subtotal before discounts</span>
           <b data-testid="text-shopify-cart-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</b>
+        </div>
+        <div className="row" style={{ marginTop: 10 }}>
+          <strong>Total after discounts</strong>
+          <strong data-testid="text-shopify-cart-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
         </div>
         <form
           onSubmit={(event) => {
@@ -320,18 +404,89 @@ function ShopifyBag({
             Remove discount code
           </button>
         )}
-        <p className="muted">Shopify calculates shipping, taxes, and the final amount at checkout.</p>
+        {profileLoading && signedIn ? (
+          <p className="muted" role="status">Loading your saved checkout details…</p>
+        ) : selectedAddress ? (
+          <div className="guide-note" style={{ marginTop: 18 }}>
+            {savedAddresses.length > 1 ? (
+              <label className="field" htmlFor="shopify-saved-address">
+                Use a saved delivery address
+                <select
+                  id="shopify-saved-address"
+                  data-testid="select-shopify-saved-address"
+                  value={selectedAddress.id}
+                  onChange={(event) => setSelectedAddressId(event.currentTarget.value)}
+                >
+                  {savedAddresses.map((address) => (
+                    <option value={address.id} key={address.id}>
+                      {address.label} · {address.city}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <>
+                <span className="eyebrow">Saved delivery address</span>
+                <p style={{ margin: "8px 0 0" }}>
+                  {selectedAddress.recipient} · {selectedAddress.city}, {selectedAddress.state} {selectedAddress.pin}
+                </p>
+              </>
+            )}
+            <p className="muted" style={{ fontSize: 12, marginBottom: 0 }}>
+              Continue with this address to send it, along with your saved contact details, to Shopify checkout.
+            </p>
+            {(checkoutPrepErrorMessage || checkoutError) && (
+              <p className="notice" role="alert" data-testid="error-shopify-checkout-prefill">
+                {checkoutPrepErrorMessage || checkoutError}
+              </p>
+            )}
+            <button
+              className="btn"
+              style={{ width: "100%", marginTop: 14 }}
+              type="button"
+              data-testid="button-continue-shopify-checkout-with-profile"
+              onClick={() => void continueWithSavedAddress()}
+              disabled={isPreparingCheckout || !canCheckout}
+            >
+              {isPreparingCheckout ? "Preparing secure checkout…" : "Continue to Shopify with saved details"}
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        ) : signedIn && !profileLoading ? (
+          <p className="muted" style={{ marginTop: 18 }}>
+            Save a delivery address in <a className="link" href={base + "Profile#saved-addresses"}>My profile</a> to prefill Shopify checkout. Otherwise, Shopify will ask for it there.
+          </p>
+        ) : null}
+        <p className="muted">Shipping and taxes are added by Shopify at checkout.</p>
         {hasUnavailableLine ? (
           <p className="notice" role="alert">A demo or unavailable listing is in this bag. Remove it or update its Shopify details before checkout.</p>
+        ) : !canCheckout ? (
+          <p className="notice" role="alert">Shopify could not provide a secure checkout link for this bag. Refresh your bag and try again.</p>
+        ) : selectedAddress ? (
+          <p className="muted" style={{ fontSize: 12 }}>Your saved address is ready to prefill above. Continue there to send it securely to Shopify.</p>
+        ) : profileLoading && signedIn ? (
+          <div>
+            <p className="muted" role="status">Loading your saved checkout details…</p>
+            <a className="link" href={checkoutHref!} target="_blank" rel="noopener noreferrer">Continue without prefill</a>
+          </div>
         ) : (
-          <a className="btn" style={{ width: "100%", marginTop: 18 }} href={base + "Checkout"} data-testid="link-shopify-checkout">
-            Review and checkout <ArrowRight size={14} />
+          <a className="btn" style={{ width: "100%", marginTop: 18 }} href={checkoutHref!} target="_blank" rel="noopener noreferrer" data-testid="link-shopify-checkout">
+            Continue to secure Shopify checkout <ArrowRight size={14} />
           </a>
         )}
-        <p className="muted" style={{ fontSize: 11 }}>Shipping address and payment are entered on Shopify’s secure checkout.</p>
+        <p className="muted" style={{ fontSize: 11 }}>You can review or edit the delivery details at Shopify checkout. Payment details stay with Shopify.</p>
       </aside>
     </div>
   );
+}
+
+function getShopifyCheckoutHref(checkoutUrl: string | null | undefined): string | null {
+  try {
+    const url = checkoutUrl ? new URL(checkoutUrl) : null;
+    return url?.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function getCartUpdateErrorMessage(error: unknown): string | null {

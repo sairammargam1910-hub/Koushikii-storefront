@@ -43,7 +43,10 @@ function cart(overrides = {}) {
     id: "gid://shopify/Cart/cart-123",
     checkoutUrl,
     totalQuantity: 1,
-    cost: { subtotalAmount: { amount: "1250.00", currencyCode: "INR" } },
+    cost: {
+      subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
+      totalAmount: { amount: "1250.00", currencyCode: "INR" },
+    },
     discountCodes: [],
     lines: {
       nodes: [{
@@ -107,6 +110,9 @@ async function harness(run) {
       if (query.includes("mutation UpdateShopifyCartDiscountCodes")) {
         return { cartDiscountCodesUpdate: state.cartMutationResult };
       }
+      if (query.includes("mutation UpdateShopifyCartBuyerIdentity")) {
+        return { cartBuyerIdentityUpdate: state.cartMutationResult };
+      }
       throw new Error(`Unexpected Shopify query: ${query}`);
     },
   );
@@ -134,12 +140,20 @@ async function harness(run) {
     });
     return { status: response.status, data: await response.json() };
   };
+  const postBuyerIdentity = async (body) => {
+    const response = await fetch(`${endpoint}/buyer-identity`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, data: await response.json() };
+  };
   const getCart = async (cartId) => {
     const response = await fetch(`${endpoint}?cartId=${encodeURIComponent(cartId)}`);
     return { status: response.status, data: await response.json() };
   };
   try {
-    await run({ state, post, postDiscount, getCart });
+    await run({ state, post, postDiscount, postBuyerIdentity, getCart });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -200,6 +214,7 @@ test("forwards Shopify cart user errors and returns Shopify's checkout URL on su
     assert.equal(successful.status, 200);
     assert.equal(successful.data.checkoutUrl, checkoutUrl);
     assert.equal(successful.data.id, "gid://shopify/Cart/cart-123");
+    assert.equal(successful.data.totalAmount, "1250.00");
   });
 });
 
@@ -213,7 +228,13 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     assert.equal(state.calls.length, 0);
 
     state.cartMutationResult = {
-      cart: cart({ discountCodes: [{ code: "SILK10", applicable: true }] }),
+      cart: cart({
+        cost: {
+          subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
+          totalAmount: { amount: "1125.00", currencyCode: "INR" },
+        },
+        discountCodes: [{ code: "SILK10", applicable: true }],
+      }),
       userErrors: [],
     };
     const applied = await postDiscount({
@@ -222,6 +243,8 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     });
     assert.equal(applied.status, 200);
     assert.deepEqual(applied.data.discountCodes, [{ code: "SILK10", applicable: true }]);
+    assert.equal(applied.data.subtotalAmount, "1250.00");
+    assert.equal(applied.data.totalAmount, "1125.00");
     assert.deepEqual(state.calls.at(-1).variables, {
       cartId: "gid://shopify/Cart/cart-123",
       discountCodes: ["SILK10"],
@@ -246,6 +269,56 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     });
     assert.equal(removed.status, 200);
     assert.deepEqual(removed.data.discountCodes, []);
+  });
+});
+
+test("prefills Shopify checkout with a saved shopper address", async () => {
+  await harness(async ({ state, postBuyerIdentity }) => {
+    const saved = await postBuyerIdentity({
+      cartId: "gid://shopify/Cart/cart-123",
+      email: "shopper@example.com",
+      phone: "+919876543210",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Chennai",
+        state: "Tamil Nadu",
+        pin: "600001",
+      },
+    });
+    assert.equal(saved.status, 200);
+    assert.equal(saved.data.checkoutUrl, checkoutUrl);
+    const call = state.calls.at(-1);
+    assert.match(call.query, /cartBuyerIdentityUpdate/);
+    assert.deepEqual(call.variables, {
+      cartId: "gid://shopify/Cart/cart-123",
+      buyerIdentity: {
+        countryCode: "IN",
+        email: "shopper@example.com",
+        phone: "+919876543210",
+        deliveryAddressPreferences: [{
+          firstName: "Asha Rao",
+          address1: "12 Example Road",
+          city: "Chennai",
+          province: "Tamil Nadu",
+          zip: "600001",
+          countryCode: "IN",
+          phone: "+919876543210",
+        }],
+      },
+    });
+
+    const invalid = await postBuyerIdentity({
+      cartId: "gid://shopify/Cart/cart-123",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Chennai",
+        state: "Tamil Nadu",
+        pin: "000000",
+      },
+    });
+    assert.equal(invalid.status, 400);
   });
 });
 

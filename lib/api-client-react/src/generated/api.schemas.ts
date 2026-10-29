@@ -112,6 +112,44 @@ export interface ShopifyCartDiscountCodesInput {
   discountCodes: string[];
 }
 
+export type ShopifyCartBuyerIdentityInputDeliveryAddress = {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  recipient: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  street: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  city: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  state: string;
+  /** @pattern ^[1-9][0-9]{5}$ */
+  pin: string;
+};
+
+export interface ShopifyCartBuyerIdentityInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  cartId: string;
+  /** @maxLength 254 */
+  email?: string;
+  /** @maxLength 40 */
+  phone?: string;
+  deliveryAddress: ShopifyCartBuyerIdentityInputDeliveryAddress;
+}
+
 export interface ShopifyCartDiscountCode {
   code: string;
   applicable: boolean;
@@ -137,6 +175,7 @@ export interface ShopifyCartResponse {
   checkoutUrl: string | null;
   totalQuantity: number;
   subtotalAmount: string;
+  totalAmount: string;
   currencyCode: string;
   discountCodes: ShopifyCartDiscountCode[];
   lines: ShopifyCartLine[];

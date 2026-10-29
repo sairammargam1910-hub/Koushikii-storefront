@@ -196,8 +196,12 @@ function ShopifyCheckoutReview({
           </div>
         ))}
         <div className="row" style={{ marginTop: 20 }}>
-          <span>Shopify subtotal</span>
+          <span>Subtotal before discounts</span>
           <strong data-testid="text-shopify-checkout-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</strong>
+        </div>
+        <div className="row" style={{ marginTop: 10 }}>
+          <strong>Total after discounts</strong>
+          <strong data-testid="text-shopify-checkout-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
         </div>
         {cart.discountCodes.map((discount) => (
           <p
@@ -206,13 +210,13 @@ function ShopifyCheckoutReview({
             key={discount.code}
           >
             {discount.applicable
-              ? `Discount code ${discount.code} will be included at Shopify checkout.`
+              ? `Discount code ${discount.code} is applied to this bag.`
               : `Discount code ${discount.code} does not apply to this bag.`}
           </p>
         ))}
-        <p className="muted" style={{ fontSize: 12 }}>Shipping, applicable taxes, and final total are calculated by Shopify at checkout.</p>
+        <p className="muted" style={{ fontSize: 12 }}>Shipping and applicable taxes are calculated by Shopify at checkout.</p>
         {canCheckout ? (
-          <a className="btn" style={{ marginTop: 18 }} href={checkoutHref} data-testid="button-continue-shopify-checkout">
+          <a className="btn" style={{ marginTop: 18 }} href={checkoutHref} target="_blank" rel="noopener noreferrer" data-testid="button-continue-shopify-checkout">
             <ShieldCheck size={16} /> Continue to secure Shopify checkout <ArrowRight size={14} />
           </a>
         ) : (
@@ -225,7 +229,7 @@ function ShopifyCheckoutReview({
         <span className="eyebrow">Secure checkout</span>
         <h3 style={{ margin: "14px 0" }}>Your details stay with Shopify.</h3>
         <p className="muted">After you continue, Shopify asks for your shipping address and payment method, calculates delivery and tax, and confirms the order.</p>
-        <p className="muted" style={{ fontSize: 12 }}>This storefront does not collect or store your address or payment details.</p>
+        <p className="muted" style={{ fontSize: 12 }}>Saved profile details are only sent when you choose the saved-details option from your bag. Shopify securely handles payment and lets you review the delivery address.</p>
         <a className="link" href={base + "Cart"}>Return to your bag →</a>
       </aside>
     </div>

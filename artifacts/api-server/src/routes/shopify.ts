@@ -3,6 +3,7 @@ import {
   AddShopifyCartLineBody,
   GetShopifyCartQueryParams,
   GetShopifyCustomerAccountResponse,
+  UpdateShopifyCartBuyerIdentityBody,
   UpdateShopifyCartDiscountCodesBody,
   UpdateShopifyCartLinesBody,
 } from "@workspace/api-zod";
@@ -67,7 +68,7 @@ type ShopifyCartNode = {
   id: string;
   checkoutUrl: string;
   totalQuantity: number;
-  cost: { subtotalAmount: ShopifyMoney };
+  cost: { subtotalAmount: ShopifyMoney; totalAmount: ShopifyMoney };
   discountCodes: Array<{ code: string; applicable: boolean }>;
   lines: {
     nodes: Array<{
@@ -101,6 +102,7 @@ type ShopifyCartApiResponse = {
   checkoutUrl: string | null;
   totalQuantity: number;
   subtotalAmount: string;
+  totalAmount: string;
   currencyCode: string;
   discountCodes: Array<{ code: string; applicable: boolean }>;
   lines: Array<{
@@ -150,7 +152,10 @@ const CART_FIELDS = `#graphql
   id
   checkoutUrl
   totalQuantity
-  cost { subtotalAmount { amount currencyCode } }
+  cost {
+    subtotalAmount { amount currencyCode }
+    totalAmount { amount currencyCode }
+  }
   discountCodes { code applicable }
   lines(first: 50) {
     nodes {
@@ -242,6 +247,17 @@ const SHOPIFY_CART_DISCOUNT_CODES_UPDATE = `#graphql
   }
 `;
 
+const SHOPIFY_CART_BUYER_IDENTITY_UPDATE = `#graphql
+  mutation UpdateShopifyCartBuyerIdentity($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
+    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+      cart {
+        ${CART_FIELDS}
+      }
+      userErrors { message }
+    }
+  }
+`;
+
 const SHOPIFY_VARIANT_FOR_CART = `#graphql
   query ShopifyVariantForCart($id: ID!) @inContext(country: IN) {
     node(id: $id) {
@@ -313,6 +329,7 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
     checkoutUrl: checkoutAllowed ? cart.checkoutUrl : null,
     totalQuantity: cart.totalQuantity,
     subtotalAmount: cart.cost.subtotalAmount.amount,
+    totalAmount: cart.cost.totalAmount.amount,
     currencyCode: cart.cost.subtotalAmount.currencyCode,
     discountCodes: cart.discountCodes,
     lines,
@@ -603,6 +620,52 @@ router.post("/shopify/cart/discount-codes", async (req, res): Promise<void> => {
     if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart discount codes could not be updated");
     res.status(502).json({ error: "Shopify could not apply this discount code. Please try again." });
+  }
+});
+
+router.post("/shopify/cart/buyer-identity", async (req, res): Promise<void> => {
+  const body = UpdateShopifyCartBuyerIdentityBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Choose a valid saved address for Shopify checkout." });
+    return;
+  }
+  res.setHeader("Cache-Control", "no-store");
+  try {
+    await assertIndiaMarketAvailable();
+    const { cartId, email, phone, deliveryAddress } = body.data;
+    const result = await shopifyStorefrontRequest<{
+      cartBuyerIdentityUpdate: ShopifyCartMutationResult;
+    }>(SHOPIFY_CART_BUYER_IDENTITY_UPDATE, {
+      cartId,
+      buyerIdentity: {
+        countryCode: "IN",
+        ...(email ? { email: email.trim() } : {}),
+        ...(phone ? { phone: phone.trim() } : {}),
+        deliveryAddressPreferences: [{
+          firstName: deliveryAddress.recipient.trim(),
+          address1: deliveryAddress.street.trim(),
+          city: deliveryAddress.city.trim(),
+          province: deliveryAddress.state.trim(),
+          zip: deliveryAddress.pin,
+          countryCode: "IN",
+          ...(phone ? { phone: phone.trim() } : {}),
+        }],
+      },
+    });
+    if (result.cartBuyerIdentityUpdate.userErrors.length) {
+      res.status(400).json({
+        error: result.cartBuyerIdentityUpdate.userErrors[0].message,
+      });
+      return;
+    }
+    if (!result.cartBuyerIdentityUpdate.cart) {
+      res.status(404).json({ error: "This Shopify cart has expired or could not be found." });
+      return;
+    }
+    res.json(mapShopifyCart(result.cartBuyerIdentityUpdate.cart));
+  } catch {
+    // Cart identity contains personal details; keep them out of server logs.
+    res.status(502).json({ error: "Shopify could not prepare your saved details for checkout. Please try again." });
   }
 });
 

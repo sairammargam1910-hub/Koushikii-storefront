@@ -14,6 +14,7 @@ export interface ShopifyCartResponse {
   checkoutUrl: string | null;
   totalQuantity: number;
   subtotalAmount: string;
+  totalAmount: string;
   currencyCode: string;
   discountCodes: ShopifyCartDiscountCode[];
   lines: ShopifyCartLine[];
