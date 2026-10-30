@@ -19,6 +19,7 @@ import {
 import { useUser } from "@clerk/react";
 import {
   Shell,
+  TempleBorder,
   useStore,
   products,
   format,
@@ -86,6 +87,7 @@ export function Cart() {
             </p>
           </div>
         </header>
+        <TempleBorder />
         <main className="wrap content cart-main">
         {meta ? (
           <ShopifyBag
