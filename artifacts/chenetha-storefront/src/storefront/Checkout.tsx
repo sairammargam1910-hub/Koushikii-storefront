@@ -10,7 +10,7 @@ import {
   base,
   whatsappOrderUrl,
 } from "./_shared";
-import { formatShopifyMoney, useShopifyCart } from "./ShopifyCatalog";
+import { formatShopifyMoney, isDefaultShopifyVariantTitle, useShopifyCart } from "./ShopifyCatalog";
 import { useShopifyCartMeta } from "./shopifyCartState";
 
 export function Checkout() {
@@ -189,7 +189,10 @@ function ShopifyCheckoutReview({
           <div className="row" key={line.id} style={{ padding: "16px 0", borderBottom: "1px solid var(--line)" }}>
             <div>
               <strong>{line.productTitle}</strong>
-              <p className="muted" style={{ margin: "6px 0 0" }}>{line.variantTitle} · {line.quantity} × {formatShopifyMoney(line.unitPrice, line.currencyCode)}</p>
+              <p className="muted" style={{ margin: "6px 0 0" }}>
+                {!isDefaultShopifyVariantTitle(line.variantTitle) && `${line.variantTitle} · `}
+                {line.quantity} × {formatShopifyMoney(line.unitPrice, line.currencyCode)}
+              </p>
               {line.isDemo && <span className="pill shopify-demo-badge-inline">Demo only</span>}
             </div>
             <strong>{formatShopifyMoney(String(Number(line.unitPrice) * line.quantity), line.currencyCode)}</strong>

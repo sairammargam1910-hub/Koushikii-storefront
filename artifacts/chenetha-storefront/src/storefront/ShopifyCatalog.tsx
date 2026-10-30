@@ -204,6 +204,10 @@ export function formatShopifyMoney(amount: string, currencyCode: string) {
   }
 }
 
+export function isDefaultShopifyVariantTitle(title: string | null | undefined) {
+  return !title || /^(?:default(?:\s+title)?)$/i.test(title.trim());
+}
+
 export function isShopifyVariantPurchasable(variant: ShopifyProduct["variants"][number] | undefined) {
   return Boolean(
     variant &&
@@ -334,6 +338,8 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
   const price = variant ? formatShopifyMoney(variant.price, variant.currencyCode) : "";
   const demo = isDemoProduct(product);
+  const hasVariantChoice = product.variants.length > 1 ||
+    (product.variants.length === 1 && !isDefaultShopifyVariantTitle(product.variants[0].title));
   const addToCart = useMutation({
     mutationFn: ({ merchandiseId, quantity: lineQuantity }: { merchandiseId: string; quantity: number }) => {
       const input: ShopifyCartAddInput = {
@@ -404,7 +410,7 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
             <span className="eyebrow">{product.productType || "Saree"} · Shopify listing</span>
             <h1>{product.title}</h1>
             <p>{product.description || "Product details will appear here after you add them in Shopify."}</p>
-            {product.variants.length > 0 && (
+            {product.variants.length > 0 && hasVariantChoice && (
               <label className="shopify-variant-select">
                 {product.variants.length > 1 ? "Choose an option" : "Selected option"}
                 <select value={variant?.id ?? ""} onChange={(event) => setVariantId(event.target.value)}>

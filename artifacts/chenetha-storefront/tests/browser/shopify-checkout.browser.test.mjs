@@ -20,11 +20,11 @@ const productResponse = {
     images: [],
     variants: [{
       id: variantId,
-      title: "Default",
+      title: "Default Title",
       availableForSale: true,
       price: "1250.00",
       currencyCode: "INR",
-      selectedOptions: [{ name: "Title", value: "Default" }],
+      selectedOptions: [{ name: "Title", value: "Default Title" }],
     }],
   }],
 };
@@ -42,7 +42,7 @@ const cartResponse = {
     merchandiseId: variantId,
     productHandle: "fixture-saree",
     productTitle: "Kanchipuram silk saree",
-    variantTitle: "Default",
+    variantTitle: "Default Title",
     quantity: 1,
     unitPrice: "1250.00",
     currencyCode: "INR",
@@ -184,6 +184,31 @@ test("shows Shopify quantity errors and keeps the saved bag visible", async () =
     savedCart,
   );
   await context.close();
+});
+
+test("hides Shopify's placeholder variant title from shoppers", async () => {
+  const product = await openProduct();
+  assert.equal(await product.page.locator(".shopify-variant-select").count(), 0);
+  assert.equal(await product.page.getByText("Default Title").count(), 0);
+  await product.context.close();
+
+  const savedCart = { id: "gid://shopify/Cart/default-title-cart", totalQuantity: 1 };
+  const cart = await openCart({ savedCart });
+  assert.equal(await cart.page.locator(".cart-variant").count(), 0);
+  assert.equal(await cart.page.getByText("Default Title").count(), 0);
+  await cart.context.close();
+
+  const checkout = await openCheckout({
+    savedCart,
+    onCartRequest: (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
+    }),
+  });
+  await checkout.page.getByTestId("text-shopify-checkout-subtotal").waitFor();
+  assert.equal(await checkout.page.getByText("Default Title").count(), 0);
+  await checkout.context.close();
 });
 
 test("shows Shopify cart user errors without clearing the shopper's saved bag", async () => {

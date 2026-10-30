@@ -31,6 +31,7 @@ import {
 } from "./_shared";
 import {
   formatShopifyMoney,
+  isDefaultShopifyVariantTitle,
   updateShopifyCartCache,
   useShopifyCart,
 } from "./ShopifyCatalog";
@@ -362,7 +363,9 @@ function ShopifyBag({
             <div className="cart-product-copy">
               <span className="eyebrow">Handloom saree</span>
               <a href={`${base}Product?shopify=${encodeURIComponent(line.productHandle)}`}><h2>{line.productTitle}</h2></a>
-              <p className="cart-variant">{line.variantTitle}</p>
+              {!isDefaultShopifyVariantTitle(line.variantTitle) && (
+                <p className="cart-variant">{line.variantTitle}</p>
+              )}
               {line.isDemo && <span className="pill shopify-demo-badge-inline">Demo only · not for sale</span>}
               {!line.availableForSale && <span className="pill cart-unavailable-badge">Currently unavailable</span>}
               <div className="cart-quantity">
