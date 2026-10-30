@@ -85,3 +85,9 @@ Use the Home page's Kanjeevaram-inspired motif across storefront backgrounds. Us
 **Why:** The user explicitly asked for one shared background pattern, then specified cream-white kolam dividers on the same red as the hero/footer across the whole site.
 
 **How to apply:** Keep both treatments in shared storefront styles so every customer-facing page uses the same treatment.
+
+The handover client wants one merchant workspace for Shopify products and discounts plus homepage hero slides, fabric/weave thumbnails, approved customer voices, and video posts.
+
+**Why:** The user explicitly asked for these controls so the client can run this single-store storefront without working directly in Shopify for everyday site content.
+
+**How to apply:** Keep Shopify authoritative for products, prices, discounts, checkout, shipping, and payments. Use the merchant workspace for uploaded site media and editorial content; publish only exact customer quotes the client has approved.

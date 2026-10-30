@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, products, ProductGrid, base } from "./_shared";
 import { isNewArrival, isPremiumProduct, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
+import { useGetSiteContent, getGetSiteContentQueryKey, type SiteContentItem } from "@workspace/api-client-react";
 import "./HomeMakingJourney.css";
 import "./Home.css";
 
@@ -20,7 +21,7 @@ const homeHeroSlides = [
   {image:"/images/chenetha-home-hero-weaving.png", alt:"Midnight-indigo handloom with a fine gold border in a weaving atelier", eyebrow:"A THREAD WORTH FOLLOWING", title:<>Woven by hand.<br/>Kept for years.</>, copy:"Find a weave with colour, character and a story of its own.", cta:"Explore the weaves", href:base+"Collections"},
   {image:"/images/chenetha-home-hero-garden.png", alt:"Bottle-green silk saree with an antique-gold border in a heritage garden", eyebrow:"COLOUR FROM THE LOOM", title:<>A little gold.<br/>A lot of soul.</>, copy:"Meet considered handlooms for days both special and everyday.", cta:"Discover the edit", href:base+"Collections?edit=premium"}
 ];
-function HomeHeroCarousel(){
+function StaticHomeHeroCarousel(){
  const [active,setActive]=useState(0);
  const [playing,setPlaying]=useState(true);
  const touchStart=useRef<{x:number;y:number}|null>(null);
@@ -70,6 +71,47 @@ function HomeHeroCarousel(){
    </div>
   </div>
  </section>
+}
+function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
+ const [active,setActive]=useState(0);
+ useEffect(()=>{if(slides.length<2)return;const timer=window.setInterval(()=>setActive(index=>(index+1)%slides.length),6000);return()=>window.clearInterval(timer)},[slides.length]);
+ const activeIndex=active%slides.length;
+ const slide=slides[activeIndex];
+ const touchStart=useRef<{x:number;y:number}|null>(null);
+ const swipeClickGuard=useRef(0);
+ const go=(direction:number)=>setActive(index=>(index+direction+slides.length)%slides.length);
+ const finishSwipe=(end:{x:number;y:number})=>{
+  const start=touchStart.current;
+  touchStart.current=null;
+  if(!start)return;
+  const deltaX=end.x-start.x;
+  const deltaY=end.y-start.y;
+  if(Math.abs(deltaX)<45||Math.abs(deltaX)<=Math.abs(deltaY))return;
+  swipeClickGuard.current=Date.now()+450;
+  go(deltaX<0?1:-1);
+ };
+ return <section className="heritage-hero home-hero-carousel" aria-label="Featured handloom collection" onClickCapture={event=>{if(Date.now()<swipeClickGuard.current){event.preventDefault();event.stopPropagation();swipeClickGuard.current=0}}}>
+  <div className="home-hero-images"
+   onPointerDown={event=>{if(event.isPrimary&&event.pointerType!=="touch")touchStart.current={x:event.clientX,y:event.clientY}}}
+   onPointerUp={event=>{if(event.pointerType!=="touch")finishSwipe({x:event.clientX,y:event.clientY})}}
+   onPointerCancel={event=>{if(event.pointerType!=="touch")touchStart.current=null}}
+   onTouchStart={event=>{if(event.touches.length!==1){touchStart.current=null;return}const touch=event.touches[0];touchStart.current={x:touch.clientX,y:touch.clientY}}}
+   onTouchEnd={event=>{const touch=event.changedTouches[0];if(touch)finishSwipe({x:touch.clientX,y:touch.clientY})}}
+   onTouchCancel={()=>{touchStart.current=null}}
+  ><img className="home-hero-image is-active" src={slide.imageUrl || ""} alt={slide.altText || slide.title}/><div className="home-hero-shade" aria-hidden="true"/>
+   <div className="home-hero-content wrap"><div className="home-hero-copy" key={slide.id} role="group" aria-roledescription="slide" aria-label={`${active+1} of ${slides.length}`}>
+    {slide.eyebrow && <span className="eyebrow">{slide.eyebrow}</span>}<h1>{slide.title}</h1>{slide.body && <p>{slide.body}</p>}
+    {slide.ctaLabel && slide.ctaUrl && <a className="home-hero-cta" href={slide.ctaUrl}>{slide.ctaLabel}<ArrowRight size={15}/></a>}
+   </div>
+   {slides.length>1 && <div className="home-hero-controls" role="group" aria-label="Featured collection slides">{slides.map((item,index)=><button key={item.id} type="button" className={`home-hero-dot${activeIndex===index?" is-active":""}`} aria-label={`Show slide ${index+1}`} aria-pressed={activeIndex===index} onClick={()=>setActive(index)}/>)}</div>}
+   </div>
+  </div>
+ </section>;
+}
+function HomeHeroCarousel(){
+ const content=useGetSiteContent({query:{queryKey:getGetSiteContentQueryKey(),staleTime:60_000}});
+ const slides=(content.data?.items||[]).filter(item=>item.kind==="hero_slide"&&item.published&&item.imageUrl).sort((a,b)=>a.sortOrder-b.sortOrder);
+ return slides.length?<PublishedHero slides={slides}/>:<StaticHomeHeroCarousel/>;
 }
 const makingStages = [
   {id:"yarn",step:"01",note:"Preparation",title:"Prepare the yarn",copy:"Yarn is wound onto bobbins in preparation for the loom. The tools and sequence vary between fibres and weaving communities.",image:"/images/koushikii-home-yarn.svg",video:"/images/koushikii-home-yarn.mp4",alt:"A short video of yarn preparation for handloom weaving."},
@@ -192,18 +234,18 @@ function IndiaWeaves(){
   </div></div>
  </div></section>
 }
-const customerVoices = [
-  { name: "Dr. Sahiti Reddy", image: "/images/customer-dr-sahiti-reddy.jpg" },
-  { name: "Mounika", image: "/images/customer-mounika.jpg" },
-  { name: "Poornima garu", image: "/images/customer-poornima-garu.jpg" },
-  { name: "Priya", image: "/images/customer-priya.jpg" },
-  { name: "Sudha garu", image: "/images/customer-sudha-garu.jpg" },
-  { name: "Vasantha garu", image: "/images/customer-vasantha-garu.jpg" },
-];
-
-function Reviews(){
+function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];placement:"fabric_tile"|"weave_tile"}){
+ const fallback=placement==="fabric_tile"?base+"Collections?category=Sarees":base+"Collections";
+ return <div className={placement==="fabric_tile"?"fabric-grid":"weave-grid"}>{items.map((item,index)=><a key={item.id} className={placement==="fabric_tile"?"fabric-card":""} href={item.ctaUrl||fallback}>
+  <img className="dynamic-home-tile-image" src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
+  <h3>{item.title}</h3>{item.body&&<p>{item.body}</p>}{item.ctaLabel&&<span className="link">{item.ctaLabel} →</span>}
+ </a>)}</div>;
+}
+function Reviews({items}:{items:SiteContentItem[]}){
+  const customerVoices=items;
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  if(!customerVoices.length)return null;
   const scrollToPhoto = (index:number) => {
     const track = trackRef.current;
     const card = track?.children[index] as HTMLElement | undefined;
@@ -236,40 +278,46 @@ function Reviews(){
    <div className="customer-reel">
     <button type="button" className="customer-reel-arrow is-prev" aria-label="Previous customer photo" onClick={()=>move(-1)}><ArrowLeft size={17}/></button>
     <div className="customer-review-track" ref={trackRef} role="region" aria-label="Customer photographs" tabIndex={0} onScroll={updateActive}>
-     {customerVoices.map((customer,index)=><article className="customer-review-card" key={customer.name}>
-      <img src={customer.image} alt={`${customer.name} — Customer photo`} loading="eager"/>
-      <span className="customer-photo-label">Customer photo</span>
+     {customerVoices.map((customer,index)=><article className="customer-review-card" key={customer.id}>
+       {customer.imageUrl&&<img src={customer.imageUrl} alt={customer.altText||customer.title} loading="lazy"/>}
+       <span className="customer-photo-label">Customer voice</span>
       <span className="customer-photo-index" aria-hidden="true">{String(index+1).padStart(2,"0")}</span>
       <div className="customer-review-content">
-       <span className="review-pending">Review text pending</span>
-       <h3>{customer.name}</h3>
-       <p>Customer-approved review text will appear here.</p>
+        {customer.eyebrow&&<span className="review-pending">{customer.eyebrow}</span>}
+        <h3>{customer.title}</h3>
+        <p>{customer.body}</p>
       </div>
      </article>)}
     </div>
     <button type="button" className="customer-reel-arrow is-next" aria-label="Next customer photo" onClick={()=>move(1)}><ArrowRight size={17}/></button>
    </div>
    <div className="customer-reel-pagination" role="group" aria-label="Customer photo navigation">
-    {customerVoices.map((customer,index)=><button key={customer.name} type="button" aria-label={customer.name} aria-pressed={active===index} onClick={()=>scrollToPhoto(index)}><span/></button>)}
+    {customerVoices.map((customer,index)=><button key={customer.id} type="button" aria-label={`Show customer voice ${index+1}`} aria-pressed={active===index} onClick={()=>scrollToPhoto(index)}><span/></button>)}
     <span className="customer-reel-status" role="status" aria-live="polite">{String(active+1).padStart(2,"0")} / {String(customerVoices.length).padStart(2,"0")}</span>
    </div>
   </div></section>
  }
 export function Home(){
+ const siteContent=useGetSiteContent({query:{queryKey:getGetSiteContentQueryKey(),staleTime:60_000}});
+ const published=siteContent.data?.items||[];
+ const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];
+ const fabricTiles=homeTiles.filter(item=>item.placement==="fabric_tile").sort((a,b)=>a.sortOrder-b.sortOrder);
+ const weaveTiles=homeTiles.filter(item=>item.placement==="weave_tile").sort((a,b)=>a.sortOrder-b.sortOrder);
+ const voices=published.filter(item=>item.kind==="customer_voice"&&item.published&&item.approved&&Boolean(item.body?.trim())).sort((a,b)=>a.sortOrder-b.sortOrder);
  return <Shell>
   <HomeHeroCarousel/>
 
-  <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
-   <div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>
+   <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
+    {fabricTiles.length?<DynamicHomeTiles items={fabricTiles} placement="fabric_tile"/>:<div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>}
   </div></section>
     <ProductCarousel title="The Collection Edit" copy="Published sarees from the connected Shopify catalog."/>
     <PremiumFeature/>
    <ProductCarousel title="New Arrivals" copy="Tag a Shopify product new-arrival to feature it here." offset={4}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
   <IndiaWeaves/>
-  <Reviews/>
+   <Reviews items={voices}/>
   <section className="section home-weave-section"><div className="wrap"><div className="section-head"><div><h2>Shop by Weave</h2><p>Different regions. Distinct hands. A shared love of cloth.</p></div><a href={base+"Collections"} className="link">All weaves →</a></div>
-    <div className="weave-grid">{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina","Narayanpet"].map((w,i)=><a key={w} href={base+"Collections?category="+(w==="Pashmina"?"Dupattas":"Sarees")+"&weave="+w}><Textile pattern={"s"+(i+1)} label={w}/><h3>{w}</h3><span className="eyebrow" style={{fontSize:9}}>Explore →</span></a>)}</div>
+     {weaveTiles.length?<DynamicHomeTiles items={weaveTiles} placement="weave_tile"/>:<div className="weave-grid">{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina","Narayanpet"].map((w,i)=><a key={w} href={base+"Collections?category="+(w==="Pashmina"?"Dupattas":"Sarees")+"&weave="+w}><Textile pattern={"s"+(i+1)} label={w}/><h3>{w}</h3><span className="eyebrow" style={{fontSize:9}}>Explore →</span></a>)}</div>}
   </div></section>
      <section className="section" style={{paddingTop:12}}><div className="wrap home-guide-link"><a href={base+"Collections?category=Sarees"}><span className="eyebrow">A companion for choosing</span><h3>Find your thread.</h3><p>Begin with Kanchipuram, Mangalagiri and Narayanpet. Compare fabrics and borders, then narrow the collection by region or weave.</p><span className="link">Discover saree collections →</span></a><a href={base+"SareeCare"}><span className="eyebrow">A companion for keeping</span><h3>Care for the cloth.</h3><p>Give an everyday cotton and a treasured silk the different kinds of attention they need.</p><span className="link">Read the saree care notes →</span></a></div></section>
  </Shell>

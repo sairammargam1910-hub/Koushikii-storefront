@@ -576,6 +576,175 @@ export interface ShopperPreferencesResponse {
   profile: ShopperProfile;
 }
 
+export type SiteContentItemKind = typeof SiteContentItemKind[keyof typeof SiteContentItemKind];
+
+
+export const SiteContentItemKind = {
+  hero_slide: 'hero_slide',
+  home_image: 'home_image',
+  customer_voice: 'customer_voice',
+  video_post: 'video_post',
+} as const;
+
+/**
+ * @nullable
+ */
+export type SiteContentItemPlacement = typeof SiteContentItemPlacement[keyof typeof SiteContentItemPlacement] | null;
+
+
+export const SiteContentItemPlacement = {
+  fabric_tile: 'fabric_tile',
+  weave_tile: 'weave_tile',
+} as const;
+
+export interface SiteContentItem {
+  id: string;
+  kind: SiteContentItemKind;
+  /** @nullable */
+  placement: SiteContentItemPlacement;
+  title: string;
+  /** @nullable */
+  eyebrow: string | null;
+  /** @nullable */
+  body: string | null;
+  /** @nullable */
+  imageUrl: string | null;
+  /** @nullable */
+  mediaUrl: string | null;
+  /** @nullable */
+  altText: string | null;
+  /** @nullable */
+  ctaLabel: string | null;
+  /** @nullable */
+  ctaUrl: string | null;
+  /** @nullable */
+  linkedProductId: string | null;
+  sortOrder: number;
+  published: boolean;
+  approved: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SiteContentListResponse {
+  items: SiteContentItem[];
+}
+
+export type SiteContentInputKind = typeof SiteContentInputKind[keyof typeof SiteContentInputKind];
+
+
+export const SiteContentInputKind = {
+  hero_slide: 'hero_slide',
+  home_image: 'home_image',
+  customer_voice: 'customer_voice',
+  video_post: 'video_post',
+} as const;
+
+/**
+ * @nullable
+ */
+export type SiteContentInputPlacement = typeof SiteContentInputPlacement[keyof typeof SiteContentInputPlacement] | null;
+
+
+export const SiteContentInputPlacement = {
+  fabric_tile: 'fabric_tile',
+  weave_tile: 'weave_tile',
+} as const;
+
+export interface SiteContentInput {
+  kind: SiteContentInputKind;
+  /** @nullable */
+  placement: SiteContentInputPlacement;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  title: string;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  eyebrow: string | null;
+  /**
+     * @maxLength 3000
+     * @nullable
+     */
+  body: string | null;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  imageUrl: string | null;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  mediaUrl: string | null;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  altText: string | null;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  ctaLabel: string | null;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  ctaUrl: string | null;
+  /**
+     * @maxLength 250
+     * @nullable
+     */
+  linkedProductId: string | null;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  sortOrder: number;
+  published: boolean;
+  approved: boolean;
+}
+
+export interface SiteContentDeleteResponse {
+  id: string;
+  deleted: boolean;
+}
+
+export type SiteContentUploadInputContentType = typeof SiteContentUploadInputContentType[keyof typeof SiteContentUploadInputContentType];
+
+
+export const SiteContentUploadInputContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'video/mp4': 'video/mp4',
+  'video/webm': 'video/webm',
+} as const;
+
+export interface SiteContentUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 209715200
+     */
+  size: number;
+  contentType: SiteContentUploadInputContentType;
+}
+
+export interface SiteContentUploadResponse {
+  uploadUrl: string;
+  objectPath: string;
+  assetUrl: string;
+}
+
 export type GetShopifyCartParams = {
 /**
  * @minLength 1

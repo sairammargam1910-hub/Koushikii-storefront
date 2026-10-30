@@ -24,6 +24,7 @@ import { Profile } from "./storefront/Profile";
 import { Orders } from "./storefront/Orders";
 import { Videos } from "./storefront/Videos";
 import { AdminDashboard, AdminDiscounts, AdminProducts, AdminSignInPrompt } from "./admin/Admin";
+import { AdminContent } from "./admin/ContentAdmin";
 import { ShopperPreferencesProvider } from "./storefront/ShopperPreferences";
 
 const queryClient = new QueryClient();
@@ -89,7 +90,7 @@ const pageTitles: Record<string,string> = {
   "/CustomerCare": "Customer care", "/SareeCare": "Saree care", "/Account": "Saved preferences",
   "/Profile": "Your details", "/Orders": "Order information", "/Videos": "Videos",
   "/admin": "Merchant workroom", "/admin/products": "Manage products",
-  "/admin/discounts": "Manage discounts", "/sign-in": "Account sign in",
+  "/admin/discounts": "Manage discounts", "/admin/content": "Storefront content", "/sign-in": "Account sign in",
   "/sign-up": "Create an account",
 };
 
@@ -162,6 +163,7 @@ function Router() {
         <Route path="/admin"><ProtectedAdmin page={<AdminDashboard/>}/></Route>
         <Route path="/admin/products"><ProtectedAdmin page={<AdminProducts/>}/></Route>
         <Route path="/admin/discounts"><ProtectedAdmin page={<AdminDiscounts/>}/></Route>
+        <Route path="/admin/content"><ProtectedAdmin page={<AdminContent/>}/></Route>
           <Route path="/" component={Home}/>
         <Route path="/Home" component={Home}/>
         <Route path="/Collections" component={Collections}/>

@@ -20,7 +20,7 @@ import {
 } from "@workspace/api-client-react";
 import { useClerk } from "@clerk/react";
 import {
-  ArrowDownRight, ArrowRight, BadgePercent, Box, Check, CircleAlert,
+  ArrowDownRight, ArrowRight, BadgePercent, Box, Check, CircleAlert, Images,
   Clock3, ExternalLink, Layers3, LoaderCircle, MapPin, PackagePlus, Plus, RefreshCw,
   Search, Tag, X,
 } from "lucide-react";
@@ -65,7 +65,7 @@ function readableError(error: unknown, fallback: string) {
     : fallback;
 }
 
-function AdminLayout({ children, title, eyebrow, action }: { children: ReactNode; title: string; eyebrow: string; action?: ReactNode }) {
+export function AdminLayout({ children, title, eyebrow, action }: { children: ReactNode; title: string; eyebrow: string; action?: ReactNode }) {
   const [location] = useLocation();
   const { signOut } = useClerk();
   return <div className="merchant-app">
@@ -83,6 +83,9 @@ function AdminLayout({ children, title, eyebrow, action }: { children: ReactNode
         </Link>
         <Link href="/admin/discounts" className={location === "/admin/discounts" ? "nav-item active" : "nav-item"} data-testid="link-admin-discounts">
           <BadgePercent size={18}/><span>Discounts</span>
+        </Link>
+        <Link href="/admin/content" className={location === "/admin/content" ? "nav-item active" : "nav-item"} data-testid="link-admin-content">
+          <Images size={18}/><span>Storefront content</span>
         </Link>
       </nav>
       <div className="sidebar-note">
@@ -442,6 +445,7 @@ export function AdminDiscounts() {
 }
 
 export function AdminSignInPrompt() {
-  return <div className="auth-gate"><div className="auth-gate-card"><span className="brand-seal">C</span><span className="eyebrow">MERCHANT WORKROOM</span><h1>Welcome back.</h1><p>Sign in to tend your collection and offers.</p><Link href="/sign-in?redirect_url=%2Fadmin" className="button button-primary" data-testid="link-admin-sign-in">Sign in to continue <ArrowRight size={16}/></Link><small>Your shoppers will never see this workspace.</small></div></div>;
+  const [location] = useLocation();
+  return <div className="auth-gate"><div className="auth-gate-card"><span className="brand-seal">C</span><span className="eyebrow">MERCHANT WORKROOM</span><h1>Welcome back.</h1><p>Sign in to tend your storefront content, collection and offers.</p><Link href={`/sign-in?redirect_url=${encodeURIComponent(location)}`} className="button button-primary" data-testid="link-admin-sign-in">Sign in to continue <ArrowRight size={16}/></Link><small>Your shoppers will never see this workspace.</small></div></div>;
 }
 

@@ -14,6 +14,8 @@ tags:
     description: Shopify storefront operations
   - name: shopper
     description: Signed-in shopper preferences
+  - name: content
+    description: Storefront editorial content
 paths:
   /healthz:
     get:
@@ -1023,6 +1025,232 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /site-content:
+    get:
+      operationId: getSiteContent
+      tags: [content]
+      summary: Get published storefront content
+      description: Returns published homepage slides, images, approved customer voices, and video posts.
+      responses:
+        "200":
+          description: Published storefront content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContentListResponse"
+    post:
+      operationId: createSiteContent
+      tags: [content]
+      summary: Create a storefront content item
+      description: Creates a draft or published content item for the connected store.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteContentInput"
+      responses:
+        "201":
+          description: Content item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContentItem"
+        "400":
+          description: Content is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /site-content/admin:
+    get:
+      operationId: getAdminSiteContent
+      tags: [content]
+      summary: Get all storefront content for the merchant
+      description: Returns published and draft content for the authenticated store owner.
+      responses:
+        "200":
+          description: Merchant content list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContentListResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /site-content/{id}:
+    put:
+      operationId: updateSiteContent
+      tags: [content]
+      summary: Update storefront content
+      description: Replaces the editable fields for one content item.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteContentInput"
+      responses:
+        "200":
+          description: Content item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContentItem"
+        "400":
+          description: Content is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Content item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteSiteContent
+      tags: [content]
+      summary: Delete storefront content
+      description: Removes one content item from the connected store.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Content item deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContentDeleteResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Content item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /site-content/uploads:
+    post:
+      operationId: requestSiteContentUpload
+      tags: [content]
+      summary: Request a direct upload URL for site media
+      description: Creates a short-lived upload URL for a merchant image or video. Files are uploaded directly to persistent App Storage.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteContentUploadInput"
+      responses:
+        "201":
+          description: Short-lived upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContentUploadResponse"
+        "400":
+          description: File type or size is not supported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /site-content/media/{assetId}:
+    get:
+      operationId: getSiteContentMedia
+      tags: [content]
+      summary: Serve a published storefront media asset
+      description: Streams one media asset from persistent App Storage after checking its access policy.
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Public site image or video
+          content:
+            image/jpeg: {}
+            image/png: {}
+            image/webp: {}
+            video/mp4: {}
+            video/webm: {}
+        "404":
+          description: Media asset not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -1768,4 +1996,136 @@ components:
         profile:
           $ref: "#/components/schemas/ShopperProfile"
       required: [wishlist, profile]
+    SiteContentItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [hero_slide, home_image, customer_voice, video_post]
+        placement:
+          type: ["string", "null"]
+          enum: [fabric_tile, weave_tile, null]
+        title:
+          type: string
+        eyebrow:
+          type: ["string", "null"]
+        body:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        mediaUrl:
+          type: ["string", "null"]
+        altText:
+          type: ["string", "null"]
+        ctaLabel:
+          type: ["string", "null"]
+        ctaUrl:
+          type: ["string", "null"]
+        linkedProductId:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+        published:
+          type: boolean
+        approved:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved, createdAt, updatedAt]
+    SiteContentListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SiteContentItem"
+      required: [items]
+    SiteContentInput:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [hero_slide, home_image, customer_voice, video_post]
+        placement:
+          type: ["string", "null"]
+          enum: [fabric_tile, weave_tile, null]
+        title:
+          type: string
+          minLength: 1
+          maxLength: 180
+        eyebrow:
+          type: ["string", "null"]
+          maxLength: 120
+        body:
+          type: ["string", "null"]
+          maxLength: 3000
+        imageUrl:
+          type: ["string", "null"]
+          maxLength: 2048
+        mediaUrl:
+          type: ["string", "null"]
+          maxLength: 2048
+        altText:
+          type: ["string", "null"]
+          maxLength: 500
+        ctaLabel:
+          type: ["string", "null"]
+          maxLength: 80
+        ctaUrl:
+          type: ["string", "null"]
+          maxLength: 2048
+        linkedProductId:
+          type: ["string", "null"]
+          maxLength: 250
+        sortOrder:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        published:
+          type: boolean
+        approved:
+          type: boolean
+      required: [kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved]
+    SiteContentDeleteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        deleted:
+          type: boolean
+      required: [id, deleted]
+    SiteContentUploadInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        size:
+          type: integer
+          minimum: 1
+          maximum: 209715200
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, image/webp, video/mp4, video/webm]
+      required: [name, size, contentType]
+    SiteContentUploadResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        assetUrl:
+          type: string
+      required: [uploadUrl, objectPath, assetUrl]
 

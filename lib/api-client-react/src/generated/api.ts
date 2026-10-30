@@ -49,7 +49,13 @@ import type {
   ShopifyProductsResponse,
   ShopperPreferencesResponse,
   ShopperProfileUpdate,
-  ShopperWishlistUpdate
+  ShopperWishlistUpdate,
+  SiteContentDeleteResponse,
+  SiteContentInput,
+  SiteContentItem,
+  SiteContentListResponse,
+  SiteContentUploadInput,
+  SiteContentUploadResponse
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -2587,4 +2593,581 @@ export const useDeactivateShopifyAdminDiscount = <TError = ErrorType<ApiError>,
       > => {
       return useMutation(getDeactivateShopifyAdminDiscountMutationOptions(options));
     }
+
+export const getGetSiteContentUrl = () => {
+
+
+
+
+  return `/api/site-content`
+}
+
+/**
+ * Returns published homepage slides, images, approved customer voices, and video posts.
+ * @summary Get published storefront content
+ */
+export const getSiteContent = async ( options?: Parameters<typeof customFetch>[1]): Promise<SiteContentListResponse> => {
+
+  return customFetch<SiteContentListResponse>(getGetSiteContentUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSiteContentQueryKey = () => {
+    return [
+    `/api/site-content`
+    ] as const;
+    }
+
+
+export const getGetSiteContentQueryOptions = <TData = Awaited<ReturnType<typeof getSiteContent>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSiteContentQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteContent>>> = ({ signal }) => getSiteContent({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSiteContentQueryResult = NonNullable<Awaited<ReturnType<typeof getSiteContent>>>
+export type GetSiteContentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get published storefront content
+ */
+
+export function useGetSiteContent<TData = Awaited<ReturnType<typeof getSiteContent>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSiteContentQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSiteContentUrl = () => {
+
+
+
+
+  return `/api/site-content`
+}
+
+/**
+ * Creates a draft or published content item for the connected store.
+ * @summary Create a storefront content item
+ */
+export const createSiteContent = async (siteContentInput: SiteContentInput, options?: Parameters<typeof customFetch>[1]): Promise<SiteContentItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SiteContentItem>(getCreateSiteContentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(siteContentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSiteContentMutationKey = () => ['createSiteContent'] as const;
+
+export const getCreateSiteContentMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSiteContent>>, TError,CreateSiteContentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSiteContent>>, TError,CreateSiteContentMutationVariables, TContext> => {
+
+const mutationKey = getCreateSiteContentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSiteContent>>, CreateSiteContentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSiteContent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSiteContentMutationResult = NonNullable<Awaited<ReturnType<typeof createSiteContent>>>
+    export type CreateSiteContentMutationBody = BodyType<SiteContentInput>
+    export type CreateSiteContentMutationError = ErrorType<ApiError>
+    export type CreateSiteContentMutationVariables = {data: BodyType<SiteContentInput>}
+
+    /**
+ * @summary Create a storefront content item
+ */
+export const useCreateSiteContent = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSiteContent>>, TError,CreateSiteContentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSiteContent>>,
+        TError,
+        CreateSiteContentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSiteContentMutationOptions(options));
+    }
+
+export const getGetAdminSiteContentUrl = () => {
+
+
+
+
+  return `/api/site-content/admin`
+}
+
+/**
+ * Returns published and draft content for the authenticated store owner.
+ * @summary Get all storefront content for the merchant
+ */
+export const getAdminSiteContent = async ( options?: Parameters<typeof customFetch>[1]): Promise<SiteContentListResponse> => {
+
+  return customFetch<SiteContentListResponse>(getGetAdminSiteContentUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminSiteContentQueryKey = () => {
+    return [
+    `/api/site-content/admin`
+    ] as const;
+    }
+
+
+export const getGetAdminSiteContentQueryOptions = <TData = Awaited<ReturnType<typeof getAdminSiteContent>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminSiteContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminSiteContentQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminSiteContent>>> = ({ signal }) => getAdminSiteContent({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminSiteContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminSiteContentQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminSiteContent>>>
+export type GetAdminSiteContentQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get all storefront content for the merchant
+ */
+
+export function useGetAdminSiteContent<TData = Awaited<ReturnType<typeof getAdminSiteContent>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminSiteContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminSiteContentQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSiteContentUrl = (id: string,) => {
+
+
+
+
+  return `/api/site-content/${encodeURIComponent(String(id))}`
+}
+
+/**
+ * Replaces the editable fields for one content item.
+ * @summary Update storefront content
+ */
+export const updateSiteContent = async (id: string,
+    siteContentInput: SiteContentInput, options?: Parameters<typeof customFetch>[1]): Promise<SiteContentItem> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SiteContentItem>(getUpdateSiteContentUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(siteContentInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSiteContentMutationKey = () => ['updateSiteContent'] as const;
+
+export const getUpdateSiteContentMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSiteContent>>, TError,UpdateSiteContentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSiteContent>>, TError,UpdateSiteContentMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSiteContentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSiteContent>>, UpdateSiteContentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSiteContent(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSiteContentMutationResult = NonNullable<Awaited<ReturnType<typeof updateSiteContent>>>
+    export type UpdateSiteContentMutationBody = BodyType<SiteContentInput>
+    export type UpdateSiteContentMutationError = ErrorType<ApiError>
+    export type UpdateSiteContentMutationVariables = {id: string;data: BodyType<SiteContentInput>}
+
+    /**
+ * @summary Update storefront content
+ */
+export const useUpdateSiteContent = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSiteContent>>, TError,UpdateSiteContentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSiteContent>>,
+        TError,
+        UpdateSiteContentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSiteContentMutationOptions(options));
+    }
+
+export const getDeleteSiteContentUrl = (id: string,) => {
+
+
+
+
+  return `/api/site-content/${encodeURIComponent(String(id))}`
+}
+
+/**
+ * Removes one content item from the connected store.
+ * @summary Delete storefront content
+ */
+export const deleteSiteContent = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SiteContentDeleteResponse> => {
+
+  return customFetch<SiteContentDeleteResponse>(getDeleteSiteContentUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSiteContentMutationKey = () => ['deleteSiteContent'] as const;
+
+export const getDeleteSiteContentMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSiteContent>>, TError,DeleteSiteContentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSiteContent>>, TError,DeleteSiteContentMutationVariables, TContext> => {
+
+const mutationKey = getDeleteSiteContentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSiteContent>>, DeleteSiteContentMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSiteContent(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSiteContentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSiteContent>>>
+
+    export type DeleteSiteContentMutationError = ErrorType<ApiError>
+    export type DeleteSiteContentMutationVariables = {id: string}
+
+    /**
+ * @summary Delete storefront content
+ */
+export const useDeleteSiteContent = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSiteContent>>, TError,DeleteSiteContentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSiteContent>>,
+        TError,
+        DeleteSiteContentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteSiteContentMutationOptions(options));
+    }
+
+export const getRequestSiteContentUploadUrl = () => {
+
+
+
+
+  return `/api/site-content/uploads`
+}
+
+/**
+ * Creates a short-lived upload URL for a merchant image or video. Files are uploaded directly to persistent App Storage.
+ * @summary Request a direct upload URL for site media
+ */
+export const requestSiteContentUpload = async (siteContentUploadInput: SiteContentUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<SiteContentUploadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SiteContentUploadResponse>(getRequestSiteContentUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(siteContentUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestSiteContentUploadMutationKey = () => ['requestSiteContentUpload'] as const;
+
+export const getRequestSiteContentUploadMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSiteContentUpload>>, TError,RequestSiteContentUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestSiteContentUpload>>, TError,RequestSiteContentUploadMutationVariables, TContext> => {
+
+const mutationKey = getRequestSiteContentUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestSiteContentUpload>>, RequestSiteContentUploadMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestSiteContentUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestSiteContentUploadMutationResult = NonNullable<Awaited<ReturnType<typeof requestSiteContentUpload>>>
+    export type RequestSiteContentUploadMutationBody = BodyType<SiteContentUploadInput>
+    export type RequestSiteContentUploadMutationError = ErrorType<ApiError>
+    export type RequestSiteContentUploadMutationVariables = {data: BodyType<SiteContentUploadInput>}
+
+    /**
+ * @summary Request a direct upload URL for site media
+ */
+export const useRequestSiteContentUpload = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSiteContentUpload>>, TError,RequestSiteContentUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestSiteContentUpload>>,
+        TError,
+        RequestSiteContentUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestSiteContentUploadMutationOptions(options));
+    }
+
+export const getGetSiteContentMediaUrl = (assetId: string,) => {
+
+
+
+
+  return `/api/site-content/media/${encodeURIComponent(String(assetId))}`
+}
+
+/**
+ * Streams one media asset from persistent App Storage after checking its access policy.
+ * @summary Serve a published storefront media asset
+ */
+export const getSiteContentMedia = async (assetId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetSiteContentMediaUrl(assetId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSiteContentMediaQueryKey = (assetId: string,) => {
+    return [
+    `/api/site-content/media/${assetId}`
+    ] as const;
+    }
+
+
+export const getGetSiteContentMediaQueryOptions = <TData = Awaited<ReturnType<typeof getSiteContentMedia>>, TError = ErrorType<ApiError>>(assetId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteContentMedia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSiteContentMediaQueryKey(assetId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteContentMedia>>> = ({ signal }) => getSiteContentMedia(assetId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: assetId !== null && assetId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSiteContentMedia>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSiteContentMediaQueryResult = NonNullable<Awaited<ReturnType<typeof getSiteContentMedia>>>
+export type GetSiteContentMediaQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Serve a published storefront media asset
+ */
+
+export function useGetSiteContentMedia<TData = Awaited<ReturnType<typeof getSiteContentMedia>>, TError = ErrorType<ApiError>>(
+ assetId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteContentMedia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSiteContentMediaQueryOptions(assetId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

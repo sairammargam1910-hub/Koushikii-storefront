@@ -1231,3 +1231,239 @@ export const DeactivateShopifyAdminDiscountResponse = zod.object({
 })
 
 
+/**
+ * Returns published homepage slides, images, approved customer voices, and video posts.
+ * @summary Get published storefront content
+ */
+export const GetSiteContentResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "title": zod.string(),
+  "eyebrow": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "imageUrl": zod.string().nullable(),
+  "mediaUrl": zod.string().nullable(),
+  "altText": zod.string().nullable(),
+  "ctaLabel": zod.string().nullable(),
+  "ctaUrl": zod.string().nullable(),
+  "linkedProductId": zod.string().nullable(),
+  "sortOrder": zod.number().int(),
+  "published": zod.boolean(),
+  "approved": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * Creates a draft or published content item for the connected store.
+ * @summary Create a storefront content item
+ */
+export const createSiteContentBodyTitleMax = 180;
+
+export const createSiteContentBodyEyebrowMax = 120;
+
+export const createSiteContentBodyBodyMax = 3000;
+
+export const createSiteContentBodyImageUrlMax = 2048;
+
+export const createSiteContentBodyMediaUrlMax = 2048;
+
+export const createSiteContentBodyAltTextMax = 500;
+
+export const createSiteContentBodyCtaLabelMax = 80;
+
+export const createSiteContentBodyCtaUrlMax = 2048;
+
+export const createSiteContentBodyLinkedProductIdMax = 250;
+
+export const createSiteContentBodySortOrderMin = 0;
+export const createSiteContentBodySortOrderMax = 10000;
+
+
+
+export const CreateSiteContentBody = zod.object({
+  "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "title": zod.string().min(1).max(createSiteContentBodyTitleMax),
+  "eyebrow": zod.string().max(createSiteContentBodyEyebrowMax).nullable(),
+  "body": zod.string().max(createSiteContentBodyBodyMax).nullable(),
+  "imageUrl": zod.string().max(createSiteContentBodyImageUrlMax).nullable(),
+  "mediaUrl": zod.string().max(createSiteContentBodyMediaUrlMax).nullable(),
+  "altText": zod.string().max(createSiteContentBodyAltTextMax).nullable(),
+  "ctaLabel": zod.string().max(createSiteContentBodyCtaLabelMax).nullable(),
+  "ctaUrl": zod.string().max(createSiteContentBodyCtaUrlMax).nullable(),
+  "linkedProductId": zod.string().max(createSiteContentBodyLinkedProductIdMax).nullable(),
+  "sortOrder": zod.number().int().min(createSiteContentBodySortOrderMin).max(createSiteContentBodySortOrderMax),
+  "published": zod.boolean(),
+  "approved": zod.boolean()
+})
+
+export const CreateSiteContentResponse = zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "title": zod.string(),
+  "eyebrow": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "imageUrl": zod.string().nullable(),
+  "mediaUrl": zod.string().nullable(),
+  "altText": zod.string().nullable(),
+  "ctaLabel": zod.string().nullable(),
+  "ctaUrl": zod.string().nullable(),
+  "linkedProductId": zod.string().nullable(),
+  "sortOrder": zod.number().int(),
+  "published": zod.boolean(),
+  "approved": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Returns published and draft content for the authenticated store owner.
+ * @summary Get all storefront content for the merchant
+ */
+export const GetAdminSiteContentResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "title": zod.string(),
+  "eyebrow": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "imageUrl": zod.string().nullable(),
+  "mediaUrl": zod.string().nullable(),
+  "altText": zod.string().nullable(),
+  "ctaLabel": zod.string().nullable(),
+  "ctaUrl": zod.string().nullable(),
+  "linkedProductId": zod.string().nullable(),
+  "sortOrder": zod.number().int(),
+  "published": zod.boolean(),
+  "approved": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * Replaces the editable fields for one content item.
+ * @summary Update storefront content
+ */
+export const UpdateSiteContentParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const updateSiteContentBodyTitleMax = 180;
+
+export const updateSiteContentBodyEyebrowMax = 120;
+
+export const updateSiteContentBodyBodyMax = 3000;
+
+export const updateSiteContentBodyImageUrlMax = 2048;
+
+export const updateSiteContentBodyMediaUrlMax = 2048;
+
+export const updateSiteContentBodyAltTextMax = 500;
+
+export const updateSiteContentBodyCtaLabelMax = 80;
+
+export const updateSiteContentBodyCtaUrlMax = 2048;
+
+export const updateSiteContentBodyLinkedProductIdMax = 250;
+
+export const updateSiteContentBodySortOrderMin = 0;
+export const updateSiteContentBodySortOrderMax = 10000;
+
+
+
+export const UpdateSiteContentBody = zod.object({
+  "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "title": zod.string().min(1).max(updateSiteContentBodyTitleMax),
+  "eyebrow": zod.string().max(updateSiteContentBodyEyebrowMax).nullable(),
+  "body": zod.string().max(updateSiteContentBodyBodyMax).nullable(),
+  "imageUrl": zod.string().max(updateSiteContentBodyImageUrlMax).nullable(),
+  "mediaUrl": zod.string().max(updateSiteContentBodyMediaUrlMax).nullable(),
+  "altText": zod.string().max(updateSiteContentBodyAltTextMax).nullable(),
+  "ctaLabel": zod.string().max(updateSiteContentBodyCtaLabelMax).nullable(),
+  "ctaUrl": zod.string().max(updateSiteContentBodyCtaUrlMax).nullable(),
+  "linkedProductId": zod.string().max(updateSiteContentBodyLinkedProductIdMax).nullable(),
+  "sortOrder": zod.number().int().min(updateSiteContentBodySortOrderMin).max(updateSiteContentBodySortOrderMax),
+  "published": zod.boolean(),
+  "approved": zod.boolean()
+})
+
+export const UpdateSiteContentResponse = zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "title": zod.string(),
+  "eyebrow": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "imageUrl": zod.string().nullable(),
+  "mediaUrl": zod.string().nullable(),
+  "altText": zod.string().nullable(),
+  "ctaLabel": zod.string().nullable(),
+  "ctaUrl": zod.string().nullable(),
+  "linkedProductId": zod.string().nullable(),
+  "sortOrder": zod.number().int(),
+  "published": zod.boolean(),
+  "approved": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * Removes one content item from the connected store.
+ * @summary Delete storefront content
+ */
+export const DeleteSiteContentParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const DeleteSiteContentResponse = zod.object({
+  "id": zod.string().uuid(),
+  "deleted": zod.boolean()
+})
+
+
+/**
+ * Creates a short-lived upload URL for a merchant image or video. Files are uploaded directly to persistent App Storage.
+ * @summary Request a direct upload URL for site media
+ */
+export const requestSiteContentUploadBodyNameMax = 255;
+
+export const requestSiteContentUploadBodySizeMax = 209715200;
+
+
+
+export const RequestSiteContentUploadBody = zod.object({
+  "name": zod.string().min(1).max(requestSiteContentUploadBodyNameMax),
+  "size": zod.number().int().min(1).max(requestSiteContentUploadBodySizeMax),
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
+})
+
+export const RequestSiteContentUploadResponse = zod.object({
+  "uploadUrl": zod.string().url(),
+  "objectPath": zod.string(),
+  "assetUrl": zod.string()
+})
+
+
+/**
+ * Streams one media asset from persistent App Storage after checking its access policy.
+ * @summary Serve a published storefront media asset
+ */
+export const GetSiteContentMediaParams = zod.object({
+  "assetId": zod.coerce.string().uuid()
+})
+
+export const GetSiteContentMediaResponse = zod.unknown()
+
+
