@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, RefreshCw, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  LockKeyhole,
+  RefreshCw,
+  ShieldCheck,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 import {
   updateShopifyCartBuyerIdentity,
   updateShopifyCartDiscountCodes,
@@ -11,7 +19,6 @@ import {
 import { useUser } from "@clerk/react";
 import {
   Shell,
-  PageHero,
   useStore,
   products,
   format,
@@ -31,6 +38,7 @@ import {
   useShopifyCartMeta,
 } from "./shopifyCartState";
 import { useShopperPreferences } from "./ShopperPreferences";
+import "./Cart.css";
 
 export function Cart() {
   const shopper = useShopperPreferences();
@@ -62,16 +70,23 @@ export function Cart() {
 
   return (
     <Shell>
-      <PageHero
-        eyebrow={meta ? `Your bag · Shopify (${displayedShopifyQuantity})` : "Your bag · Sample selection"}
-        title="A little goodness, gathered."
-        subtitle={
-          meta
-            ? "Your Shopify products and prices are refreshed from the connected store."
-            : "Review your saved pieces. Published Shopify products can be purchased through secure Shopify checkout."
-        }
-      />
-      <main className="wrap content">
+      <div className="cart-page">
+        <header className="cart-hero">
+          <div className="wrap">
+            <span className="eyebrow" data-testid="text-cart-quantity">
+              {meta
+                ? `Your bag · ${displayedShopifyQuantity} ${displayedShopifyQuantity === 1 ? "piece" : "pieces"}`
+                : "Your bag · Chenetha by Koushikii"}
+            </span>
+            <h1>Your bag, beautifully considered.</h1>
+            <p>
+              {meta
+                ? "Review your handloom pieces before continuing to secure Shopify checkout."
+                : "Review your saved pieces. Published Shopify sarees can be purchased through secure Shopify checkout."}
+            </p>
+          </div>
+        </header>
+        <main className="wrap content cart-main">
         {meta ? (
           <ShopifyBag
             cart={shopifyCart.data}
@@ -102,32 +117,38 @@ export function Cart() {
             }}
           />
         ) : sampleCart.length ? (
-          <div className="two-col">
-            <section>
-              <div className="row">
-                <span className="eyebrow">Sample selections ({sampleCart.reduce((sum, item) => sum + item.qty, 0)})</span>
+          <div className="cart-layout">
+            <section className="cart-items">
+              <div className="cart-list-head">
+                <span className="eyebrow" data-testid="text-cart-items-count">
+                  Sample selections · {sampleCart.reduce((sum, item) => sum + item.qty, 0)}{" "}
+                  {sampleCart.reduce((sum, item) => sum + item.qty, 0) === 1 ? "piece" : "pieces"}
+                </span>
                 <a className="link" href={base + "Collections"}>Continue exploring</a>
               </div>
               {sampleProducts.map((product) => {
                 const row = sampleCart.find((item) => item.id === product.id)!;
                 return (
-                  <article key={product.id} className="cartrow" data-testid={`row-cart-item-${product.id}`}>
-                    <a href={`${base}Product?id=${encodeURIComponent(product.id)}`} aria-label={`View ${product.name}`}>
-                      <span className={`textile s${products.indexOf(product) % 6 + 1}`} style={{ display: "block", width: 100, height: 125 }} />
+                  <article key={product.id} className="cart-product" data-testid={`row-cart-item-${product.id}`}>
+                    <a className="cart-product-image" href={`${base}Product?id=${encodeURIComponent(product.id)}`} aria-label={`View ${product.name}`}>
+                      <span className={`textile s${products.indexOf(product) % 6 + 1}`} role="img" aria-label={`${product.name} illustrative textile pattern`} />
+                      <span className="cart-image-caption">Illustrative design</span>
                     </a>
-                    <div>
-                      <a href={`${base}Product?id=${encodeURIComponent(product.id)}`}><h3>{product.name}</h3></a>
-                      <p className="muted">{product.type} · {product.weave}</p>
-                      <Qty value={row.qty} onChange={(quantity) => saveItems("kq-cart", sampleCart.map((item) => item.id === product.id ? { ...item, qty: quantity } : item))} />
+                    <div className="cart-product-copy">
+                      <span className="eyebrow">{product.weave} · {product.type}</span>
+                      <a href={`${base}Product?id=${encodeURIComponent(product.id)}`}><h2>{product.name}</h2></a>
+                      <p>Preview catalogue item</p>
+                      <div className="cart-quantity">
+                        <Qty value={row.qty} onChange={(quantity) => saveItems("kq-cart", sampleCart.map((item) => item.id === product.id ? { ...item, qty: quantity } : item))} />
+                      </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <b>{format(product.price * row.qty)}</b>
-                      <br />
+                    <div className="cart-product-price">
+                      <strong>{format(product.price * row.qty)}</strong>
                       <button
-                        className="link"
-                        style={{ marginTop: 14, border: 0, background: "none" }}
+                        className="cart-remove"
                         type="button"
                         onClick={() => saveItems("kq-cart", sampleCart.filter((item) => item.id !== product.id))}
+                        aria-label={`Remove ${product.name} from sample selections`}
                       >
                         <Trash2 size={13} /> Remove
                       </button>
@@ -135,13 +156,26 @@ export function Cart() {
                   </article>
                 );
               })}
+              <div className="cart-note">
+                <Check size={16} aria-hidden="true" />
+                <p>These are sample designs only. They are not included in Shopify checkout and cannot be purchased.</p>
+              </div>
             </section>
-            <aside className="panel">
-              <span className="eyebrow">Sample catalogue only</span>
-              <h3 style={{ margin: "10px 0 22px" }}>These are not Shopify products.</h3>
-              <div className="row"><span>Illustrative subtotal</span><b>{format(moneySub(sampleCart))}</b></div>
-              <p className="muted">Sample items cannot be purchased. Add a verified, published Shopify product to use Shopify checkout.</p>
-              <a className="btn outline" style={{ width: "100%", marginTop: 20 }} href={base + "Checkout"}>Prepare a product enquiry <ArrowRight size={14} /></a>
+            <aside className="panel cart-summary">
+              <div className="summary-heading">
+                <div>
+                  <span className="eyebrow">Preview only</span>
+                  <h2>Sample selection</h2>
+                </div>
+                <span className="summary-mark" aria-hidden="true"><ShoppingBag size={18} /></span>
+              </div>
+              <div className="summary-lines">
+                <div className="row"><span>Illustrative subtotal</span><b>{format(moneySub(sampleCart))}</b></div>
+                <div className="row summary-total"><strong>Payable total</strong><strong>Not available</strong></div>
+              </div>
+              <p className="muted">Sample items cannot be purchased. Add a verified, published Shopify saree to use secure checkout.</p>
+              <a className="btn outline cart-checkout" href={base + "Collections"}>Browse available sarees <ArrowRight size={14} /></a>
+              <p className="secure-caption">Shopify products and checkout are required to place an order.</p>
             </aside>
           </div>
         ) : (
@@ -151,9 +185,9 @@ export function Cart() {
         )}
 
         {meta && sampleCart.length > 0 && (
-          <section className="panel shopify-sample-selections">
-            <span className="eyebrow">Separate sample selections</span>
-            <p className="muted">Illustrative sample items are not included in Shopify checkout.</p>
+          <section className="panel shopify-sample-selections cart-sample-note">
+            <span className="eyebrow">Separate sample selections · not in your Shopify bag</span>
+            <p className="muted">These illustrative items are not included in checkout. Remove them here to clear your sample list.</p>
             {sampleProducts.map((product) => {
               const row = sampleCart.find((item) => item.id === product.id)!;
               return (
@@ -165,7 +199,8 @@ export function Cart() {
             })}
           </section>
         )}
-      </main>
+        </main>
+      </div>
     </Shell>
   );
 }
@@ -215,13 +250,20 @@ function ShopifyBag({
   const { user } = useUser();
 
   if (isLoading) {
-    return <div className="shopify-catalog-status" role="status">Refreshing your Shopify bag…</div>;
+    return <div className="cart-state cart-loading" role="status">
+      <span className="eyebrow">Refreshing your bag</span>
+      <h2>Gathering your pieces.</h2>
+      <p>We’re checking your latest bag details with Shopify.</p>
+      <div className="cart-loading-row" aria-hidden="true"><span /><div><i /><i /><i /></div></div>
+    </div>;
   }
 
   if (isError || !cart) {
     return (
-      <div className="panel" role="alert">
+      <div className="cart-state" role="alert">
+        <span className="state-symbol"><RefreshCw size={20} /></span>
         <span className="eyebrow">Shopify bag unavailable</span>
+        <h2>Your saved bag could not be refreshed.</h2>
         <p className="muted" data-testid="error-shopify-cart-load">
           {getCartUpdateErrorMessage(loadError) || "Your saved Shopify cart may have expired, or Shopify could not be reached."}
         </p>
@@ -235,10 +277,11 @@ function ShopifyBag({
 
   if (cart.totalQuantity < 1 || !cart.lines.some((line) => line.quantity > 0)) {
     return (
-      <div className="empty">
+      <div className="empty cart-empty">
+        <span className="state-symbol"><ShoppingBag size={20} /></span>
         <span className="eyebrow">Shopify bag</span>
-        <h2>Your Shopify bag is empty.</h2>
-        <p>Add an available product from the collection to continue.</p>
+        <h2>Your bag is taking a quiet moment.</h2>
+        <p>Explore the collection and add an available handloom saree to continue.</p>
         <button className="link" type="button" onClick={onClear}>Clear this saved bag</button>
         <a className="btn" href={base + "Collections"}>Browse sarees <ArrowRight size={14} /></a>
       </div>
@@ -292,60 +335,76 @@ function ShopifyBag({
   }
 
   return (
-    <div className="two-col">
-      <section>
-        <div className="row">
-          <span className="eyebrow">Shopify products ({cart.totalQuantity})</span>
+    <div className="cart-layout">
+      <section className="cart-items">
+        <div className="cart-list-head">
+          <span className="eyebrow" data-testid="text-cart-items-count">
+            Shopify products · {cart.totalQuantity} {cart.totalQuantity === 1 ? "piece" : "pieces"}
+          </span>
           <a className="link" href={base + "Collections"}>Continue exploring</a>
         </div>
         {updateErrorMessage && (
-          <p className="notice" role="alert">
+          <p className="notice cart-action-notice" role="alert">
             Shopify couldn’t update your bag: {updateErrorMessage} Your saved bag is unchanged. Please try again.
           </p>
         )}
         {cart.lines.map((line) => (
-          <article className="cartrow shopify-cart-row" key={line.id}>
-            <a href={`${base}Product?shopify=${encodeURIComponent(line.productHandle)}`} aria-label={`View ${line.productTitle}`}>
+          <article className="cart-product shopify-cart-row" key={line.id}>
+            <a className="cart-product-image" href={`${base}Product?shopify=${encodeURIComponent(line.productHandle)}`} aria-label={`View ${line.productTitle}`}>
               {line.image ? (
                 <img src={line.image.url} alt={line.image.altText || line.productTitle} />
               ) : (
                 <span className="shopify-cart-no-image">Photo not available</span>
               )}
             </a>
-            <div>
-              <a href={`${base}Product?shopify=${encodeURIComponent(line.productHandle)}`}><h3>{line.productTitle}</h3></a>
-              <p className="muted">{line.variantTitle}</p>
+            <div className="cart-product-copy">
+              <span className="eyebrow">Handloom saree</span>
+              <a href={`${base}Product?shopify=${encodeURIComponent(line.productHandle)}`}><h2>{line.productTitle}</h2></a>
+              <p className="cart-variant">{line.variantTitle}</p>
               {line.isDemo && <span className="pill shopify-demo-badge-inline">Demo only · not for sale</span>}
-              <Qty value={line.quantity} onChange={(quantity) => onQuantityChange(line.id, quantity)} />
+              {!line.availableForSale && <span className="pill cart-unavailable-badge">Currently unavailable</span>}
+              <div className="cart-quantity">
+                <Qty value={line.quantity} onChange={(quantity) => onQuantityChange(line.id, quantity)} />
+              </div>
             </div>
-            <div className="shopify-cart-line-total">
-              <b>{formatShopifyMoney(String(Number(line.unitPrice) * line.quantity), line.currencyCode)}</b>
-              <br />
-              <button className="link" type="button" disabled={isUpdating} onClick={() => onQuantityChange(line.id, 0)}>
+            <div className="cart-product-price shopify-cart-line-total">
+              <strong>{formatShopifyMoney(String(Number(line.unitPrice) * line.quantity), line.currencyCode)}</strong>
+              <button className="cart-remove" type="button" disabled={isUpdating} onClick={() => onQuantityChange(line.id, 0)}>
                 <Trash2 size={13} /> Remove
               </button>
             </div>
           </article>
         ))}
         {isUpdating && <p role="status" className="muted">Updating your Shopify bag…</p>}
+        <div className="cart-note">
+          <Check size={16} aria-hidden="true" />
+          <p>Your chosen pieces and current prices are synced from Shopify. Delivery and taxes are confirmed at checkout.</p>
+        </div>
       </section>
 
-      <aside className="panel">
-        <span className="eyebrow">Shopify order summary</span>
-        <h3 style={{ margin: "10px 0 22px" }}>Your selected sarees</h3>
-        <div className="row">
-          <span>Subtotal before discounts</span>
-          <b data-testid="text-shopify-cart-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</b>
-        </div>
-        {Number(cart.discountAmount) > 0 && (
-          <div className="row" style={{ marginTop: 10 }}>
-            <span>Discount savings</span>
-            <b data-testid="text-shopify-cart-discount">-{formatShopifyMoney(cart.discountAmount, cart.currencyCode)}</b>
+      <aside className="panel cart-summary">
+        <div className="summary-heading">
+          <div>
+            <span className="eyebrow">Your order</span>
+            <h2>Selected with care.</h2>
           </div>
-        )}
-        <div className="row" style={{ marginTop: 10 }}>
-          <strong>Estimated total</strong>
-          <strong data-testid="text-shopify-cart-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
+          <span className="summary-mark" aria-hidden="true"><ShoppingBag size={18} /></span>
+        </div>
+        <div className="summary-lines">
+          <div className="row">
+            <span>Subtotal before discounts</span>
+            <b data-testid="text-shopify-cart-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</b>
+          </div>
+          {Number(cart.discountAmount) > 0 && (
+            <div className="row">
+              <span>Discount savings</span>
+              <b data-testid="text-shopify-cart-discount">−{formatShopifyMoney(cart.discountAmount, cart.currencyCode)}</b>
+            </div>
+          )}
+          <div className="row summary-total">
+            <strong>Estimated total</strong>
+            <strong data-testid="text-shopify-cart-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
+          </div>
         </div>
         <form
           onSubmit={(event) => {
@@ -353,11 +412,11 @@ function ShopifyBag({
             const code = discountCode.trim();
             if (code) onDiscountCodesChange(cart.id, [code]);
           }}
-          style={{ display: "grid", gap: 8, marginTop: 20 }}
+          className="cart-discount"
           aria-label="Apply a discount code"
         >
-          <label htmlFor="shopify-discount-code" className="eyebrow">Discount code</label>
-          <div className="row" style={{ gap: 8 }}>
+          <label htmlFor="shopify-discount-code">Have a discount code?</label>
+          <div className="discount-entry">
             <input
               id="shopify-discount-code"
               data-testid="input-shopify-discount-code"
@@ -366,10 +425,9 @@ function ShopifyBag({
               autoComplete="off"
               maxLength={128}
               placeholder="Enter your code"
-              style={{ flex: 1, minWidth: 0, padding: "11px 12px", border: "1px solid var(--line)", background: "#fffaf2" }}
             />
             <button
-              className="btn small"
+              className="btn small outline"
               data-testid="button-apply-shopify-discount"
               type="submit"
               disabled={!discountCode.trim() || isApplyingDiscount}
@@ -379,13 +437,13 @@ function ShopifyBag({
           </div>
         </form>
         {discountErrorMessage && (
-          <p className="notice" role="alert" data-testid="notice-shopify-discount-error">
+          <p className="notice cart-action-notice" role="alert" data-testid="notice-shopify-discount-error">
             Shopify couldn’t update this code: {discountErrorMessage}
           </p>
         )}
         {cart.discountCodes.map((discount) => (
           <p
-            className={discount.applicable ? "muted" : "notice"}
+            className={discount.applicable ? "discount-status is-applied" : "discount-status is-rejected"}
             role={discount.applicable ? "status" : "alert"}
             data-testid={discount.applicable ? "status-shopify-discount" : "notice-shopify-discount"}
             key={discount.code}
@@ -397,7 +455,7 @@ function ShopifyBag({
         ))}
         {cart.discountCodes.length > 0 && (
           <button
-            className="link"
+            className="link remove-discount"
             data-testid="button-remove-shopify-discount"
             type="button"
             disabled={isApplyingDiscount}
@@ -407,9 +465,10 @@ function ShopifyBag({
           </button>
         )}
         {profileLoading && signedIn ? (
-          <p className="muted" role="status">Loading your saved checkout details…</p>
+          <p className="muted cart-address-loading" role="status">Loading your saved checkout details…</p>
         ) : selectedAddress ? (
-          <div className="guide-note" style={{ marginTop: 18 }}>
+          <div className="saved-address">
+            <span className="eyebrow">Checkout details</span>
             {savedAddresses.length > 1 ? (
               <label className="field" htmlFor="shopify-saved-address">
                 Use a saved delivery address
@@ -428,23 +487,21 @@ function ShopifyBag({
               </label>
             ) : (
               <>
-                <span className="eyebrow">Saved delivery address</span>
-                <p style={{ margin: "8px 0 0" }}>
+                <p className="address-preview">
                   {selectedAddress.recipient} · {selectedAddress.city}, {selectedAddress.state} {selectedAddress.pin}
                 </p>
               </>
             )}
-            <p className="muted" style={{ fontSize: 12, marginBottom: 0 }}>
+            <p className="address-footnote">
               Continue with this address to send it, along with your saved contact details, to Shopify checkout.
             </p>
             {(checkoutPrepErrorMessage || checkoutError) && (
-              <p className="notice" role="alert" data-testid="error-shopify-checkout-prefill">
+              <p className="notice cart-action-notice" role="alert" data-testid="error-shopify-checkout-prefill">
                 {checkoutPrepErrorMessage || checkoutError}
               </p>
             )}
             <button
-              className="btn"
-              style={{ width: "100%", marginTop: 14 }}
+              className="btn cart-checkout"
               type="button"
               data-testid="button-continue-shopify-checkout-with-profile"
               onClick={() => void continueWithSavedAddress()}
@@ -453,30 +510,37 @@ function ShopifyBag({
               {isPreparingCheckout ? "Preparing secure checkout…" : "Continue to Shopify with saved details"}
               <ArrowRight size={14} />
             </button>
+            <p className="secure-caption"><LockKeyhole size={12} /> Payment details stay with Shopify <span aria-hidden="true">·</span> <ShieldCheck size={12} /> Secure checkout</p>
           </div>
         ) : signedIn && !profileLoading ? (
-          <p className="muted" style={{ marginTop: 18 }}>
-            Save a delivery address in <a className="link" href={base + "Profile#saved-addresses"}>My profile</a> to prefill Shopify checkout. Otherwise, Shopify will ask for it there.
-          </p>
+          <div className="saved-address saved-address-empty">
+            <span className="eyebrow">Checkout details</span>
+            <p className="muted">
+              Save a delivery address in <a className="link" href={base + "Profile#saved-addresses"}>My profile</a> to prefill Shopify checkout. Otherwise, Shopify will ask for it there.
+            </p>
+            {checkoutPrepErrorMessage && <p className="notice cart-action-notice" role="alert">{checkoutPrepErrorMessage}</p>}
+          </div>
         ) : null}
-        <p className="muted">Shopify may adjust delivery, taxes, and the final payable amount at checkout.</p>
         {hasUnavailableLine ? (
-          <p className="notice" role="alert">A demo or unavailable listing is in this bag. Remove it or update its Shopify details before checkout.</p>
+          <p className="notice cart-action-notice" role="alert">A demo or unavailable listing is in this bag. Remove it or update its Shopify details before checkout.</p>
         ) : !canCheckout ? (
-          <p className="notice" role="alert">Shopify could not provide a secure checkout link for this bag. Refresh your bag and try again.</p>
+          <p className="notice cart-action-notice" role="alert">Shopify could not provide a secure checkout link for this bag. Refresh your bag and try again.</p>
         ) : selectedAddress ? (
-          <p className="muted" style={{ fontSize: 12 }}>Your saved address is ready to prefill above. Continue there to send it securely to Shopify.</p>
+          <p className="address-footnote">Your saved address is ready to prefill above. Continue there to send it securely to Shopify.</p>
         ) : profileLoading && signedIn ? (
           <div>
             <p className="muted" role="status">Loading your saved checkout details…</p>
-            <a className="link" href={checkoutHref!}>Continue without prefill</a>
+            <a className="link" href={checkoutHref!} data-testid="link-shopify-checkout">Continue without prefill</a>
           </div>
         ) : (
-          <a className="btn" style={{ width: "100%", marginTop: 18 }} href={checkoutHref!} data-testid="link-shopify-checkout">
-            Continue to secure Shopify checkout <ArrowRight size={14} />
-          </a>
+          <div className="cart-checkout-block">
+            <a className="btn cart-checkout" href={checkoutHref!} data-testid="link-shopify-checkout">
+              Continue to secure Shopify checkout <ArrowRight size={14} />
+            </a>
+            <p className="secure-caption"><LockKeyhole size={12} /> Payment details stay with Shopify <span aria-hidden="true">·</span> <ShieldCheck size={12} /> Secure checkout</p>
+          </div>
         )}
-        <p className="muted" style={{ fontSize: 11 }}>You can review or edit the delivery details at Shopify checkout. Payment details stay with Shopify.</p>
+        <p className="address-footnote cart-summary-footnote">Shopify confirms delivery, taxes, and your final payable amount at checkout.</p>
       </aside>
     </div>
   );

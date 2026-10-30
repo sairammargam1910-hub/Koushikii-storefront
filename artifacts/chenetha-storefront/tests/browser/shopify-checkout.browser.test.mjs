@@ -244,8 +244,8 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
   assert.equal(await viewBagLink.getAttribute("href"), "/Cart");
   await viewBagLink.click();
   await page.waitForURL("**/Cart", { timeout: 5000 });
-  await page.getByText("Your bag · Shopify (1)", { exact: true }).waitFor({ timeout: 5000 });
-  await page.getByText("Shopify products (1)", { exact: true }).waitFor({ timeout: 5000 });
+  await page.getByTestId("text-cart-quantity").getByText(/Your bag · 1 piece/).waitFor({ timeout: 5000 });
+  await page.getByTestId("text-cart-items-count").getByText(/Shopify products · 1 piece/).waitFor({ timeout: 5000 });
   const cartCheckoutLink = page.getByTestId("link-shopify-checkout");
   await cartCheckoutLink.waitFor();
   assert.equal(await cartCheckoutLink.getAttribute("href"), checkoutUrl);

@@ -4,6 +4,7 @@ export const modules: ModuleMap = {
   "./components/mockups/koushikii/Account.tsx": () => import("../components/mockups/koushikii/Account.tsx"),
   "./components/mockups/koushikii/Article.tsx": () => import("../components/mockups/koushikii/Article.tsx"),
   "./components/mockups/koushikii/Cart.tsx": () => import("../components/mockups/koushikii/Cart.tsx"),
+  "./components/mockups/koushikii/CartRedesign.tsx": () => import("../components/mockups/koushikii/CartRedesign.tsx"),
   "./components/mockups/koushikii/Checkout.tsx": () => import("../components/mockups/koushikii/Checkout.tsx"),
   "./components/mockups/koushikii/Collections.tsx": () => import("../components/mockups/koushikii/Collections.tsx"),
   "./components/mockups/koushikii/Confirmation.tsx": () => import("../components/mockups/koushikii/Confirmation.tsx"),
