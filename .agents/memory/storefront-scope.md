@@ -91,3 +91,9 @@ The handover client wants one merchant workspace for Shopify products and discou
 **Why:** The user explicitly asked for these controls so the client can run this single-store storefront without working directly in Shopify for everyday site content.
 
 **How to apply:** Keep Shopify authoritative for products, prices, discounts, checkout, shipping, and payments. Use the merchant workspace for uploaded site media and editorial content; publish only exact customer quotes the client has approved.
+
+Draft content previews must stay inside the authorized merchant workspace, render without saving or publishing, and never create a public preview URL. Unpublished media must not be retrievable through public media routes.
+
+**Why:** The user’s preview task requires real storefront previews for every content type while ensuring drafts stay private and publication remains explicit.
+
+**How to apply:** Render the current editor state with shared storefront components, keep public content responses filtered to published/approved records, and gate media that has no published reference behind merchant authorization.

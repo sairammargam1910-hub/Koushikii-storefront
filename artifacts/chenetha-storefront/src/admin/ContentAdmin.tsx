@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CircleAlert, Film, ImagePlus, MessageSquareQuote, Pencil, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
+import { CircleAlert, Eye, Film, ImagePlus, MessageSquareQuote, Pencil, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import {
   getGetAdminSiteContentQueryKey, getGetSiteContentQueryKey,
   useCreateSiteContent, useDeleteSiteContent, useGetAdminSiteContent,
@@ -8,6 +8,7 @@ import {
   type SiteContentInput, type SiteContentItem,
 } from "@workspace/api-client-react";
 import { AdminLayout } from "./Admin";
+import { ContentPreview } from "./ContentPreview";
 import "./ContentAdmin.css";
 
 type Kind = SiteContentInput["kind"];
@@ -49,12 +50,25 @@ function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem; kind: 
     sortOrder: item.sortOrder, published: item.published, approved: item.approved,
   } : emptyDraft(kind));
   const [error, setError] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [progress, setProgress] = useState<{ label: string; value: number } | null>(null);
   const [previews, setPreviews] = useState<{ imageUrl?: string; mediaUrl?: string }>({});
   const localPreviewUrls = useRef<string[]>([]);
+  const previewTriggerRef = useRef<HTMLButtonElement>(null);
+  const hadPreviewOpen = useRef(false);
   const busy = create.isPending || update.isPending || requestUpload.isPending || !!progress;
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft(current => ({ ...current, [key]: value }));
   useEffect(() => () => localPreviewUrls.current.forEach(URL.revokeObjectURL), []);
+  useEffect(() => {
+    if (previewOpen) {
+      hadPreviewOpen.current = true;
+      return;
+    }
+    if (hadPreviewOpen.current) {
+      previewTriggerRef.current?.focus();
+      hadPreviewOpen.current = false;
+    }
+  }, [previewOpen]);
   const upload = async (file: File, field: "imageUrl" | "mediaUrl") => {
     const isVideo = field === "mediaUrl";
     const validTypes = isVideo ? acceptedVideo : acceptedImage;
@@ -99,8 +113,9 @@ function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem; kind: 
     if (item) update.mutate({ id: item.id, data: payload }, options);
     else create.mutate({ data: payload }, options);
   };
-  return <div className="modal-backdrop content-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-    <section className="admin-modal content-editor" role="dialog" aria-modal="true" aria-labelledby="content-editor-title">
+  return <>
+   <div className="modal-backdrop content-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <section className="admin-modal content-editor" role="dialog" aria-modal="true" aria-hidden={previewOpen} aria-labelledby="content-editor-title">
       <header className="modal-head"><div><span className="eyebrow">STOREFRONT CONTENT</span><h2 id="content-editor-title">{item ? "Edit" : "Add"} {labels[kind].replace(/s$/, "").toLowerCase()}</h2></div><button className="icon-button" type="button" disabled={busy} onClick={onClose} aria-label="Close"><X size={18}/></button></header>
       <form className="admin-form" onSubmit={submit}>
         <label>Title<input required maxLength={180} value={draft.title} onChange={event => set("title", event.target.value)} placeholder="A clear working title"/></label>
@@ -117,10 +132,18 @@ function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem; kind: 
         <div className="form-row"><label>Display order<input type="number" min="0" max="10000" value={draft.sortOrder} onChange={event => set("sortOrder", Number(event.target.value))}/></label><label className="check-line content-publish"><input type="checkbox" checked={draft.published} onChange={event => set("published", event.target.checked)}/><span><b>Publish</b><small>Visible on the public storefront.</small></span></label></div>
         {progress && <div className="content-upload-progress" role="status"><span>{progress.label}</span><progress max="100" value={progress.value}/><b>{progress.value}%</b></div>}
         {error && <p className="form-error" role="alert">{error}</p>}
-        <div className="modal-actions"><button className="button button-quiet" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="button button-primary" type="submit" disabled={busy || !draft.title.trim()}>{busy ? "Working…" : item ? "Save changes" : "Save content"}</button></div>
+         <div className="modal-actions content-editor-actions"><button ref={previewTriggerRef} className="button button-quiet" type="button" disabled={busy} onClick={() => setPreviewOpen(true)}><Eye size={15}/> Preview</button><span className="content-editor-actions-spacer"/><button className="button button-quiet" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="button button-primary" type="submit" disabled={busy || !draft.title.trim()}>{busy ? "Working…" : item ? "Save changes" : "Save content"}</button></div>
       </form>
     </section>
-  </div>;
+   </div>
+   {previewOpen && <ContentPreview
+     draft={draft}
+     imageUrl={previews.imageUrl || draft.imageUrl}
+     mediaUrl={previews.mediaUrl || draft.mediaUrl}
+     product={shopify.data?.products.find(product => product.id === draft.linkedProductId)}
+     onClose={() => setPreviewOpen(false)}
+   />}
+  </>;
 }
 
 function MediaField({ label, url, required, accept, video, onFile, onUrl }: { label: string; url: string | null | undefined; required?: boolean; accept: string; video?: boolean; onFile: (file: File) => void; onUrl: (url: string) => void }) {

@@ -1,8 +1,23 @@
 import { ArrowRight, CircleAlert, Film } from "lucide-react";
-import { useGetSiteContent, getGetSiteContentQueryKey } from "@workspace/api-client-react";
+import { useGetSiteContent, getGetSiteContentQueryKey, type ShopifyProduct, type SiteContentItem } from "@workspace/api-client-react";
 import { Shell, base } from "./_shared";
 import { useShopifyCatalog } from "./ShopifyCatalog";
 import "./_video-commerce.css";
+
+export function VideoPostCard({ post, product, disableProductLink = false }: {
+  post: SiteContentItem;
+  product?: Pick<ShopifyProduct, "title" | "handle">;
+  disableProductLink?: boolean;
+}) {
+  return <article className="video-card" role="listitem">
+    <div className="video-poster"><video src={post.mediaUrl || undefined} controls playsInline preload="metadata" poster={post.imageUrl || undefined} aria-label={post.title}/></div>
+    <div className="video-card-copy">{post.eyebrow && <span className="eyebrow">{post.eyebrow}</span>}<h3>{post.title}</h3>{post.body && <p>{post.body}</p>}
+      {product && <div className="video-card-product">{disableProductLink
+        ? <span aria-disabled="true">{product.title}</span>
+        : <a href={base + "Product?shopify=" + encodeURIComponent(product.handle)}>{product.title}</a>}<ArrowRight size={14}/></div>}
+    </div>
+  </article>;
+}
 
 export function Videos() {
   const content = useGetSiteContent({ query: { queryKey: getGetSiteContentQueryKey(), staleTime: 60_000 } });
@@ -18,12 +33,7 @@ export function Videos() {
           content.isError ? <div className="video-empty" role="alert"><CircleAlert size={22}/><h3>Videos could not load</h3><p>{content.error instanceof Error ? content.error.message : "Please try again."}</p><button className="video-retry" onClick={() => void content.refetch()}>Try again</button></div> :
           posts.length ? <div className="video-card-grid" role="list" aria-label="Published video posts">{posts.map(post => {
             const product = post.linkedProductId ? products.find(item => item.id === post.linkedProductId) : undefined;
-            return <article className="video-card" role="listitem" key={post.id}>
-              <div className="video-poster"><video src={post.mediaUrl || undefined} controls playsInline preload="metadata" poster={post.imageUrl || undefined} aria-label={post.title}/></div>
-              <div className="video-card-copy">{post.eyebrow && <span className="eyebrow">{post.eyebrow}</span>}<h3>{post.title}</h3>{post.body && <p>{post.body}</p>}
-                {product && <div className="video-card-product"><a href={base + "Product?shopify=" + encodeURIComponent(product.handle)}>{product.title}</a><ArrowRight size={14}/></div>}
-              </div>
-            </article>;
+             return <VideoPostCard key={post.id} post={post} product={product}/>;
           })}</div> :
           <div className="video-empty"><span className="video-empty-icon"><Film size={22}/></span><h3>No videos published yet</h3><p>New videos will appear here when the store publishes them.</p></div>}
         {catalog.isError && posts.some(post => post.linkedProductId) && <p className="video-product-note">Product details could not be loaded. Linked items will appear when the live Shopify catalog is available.</p>}

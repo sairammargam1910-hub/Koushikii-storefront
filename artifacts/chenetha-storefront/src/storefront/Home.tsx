@@ -72,7 +72,7 @@ function StaticHomeHeroCarousel(){
   </div>
  </section>
 }
-function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
+export function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
  const [active,setActive]=useState(0);
  useEffect(()=>{if(slides.length<2)return;const timer=window.setInterval(()=>setActive(index=>(index+1)%slides.length),6000);return()=>window.clearInterval(timer)},[slides.length]);
  const activeIndex=active%slides.length;
@@ -234,14 +234,14 @@ function IndiaWeaves(){
   </div></div>
  </div></section>
 }
-function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];placement:"fabric_tile"|"weave_tile"}){
+export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];placement:"fabric_tile"|"weave_tile"}){
  const fallback=placement==="fabric_tile"?base+"Collections?category=Sarees":base+"Collections";
  return <div className={placement==="fabric_tile"?"fabric-grid":"weave-grid"}>{items.map((item,index)=><a key={item.id} className={placement==="fabric_tile"?"fabric-card":""} href={item.ctaUrl||fallback}>
   <img className="dynamic-home-tile-image" src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
   <h3>{item.title}</h3>{item.body&&<p>{item.body}</p>}{item.ctaLabel&&<span className="link">{item.ctaLabel} →</span>}
  </a>)}</div>;
 }
-function Reviews({items}:{items:SiteContentItem[]}){
+export function Reviews({items}:{items:SiteContentItem[]}){
   const customerVoices=items;
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);

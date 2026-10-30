@@ -12,17 +12,16 @@ import {
   UpdateSiteContentResponse,
 } from "@workspace/api-zod";
 import { db, siteContentTable, type SiteContent } from "@workspace/db";
-import { asc, eq } from "drizzle-orm";
-import { Router } from "express";
+import { and, asc, eq, or } from "drizzle-orm";
+import { Router, type NextFunction, type Request, type Response } from "express";
 import { pipeline } from "node:stream/promises";
 import { requireMerchantAdmin } from "../middlewares/merchantAdminAuth";
 import {
   deleteSiteContentAsset,
   getSiteContentAssetFile,
-  markSiteContentAssetPublic,
+  markSiteContentAssetPrivate,
   requestSiteContentUploadUrl,
   siteContentAssetIdFromUrl,
-  siteContentAssetIsPublic,
   siteContentAssetUrl,
 } from "../lib/siteContentStorage";
 
@@ -119,7 +118,7 @@ async function normalizeMediaUrl(
     if (mediaKind === "video" && (!VIDEO_TYPES.has(mimeType) || size > MAX_VIDEO_BYTES)) {
       throw new Error("Choose an MP4 or WebM video under 200 MB.");
     }
-    await markSiteContentAssetPublic(assetId, ownerId);
+    await markSiteContentAssetPrivate(assetId, ownerId);
     return siteContentAssetUrl(assetId);
   }
 
@@ -295,16 +294,52 @@ router.delete("/site-content/:id", requireMerchantAdmin, async (req, res) => {
   return res.json(DeleteSiteContentResponse.parse({ id: row.id, deleted: true }));
 });
 
-router.get("/site-content/media/:assetId", async (req, res) => {
+async function hasPublishedMediaReference(assetId: string) {
+  const mediaUrl = siteContentAssetUrl(assetId);
+  const [row] = await db.select({
+    kind: siteContentTable.kind,
+    approved: siteContentTable.approved,
+  }).from(siteContentTable)
+    .where(and(
+      eq(siteContentTable.published, true),
+      or(eq(siteContentTable.imageUrl, mediaUrl), eq(siteContentTable.mediaUrl, mediaUrl)),
+    ))
+    .limit(1);
+  return Boolean(row && (row.kind !== "customer_voice" || row.approved));
+}
+
+async function authorizeSiteMedia(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const assetId = req.params.assetId;
-  if (!/^[0-9a-f-]{36}$/i.test(assetId)) {
+  if (typeof assetId !== "string" || !/^[0-9a-f-]{36}$/i.test(assetId)) {
+    res.status(404).json({ error: "Media not found." });
+    return;
+  }
+  try {
+    if (await hasPublishedMediaReference(assetId)) {
+      next();
+      return;
+    }
+    await requireMerchantAdmin(req, res, next);
+  } catch (error) {
+    req.log.error({ err: error }, "Could not verify site media visibility");
+    if (!res.headersSent) res.status(503).json({ error: "Media access is temporarily unavailable." });
+  }
+}
+
+router.get("/site-content/media/:assetId", authorizeSiteMedia, async (req, res) => {
+  const assetId = req.params.assetId;
+  if (typeof assetId !== "string" || !/^[0-9a-f-]{36}$/i.test(assetId)) {
     res.status(404).json({ error: "Media not found." });
     return;
   }
   try {
     const file = await getSiteContentAssetFile(assetId);
     const [exists] = await file.exists();
-    if (!exists || !(await siteContentAssetIsPublic(file))) {
+    if (!exists) {
       res.status(404).json({ error: "Media not found." });
       return;
     }
@@ -341,7 +376,7 @@ router.get("/site-content/media/:assetId", async (req, res) => {
     }
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
     res.setHeader("X-Content-Type-Options", "nosniff");
     await pipeline(file.createReadStream(start === undefined ? {} : { start, end }), res);
   } catch (error) {

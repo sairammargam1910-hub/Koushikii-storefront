@@ -84,27 +84,16 @@ export async function getSiteContentAssetFile(assetId: string): Promise<File> {
   return storage.bucket(bucketName).file(objectName);
 }
 
-export async function markSiteContentAssetPublic(assetId: string, ownerId: string) {
+export async function markSiteContentAssetPrivate(assetId: string, ownerId: string) {
   const file = await getSiteContentAssetFile(assetId);
   const [exists] = await file.exists();
   if (!exists) throw new Error("The uploaded file has not finished uploading.");
   await file.setMetadata({
     metadata: {
-      [ACL_METADATA_KEY]: JSON.stringify({ owner: ownerId, visibility: "public" }),
+      [ACL_METADATA_KEY]: JSON.stringify({ owner: ownerId, visibility: "private" }),
     },
   });
   return file;
-}
-
-export async function siteContentAssetIsPublic(file: File) {
-  const [metadata] = await file.getMetadata();
-  const policy = metadata.metadata?.[ACL_METADATA_KEY];
-  if (typeof policy !== "string") return false;
-  try {
-    return (JSON.parse(policy) as { visibility?: string }).visibility === "public";
-  } catch {
-    return false;
-  }
 }
 
 export async function deleteSiteContentAsset(assetId: string) {
