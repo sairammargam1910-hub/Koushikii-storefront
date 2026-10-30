@@ -1,6 +1,6 @@
 import { ArrowRight, Instagram, MessageCircle } from "lucide-react";
 import type { FormEvent } from "react";
-import { Shell, PageHero, base } from "./_shared";
+import { Shell, PageHero, base, whatsappOrderUrl } from "./_shared";
 
 export function Contact() {
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -14,7 +14,7 @@ export function Contact() {
       data.get("reference") ? `Reference: ${String(data.get("reference")).trim()}` : "",
       `Message: ${String(data.get("message") || "").trim()}`
     ].filter(Boolean).join("\n");
-    window.open(`https://wa.me/916309741049?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    window.open(whatsappOrderUrl(message), "_blank", "noopener,noreferrer");
   };
   return <Shell><PageHero eyebrow="A note to Chenetha" title="Begin with a question." subtitle="About a border, a fabric, a piece you are considering. A useful conversation starts with the small details."/>
     <main className="wrap content"><div className="two-col"><section>
