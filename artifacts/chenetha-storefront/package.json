@@ -10,6 +10,7 @@
     "test:photo-browser": "node --test --test-concurrency=1 tests/browser/product-photo.browser.test.mjs",
     "test:checkout-browser": "node --test --test-concurrency=1 tests/browser/shopify-checkout.browser.test.mjs",
     "test:auth-browser": "node --test --test-concurrency=1 tests/browser/shopper-auth.browser.test.mjs",
+    "test:video-browser": "node --test --test-concurrency=1 tests/browser/video-feed.browser.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
