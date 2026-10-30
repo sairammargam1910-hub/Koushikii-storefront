@@ -30,7 +30,7 @@ export const GetShopifyProductsResponse = zod.object({
   "productType": zod.string(),
   "tags": zod.array(zod.string()),
   "images": zod.array(zod.object({
-  "url": zod.string().url(),
+  "url": zod.url(),
   "altText": zod.string().nullable()
 })),
   "variants": zod.array(zod.object({
@@ -45,7 +45,7 @@ export const GetShopifyProductsResponse = zod.object({
 }))
 }))
 })),
-  "totalPublishedProducts": zod.number().int(),
+  "totalPublishedProducts": zod.int(),
   "truncated": zod.boolean()
 })
 
@@ -55,7 +55,7 @@ export const GetShopifyProductsResponse = zod.object({
  * @summary Get the connected Shopify customer account URL
  */
 export const GetShopifyCustomerAccountResponse = zod.object({
-  "accountUrl": zod.string().url()
+  "accountUrl": zod.url()
 })
 
 
@@ -270,8 +270,8 @@ export const GetShopifyCartQueryParams = zod.object({
 
 export const GetShopifyCartResponse = zod.object({
   "id": zod.string(),
-  "checkoutUrl": zod.string().url().nullable(),
-  "totalQuantity": zod.number().int(),
+  "checkoutUrl": zod.url().nullable(),
+  "totalQuantity": zod.int(),
   "subtotalAmount": zod.string(),
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
@@ -286,13 +286,13 @@ export const GetShopifyCartResponse = zod.object({
   "productHandle": zod.string(),
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
-  "quantity": zod.number().int(),
+  "quantity": zod.int(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
   "isDemo": zod.boolean(),
   "image": zod.union([zod.object({
-  "url": zod.string().url(),
+  "url": zod.url(),
   "altText": zod.string().nullable()
 }),zod.null()])
 }))
@@ -314,13 +314,13 @@ export const addShopifyCartLineBodyQuantityMax = 99;
 export const AddShopifyCartLineBody = zod.object({
   "cartId": zod.string().min(1).max(addShopifyCartLineBodyCartIdMax).optional(),
   "merchandiseId": zod.string().min(1).max(addShopifyCartLineBodyMerchandiseIdMax),
-  "quantity": zod.number().int().min(1).max(addShopifyCartLineBodyQuantityMax)
+  "quantity": zod.int().min(1).max(addShopifyCartLineBodyQuantityMax)
 })
 
 export const AddShopifyCartLineResponse = zod.object({
   "id": zod.string(),
-  "checkoutUrl": zod.string().url().nullable(),
-  "totalQuantity": zod.number().int(),
+  "checkoutUrl": zod.url().nullable(),
+  "totalQuantity": zod.int(),
   "subtotalAmount": zod.string(),
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
@@ -335,13 +335,13 @@ export const AddShopifyCartLineResponse = zod.object({
   "productHandle": zod.string(),
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
-  "quantity": zod.number().int(),
+  "quantity": zod.int(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
   "isDemo": zod.boolean(),
   "image": zod.union([zod.object({
-  "url": zod.string().url(),
+  "url": zod.url(),
   "altText": zod.string().nullable()
 }),zod.null()])
 }))
@@ -367,14 +367,14 @@ export const UpdateShopifyCartLinesBody = zod.object({
   "cartId": zod.string().min(1).max(updateShopifyCartLinesBodyCartIdMax),
   "lines": zod.array(zod.object({
   "id": zod.string().min(1).max(updateShopifyCartLinesBodyLinesItemIdMax),
-  "quantity": zod.number().int().min(updateShopifyCartLinesBodyLinesItemQuantityMin).max(updateShopifyCartLinesBodyLinesItemQuantityMax)
+  "quantity": zod.int().min(updateShopifyCartLinesBodyLinesItemQuantityMin).max(updateShopifyCartLinesBodyLinesItemQuantityMax)
 })).min(1).max(updateShopifyCartLinesBodyLinesMax)
 })
 
 export const UpdateShopifyCartLinesResponse = zod.object({
   "id": zod.string(),
-  "checkoutUrl": zod.string().url().nullable(),
-  "totalQuantity": zod.number().int(),
+  "checkoutUrl": zod.url().nullable(),
+  "totalQuantity": zod.int(),
   "subtotalAmount": zod.string(),
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
@@ -389,13 +389,13 @@ export const UpdateShopifyCartLinesResponse = zod.object({
   "productHandle": zod.string(),
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
-  "quantity": zod.number().int(),
+  "quantity": zod.int(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
   "isDemo": zod.boolean(),
   "image": zod.union([zod.object({
-  "url": zod.string().url(),
+  "url": zod.url(),
   "altText": zod.string().nullable()
 }),zod.null()])
 }))
@@ -421,8 +421,8 @@ export const UpdateShopifyCartDiscountCodesBody = zod.object({
 
 export const UpdateShopifyCartDiscountCodesResponse = zod.object({
   "id": zod.string(),
-  "checkoutUrl": zod.string().url().nullable(),
-  "totalQuantity": zod.number().int(),
+  "checkoutUrl": zod.url().nullable(),
+  "totalQuantity": zod.int(),
   "subtotalAmount": zod.string(),
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
@@ -437,13 +437,13 @@ export const UpdateShopifyCartDiscountCodesResponse = zod.object({
   "productHandle": zod.string(),
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
-  "quantity": zod.number().int(),
+  "quantity": zod.int(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
   "isDemo": zod.boolean(),
   "image": zod.union([zod.object({
-  "url": zod.string().url(),
+  "url": zod.url(),
   "altText": zod.string().nullable()
 }),zod.null()])
 }))
@@ -473,7 +473,7 @@ export const updateShopifyCartBuyerIdentityBodyDeliveryAddressPinRegExp = new Re
 
 export const UpdateShopifyCartBuyerIdentityBody = zod.object({
   "cartId": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyCartIdMax),
-  "email": zod.string().email().max(updateShopifyCartBuyerIdentityBodyEmailMax).optional(),
+  "email": zod.email().max(updateShopifyCartBuyerIdentityBodyEmailMax).optional(),
   "phone": zod.string().max(updateShopifyCartBuyerIdentityBodyPhoneMax).optional(),
   "deliveryAddress": zod.object({
   "recipient": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressRecipientMax),
@@ -486,8 +486,8 @@ export const UpdateShopifyCartBuyerIdentityBody = zod.object({
 
 export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
   "id": zod.string(),
-  "checkoutUrl": zod.string().url().nullable(),
-  "totalQuantity": zod.number().int(),
+  "checkoutUrl": zod.url().nullable(),
+  "totalQuantity": zod.int(),
   "subtotalAmount": zod.string(),
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
@@ -502,13 +502,13 @@ export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
   "productHandle": zod.string(),
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
-  "quantity": zod.number().int(),
+  "quantity": zod.int(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
   "isDemo": zod.boolean(),
   "image": zod.union([zod.object({
-  "url": zod.string().url(),
+  "url": zod.url(),
   "altText": zod.string().nullable()
 }),zod.null()])
 }))
@@ -520,7 +520,7 @@ export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
  * @summary Stage a product photo in Shopify (merchant only)
  */
 export const UploadShopifyAdminImageResponse = zod.object({
-  "resourceUrl": zod.string().url()
+  "resourceUrl": zod.url()
 })
 
 
@@ -538,12 +538,12 @@ export const GetShopifyAdminProductsResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
-  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
   "selectedOptions": zod.array(zod.object({
@@ -554,7 +554,7 @@ export const GetShopifyAdminProductsResponse = zod.object({
   "locationId": zod.string(),
   "locationName": zod.string(),
   "active": zod.boolean(),
-  "available": zod.number().int()
+  "available": zod.int()
 }))
 })),
   "options": zod.array(zod.object({
@@ -595,8 +595,8 @@ export const CreateShopifyAdminProductBody = zod.object({
   "productType": zod.string().max(createShopifyAdminProductBodyProductTypeMax),
   "tags": zod.array(zod.string().max(createShopifyAdminProductBodyTagsItemMax)).max(createShopifyAdminProductBodyTagsMax),
   "price": zod.number().gt(createShopifyAdminProductBodyPriceExclusiveMin),
-  "inventoryQuantity": zod.number().int().min(createShopifyAdminProductBodyInventoryQuantityMin),
-  "imageUrl": zod.string().url().nullish(),
+  "inventoryQuantity": zod.int().min(createShopifyAdminProductBodyInventoryQuantityMin),
+  "imageUrl": zod.url().nullish(),
   "publishToWebsite": zod.boolean()
 })
 
@@ -610,12 +610,12 @@ export const CreateShopifyAdminProductResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
-  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
   "selectedOptions": zod.array(zod.object({
@@ -626,7 +626,7 @@ export const CreateShopifyAdminProductResponse = zod.object({
   "locationId": zod.string(),
   "locationName": zod.string(),
   "active": zod.boolean(),
-  "available": zod.number().int()
+  "available": zod.int()
 }))
 })),
   "options": zod.array(zod.object({
@@ -659,7 +659,7 @@ export const GetShopifyAdminInventoryResponse = zod.object({
   "locationId": zod.string(),
   "locationName": zod.string(),
   "active": zod.boolean(),
-  "available": zod.number().int()
+  "available": zod.int()
 }))
 }))
 })
@@ -686,12 +686,12 @@ export const GetShopifyAdminProductResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
-  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
   "selectedOptions": zod.array(zod.object({
@@ -702,7 +702,7 @@ export const GetShopifyAdminProductResponse = zod.object({
   "locationId": zod.string(),
   "locationName": zod.string(),
   "active": zod.boolean(),
-  "available": zod.number().int()
+  "available": zod.int()
 }))
 })),
   "options": zod.array(zod.object({
@@ -746,7 +746,7 @@ export const UpdateShopifyAdminProductBody = zod.object({
   "description": zod.string().max(updateShopifyAdminProductBodyDescriptionMax).optional(),
   "productType": zod.string().max(updateShopifyAdminProductBodyProductTypeMax).optional(),
   "tags": zod.array(zod.string().max(updateShopifyAdminProductBodyTagsItemMax)).max(updateShopifyAdminProductBodyTagsMax).optional(),
-  "imageUrl": zod.string().url().nullish(),
+  "imageUrl": zod.url().nullish(),
   "publishToWebsite": zod.boolean().optional()
 })
 
@@ -760,12 +760,12 @@ export const UpdateShopifyAdminProductResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
-  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
   "selectedOptions": zod.array(zod.object({
@@ -776,7 +776,7 @@ export const UpdateShopifyAdminProductResponse = zod.object({
   "locationId": zod.string(),
   "locationName": zod.string(),
   "active": zod.boolean(),
-  "available": zod.number().int()
+  "available": zod.int()
 }))
 })),
   "options": zod.array(zod.object({
@@ -829,8 +829,8 @@ export const UpdateShopifyAdminVariantBody = zod.object({
   "price": zod.number().gt(updateShopifyAdminVariantBodyPriceExclusiveMin).optional(),
   "stock": zod.object({
   "locationId": zod.string(),
-  "quantity": zod.number().int().min(updateShopifyAdminVariantBodyStockQuantityMin).max(updateShopifyAdminVariantBodyStockQuantityMax),
-  "compareQuantity": zod.number().int()
+  "quantity": zod.int().min(updateShopifyAdminVariantBodyStockQuantityMin).max(updateShopifyAdminVariantBodyStockQuantityMax),
+  "compareQuantity": zod.int()
 }).optional(),
   "selectedOptions": zod.array(zod.object({
   "name": zod.string(),
@@ -848,12 +848,12 @@ export const UpdateShopifyAdminVariantResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
-  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
   "selectedOptions": zod.array(zod.object({
@@ -864,7 +864,7 @@ export const UpdateShopifyAdminVariantResponse = zod.object({
   "locationId": zod.string(),
   "locationName": zod.string(),
   "active": zod.boolean(),
-  "available": zod.number().int()
+  "available": zod.int()
 }))
 })),
   "options": zod.array(zod.object({
@@ -898,12 +898,12 @@ export const DeleteShopifyAdminVariantResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
-  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
   "selectedOptions": zod.array(zod.object({
@@ -914,7 +914,7 @@ export const DeleteShopifyAdminVariantResponse = zod.object({
   "locationId": zod.string(),
   "locationName": zod.string(),
   "active": zod.boolean(),
-  "available": zod.number().int()
+  "available": zod.int()
 }))
 })),
   "options": zod.array(zod.object({
@@ -965,12 +965,12 @@ export const CreateShopifyAdminVariantResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
-  "inventoryQuantity": zod.number().int().nullable(),
+  "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
   "selectedOptions": zod.array(zod.object({
@@ -981,7 +981,7 @@ export const CreateShopifyAdminVariantResponse = zod.object({
   "locationId": zod.string(),
   "locationName": zod.string(),
   "active": zod.boolean(),
-  "available": zod.number().int()
+  "available": zod.int()
 }))
 })),
   "options": zod.array(zod.object({
@@ -1012,7 +1012,7 @@ export const GetShopifyAdminProductMediaResponse = zod.object({
   "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
   "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
   "alt": zod.string().nullable(),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "errors": zod.array(zod.object({
   "code": zod.string().nullable(),
   "message": zod.string(),
@@ -1035,7 +1035,7 @@ export const updateShopifyAdminProductMediaBodyReplaceMediaIdMax = 200;
 
 
 export const UpdateShopifyAdminProductMediaBody = zod.object({
-  "resourceUrl": zod.string().url(),
+  "resourceUrl": zod.url(),
   "replaceMediaId": zod.string().min(1).max(updateShopifyAdminProductMediaBodyReplaceMediaIdMax).optional()
 })
 
@@ -1047,7 +1047,7 @@ export const UpdateShopifyAdminProductMediaResponse = zod.object({
   "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
   "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
   "alt": zod.string().nullable(),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "errors": zod.array(zod.object({
   "code": zod.string().nullable(),
   "message": zod.string(),
@@ -1088,7 +1088,7 @@ export const ReorderShopifyAdminProductMediaResponse = zod.object({
   "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
   "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
   "alt": zod.string().nullable(),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "errors": zod.array(zod.object({
   "code": zod.string().nullable(),
   "message": zod.string(),
@@ -1115,7 +1115,7 @@ export const DeleteShopifyAdminProductMediaResponse = zod.object({
   "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
   "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
   "alt": zod.string().nullable(),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "errors": zod.array(zod.object({
   "code": zod.string().nullable(),
   "message": zod.string(),
@@ -1150,7 +1150,7 @@ export const UpdateShopifyAdminProductMediaAltResponse = zod.object({
   "mediaContentType": zod.enum(['IMAGE', 'VIDEO', 'EXTERNAL_VIDEO', 'MODEL_3D']),
   "status": zod.enum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED']),
   "alt": zod.string().nullable(),
-  "imageUrl": zod.string().url().nullable(),
+  "imageUrl": zod.url().nullable(),
   "errors": zod.array(zod.object({
   "code": zod.string().nullable(),
   "message": zod.string(),
@@ -1197,7 +1197,7 @@ export const CreateShopifyAdminDiscountBody = zod.object({
   "percentage": zod.number().gt(createShopifyAdminDiscountBodyPercentageExclusiveMin).max(createShopifyAdminDiscountBodyPercentageMax),
   "startsAt": zod.coerce.date().optional(),
   "endsAt": zod.coerce.date().nullish(),
-  "usageLimit": zod.number().int().min(1).optional(),
+  "usageLimit": zod.int().min(1).optional(),
   "appliesOncePerCustomer": zod.boolean()
 })
 
@@ -1237,7 +1237,7 @@ export const DeactivateShopifyAdminDiscountResponse = zod.object({
  */
 export const GetSiteContentResponse = zod.object({
   "items": zod.array(zod.object({
-  "id": zod.string().uuid(),
+  "id": zod.uuid(),
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
   "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
   "title": zod.string(),
@@ -1249,7 +1249,7 @@ export const GetSiteContentResponse = zod.object({
   "ctaLabel": zod.string().nullable(),
   "ctaUrl": zod.string().nullable(),
   "linkedProductId": zod.string().nullable(),
-  "sortOrder": zod.number().int(),
+  "sortOrder": zod.int(),
   "published": zod.boolean(),
   "approved": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -1297,13 +1297,13 @@ export const CreateSiteContentBody = zod.object({
   "ctaLabel": zod.string().max(createSiteContentBodyCtaLabelMax).nullable(),
   "ctaUrl": zod.string().max(createSiteContentBodyCtaUrlMax).nullable(),
   "linkedProductId": zod.string().max(createSiteContentBodyLinkedProductIdMax).nullable(),
-  "sortOrder": zod.number().int().min(createSiteContentBodySortOrderMin).max(createSiteContentBodySortOrderMax),
+  "sortOrder": zod.int().min(createSiteContentBodySortOrderMin).max(createSiteContentBodySortOrderMax),
   "published": zod.boolean(),
   "approved": zod.boolean()
 })
 
 export const CreateSiteContentResponse = zod.object({
-  "id": zod.string().uuid(),
+  "id": zod.uuid(),
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
   "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
   "title": zod.string(),
@@ -1315,7 +1315,7 @@ export const CreateSiteContentResponse = zod.object({
   "ctaLabel": zod.string().nullable(),
   "ctaUrl": zod.string().nullable(),
   "linkedProductId": zod.string().nullable(),
-  "sortOrder": zod.number().int(),
+  "sortOrder": zod.int(),
   "published": zod.boolean(),
   "approved": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -1329,7 +1329,7 @@ export const CreateSiteContentResponse = zod.object({
  */
 export const GetAdminSiteContentResponse = zod.object({
   "items": zod.array(zod.object({
-  "id": zod.string().uuid(),
+  "id": zod.uuid(),
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
   "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
   "title": zod.string(),
@@ -1341,7 +1341,7 @@ export const GetAdminSiteContentResponse = zod.object({
   "ctaLabel": zod.string().nullable(),
   "ctaUrl": zod.string().nullable(),
   "linkedProductId": zod.string().nullable(),
-  "sortOrder": zod.number().int(),
+  "sortOrder": zod.int(),
   "published": zod.boolean(),
   "approved": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -1355,7 +1355,7 @@ export const GetAdminSiteContentResponse = zod.object({
  * @summary Update storefront content
  */
 export const UpdateSiteContentParams = zod.object({
-  "id": zod.coerce.string().uuid()
+  "id": zod.uuid()
 })
 
 export const updateSiteContentBodyTitleMax = 180;
@@ -1393,13 +1393,13 @@ export const UpdateSiteContentBody = zod.object({
   "ctaLabel": zod.string().max(updateSiteContentBodyCtaLabelMax).nullable(),
   "ctaUrl": zod.string().max(updateSiteContentBodyCtaUrlMax).nullable(),
   "linkedProductId": zod.string().max(updateSiteContentBodyLinkedProductIdMax).nullable(),
-  "sortOrder": zod.number().int().min(updateSiteContentBodySortOrderMin).max(updateSiteContentBodySortOrderMax),
+  "sortOrder": zod.int().min(updateSiteContentBodySortOrderMin).max(updateSiteContentBodySortOrderMax),
   "published": zod.boolean(),
   "approved": zod.boolean()
 })
 
 export const UpdateSiteContentResponse = zod.object({
-  "id": zod.string().uuid(),
+  "id": zod.uuid(),
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
   "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
   "title": zod.string(),
@@ -1411,7 +1411,7 @@ export const UpdateSiteContentResponse = zod.object({
   "ctaLabel": zod.string().nullable(),
   "ctaUrl": zod.string().nullable(),
   "linkedProductId": zod.string().nullable(),
-  "sortOrder": zod.number().int(),
+  "sortOrder": zod.int(),
   "published": zod.boolean(),
   "approved": zod.boolean(),
   "createdAt": zod.coerce.date(),
@@ -1424,11 +1424,11 @@ export const UpdateSiteContentResponse = zod.object({
  * @summary Delete storefront content
  */
 export const DeleteSiteContentParams = zod.object({
-  "id": zod.coerce.string().uuid()
+  "id": zod.uuid()
 })
 
 export const DeleteSiteContentResponse = zod.object({
-  "id": zod.string().uuid(),
+  "id": zod.uuid(),
   "deleted": zod.boolean()
 })
 
@@ -1445,12 +1445,12 @@ export const requestSiteContentUploadBodySizeMax = 209715200;
 
 export const RequestSiteContentUploadBody = zod.object({
   "name": zod.string().min(1).max(requestSiteContentUploadBodyNameMax),
-  "size": zod.number().int().min(1).max(requestSiteContentUploadBodySizeMax),
+  "size": zod.int().min(1).max(requestSiteContentUploadBodySizeMax),
   "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
 })
 
 export const RequestSiteContentUploadResponse = zod.object({
-  "uploadUrl": zod.string().url(),
+  "uploadUrl": zod.url(),
   "objectPath": zod.string(),
   "assetUrl": zod.string()
 })
@@ -1461,7 +1461,7 @@ export const RequestSiteContentUploadResponse = zod.object({
  * @summary Serve a published storefront media asset
  */
 export const GetSiteContentMediaParams = zod.object({
-  "assetId": zod.coerce.string().uuid()
+  "assetId": zod.uuid()
 })
 
 export const GetSiteContentMediaResponse = zod.unknown()
