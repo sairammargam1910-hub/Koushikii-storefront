@@ -310,7 +310,6 @@ export function Home(){
    <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
     {fabricTiles.length?<DynamicHomeTiles items={fabricTiles} placement="fabric_tile"/>:<div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>}
   </div></section>
-    <ProductCarousel title="The Collection Edit" copy="Published sarees from the connected Shopify catalog."/>
     <PremiumFeature/>
    <ProductCarousel title="New Arrivals" copy="Tag a Shopify product new-arrival to feature it here." offset={4}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
