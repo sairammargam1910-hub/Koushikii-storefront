@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:railway": "node --test tests/railwayPortability.test.mjs",
     "test:variants": "node --test tests/shopifyVariants.test.mjs",
     "test:cart": "node --test tests/shopifyCart.test.mjs",
     "test:images": "node --test tests/shopifyImageUpload.test.mjs",
@@ -14,6 +15,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1161.0",
+    "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "@clerk/express": "^2.1.85",
     "@clerk/shared": "^4.43.0",
     "@google-cloud/storage": "^8.4.0",

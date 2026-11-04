@@ -1,7 +1,8 @@
 import { ReplitConnectors } from "@replit/connectors-sdk";
+import { directShopifyConfig, usesDirectShopify } from "./directShopifyConfig";
+import { getDirectShopifyAdminToken, invalidateShopifyAdminToken } from "./shopifyAdminToken";
 
 const ADMIN_API_VERSION = "2026-04";
-const connectors = new ReplitConnectors();
 
 type ShopifyGraphQLError = { message?: string };
 type ShopifyGraphQLResponse<T> = {
@@ -26,16 +27,29 @@ export class ShopifyInputError extends Error {
 export async function shopifyAdminRequest<T>(
   query: string,
   variables?: Record<string, unknown>,
+  retryOnUnauthorized = true,
 ): Promise<T> {
-  const response = await connectors.proxy(
+  const request = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  };
+  const response = usesDirectShopify() ? await fetch(
+    `https://${directShopifyConfig().shopDomain}/admin/api/${ADMIN_API_VERSION}/graphql.json`,
+    {
+      ...request,
+      headers: { ...request.headers, "X-Shopify-Access-Token": await getDirectShopifyAdminToken() },
+      signal: AbortSignal.timeout(10_000),
+    },
+  ) : await new ReplitConnectors().proxy(
     "shopify-store",
     `/admin/api/${ADMIN_API_VERSION}/graphql.json`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, variables }),
-    },
+    request,
   );
+  if (usesDirectShopify() && response.status === 401 && retryOnUnauthorized && !process.env.SHOPIFY_ADMIN_ACCESS_TOKEN) {
+    invalidateShopifyAdminToken();
+    return shopifyAdminRequest<T>(query, variables, false);
+  }
 
   let payload: ShopifyGraphQLResponse<T>;
   try {

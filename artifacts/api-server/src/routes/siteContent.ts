@@ -223,7 +223,7 @@ router.post("/site-content/uploads", requireMerchantAdmin, async (req, res) => {
     });
   }
   try {
-    const result = await requestSiteContentUploadUrl();
+    const result = await requestSiteContentUploadUrl(contentType, size);
     return res.status(201).json(RequestSiteContentUploadResponse.parse(result));
   } catch (error) {
     req.log.error({ err: error }, "Could not create a site media upload URL");

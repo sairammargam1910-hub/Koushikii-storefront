@@ -1,3 +1,5 @@
+import { directShopifyConfig, directShopifyToken, usesDirectShopify } from "./directShopifyConfig";
+
 type ShopifyConnectionSettings = {
   shop_domain?: string;
   storefront_access_token?: string;
@@ -21,6 +23,9 @@ let cachedConfig:
   | undefined;
 
 async function getShopifyConfig(forceRefresh = false) {
+  if (usesDirectShopify()) {
+    return { ...directShopifyConfig(), storefrontAccessToken: directShopifyToken("STOREFRONT") };
+  }
   if (cachedConfig && !forceRefresh && Date.now() < cachedConfig.expiresAt) {
     return cachedConfig.value;
   }

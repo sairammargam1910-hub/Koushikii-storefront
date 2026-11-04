@@ -785,11 +785,15 @@ async function publishToWebsite(productId: string): Promise<void> {
     publications: { nodes: Array<{ id: string; name: string }> };
   }>(ADMIN_PUBLICATIONS_QUERY);
   const publication = publications.publications.nodes.find(
-    (entry) => entry.name.toLowerCase() === "replit",
+    (entry) => process.env.SHOPIFY_CONNECTION_MODE === "direct"
+      ? entry.id === process.env.SHOPIFY_PUBLICATION_ID
+      : entry.name.toLowerCase() === "replit",
   );
   if (!publication) {
     throw new ShopifyInputError(
-      "The Replit storefront channel is not available in this Shopify store.",
+      process.env.SHOPIFY_CONNECTION_MODE === "direct"
+        ? "Set SHOPIFY_PUBLICATION_ID to the publication used by this storefront's Shopify token."
+        : "The Replit storefront channel is not available in this Shopify store.",
     );
   }
   const result = await shopifyAdminRequest<{

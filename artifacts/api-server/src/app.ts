@@ -10,8 +10,12 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import { logger } from "./lib/logger";
+import { serveStorefront } from "./lib/serveStorefront";
 
 const app: Express = express();
+app.set("trust proxy", 1);
+const externalAuth = process.env.CLERK_AUTH_MODE === "external";
+const allowedOrigins = (process.env.APP_ORIGIN || "").split(",").map(value => value.trim()).filter(Boolean);
 
 app.use(
   pinoHttp({
@@ -32,19 +36,28 @@ app.use(
     },
   }),
 );
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-app.use(cors({ credentials: true, origin: true }));
+if (!externalAuth) app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+app.use(cors({
+  credentials: true,
+  origin(origin, callback) {
+    const allowed = !origin || allowedOrigins.includes(origin) ||
+      (!externalAuth && process.env.NODE_ENV !== "production");
+    callback(null, allowed);
+  },
+}));
 app.use(
   clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
+    publishableKey: externalAuth ? process.env.CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(
       getClerkProxyHost(req) ?? "",
       process.env.CLERK_PUBLISHABLE_KEY,
     ),
+    ...(externalAuth && allowedOrigins.length ? { authorizedParties: allowedOrigins } : {}),
   })),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+if (process.env.SERVE_STOREFRONT === "true") serveStorefront(app);
 
 export default app;

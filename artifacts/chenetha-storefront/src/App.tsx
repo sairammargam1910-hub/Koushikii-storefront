@@ -29,11 +29,12 @@ import { ShopperPreferencesProvider } from "./storefront/ShopperPreferences";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-const clerkPublishableKey = publishableKeyFromHost(
+const externalAuth = import.meta.env.VITE_CLERK_AUTH_MODE === "external";
+const clerkPublishableKey = externalAuth ? import.meta.env.VITE_CLERK_PUBLISHABLE_KEY : publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const clerkProxyUrl = externalAuth ? undefined : import.meta.env.VITE_CLERK_PROXY_URL;
 const clerkAppearance = {
   theme: shadcn,
   cssLayerName: "clerk",
