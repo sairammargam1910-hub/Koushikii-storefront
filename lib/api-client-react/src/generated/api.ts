@@ -1090,8 +1090,8 @@ export const getUpdateShopifyCartBuyerIdentityUrl = () => {
 }
 
 /**
- * Sends the signed-in shopper's selected saved delivery address and optional contact details to Shopify for checkout.
- * @summary Prefill a Shopify cart with saved shopper details
+ * Sends shopper-entered contact details and a one-time delivery address to Shopify before secure hosted payment.
+ * @summary Prepare a Shopify cart with buyer details
  */
 export const updateShopifyCartBuyerIdentity = async (shopifyCartBuyerIdentityInput: ShopifyCartBuyerIdentityInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyCartResponse> => {
 
@@ -1157,7 +1157,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateShopifyCartBuyerIdentityMutationVariables = {data: BodyType<ShopifyCartBuyerIdentityInput>}
 
     /**
- * @summary Prefill a Shopify cart with saved shopper details
+ * @summary Prepare a Shopify cart with buyer details
  */
 export const useUpdateShopifyCartBuyerIdentity = <TError = ErrorType<ApiError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShopifyCartBuyerIdentity>>, TError,UpdateShopifyCartBuyerIdentityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

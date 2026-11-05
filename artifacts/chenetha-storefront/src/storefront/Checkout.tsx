@@ -94,7 +94,7 @@ export function Checkout() {
       <PageHero
         eyebrow="Sample selection · enquiry only"
         title="Review the pieces you found."
-        subtitle="Sample catalogue items are not sold online. Use Shopify checkout for a verified product published by the brand."
+        subtitle="Sample catalogue items are not sold online. For a real order, enter delivery details here before secure payment with Shopify."
       />
       <main className="wrap content">
         <div className="notice" role="note" data-testid="notice-catalogue-prices">
@@ -155,8 +155,8 @@ export function Checkout() {
           </section>
           <aside className="panel">
             <span className="eyebrow">For a real order</span>
-            <h3 style={{ margin: "14px 0" }}>Shopify handles checkout.</h3>
-            <p className="muted">Add an available, non-demo product published to the Replit sales channel. Enter your address and payment details only on Shopify’s secure checkout page.</p>
+            <h3 style={{ margin: "14px 0" }}>Shopify handles payment.</h3>
+            <p className="muted">Add an available, non-demo product published to the Online Store sales channel. Enter delivery details on this website, then complete payment securely with Shopify.</p>
             <a className="link" href={base + "Cart"}>Return to your bag →</a>
           </aside>
         </div>

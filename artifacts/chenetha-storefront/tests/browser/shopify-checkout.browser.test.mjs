@@ -155,16 +155,18 @@ async function openCheckout({ savedCart, onCartRequest }) {
     }
     await onCartRequest(route);
   });
-  await page.route("**/api/shopify/countries", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({
-      countries: [
-        { isoCode: "IN", name: "India" },
-        { isoCode: "US", name: "United States" },
-      ],
-    }),
-  }));
+  await page.route("**/api/shopify/countries**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        countries: [
+          { isoCode: "IN", name: "India" },
+          { isoCode: "US", name: "United States" },
+        ],
+      }),
+    });
+  });
   await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
   return { context, page };
 }
@@ -256,6 +258,16 @@ test("shows Shopify cart user errors without clearing the shopper's saved bag", 
 
 test("uses Shopify's returned checkout URL in the current tab", async () => {
   const { context, page } = await openProduct();
+  await page.route("**/api/shopify/countries**", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      countries: [
+        { isoCode: "IN", name: "India" },
+        { isoCode: "US", name: "United States" },
+      ],
+    }),
+  }));
   await page.route("**/api/shopify/cart**", async (route) => {
     if (route.request().method() === "POST") {
       await route.fulfill({
@@ -295,24 +307,13 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
   await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
   await page.getByTestId("text-shopify-checkout-total").waitFor();
   assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,250/);
+  let postedBuyerDetails;
   await page.route("**/api/shopify/cart/buyer-identity", async (route) => {
-    assert.equal(route.request().method(), "POST");
-    assert.deepEqual(route.request().postDataJSON(), {
-      cartId: savedCart.id,
-      email: "buyer@example.com",
-      deliveryAddress: {
-        recipient: "Asha Rao",
-        street: "12 Example Road",
-        city: "Chennai",
-        state: "Tamil Nadu",
-        pin: "600001",
-        countryCode: "IN",
-      },
-    });
+    postedBuyerDetails = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
+      body: JSON.stringify(cartResponse),
     });
   });
   await page.route("https://chenetha.myshopify.com/checkouts/**", (route) =>
@@ -331,6 +332,18 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
   const checkoutButton = page.getByTestId("button-submit-checkout-details");
   await Promise.all([page.waitForURL(checkoutUrl), checkoutButton.click()]);
   assert.equal(page.url(), checkoutUrl);
+  assert.deepEqual(postedBuyerDetails, {
+    cartId: cartResponse.id,
+    email: "buyer@example.com",
+    deliveryAddress: {
+      recipient: "Asha Rao",
+      street: "12 Example Road",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      pin: "600001",
+      countryCode: "IN",
+    },
+  });
   await context.close();
 });
 
@@ -398,7 +411,7 @@ test("shows coupon savings separately from Shopify's address-based estimated tot
   assert.match(await page.getByTestId("text-shopify-checkout-subtotal").innerText(), /1,250/);
   assert.match(await page.getByTestId("text-shopify-checkout-discount").innerText(), /125/);
   assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,385/);
-  assert.match(await page.getByText(/Shopify may recalculate delivery and taxes/i).innerText(), /estimated total can change/i);
+  assert.match(await page.getByText(/Shipping and taxes are calculated by Shopify/i).innerText(), /final amount before you pay/i);
   await context.close();
 });
 

@@ -67,8 +67,8 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
       ...emptyDetails,
       email: shopper.profile.email.trim() ||
         user?.primaryEmailAddress?.emailAddress.trim() || "",
-      phone: shopper.profile.phone.trim() ||
-        user?.primaryPhoneNumber?.phoneNumber.trim() || "",
+      phone: toE164Phone(shopper.profile.phone) ||
+        toE164Phone(user?.primaryPhoneNumber?.phoneNumber ?? "") || "",
       recipient: savedAddress?.recipient || shopper.profile.name,
       street: savedAddress?.street ?? "",
       city: savedAddress?.city ?? "",
@@ -265,7 +265,14 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
             {countriesQuery.isLoading && <small role="status">Loading delivery countries…</small>}
             {countriesQuery.isError && (
               <small className="checkout-inline-error" role="alert">
-                Delivery countries could not be loaded. Try again before continuing.
+                Delivery countries could not be loaded.{" "}
+                <button
+                  className="checkout-retry"
+                  type="button"
+                  onClick={() => void countriesQuery.refetch()}
+                >
+                  Try again
+                </button>
               </small>
             )}
             {!countriesQuery.isLoading && !countriesQuery.isError && availableCountries.length === 0 && (
@@ -337,11 +344,16 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
         </div>
 
         {submitError && <p className="notice checkout-error" role="alert" data-testid="error-checkout-submit">{submitError}</p>}
+        {!checkoutHref && (
+          <p className="notice checkout-error" role="alert">
+            Shopify hasn’t provided a secure payment link. Return to your bag and refresh it before continuing.
+          </p>
+        )}
         <button
           className="btn checkout-submit"
           type="submit"
           data-testid="button-submit-checkout-details"
-          disabled={prepareCheckout.isPending || countriesQuery.isLoading || countriesQuery.isError || availableCountries.length === 0}
+          disabled={!checkoutHref || prepareCheckout.isPending || countriesQuery.isLoading || countriesQuery.isError || availableCountries.length === 0}
         >
           {prepareCheckout.isPending ? "Preparing secure payment…" : "Continue to secure payment"}
           <ArrowRight size={15} />
@@ -426,4 +438,13 @@ function getApiError(error: unknown): string | null {
   const data = error.data;
   if (!data || typeof data !== "object" || !("error" in data)) return null;
   return typeof data.error === "string" && data.error.trim() ? data.error.trim() : null;
+}
+
+function toE164Phone(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("+")) return "";
+  const digits = trimmed.slice(1).replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 15 && digits[0] !== "0"
+    ? `+${digits}`
+    : "";
 }

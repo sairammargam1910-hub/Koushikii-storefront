@@ -467,8 +467,8 @@ export const UpdateShopifyCartDiscountCodesResponse = zod.object({
 
 
 /**
- * Sends the signed-in shopper's selected saved delivery address and optional contact details to Shopify for checkout.
- * @summary Prefill a Shopify cart with saved shopper details
+ * Sends shopper-entered contact details and a one-time delivery address to Shopify before secure hosted payment.
+ * @summary Prepare a Shopify cart with buyer details
  */
 export const updateShopifyCartBuyerIdentityBodyCartIdMax = 1000;
 
