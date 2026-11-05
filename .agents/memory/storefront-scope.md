@@ -14,6 +14,12 @@ The merchant dashboard is for the handover client who runs this business, not fo
 
 **How to apply:** Keep merchant access separate from customer navigation, authorize store-changing actions on the server, and keep Shopify authoritative for commerce. Public browsing must remain accessible even during a merchant session; signing in must not replace the storefront home with an admin page.
 
+The current Shopify connection is the user's own account for development; before handover, the user intends to connect the client's Shopify account instead.
+
+**Why:** The user said they will configure the client's Shopify account and connect it after having developed against their own account.
+
+**How to apply:** Do not add client inventory or real orders to the user's development store. Before switching production, verify the client store domain and confirm the storefront's Shopify credentials point to that store.
+
 The user wants sign-in and sign-out for both shoppers and the merchant. Shopper site accounts use Replit-managed Clerk; Shopify checkout, payments, shipping and order identity remain separate. Phone sign-in is not supported by the managed Clerk integration.
 
 **Why:** The user explicitly chose “Shoppers and merchant” and asked for email or phone with password and password recovery.
