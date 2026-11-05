@@ -50,7 +50,7 @@ function fixture() {
   };
 }
 async function harness(run, configure = () => {}) {
-  const state = { product: fixture(), calls: [], conflict: false, mutationError: false, deleteError: false, inventoryPage: false, nextOptionValueId: 31, nextVariantId: 100 };
+  const state = { product: fixture(), calls: [], conflict: false, mutationError: false, deleteError: false, deleteNetworkError: false, inventoryPage: false, nextOptionValueId: 31, nextVariantId: 100 };
   configure(state);
   const module = { exports: {} };
   new Function("require", "module", "exports", "sdkProxy", compiled.outputFiles[0].text)(
@@ -64,6 +64,7 @@ async function harness(run, configure = () => {}) {
       if (query.includes("mutation MerchantProductDelete")) {
         assert.equal(v.input.id, productId);
         assert.equal(v.synchronous, true);
+        if (state.deleteNetworkError) throw new Error("Shopify connection timed out.");
         data = {
           productDelete: {
             deletedProductId: state.deleteError ? null : productId,
@@ -172,6 +173,22 @@ test("reports Shopify deletion errors without claiming the product was removed",
     const result = await request(undefined, "/permanently", true, "DELETE");
     assert.equal(result.status, 400);
     assert.match(result.data.error, /Shopify rejected deletion/);
+  });
+});
+
+test("keeps deletion retryable after a Shopify connection error", async () => {
+  await harness(async ({ request, state }) => {
+    state.deleteNetworkError = true;
+    const failed = await request(undefined, "/permanently", true, "DELETE");
+    assert.equal(failed.status, 502);
+    assert.match(failed.data.error, /could not permanently delete this product/i);
+    assert.match(failed.data.error, /check the store connection and try again/i);
+
+    state.deleteNetworkError = false;
+    const retried = await request(undefined, "/permanently", true, "DELETE");
+    assert.equal(retried.status, 200);
+    assert.deepEqual(retried.data, { success: true, deletedProductId: productId });
+    assert.equal(state.calls.filter((call) => call.query.includes("mutation MerchantProductDelete")).length, 2);
   });
 });
 
