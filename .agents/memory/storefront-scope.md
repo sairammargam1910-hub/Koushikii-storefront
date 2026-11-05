@@ -20,6 +20,12 @@ The client's Shopify store (`gtnbsw-x3.myshopify.com`) is now the connected prod
 
 **How to apply:** Keep product data and checkout tied to the client store. Publish website products to the Online Store channel. Do not seed demo items or modify the client catalog without explicit approval.
 
+The client approved Shopify-managed delivery rates on the current Basic plan, rather than third-party carrier-calculated quotes. Exact India and international rate amounts and countries still require merchant confirmation.
+
+**Why:** The user selected Shopify-managed rates after confirming that carrier-calculated rates are not available on the store's current plan.
+
+**How to apply:** Let Shopify apply merchant-configured flat, weight-based, or order-value rates at checkout. Do not hardcode delivery prices or claim international delivery until its market and shipping zone are active.
+
 The user wants sign-in and sign-out for both shoppers and the merchant. Shopper site accounts use Replit-managed Clerk; Shopify checkout, payments, shipping and order identity remain separate. Phone sign-in is not supported by the managed Clerk integration.
 
 **Why:** The user explicitly chose “Shoppers and merchant” and asked for email or phone with password and password recovery.
