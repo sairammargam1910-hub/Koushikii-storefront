@@ -9,6 +9,12 @@ Host both the storefront and API on Railway, with Neon Postgres and Cloudflare R
 
 **How to apply:** Keep Replit intact during migration and verify the external deployment after changes before retiring any source service.
 
+A GitHub push is not proof that Railway has deployed the new version. Before saying a change is live, verify Railway's active deployment is built from the intended GitHub commit and smoke-test the storefront and API on the custom domain.
+
+**Why:** The user expects Railway to serve the latest storefront while the Replit copy remains available during verification.
+
+**How to apply:** After a source push, check Railway deployment status and test the public flow before reporting that production is updated.
+
 The user approved using new, independent Clerk accounts for the external site after being told that Replit-managed Clerk cannot be hosted externally or export its users. Existing accounts, profile/address preferences, and wishlists are not promised to transfer.
 
 **Why:** On 2026-11-05, the user explicitly selected “Proceed with new Clerk accounts” after the account and preference implications were explained.

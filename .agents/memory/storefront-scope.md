@@ -44,6 +44,12 @@ Published Shopify sarees replace the storefront's sample product cards; drafts a
 
 **How to apply:** Validate product availability and demo markers on the server before adding a cart line. Keep Shopify authoritative for variants, prices, shipping, payment, and order status; collect only the buyer details needed to prepare checkout, and never collect card/payment credentials on the website.
 
+Before hosted payment, the custom checkout should submit the buyer's current contact and delivery details to Shopify and show Shopify's configured shipping estimate in the order total. Prefer Shopify's selected rate; if none is selected, estimate using the lowest returned shipping option per delivery group. Never hardcode delivery prices. If Shopify returns no rate, say the estimate is unavailable and let Shopify confirm delivery during hosted checkout. Changing the buyer or address details invalidates the previous estimate.
+
+**Why:** The user wants the branded checkout to show shipping costs before payment while keeping Shopify authoritative for configured rates and the final checkout.
+
+**How to apply:** Calculate after the current address is applied to the Shopify cart, show an estimated total only when a valid estimate is available, and clearly state that Shopify confirms the final shipping choice and taxes before payment.
+
 Shopify currency is authoritative. Request the India market context for this storefront, but display the currency Shopify returns; never relabel a USD price as INR in app code. Local-currency transaction support depends on Shopify market and payment-provider settings.
 
 **Why:** A Shopify product may display a local currency while checkout still charges the store's base currency, depending on the configured payment gateway.
