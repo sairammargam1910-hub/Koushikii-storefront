@@ -20,3 +20,9 @@ For Shopify Dev Dashboard apps, requested permissions, released app configuratio
 **Why:** Shopify continued rejecting location access after a reported permission approval and a fresh Railway process. Shopify's documentation confirms that releasing a new app version does not automatically approve its scopes on installed stores.
 
 **How to apply:** When permission errors persist, verify the active released version and the exact installed app's approved scopes before repeating restarts. Do not treat a successful token refresh or working public catalog as proof that merchant permissions are correct.
+
+Keep Railway's canonical app origin aligned with the domain used for merchant sign-in. Validate the startup contract as well as the API middleware before changing an origin setting.
+
+**Why:** After moving to the custom domain, Clerk rejected merchant sessions whose authorized party was the custom domain while the backend still expected the generated Railway hostname. An attempted comma-separated origin list then failed the startup validator, despite the API middleware supporting lists.
+
+**How to apply:** Use the single canonical custom-domain origin unless multi-origin support is implemented and validated end to end. A working public Shopify catalog does not prove authenticated merchant requests are accepted.
