@@ -2,6 +2,7 @@ import { Router, raw, type IRouter, type Request, type Response, type RequestHan
 import { randomUUID } from "node:crypto";
 import {
   ArchiveShopifyAdminProductResponse,
+  PermanentlyDeleteShopifyAdminProductResponse,
   CreateShopifyAdminDiscountBody,
   CreateShopifyAdminDiscountResponse,
   CreateShopifyAdminProductBody,
@@ -278,6 +279,15 @@ const ADMIN_PRODUCT_UPDATE = `#graphql
   ) {
     productUpdate(product: $product, media: $media) {
       product { id }
+      userErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_PRODUCT_DELETE = `#graphql
+  mutation MerchantProductDelete($input: ProductDeleteInput!, $synchronous: Boolean!) {
+    productDelete(input: $input, synchronous: $synchronous) {
+      deletedProductId
       userErrors { field message }
     }
   }
@@ -1426,6 +1436,50 @@ router.patch(
         res,
         error,
         "Shopify could not update this product. Check the store connection and try again.",
+      );
+    } finally {
+      invalidateShopifyCatalog();
+    }
+  },
+);
+
+router.delete(
+  "/shopify/admin/products/:productId/permanently",
+  async (req, res): Promise<void> => {
+    const productId = Array.isArray(req.params.productId)
+      ? req.params.productId[0]
+      : req.params.productId;
+    if (!productId || !isShopifyProductId(productId)) {
+      res.status(400).json({ error: "The Shopify product ID is invalid." });
+      return;
+    }
+
+    try {
+      const result = await shopifyAdminRequest<{
+        productDelete: {
+          deletedProductId: string | null;
+          userErrors: ShopifyUserErrors;
+        };
+      }>(ADMIN_PRODUCT_DELETE, {
+        input: { id: productId },
+        synchronous: true,
+      });
+      assertNoUserErrors(result.productDelete.userErrors);
+      if (result.productDelete.deletedProductId !== productId) {
+        throw new ShopifyAdminError("Shopify did not confirm that the product was deleted.");
+      }
+      res.json(
+        PermanentlyDeleteShopifyAdminProductResponse.parse({
+          success: true,
+          deletedProductId: result.productDelete.deletedProductId,
+        }),
+      );
+    } catch (error) {
+      respondShopifyError(
+        req,
+        res,
+        error,
+        "Shopify could not permanently delete this product. Check the store connection and try again.",
       );
     } finally {
       invalidateShopifyCatalog();

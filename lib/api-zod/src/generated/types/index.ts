@@ -23,6 +23,7 @@ export * from './shopifyAdminInventoryVariant';
 export * from './shopifyAdminInventoryVariantInventoryPolicy';
 export * from './shopifyAdminInventoryVariantProductStatus';
 export * from './shopifyAdminProduct';
+export * from './shopifyAdminProductDeleteResponse';
 export * from './shopifyAdminProductInput';
 export * from './shopifyAdminProductMedia';
 export * from './shopifyAdminProductMediaAltUpdate';

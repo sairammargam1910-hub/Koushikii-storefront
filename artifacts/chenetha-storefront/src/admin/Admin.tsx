@@ -11,6 +11,7 @@ import {
   useCreateShopifyAdminProduct,
   useUpdateShopifyAdminProduct,
   useArchiveShopifyAdminProduct,
+  usePermanentlyDeleteShopifyAdminProduct,
   useGetShopifyAdminDiscounts,
   useCreateShopifyAdminDiscount,
   useDeactivateShopifyAdminDiscount,
@@ -314,8 +315,8 @@ export function AdminDashboard() {
   </AdminLayout>;
 }
 
-function ProductRow({ product, currencyCode, compact, onEdit, onArchive, onVariants }: {
-  product: ShopifyAdminProduct; currencyCode?: string; compact?: boolean; onEdit?: () => void; onArchive?: () => void; onVariants?: () => void;
+function ProductRow({ product, currencyCode, compact, onEdit, onArchive, onDelete, onVariants }: {
+  product: ShopifyAdminProduct; currencyCode?: string; compact?: boolean; onEdit?: () => void; onArchive?: () => void; onDelete?: () => void; onVariants?: () => void;
 }) {
   const price = product.variants[0]?.price ?? "—";
   return <article className="product-row" data-testid={`row-product-${product.id}`}>
@@ -323,7 +324,7 @@ function ProductRow({ product, currencyCode, compact, onEdit, onArchive, onVaria
     <div className="product-info"><b data-testid={`text-product-title-${product.id}`}>{product.title}</b><small>{product.productType || "Handloom"}{product.tags.length ? ` · ${product.tags.slice(0, 2).join(", ")}` : ""}</small></div>
     <div className="product-price" data-testid={`text-product-price-${product.id}`}>{product.variants.length > 1 ? "By variant" : currency(price, currencyCode)}</div>
     <StatusPill status={product.status} productId={product.id}/>
-    {!compact && <div className="row-actions">{product.status !== "ARCHIVED" && <><button className="text-button" onClick={onEdit} data-testid={`button-edit-product-${product.id}`}>Edit</button><button className="text-button" onClick={onVariants} data-testid={`button-variants-product-${product.id}`}>Variants & stock</button><button className="text-button danger-text" onClick={onArchive} data-testid={`button-archive-product-${product.id}`}>Archive</button></>}</div>}
+    {!compact && <div className="row-actions">{product.status !== "ARCHIVED" && <><button className="text-button" onClick={onEdit} data-testid={`button-edit-product-${product.id}`}>Edit</button><button className="text-button" onClick={onVariants} data-testid={`button-variants-product-${product.id}`}>Variants & stock</button><button className="text-button danger-text" onClick={onArchive} data-testid={`button-archive-product-${product.id}`}>Archive</button></>}<button className="text-button danger-text" title={`Permanently delete ${product.title}`} aria-label={`Permanently delete ${product.title}`} onClick={onDelete} data-testid={`button-delete-product-${product.id}`}>Delete</button></div>}
   </article>;
 }
 
@@ -344,6 +345,7 @@ export function AdminProducts() {
   const queryClient = useQueryClient();
   const products = useGetShopifyAdminProducts();
   const archive = useArchiveShopifyAdminProduct();
+  const permanentlyDelete = usePermanentlyDeleteShopifyAdminProduct();
   const rows = useMemo(() => (products.data?.products || []).filter((product) => `${product.title} ${product.tags.join(" ")}`.toLowerCase().includes(search.toLowerCase())), [products.data?.products, search]);
   const createRequested = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("create") === "1";
   const onArchive = (product: ShopifyAdminProduct) => {
@@ -354,11 +356,24 @@ export function AdminProducts() {
       onError: (error: Error) => setNotice(error.message || "Could not archive this product. Please try again."),
     });
   };
+  const onDelete = (product: ShopifyAdminProduct) => {
+    if (!window.confirm(`Permanently delete “${product.title}” from Shopify? This cannot be undone. If you only want to hide it, choose Archive instead.`)) return;
+    setNotice("");
+    permanentlyDelete.mutate({ productId: product.id }, {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() });
+        void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminInventoryQueryKey() });
+        void queryClient.invalidateQueries({ queryKey: getGetShopifyProductsQueryKey() });
+        setNotice(`${product.title} was permanently deleted from Shopify.`);
+      },
+      onError: (error: Error) => setNotice(`Could not delete ${product.title}: ${error.message || "Please try again."}`),
+    });
+  };
   return <AdminLayout title="Your products" eyebrow="SHOPIFY CATALOG" action={<button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-create-product"><Plus size={17}/> Add product</button>}>
     <div className="catalog-toolbar"><div className="toolbar-count"><b>{products.data?.products.length ?? "—"}</b> products in your catalog</div><label className="search-field"><Search size={17}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find a product" aria-label="Find a product" data-testid="input-search-products"/></label></div>
     {notice && <div className={`inline-notice ${notice.includes("Could not") ? "notice-error" : ""}`} role="status" data-testid="status-product-notice"><Check size={16}/>{notice}<button aria-label="Dismiss notice" onClick={() => setNotice("")} data-testid="button-dismiss-notice"><X size={15}/></button></div>}
     {products.isLoading ? <LoadingPanel/> : products.isError ? <ErrorPanel message={readableError(products.error, "We couldn’t reach your Shopify catalog.")} retry={() => void products.refetch()}/> :
-      rows.length ? <div className="catalog-table"><div className="table-head"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>ACTIONS</span></div>{rows.map((product) => <ProductRow key={product.id} product={product} currencyCode={products.data?.currencyCode} onEdit={() => setEditing(product)} onVariants={() => setVariantProduct(product)} onArchive={() => onArchive(product)}/>)}</div> :
+       rows.length ? <div className="catalog-table"><div className="table-head"><span>PRODUCT</span><span>PRICE</span><span>STATUS</span><span>ACTIONS</span></div>{rows.map((product) => <ProductRow key={product.id} product={product} currencyCode={products.data?.currencyCode} onEdit={() => setEditing(product)} onVariants={() => setVariantProduct(product)} onArchive={() => onArchive(product)} onDelete={() => onDelete(product)}/>)}</div> :
         <EmptyPanel icon={<PackagePlus size={22}/>} title={search ? "No matching products" : "Your catalog is still unwoven"} body={search ? "Try another name or tag." : "Add your first saree and keep its price, stock and story together."} action={!search ? <button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-empty-create-product"><Plus size={16}/> Add a product</button> : undefined}/>
     }
     {(creating || createRequested) && <ProductForm onClose={() => { setCreating(false); if (createRequested) window.history.replaceState({}, "", "/admin/products"); }} currencyCode={products.data?.currencyCode}/>}

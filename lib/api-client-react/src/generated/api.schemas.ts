@@ -468,6 +468,11 @@ export interface ShopifyAdminArchiveResponse {
   success: boolean;
 }
 
+export interface ShopifyAdminProductDeleteResponse {
+  success: boolean;
+  deletedProductId: string;
+}
+
 export type ShopifyAdminDiscountStatus = typeof ShopifyAdminDiscountStatus[keyof typeof ShopifyAdminDiscountStatus];
 
 

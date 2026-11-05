@@ -641,6 +641,51 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/admin/products/{productId}/permanently:
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+    delete:
+      operationId: permanentlyDeleteShopifyAdminProduct
+      tags: [shopify]
+      summary: Permanently delete a Shopify product
+      description: Removes the product from Shopify. This cannot be undone; archive the product to hide it without permanent deletion.
+      responses:
+        "200":
+          description: Shopify product permanently deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminProductDeleteResponse"
+        "400":
+          description: Product ID is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify product could not be deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/admin/products/{productId}/variants/{variantId}:
     parameters:
       - name: productId
@@ -1850,6 +1895,14 @@ components:
         success:
           type: boolean
       required: [success]
+    ShopifyAdminProductDeleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        deletedProductId:
+          type: string
+      required: [success, deletedProductId]
     ShopifyAdminDiscount:
       type: object
       properties:

@@ -29,6 +29,7 @@ import type {
   ShopifyAdminDiscountsResponse,
   ShopifyAdminImageResponse,
   ShopifyAdminInventoryResponse,
+  ShopifyAdminProductDeleteResponse,
   ShopifyAdminProductInput,
   ShopifyAdminProductMediaAltUpdate,
   ShopifyAdminProductMediaInput,
@@ -1665,6 +1666,81 @@ export const useArchiveShopifyAdminProduct = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getArchiveShopifyAdminProductMutationOptions(options));
+    }
+
+export const getPermanentlyDeleteShopifyAdminProductUrl = (productId: string,) => {
+
+
+
+
+  return `/api/shopify/admin/products/${encodeURIComponent(String(productId))}/permanently`
+}
+
+/**
+ * Removes the product from Shopify. This cannot be undone; archive the product to hide it without permanent deletion.
+ * @summary Permanently delete a Shopify product
+ */
+export const permanentlyDeleteShopifyAdminProduct = async (productId: string, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductDeleteResponse> => {
+
+  return customFetch<ShopifyAdminProductDeleteResponse>(getPermanentlyDeleteShopifyAdminProductUrl(productId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getPermanentlyDeleteShopifyAdminProductMutationKey = () => ['permanentlyDeleteShopifyAdminProduct'] as const;
+
+export const getPermanentlyDeleteShopifyAdminProductMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof permanentlyDeleteShopifyAdminProduct>>, TError,PermanentlyDeleteShopifyAdminProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof permanentlyDeleteShopifyAdminProduct>>, TError,PermanentlyDeleteShopifyAdminProductMutationVariables, TContext> => {
+
+const mutationKey = getPermanentlyDeleteShopifyAdminProductMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof permanentlyDeleteShopifyAdminProduct>>, PermanentlyDeleteShopifyAdminProductMutationVariables> = (props) => {
+          const {productId} = props ?? {};
+
+          return  permanentlyDeleteShopifyAdminProduct(productId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PermanentlyDeleteShopifyAdminProductMutationResult = NonNullable<Awaited<ReturnType<typeof permanentlyDeleteShopifyAdminProduct>>>
+
+    export type PermanentlyDeleteShopifyAdminProductMutationError = ErrorType<ApiError>
+    export type PermanentlyDeleteShopifyAdminProductMutationVariables = {productId: string}
+
+    /**
+ * @summary Permanently delete a Shopify product
+ */
+export const usePermanentlyDeleteShopifyAdminProduct = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof permanentlyDeleteShopifyAdminProduct>>, TError,PermanentlyDeleteShopifyAdminProductMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof permanentlyDeleteShopifyAdminProduct>>,
+        TError,
+        PermanentlyDeleteShopifyAdminProductMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPermanentlyDeleteShopifyAdminProductMutationOptions(options));
     }
 
 export const getUpdateShopifyAdminVariantUrl = (productId: string,

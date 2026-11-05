@@ -50,7 +50,7 @@ function fixture() {
   };
 }
 async function harness(run, configure = () => {}) {
-  const state = { product: fixture(), calls: [], conflict: false, mutationError: false, inventoryPage: false, nextOptionValueId: 31, nextVariantId: 100 };
+  const state = { product: fixture(), calls: [], conflict: false, mutationError: false, deleteError: false, inventoryPage: false, nextOptionValueId: 31, nextVariantId: 100 };
   configure(state);
   const module = { exports: {} };
   new Function("require", "module", "exports", "sdkProxy", compiled.outputFiles[0].text)(
@@ -61,7 +61,16 @@ async function harness(run, configure = () => {}) {
       const { query, variables: v } = JSON.parse(request.body);
       state.calls.push({ query, variables: v });
       let data;
-      if (query.includes("MerchantVariantPage")) {
+      if (query.includes("mutation MerchantProductDelete")) {
+        assert.equal(v.input.id, productId);
+        assert.equal(v.synchronous, true);
+        data = {
+          productDelete: {
+            deletedProductId: state.deleteError ? null : productId,
+            userErrors: state.deleteError ? [{ message: "Shopify rejected deletion." }] : [],
+          },
+        };
+      } else if (query.includes("MerchantVariantPage")) {
         data = { product: { variants: { nodes: state.product.variants.nodes.slice(2), pageInfo: { hasNextPage: false, endCursor: null } } } };
       } else if (query.includes("MerchantInventoryPage")) {
         data = { inventoryItem: { inventoryLevels: { nodes: [state.product.variants.nodes[0].inventoryItem.inventoryLevels.nodes[1]], pageInfo: { hasNextPage: false, endCursor: null } } } };
@@ -145,6 +154,26 @@ async function harness(run, configure = () => {}) {
 }
 const stock = (quantity = 3, compareQuantity = 5, id = locationId) => ({ stock: { locationId: id, quantity, compareQuantity } });
 const mutations = (state) => state.calls.filter((call) => call.query.includes("mutation "));
+
+test("permanently deletes the selected product synchronously and requires merchant access", async () => {
+  await harness(async ({ request, state }) => {
+    const result = await request(undefined, "/permanently", true, "DELETE");
+    assert.equal(result.status, 200);
+    assert.deepEqual(result.data, { success: true, deletedProductId: productId });
+    assert.equal(mutations(state).length, 1);
+    assert.match(mutations(state)[0].query, /productDelete\(input: \$input, synchronous: \$synchronous\)/);
+    assert.equal((await request(undefined, "/permanently", false, "DELETE")).status, 403);
+  });
+});
+
+test("reports Shopify deletion errors without claiming the product was removed", async () => {
+  await harness(async ({ request, state }) => {
+    state.deleteError = true;
+    const result = await request(undefined, "/permanently", true, "DELETE");
+    assert.equal(result.status, 400);
+    assert.match(result.data.error, /Shopify rejected deletion/);
+  });
+});
 
 test("loads every variant and each location using bounded nested pages and separate inventory pagination", async () => {
   await harness(async ({ request, state }) => {

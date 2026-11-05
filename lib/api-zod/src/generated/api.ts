@@ -809,6 +809,24 @@ export const ArchiveShopifyAdminProductResponse = zod.object({
 
 
 /**
+ * Removes the product from Shopify. This cannot be undone; archive the product to hide it without permanent deletion.
+ * @summary Permanently delete a Shopify product
+ */
+export const permanentlyDeleteShopifyAdminProductPathProductIdMax = 200;
+
+
+
+export const PermanentlyDeleteShopifyAdminProductParams = zod.object({
+  "productId": zod.coerce.string().min(1).max(permanentlyDeleteShopifyAdminProductPathProductIdMax)
+})
+
+export const PermanentlyDeleteShopifyAdminProductResponse = zod.object({
+  "success": zod.boolean(),
+  "deletedProductId": zod.string()
+})
+
+
+/**
  * @summary Update a variant price or compare-and-set stock at one location
  */
 export const UpdateShopifyAdminVariantParams = zod.object({
