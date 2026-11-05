@@ -14,7 +14,7 @@ export interface ShopifyCartBuyerIdentityInput {
      */
   cartId: string;
   /** @maxLength 254 */
-  email?: string;
+  email: string;
   /** @maxLength 40 */
   phone?: string;
   deliveryAddress: ShopifyCartBuyerIdentityInputDeliveryAddress;

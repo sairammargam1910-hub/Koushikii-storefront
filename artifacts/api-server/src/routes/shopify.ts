@@ -49,6 +49,11 @@ type ShopifyMoney = {
   currencyCode: string;
 };
 
+type ShopifyAvailableCountry = {
+  isoCode: string;
+  name: string;
+};
+
 type ShopifyCartMerchandise = {
   id: string;
   title: string;
@@ -190,7 +195,7 @@ const CART_FIELDS = `#graphql
 const SHOPIFY_CART_MARKET = `#graphql
   query ShopifyCartMarket {
     localization {
-      availableCountries { isoCode }
+      availableCountries { isoCode name }
     }
   }
 `;
@@ -467,11 +472,20 @@ async function getShopifyCart(cartId: string) {
 
 async function assertIndiaMarketAvailable() {
   const result = await shopifyStorefrontRequest<{
-    localization: { availableCountries: Array<{ isoCode: string }> };
+    localization: { availableCountries: ShopifyAvailableCountry[] };
   }>(SHOPIFY_CART_MARKET);
   if (!result.localization.availableCountries.some((country) => country.isoCode === "IN")) {
     throw new IndiaMarketUnavailableError();
   }
+}
+
+async function getAvailableCountries(): Promise<ShopifyAvailableCountry[]> {
+  const result = await shopifyStorefrontRequest<{
+    localization: { availableCountries: ShopifyAvailableCountry[] };
+  }>(SHOPIFY_CART_MARKET);
+  return result.localization.availableCountries
+    .filter((country) => /^[A-Z]{2}$/.test(country.isoCode) && country.name.trim())
+    .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function respondToCartError(res: import("express").Response, error: unknown) {
@@ -573,6 +587,16 @@ router.get("/shopify/customer-account", async (req, res): Promise<void> => {
     res.status(502).json({
       error: "The Shopify account page is temporarily unavailable.",
     });
+  }
+});
+
+router.get("/shopify/countries", async (_req, res): Promise<void> => {
+  try {
+    const countries = await getAvailableCountries();
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.json({ countries });
+  } catch {
+    res.status(502).json({ error: "Available delivery countries could not be loaded. Please try again." });
   }
 });
 
@@ -716,20 +740,29 @@ router.post("/shopify/cart/discount-codes", async (req, res): Promise<void> => {
 router.post("/shopify/cart/buyer-identity", async (req, res): Promise<void> => {
   const body = UpdateShopifyCartBuyerIdentityBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Choose a valid saved address for Shopify checkout." });
+    res.status(400).json({ error: "Enter valid contact and delivery details." });
     return;
   }
   res.setHeader("Cache-Control", "no-store");
   try {
-    await assertIndiaMarketAvailable();
     const { cartId, email, phone, deliveryAddress } = body.data;
+    const countryCode = deliveryAddress.countryCode.toUpperCase();
+    const availableCountries = await getAvailableCountries();
+    if (!availableCountries.some((country) => country.isoCode === countryCode)) {
+      res.status(409).json({
+        error: "This store is not currently set up to deliver to the selected country.",
+      });
+      return;
+    }
+    const [firstName, ...lastNameParts] = deliveryAddress.recipient.trim().split(/\s+/);
+    const lastName = lastNameParts.join(" ");
     const identityResult = await shopifyStorefrontRequest<{
       cartBuyerIdentityUpdate: ShopifyCartMutationResult;
     }>(SHOPIFY_CART_BUYER_IDENTITY_UPDATE, {
       cartId,
       buyerIdentity: {
-        countryCode: "IN",
-        ...(email ? { email: email.trim() } : {}),
+        countryCode,
+        email: email.trim(),
         ...(phone ? { phone: phone.trim() } : {}),
       },
     });
@@ -751,12 +784,22 @@ router.post("/shopify/cart/buyer-identity", async (req, res): Promise<void> => {
       addresses: [{
         address: {
           deliveryAddress: {
-            firstName: deliveryAddress.recipient.trim(),
+            firstName,
+            ...(lastName ? { lastName } : {}),
             address1: deliveryAddress.street.trim(),
+            ...(deliveryAddress.address2?.trim()
+              ? { address2: deliveryAddress.address2.trim() }
+              : {}),
             city: deliveryAddress.city.trim(),
-            provinceCode: shopifyIndiaProvinceCode(deliveryAddress.state),
-            zip: deliveryAddress.pin,
-            countryCode: "IN",
+            ...(deliveryAddress.state?.trim()
+              ? {
+                  provinceCode: countryCode === "IN"
+                    ? shopifyIndiaProvinceCode(deliveryAddress.state)
+                    : deliveryAddress.state.trim(),
+                }
+              : {}),
+            zip: deliveryAddress.pin.trim(),
+            countryCode,
             ...(phone ? { phone: phone.trim() } : {}),
           },
         },

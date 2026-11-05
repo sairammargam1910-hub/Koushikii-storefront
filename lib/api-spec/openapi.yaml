@@ -187,6 +187,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/countries:
+    get:
+      operationId: getShopifyAvailableCountries
+      tags: [shopify]
+      summary: List countries enabled for Shopify checkout
+      responses:
+        "200":
+          description: Countries currently available in the Shopify storefront market
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAvailableCountriesResponse"
+        "502":
+          description: Shopify market countries could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/cart:
     get:
       operationId: getShopifyCart
@@ -221,7 +239,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
         "409":
-          description: India is not enabled as a Shopify selling market
+          description: The selected delivery country is not enabled for Shopify checkout
           content:
             application/json:
               schema:
@@ -357,8 +375,8 @@ paths:
     post:
       operationId: updateShopifyCartBuyerIdentity
       tags: [shopify]
-      summary: Prefill a Shopify cart with saved shopper details
-      description: Sends the signed-in shopper's selected saved delivery address and optional contact details to Shopify for checkout.
+      summary: Prepare a Shopify cart with buyer details
+      description: Sends shopper-entered contact details and a one-time delivery address to Shopify before secure hosted payment.
       requestBody:
         required: true
         content:
@@ -373,7 +391,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ShopifyCartResponse"
         "400":
-          description: Invalid cart identity or saved address details
+          description: Invalid checkout contact or delivery details
           content:
             application/json:
               schema:
@@ -385,7 +403,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
         "409":
-          description: India is not enabled as a Shopify selling market
+          description: The selected delivery country is not enabled for this Shopify store
           content:
             application/json:
               schema:
@@ -1448,6 +1466,25 @@ components:
             minLength: 1
             maxLength: 128
       required: [cartId, discountCodes]
+    ShopifyAvailableCountry:
+      type: object
+      properties:
+        isoCode:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required: [isoCode, name]
+    ShopifyAvailableCountriesResponse:
+      type: object
+      properties:
+        countries:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAvailableCountry"
+      required: [countries]
     ShopifyCartBuyerIdentityInput:
       type: object
       properties:
@@ -1473,19 +1510,25 @@ components:
               type: string
               minLength: 1
               maxLength: 500
+            address2:
+              type: string
+              maxLength: 500
             city:
               type: string
               minLength: 1
               maxLength: 160
             state:
               type: string
-              minLength: 1
               maxLength: 160
             pin:
               type: string
-              pattern: "^[1-9][0-9]{5}$"
-          required: [recipient, street, city, state, pin]
-      required: [cartId, deliveryAddress]
+              minLength: 1
+              maxLength: 32
+            countryCode:
+              type: string
+              pattern: "^[A-Z]{2}$"
+          required: [recipient, street, city, pin, countryCode]
+      required: [cartId, email, deliveryAddress]
     ShopifyCartDiscountCode:
       type: object
       properties:

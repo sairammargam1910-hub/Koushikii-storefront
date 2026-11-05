@@ -86,7 +86,7 @@ const clerkAppearance = {
 
 const pageTitles: Record<string,string> = {
   "/": "Home", "/Home": "Home", "/Collections": "Collections", "/Product": "Textile details",
-  "/Cart": "Your bag", "/Wishlist": "Wishlist", "/Checkout": "Shopify checkout",
+  "/Cart": "Your bag", "/Wishlist": "Wishlist", "/Checkout": "Delivery details",
   "/Confirmation": "Order confirmation", "/OurStory": "Our story", "/Contact": "Contact",
   "/CustomerCare": "Customer care", "/SareeCare": "Saree care", "/Account": "Saved preferences",
   "/Profile": "Your details", "/Orders": "Order information", "/Videos": "Videos",

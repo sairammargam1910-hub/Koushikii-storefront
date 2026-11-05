@@ -112,6 +112,20 @@ export interface ShopifyCartDiscountCodesInput {
   discountCodes: string[];
 }
 
+export interface ShopifyAvailableCountry {
+  /** @pattern ^[A-Z]{2}$ */
+  isoCode: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  name: string;
+}
+
+export interface ShopifyAvailableCountriesResponse {
+  countries: ShopifyAvailableCountry[];
+}
+
 export type ShopifyCartBuyerIdentityInputDeliveryAddress = {
   /**
      * @minLength 1
@@ -123,18 +137,22 @@ export type ShopifyCartBuyerIdentityInputDeliveryAddress = {
      * @maxLength 500
      */
   street: string;
+  /** @maxLength 500 */
+  address2?: string;
   /**
      * @minLength 1
      * @maxLength 160
      */
   city: string;
+  /** @maxLength 160 */
+  state?: string;
   /**
      * @minLength 1
-     * @maxLength 160
+     * @maxLength 32
      */
-  state: string;
-  /** @pattern ^[1-9][0-9]{5}$ */
   pin: string;
+  /** @pattern ^[A-Z]{2}$ */
+  countryCode: string;
 };
 
 export interface ShopifyCartBuyerIdentityInput {
@@ -144,7 +162,7 @@ export interface ShopifyCartBuyerIdentityInput {
      */
   cartId: string;
   /** @maxLength 254 */
-  email?: string;
+  email: string;
   /** @maxLength 40 */
   phone?: string;
   deliveryAddress: ShopifyCartBuyerIdentityInputDeliveryAddress;

@@ -102,9 +102,17 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     async (query, variables) => {
       state.calls.push({ query, variables });
       if (query.includes("query ShopifyCartMarket")) {
+        const countryNames = {
+          IN: "India",
+          US: "United States",
+          GB: "United Kingdom",
+        };
         return {
           localization: {
-            availableCountries: state.availableCountries.map((isoCode) => ({ isoCode })),
+            availableCountries: state.availableCountries.map((isoCode) => ({
+              isoCode,
+              name: countryNames[isoCode] ?? isoCode,
+            })),
           },
         };
       }
@@ -138,6 +146,7 @@ async function harness(run, { useDevStorePreview = false } = {}) {
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
   const endpoint = `http://127.0.0.1:${server.address().port}/api/shopify/cart`;
+  const countriesEndpoint = `http://127.0.0.1:${server.address().port}/api/shopify/countries`;
   const post = async (body) => {
     const response = await fetch(endpoint, {
       method: "POST",
@@ -166,8 +175,12 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     const response = await fetch(`${endpoint}?cartId=${encodeURIComponent(cartId)}`);
     return { status: response.status, data: await response.json() };
   };
+  const getCountries = async () => {
+    const response = await fetch(countriesEndpoint);
+    return { status: response.status, data: await response.json() };
+  };
   try {
-    await run({ state, post, postDiscount, postBuyerIdentity, getCart });
+    await run({ state, post, postDiscount, postBuyerIdentity, getCart, getCountries });
   } finally {
     await new Promise((resolve) => server.close(resolve));
     if (previousDevStorePreview === undefined) {
@@ -305,12 +318,14 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     state.cartMutationResult = { cart: savedAddressCart, userErrors: [] };
     const withAddress = await postBuyerIdentity({
       cartId: "gid://shopify/Cart/cart-123",
+      email: "shopper@example.com",
       deliveryAddress: {
         recipient: "Asha Rao",
         street: "12 Example Road",
         city: "Chennai",
         state: "Tamil Nadu",
         pin: "600001",
+        countryCode: "IN",
       },
     });
     assert.equal(withAddress.status, 200);
@@ -351,6 +366,7 @@ test("prefills Shopify checkout with a saved shopper address", async () => {
         city: "Chennai",
         state: "Tamil Nadu",
         pin: "600001",
+        countryCode: "IN",
       },
     });
     assert.equal(saved.status, 200);
@@ -372,7 +388,8 @@ test("prefills Shopify checkout with a saved shopper address", async () => {
       addresses: [{
         address: {
           deliveryAddress: {
-            firstName: "Asha Rao",
+            firstName: "Asha",
+            lastName: "Rao",
             address1: "12 Example Road",
             city: "Chennai",
             provinceCode: "TN",
@@ -388,15 +405,89 @@ test("prefills Shopify checkout with a saved shopper address", async () => {
 
     const invalid = await postBuyerIdentity({
       cartId: "gid://shopify/Cart/cart-123",
+      email: "shopper@example.com",
       deliveryAddress: {
         recipient: "Asha Rao",
         street: "12 Example Road",
         city: "Chennai",
         state: "Tamil Nadu",
-        pin: "000000",
+        pin: "",
+        countryCode: "IN",
       },
     });
     assert.equal(invalid.status, 400);
+  });
+});
+
+test("lists active Shopify checkout countries", async () => {
+  await harness(async ({ state, getCountries }) => {
+    state.availableCountries = ["US", "IN", "GB"];
+    const result = await getCountries();
+    assert.equal(result.status, 200);
+    assert.deepEqual(result.data.countries, [
+      { isoCode: "IN", name: "India" },
+      { isoCode: "GB", name: "United Kingdom" },
+      { isoCode: "US", name: "United States" },
+    ]);
+  });
+});
+
+test("prepares an international Shopify delivery address using active market country", async () => {
+  await harness(async ({ state, postBuyerIdentity }) => {
+    state.availableCountries = ["IN", "US"];
+    const result = await postBuyerIdentity({
+      cartId: "gid://shopify/Cart/cart-123",
+      email: "shopper@example.com",
+      phone: "+12025550101",
+      deliveryAddress: {
+        recipient: "Mira Rao",
+        street: "42 Market Street",
+        address2: "Suite 12",
+        city: "San Francisco",
+        state: "CA",
+        pin: "94105",
+        countryCode: "US",
+      },
+    });
+    assert.equal(result.status, 200);
+    const identityCall = state.calls.find((call) => call.query.includes("cartBuyerIdentityUpdate"));
+    assert.deepEqual(identityCall.variables.buyerIdentity, {
+      countryCode: "US",
+      email: "shopper@example.com",
+      phone: "+12025550101",
+    });
+    const addressCall = state.calls.at(-1);
+    assert.deepEqual(addressCall.variables.addresses[0].address.deliveryAddress, {
+      firstName: "Mira",
+      lastName: "Rao",
+      address1: "42 Market Street",
+      address2: "Suite 12",
+      city: "San Francisco",
+      provinceCode: "CA",
+      zip: "94105",
+      countryCode: "US",
+      phone: "+12025550101",
+    });
+  });
+});
+
+test("rejects a shipping country not enabled in Shopify markets", async () => {
+  await harness(async ({ state, postBuyerIdentity }) => {
+    state.availableCountries = ["IN"];
+    const result = await postBuyerIdentity({
+      cartId: "gid://shopify/Cart/cart-123",
+      email: "shopper@example.com",
+      deliveryAddress: {
+        recipient: "Mira Rao",
+        street: "42 Market Street",
+        city: "San Francisco",
+        pin: "94105",
+        countryCode: "US",
+      },
+    });
+    assert.equal(result.status, 409);
+    assert.match(result.data.error, /not currently set up to deliver/i);
+    assert.equal(state.calls.some((call) => call.query.includes("mutation ")), false);
   });
 });
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, MessageCircle, ShieldCheck } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import {
   Shell,
   PageHero,
@@ -10,8 +10,9 @@ import {
   base,
   whatsappOrderUrl,
 } from "./_shared";
-import { formatShopifyMoney, isDefaultShopifyVariantTitle, useShopifyCart } from "./ShopifyCatalog";
+import { useShopifyCart } from "./ShopifyCatalog";
 import { useShopifyCartMeta } from "./shopifyCartState";
+import { ShopifyBuyerCheckout } from "./ShopifyBuyerCheckout";
 
 export function Checkout() {
   const meta = useShopifyCartMeta();
@@ -55,9 +56,9 @@ export function Checkout() {
     return (
       <Shell>
         <PageHero
-          eyebrow="Shopify checkout"
-          title="Review your order."
-          subtitle="Shipping details, payment, and final totals are handled securely by Shopify."
+          eyebrow="Your order"
+          title="Delivery details."
+          subtitle="Enter your contact and delivery information here. Shopify securely handles payment."
         />
         <main className="wrap content">
           {shopifyCart.isLoading && !shopifyCart.data ? (
@@ -81,7 +82,7 @@ export function Checkout() {
               <a className="btn" href={base + "Cart"}>Return to bag <ArrowRight size={14} /></a>
             </div>
           ) : (
-            <ShopifyCheckoutReview cart={shopifyCart.data} />
+            <ShopifyBuyerCheckout cart={shopifyCart.data} />
           )}
         </main>
       </Shell>
@@ -161,87 +162,6 @@ export function Checkout() {
         </div>
       </main>
     </Shell>
-  );
-}
-
-function ShopifyCheckoutReview({
-  cart,
-}: {
-  cart: NonNullable<ReturnType<typeof useShopifyCart>["data"]>;
-}) {
-  let checkoutHref: string | undefined;
-  try {
-    const url = cart.checkoutUrl ? new URL(cart.checkoutUrl) : undefined;
-    if (url?.protocol === "https:") checkoutHref = url.toString();
-  } catch {
-    checkoutHref = undefined;
-  }
-  const canCheckout = Boolean(checkoutHref) &&
-    cart.lines.length > 0 &&
-    cart.totalQuantity > 0 &&
-    cart.lines.every((line) => line.quantity > 0 && line.availableForSale && !line.isDemo);
-
-  return (
-    <div className="two-col">
-      <section className="panel">
-        <span className="eyebrow">Products from Shopify</span>
-        {cart.lines.map((line) => (
-          <div className="row" key={line.id} style={{ padding: "16px 0", borderBottom: "1px solid var(--line)" }}>
-            <div>
-              <strong>{line.productTitle}</strong>
-              <p className="muted" style={{ margin: "6px 0 0" }}>
-                {!isDefaultShopifyVariantTitle(line.variantTitle) && `${line.variantTitle} · `}
-                {line.quantity} × {formatShopifyMoney(line.unitPrice, line.currencyCode)}
-              </p>
-              {line.isDemo && <span className="pill shopify-demo-badge-inline">Demo only</span>}
-            </div>
-            <strong>{formatShopifyMoney(String(Number(line.unitPrice) * line.quantity), line.currencyCode)}</strong>
-          </div>
-        ))}
-        <div className="row" style={{ marginTop: 20 }}>
-          <span>Subtotal before discounts</span>
-          <strong data-testid="text-shopify-checkout-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</strong>
-        </div>
-        {Number(cart.discountAmount) > 0 && (
-          <div className="row" style={{ marginTop: 10 }}>
-            <span>Discount savings</span>
-            <strong data-testid="text-shopify-checkout-discount">-{formatShopifyMoney(cart.discountAmount, cart.currencyCode)}</strong>
-          </div>
-        )}
-        <div className="row" style={{ marginTop: 10 }}>
-          <strong>Estimated total</strong>
-          <strong data-testid="text-shopify-checkout-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
-        </div>
-        {cart.discountCodes.map((discount) => (
-          <p
-            className={discount.applicable ? "muted" : "notice"}
-            role={discount.applicable ? "status" : "alert"}
-            key={discount.code}
-          >
-            {discount.applicable
-              ? `Discount code ${discount.code} is applied to this bag.`
-              : `Discount code ${discount.code} does not apply to this bag.`}
-          </p>
-        ))}
-        <p className="muted" style={{ fontSize: 12 }}>Shopify may recalculate delivery and taxes at checkout, so your estimated total can change.</p>
-        {canCheckout ? (
-          <a className="btn" style={{ marginTop: 18 }} href={checkoutHref} data-testid="button-continue-shopify-checkout">
-            <ShieldCheck size={16} /> Continue to secure Shopify checkout <ArrowRight size={14} />
-          </a>
-        ) : (
-          <p className="notice" role="alert" data-testid="notice-shopify-cart-not-purchasable">
-            This bag contains a demo or unavailable listing. Remove it or update the product in Shopify before checking out.
-          </p>
-        )}
-      </section>
-      <aside className="panel">
-        <span className="eyebrow">Secure checkout</span>
-        <h3 style={{ margin: "14px 0" }}>Your details stay with Shopify.</h3>
-        <p className="muted">After you continue, Shopify asks for your shipping address and payment method, calculates delivery and tax, and confirms the order.</p>
-        <p className="muted" style={{ fontSize: 12 }}>Saved profile details are only sent when you choose the saved-details option from your bag. Shopify securely handles payment and lets you review the delivery address.</p>
-        <a className="link" href={base + "Cart"}>Return to your bag →</a>
-      </aside>
-    </div>
   );
 }
 

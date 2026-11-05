@@ -257,6 +257,22 @@ export const UpdateShopperProfileResponse = zod.object({
 
 
 /**
+ * @summary List countries enabled for Shopify checkout
+ */
+export const getShopifyAvailableCountriesResponseCountriesItemIsoCodeRegExp = new RegExp('^[A-Z]{2}$');
+export const getShopifyAvailableCountriesResponseCountriesItemNameMax = 100;
+
+
+
+export const GetShopifyAvailableCountriesResponse = zod.object({
+  "countries": zod.array(zod.object({
+  "isoCode": zod.string().regex(getShopifyAvailableCountriesResponseCountriesItemIsoCodeRegExp),
+  "name": zod.string().min(1).max(getShopifyAvailableCountriesResponseCountriesItemNameMax)
+}))
+})
+
+
+/**
  * Returns the current Shopify cart and its hosted checkout URL.
  * @summary Get a Shopify cart
  */
@@ -464,23 +480,29 @@ export const updateShopifyCartBuyerIdentityBodyDeliveryAddressRecipientMax = 160
 
 export const updateShopifyCartBuyerIdentityBodyDeliveryAddressStreetMax = 500;
 
+export const updateShopifyCartBuyerIdentityBodyDeliveryAddressAddress2Max = 500;
+
 export const updateShopifyCartBuyerIdentityBodyDeliveryAddressCityMax = 160;
 
 export const updateShopifyCartBuyerIdentityBodyDeliveryAddressStateMax = 160;
 
-export const updateShopifyCartBuyerIdentityBodyDeliveryAddressPinRegExp = new RegExp('^[1-9][0-9]{5}$');
+export const updateShopifyCartBuyerIdentityBodyDeliveryAddressPinMax = 32;
+
+export const updateShopifyCartBuyerIdentityBodyDeliveryAddressCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
 
 
 export const UpdateShopifyCartBuyerIdentityBody = zod.object({
   "cartId": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyCartIdMax),
-  "email": zod.email().max(updateShopifyCartBuyerIdentityBodyEmailMax).optional(),
+  "email": zod.email().max(updateShopifyCartBuyerIdentityBodyEmailMax),
   "phone": zod.string().max(updateShopifyCartBuyerIdentityBodyPhoneMax).optional(),
   "deliveryAddress": zod.object({
   "recipient": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressRecipientMax),
   "street": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressStreetMax),
+  "address2": zod.string().max(updateShopifyCartBuyerIdentityBodyDeliveryAddressAddress2Max).optional(),
   "city": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressCityMax),
-  "state": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressStateMax),
-  "pin": zod.string().regex(updateShopifyCartBuyerIdentityBodyDeliveryAddressPinRegExp)
+  "state": zod.string().max(updateShopifyCartBuyerIdentityBodyDeliveryAddressStateMax).optional(),
+  "pin": zod.string().min(1).max(updateShopifyCartBuyerIdentityBodyDeliveryAddressPinMax),
+  "countryCode": zod.string().regex(updateShopifyCartBuyerIdentityBodyDeliveryAddressCountryCodeRegExp)
 })
 })
 

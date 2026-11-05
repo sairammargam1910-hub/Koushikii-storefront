@@ -148,7 +148,23 @@ async function openCheckout({ savedCart, onCartRequest }) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
   const page = await context.newPage();
-  await page.route("**/api/shopify/cart**", onCartRequest);
+  await page.route("**/api/shopify/cart**", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.continue();
+      return;
+    }
+    await onCartRequest(route);
+  });
+  await page.route("**/api/shopify/countries", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      countries: [
+        { isoCode: "IN", name: "India" },
+        { isoCode: "US", name: "United States" },
+      ],
+    }),
+  }));
   await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
   return { context, page };
 }
@@ -271,10 +287,34 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
   await page.waitForURL("**/Cart", { timeout: 5000 });
   await page.getByTestId("text-cart-quantity").getByText(/Your bag · 1 piece/).waitFor({ timeout: 5000 });
   await page.getByTestId("text-cart-items-count").getByText(/Shopify products · 1 piece/).waitFor({ timeout: 5000 });
-  const cartCheckoutLink = page.getByTestId("link-shopify-checkout");
+  const cartCheckoutLink = page.getByTestId("link-site-checkout");
   await cartCheckoutLink.waitFor();
-  assert.equal(await cartCheckoutLink.getAttribute("href"), checkoutUrl);
+  assert.equal(await cartCheckoutLink.getAttribute("href"), "/Checkout");
   assert.equal(await cartCheckoutLink.getAttribute("target"), null);
+
+  await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
+  await page.getByTestId("text-shopify-checkout-total").waitFor();
+  assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,250/);
+  await page.route("**/api/shopify/cart/buyer-identity", async (route) => {
+    assert.equal(route.request().method(), "POST");
+    assert.deepEqual(route.request().postDataJSON(), {
+      cartId: savedCart.id,
+      email: "buyer@example.com",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Chennai",
+        state: "Tamil Nadu",
+        pin: "600001",
+        countryCode: "IN",
+      },
+    });
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
+    });
+  });
   await page.route("https://chenetha.myshopify.com/checkouts/**", (route) =>
     route.fulfill({
       status: 200,
@@ -282,17 +322,14 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
       body: "<!doctype html><title>Hosted checkout fixture</title>",
     }),
   );
-  await Promise.all([page.waitForURL(checkoutUrl), cartCheckoutLink.click()]);
-  assert.equal(page.url(), checkoutUrl);
-
-  await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
-  const checkoutLink = page.getByTestId("button-continue-shopify-checkout");
-  await checkoutLink.waitFor();
-  assert.equal(await checkoutLink.getAttribute("href"), checkoutUrl);
-  assert.equal(await checkoutLink.getAttribute("target"), null);
-  await page.getByTestId("text-shopify-checkout-total").waitFor();
-  assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,250/);
-  await Promise.all([page.waitForURL(checkoutUrl), checkoutLink.click()]);
+  await page.getByTestId("input-checkout-email").fill("buyer@example.com");
+  await page.getByTestId("input-checkout-recipient").fill("Asha Rao");
+  await page.getByTestId("input-checkout-address1").fill("12 Example Road");
+  await page.getByTestId("input-checkout-city").fill("Chennai");
+  await page.getByTestId("input-checkout-state").fill("Tamil Nadu");
+  await page.getByTestId("input-checkout-postal").fill("600001");
+  const checkoutButton = page.getByTestId("button-submit-checkout-details");
+  await Promise.all([page.waitForURL(checkoutUrl), checkoutButton.click()]);
   assert.equal(page.url(), checkoutUrl);
   await context.close();
 });
@@ -377,7 +414,7 @@ test("explains the India market setup blocker instead of showing an empty checko
   }));
   await page.goto(`${origin}${fixtureUrl}?screen=cart`);
   await page.getByTestId("error-shopify-cart-load").getByText(/not currently set up to deliver to India/i).waitFor();
-  assert.equal(await page.getByTestId("link-shopify-checkout").count(), 0);
+  assert.equal(await page.getByTestId("link-site-checkout").count(), 0);
   await context.close();
 });
 
@@ -425,9 +462,8 @@ test("retries a failed checkout cart refresh with the same saved cart ID", async
   assert.equal(await page.getByTestId("button-retry-shopify-cart-refresh").isVisible(), true);
   await page.getByTestId("button-retry-shopify-cart-refresh").click();
 
-  const checkoutLink = page.getByTestId("button-continue-shopify-checkout");
-  await checkoutLink.waitFor();
-  assert.equal(await checkoutLink.getAttribute("href"), checkoutUrl);
+  const checkoutButton = page.getByTestId("button-submit-checkout-details");
+  await checkoutButton.waitFor();
   assert.deepEqual(requestedCartIds, [savedCart.id, savedCart.id]);
   assert.deepEqual(
     await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),

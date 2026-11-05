@@ -17,16 +17,20 @@ export type ShopifyCartBuyerIdentityInputDeliveryAddress = {
      * @maxLength 500
      */
   street: string;
+  /** @maxLength 500 */
+  address2?: string;
   /**
      * @minLength 1
      * @maxLength 160
      */
   city: string;
+  /** @maxLength 160 */
+  state?: string;
   /**
      * @minLength 1
-     * @maxLength 160
+     * @maxLength 32
      */
-  state: string;
-  /** @pattern ^[1-9][0-9]{5}$ */
   pin: string;
+  /** @pattern ^[A-Z]{2}$ */
+  countryCode: string;
 };

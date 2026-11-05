@@ -41,6 +41,7 @@ import type {
   ShopifyAdminProductsResponse,
   ShopifyAdminVariantCreate,
   ShopifyAdminVariantUpdate,
+  ShopifyAvailableCountriesResponse,
   ShopifyCartAddInput,
   ShopifyCartBuyerIdentityInput,
   ShopifyCartDiscountCodesInput,
@@ -650,6 +651,83 @@ export const useUpdateShopperProfile = <TError = ErrorType<ApiError>,
       > => {
       return useMutation(getUpdateShopperProfileMutationOptions(options));
     }
+
+export const getGetShopifyAvailableCountriesUrl = () => {
+
+
+
+
+  return `/api/shopify/countries`
+}
+
+/**
+ * @summary List countries enabled for Shopify checkout
+ */
+export const getShopifyAvailableCountries = async ( options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAvailableCountriesResponse> => {
+
+  return customFetch<ShopifyAvailableCountriesResponse>(getGetShopifyAvailableCountriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyAvailableCountriesQueryKey = () => {
+    return [
+    `/api/shopify/countries`
+    ] as const;
+    }
+
+
+export const getGetShopifyAvailableCountriesQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyAvailableCountries>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAvailableCountries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyAvailableCountriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyAvailableCountries>>> = ({ signal }) => getShopifyAvailableCountries({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyAvailableCountries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyAvailableCountriesQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyAvailableCountries>>>
+export type GetShopifyAvailableCountriesQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List countries enabled for Shopify checkout
+ */
+
+export function useGetShopifyAvailableCountries<TData = Awaited<ReturnType<typeof getShopifyAvailableCountries>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAvailableCountries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyAvailableCountriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetShopifyCartUrl = (params: GetShopifyCartParams,) => {
   const normalizedParams = new URLSearchParams();
