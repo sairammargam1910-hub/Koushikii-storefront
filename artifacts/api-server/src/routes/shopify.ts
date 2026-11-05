@@ -535,38 +535,7 @@ const router: IRouter = Router();
 router.get("/shopify/products", async (_req, res) => {
   try {
     const catalog = await getSareeCatalog();
-    res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=30");
-    res.json({
-      products: catalog.products.map((product) => ({
-        id: product.id,
-        handle: product.handle,
-        title: product.title,
-        description: product.description,
-        productType: product.productType,
-        tags: product.tags,
-        images: product.images.nodes,
-        variants: product.variants.nodes.map((variant) => ({
-          id: variant.id,
-          title: variant.title,
-          availableForSale: variant.availableForSale,
-          price: variant.price.amount,
-          currencyCode: variant.price.currencyCode,
-          selectedOptions: variant.selectedOptions,
-        })),
-      })),
-      totalPublishedProducts: catalog.totalProducts,
-      truncated: catalog.truncated,
-    });
-  } catch (error) {
-    logger.error({ err: error }, "Shopify saree catalog could not be loaded");
-    res.status(502).json({ error: "Shopify products are temporarily unavailable." });
-  }
-});
-
-router.get("/shopify/products", async (_req, res) => {
-  try {
-    const catalog = await getSareeCatalog();
-    res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=30");
+    res.setHeader("Cache-Control", "no-store");
     res.json({
       products: catalog.products.map((product) => ({
         id: product.id,

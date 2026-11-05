@@ -9,6 +9,7 @@
     "test:cart": "node --test tests/shopifyCart.test.mjs",
     "test:images": "node --test tests/shopifyImageUpload.test.mjs",
     "test:gallery": "node --test tests/shopifyGallery.test.mjs",
+    "test:product-deletion": "node --test tests/shopifyProductDeletion.test.mjs",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
