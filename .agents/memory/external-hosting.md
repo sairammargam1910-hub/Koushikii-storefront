@@ -26,3 +26,9 @@ Keep Railway's canonical app origin aligned with the domain used for merchant si
 **Why:** After moving to the custom domain, Clerk rejected merchant sessions whose authorized party was the custom domain while the backend still expected the generated Railway hostname. An attempted comma-separated origin list then failed the startup validator, despite the API middleware supporting lists.
 
 **How to apply:** Use the single canonical custom-domain origin unless multi-origin support is implemented and validated end to end. A working public Shopify catalog does not prove authenticated merchant requests are accepted.
+
+Cloudflare R2 browser uploads require the live storefront origin in the bucket's CORS policy; successful upload-URL signing alone does not prove the browser's file transfer can pass.
+
+**Why:** The bucket allowed the generated Railway hostname but not `https://koushikii.com`, so upload signing succeeded while browser uploads from the custom domain were blocked at CORS preflight.
+
+**How to apply:** After changing the storefront domain, preserve existing R2 CORS rules and add the exact new HTTPS origin. Verify an `OPTIONS` request for `PUT` from that origin before testing an authenticated upload.
