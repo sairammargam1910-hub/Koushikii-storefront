@@ -292,6 +292,13 @@ export const GetShopifyCartResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
+  "shippingEstimate": zod.union([zod.object({
+  "amount": zod.string(),
+  "currencyCode": zod.string(),
+  "method": zod.string(),
+  "basis": zod.enum(['selected', 'lowest_available'])
+}),zod.null()]),
+  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -341,6 +348,13 @@ export const AddShopifyCartLineResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
+  "shippingEstimate": zod.union([zod.object({
+  "amount": zod.string(),
+  "currencyCode": zod.string(),
+  "method": zod.string(),
+  "basis": zod.enum(['selected', 'lowest_available'])
+}),zod.null()]),
+  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -395,6 +409,13 @@ export const UpdateShopifyCartLinesResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
+  "shippingEstimate": zod.union([zod.object({
+  "amount": zod.string(),
+  "currencyCode": zod.string(),
+  "method": zod.string(),
+  "basis": zod.enum(['selected', 'lowest_available'])
+}),zod.null()]),
+  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -443,6 +464,13 @@ export const UpdateShopifyCartDiscountCodesResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
+  "shippingEstimate": zod.union([zod.object({
+  "amount": zod.string(),
+  "currencyCode": zod.string(),
+  "method": zod.string(),
+  "basis": zod.enum(['selected', 'lowest_available'])
+}),zod.null()]),
+  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -514,6 +542,13 @@ export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
+  "shippingEstimate": zod.union([zod.object({
+  "amount": zod.string(),
+  "currencyCode": zod.string(),
+  "method": zod.string(),
+  "basis": zod.enum(['selected', 'lowest_available'])
+}),zod.null()]),
+  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()

@@ -69,11 +69,23 @@ type ShopifyCartMerchandise = {
   };
 };
 
+type ShopifyCartDeliveryOption = {
+  title: string | null;
+  deliveryMethodType: string;
+  estimatedCost: ShopifyMoney;
+};
+
 type ShopifyCartNode = {
   id: string;
   checkoutUrl: string;
   totalQuantity: number;
   cost: { subtotalAmount: ShopifyMoney; totalAmount: ShopifyMoney };
+  deliveryGroups?: {
+    nodes: Array<{
+      deliveryOptions: ShopifyCartDeliveryOption[];
+      selectedDeliveryOption: ShopifyCartDeliveryOption | null;
+    }>;
+  } | null;
   discountCodes: Array<{ code: string; applicable: boolean }>;
   lines: {
     nodes: Array<{
@@ -111,6 +123,13 @@ type ShopifyCartApiResponse = {
   discountAmount: string;
   totalAmount: string;
   currencyCode: string;
+  shippingEstimate: {
+    amount: string;
+    currencyCode: string;
+    method: string;
+    basis: "selected" | "lowest_available";
+  } | null;
+  estimatedTotalAmount: string | null;
   discountCodes: Array<{ code: string; applicable: boolean }>;
   lines: Array<{
     id: string;
@@ -204,6 +223,32 @@ const SHOPIFY_CART_QUERY = `#graphql
   query ShopifyCart($cartId: ID!) @inContext(country: IN) {
     cart(id: $cartId) {
       ${CART_FIELDS}
+    }
+  }
+`;
+
+const SHOPIFY_CART_SHIPPING_ESTIMATE_QUERY = `#graphql
+  query ShopifyCartShippingEstimate($cartId: ID!) {
+    cart(id: $cartId) {
+      id
+      ...ShopifyCartDeliveryGroups @defer
+    }
+  }
+
+  fragment ShopifyCartDeliveryGroups on Cart {
+    deliveryGroups(first: 20, withCarrierRates: true) {
+      nodes {
+        selectedDeliveryOption {
+          title
+          deliveryMethodType
+          estimatedCost { amount currencyCode }
+        }
+        deliveryOptions {
+          title
+          deliveryMethodType
+          estimatedCost { amount currencyCode }
+        }
+      }
     }
   }
 `;
@@ -375,6 +420,80 @@ function getCartDiscountAmount(cart: ShopifyCartNode): string {
   return formatScaledMoneyAmount(discounted, scale);
 }
 
+function getCartShippingEstimate(
+  cart: ShopifyCartNode,
+): ShopifyCartApiResponse["shippingEstimate"] {
+  const groups = cart.deliveryGroups?.nodes ?? [];
+  if (!groups.length) return null;
+
+  const chosenOptions = groups.map((group) => {
+    const selected = group.selectedDeliveryOption;
+    if (selected?.deliveryMethodType === "SHIPPING") {
+      return { option: selected, selected: true };
+    }
+
+    const options = group.deliveryOptions.filter(
+      (option) => option.deliveryMethodType === "SHIPPING",
+    );
+    if (!options.length) return null;
+
+    const scale = Math.max(
+      0,
+      ...options.map(({ estimatedCost }) => estimatedCost.amount.split(".")[1]?.length ?? 0),
+    );
+    const lowest = options.reduce((best, option) =>
+      scaledMoneyAmount(option.estimatedCost.amount, scale) <
+        scaledMoneyAmount(best.estimatedCost.amount, scale)
+        ? option
+        : best,
+    );
+    return { option: lowest, selected: false };
+  });
+
+  if (chosenOptions.some((choice) => !choice)) return null;
+  const chosen = chosenOptions.filter(
+    (choice): choice is NonNullable<typeof choice> => choice !== null,
+  );
+  const currencyCode = chosen[0]?.option.estimatedCost.currencyCode;
+  if (!currencyCode || chosen.some((choice) => choice.option.estimatedCost.currencyCode !== currencyCode)) {
+    return null;
+  }
+
+  const amounts = chosen.map(({ option }) => option.estimatedCost.amount);
+  const scale = Math.max(0, ...amounts.map((amount) => amount.split(".")[1]?.length ?? 0));
+  const total = amounts.reduce((sum, amount) => sum + scaledMoneyAmount(amount, scale), 0n);
+  const methods = [...new Set(chosen.map(
+    ({ option }) => option.title?.trim() || "Shipping",
+  ))];
+
+  return {
+    amount: formatScaledMoneyAmount(total, scale),
+    currencyCode,
+    method: methods.join(", "),
+    basis: chosen.every(({ selected }) => selected) ? "selected" : "lowest_available",
+  };
+}
+
+function getEstimatedTotalAmount(
+  cart: ShopifyCartNode,
+  shippingEstimate: ShopifyCartApiResponse["shippingEstimate"],
+): string | null {
+  if (!shippingEstimate || shippingEstimate.currencyCode !== cart.cost.totalAmount.currencyCode) {
+    return null;
+  }
+
+  const totalAmount = cart.cost.totalAmount.amount;
+  const scale = Math.max(
+    totalAmount.split(".")[1]?.length ?? 0,
+    shippingEstimate.amount.split(".")[1]?.length ?? 0,
+  );
+  return formatScaledMoneyAmount(
+    scaledMoneyAmount(totalAmount, scale) +
+      scaledMoneyAmount(shippingEstimate.amount, scale),
+    scale,
+  );
+}
+
 function createCheckoutUrl(checkoutUrl: string): string {
   const url = new URL(checkoutUrl);
   if (process.env["SHOPIFY_DEV_STORE_PREVIEW"] === "true") {
@@ -384,6 +503,7 @@ function createCheckoutUrl(checkoutUrl: string): string {
 }
 
 function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
+  const shippingEstimate = getCartShippingEstimate(cart);
   const lines = cart.lines.nodes.map((line) => {
     const merchandise = line.merchandise;
     const product = merchandise?.product;
@@ -413,6 +533,8 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
     discountAmount: getCartDiscountAmount(cart),
     totalAmount: cart.cost.totalAmount.amount,
     currencyCode: cart.cost.subtotalAmount.currencyCode,
+    shippingEstimate,
+    estimatedTotalAmount: getEstimatedTotalAmount(cart, shippingEstimate),
     discountCodes: cart.discountCodes,
     lines,
   };
@@ -817,7 +939,23 @@ router.post("/shopify/cart/buyer-identity", async (req, res): Promise<void> => {
       res.status(404).json({ error: "This Shopify cart has expired or could not be found." });
       return;
     }
-    res.json(mapShopifyCart(result.cartDeliveryAddressesReplace.cart));
+    const updatedCart = result.cartDeliveryAddressesReplace.cart;
+    let cartForResponse = updatedCart;
+    try {
+      const shippingResult = await shopifyStorefrontRequest<{
+        cart: Pick<ShopifyCartNode, "id" | "deliveryGroups"> | null;
+      }>(SHOPIFY_CART_SHIPPING_ESTIMATE_QUERY, { cartId });
+      if (shippingResult.cart) {
+        cartForResponse = {
+          ...updatedCart,
+          deliveryGroups: shippingResult.cart.deliveryGroups,
+        };
+      }
+    } catch {
+      // Keep checkout available when a carrier-calculated rate is temporarily unavailable.
+      // The response explicitly shows that no estimate was returned.
+    }
+    res.json(mapShopifyCart(cartForResponse));
   } catch {
     // Cart identity contains personal details; keep them out of server logs.
     res.status(502).json({ error: "Shopify could not prepare your saved details for checkout. Please try again." });

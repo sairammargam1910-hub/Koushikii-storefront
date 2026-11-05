@@ -57,6 +57,8 @@ export * from './shopifyCartDiscountCodesInput';
 export * from './shopifyCartLine';
 export * from './shopifyCartLineUpdate';
 export * from './shopifyCartResponse';
+export * from './shopifyCartShippingEstimate';
+export * from './shopifyCartShippingEstimateBasis';
 export * from './shopifyCartUpdateInput';
 export * from './shopifyCustomerAccountResponse';
 export * from './shopifyImage';

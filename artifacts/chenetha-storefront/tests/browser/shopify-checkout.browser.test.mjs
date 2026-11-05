@@ -36,6 +36,8 @@ const cartResponse = {
   discountAmount: "0.00",
   totalAmount: "1250.00",
   currencyCode: "INR",
+  shippingEstimate: null,
+  estimatedTotalAmount: null,
   discountCodes: [],
   lines: [{
     id: "gid://shopify/CartLine/browser-line-123",
@@ -313,7 +315,16 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify(cartResponse),
+      body: JSON.stringify({
+        ...cartResponse,
+        shippingEstimate: {
+          amount: "100.00",
+          currencyCode: "INR",
+          method: "Standard",
+          basis: "lowest_available",
+        },
+        estimatedTotalAmount: "1350.00",
+      }),
     });
   });
   await page.route("https://chenetha.myshopify.com/checkouts/**", (route) =>
@@ -330,6 +341,11 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
   await page.getByTestId("input-checkout-state").fill("Tamil Nadu");
   await page.getByTestId("input-checkout-postal").fill("600001");
   const checkoutButton = page.getByTestId("button-submit-checkout-details");
+  await checkoutButton.click();
+  await page.getByTestId("text-shopify-checkout-shipping").getByText(/100/).waitFor();
+  assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,350/);
+  assert.match(await page.getByTestId("text-shopify-shipping-note").innerText(), /lowest available rate/i);
+  assert.match(await checkoutButton.innerText(), /Continue to secure payment/i);
   await Promise.all([page.waitForURL(checkoutUrl), checkoutButton.click()]);
   assert.equal(page.url(), checkoutUrl);
   assert.deepEqual(postedBuyerDetails, {
@@ -390,7 +406,7 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
   await context.close();
 });
 
-test("shows coupon savings separately from Shopify's address-based estimated total", async () => {
+test("keeps shipping out of the total until Shopify returns an address-based estimate", async () => {
   const savedCart = { id: "gid://shopify/Cart/address-estimate-cart", totalQuantity: 1 };
   const { context, page } = await openCheckout({
     savedCart,
@@ -411,7 +427,8 @@ test("shows coupon savings separately from Shopify's address-based estimated tot
   assert.match(await page.getByTestId("text-shopify-checkout-subtotal").innerText(), /1,250/);
   assert.match(await page.getByTestId("text-shopify-checkout-discount").innerText(), /125/);
   assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,385/);
-  assert.match(await page.getByText(/Shipping and taxes are calculated by Shopify/i).innerText(), /final amount before you pay/i);
+  assert.match(await page.getByTestId("text-shopify-checkout-shipping").innerText(), /Calculate after address/);
+  assert.match(await page.getByTestId("text-shopify-shipping-note").innerText(), /choose Calculate shipping/i);
   await context.close();
 });
 

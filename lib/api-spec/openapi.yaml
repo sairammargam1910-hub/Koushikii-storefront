@@ -1565,6 +1565,19 @@ components:
             - $ref: "#/components/schemas/ShopifyImage"
             - type: "null"
       required: [id, merchandiseId, productHandle, productTitle, variantTitle, quantity, unitPrice, currencyCode, availableForSale, isDemo, image]
+    ShopifyCartShippingEstimate:
+      type: object
+      properties:
+        amount:
+          type: string
+        currencyCode:
+          type: string
+        method:
+          type: string
+        basis:
+          type: string
+          enum: [selected, lowest_available]
+      required: [amount, currencyCode, method, basis]
     ShopifyCartResponse:
       type: object
       properties:
@@ -1583,6 +1596,12 @@ components:
           type: string
         currencyCode:
           type: string
+        shippingEstimate:
+          anyOf:
+            - $ref: "#/components/schemas/ShopifyCartShippingEstimate"
+            - type: "null"
+        estimatedTotalAmount:
+          type: ["string", "null"]
         discountCodes:
           type: array
           items:
@@ -1591,7 +1610,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyCartLine"
-      required: [id, checkoutUrl, totalQuantity, subtotalAmount, discountAmount, totalAmount, currencyCode, discountCodes, lines]
+      required: [id, checkoutUrl, totalQuantity, subtotalAmount, discountAmount, totalAmount, currencyCode, shippingEstimate, estimatedTotalAmount, discountCodes, lines]
     ShopifyAdminInventoryLevel:
       type: object
       required: [locationId, locationName, active, available]

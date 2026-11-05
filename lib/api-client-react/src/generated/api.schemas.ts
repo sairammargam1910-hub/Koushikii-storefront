@@ -187,6 +187,21 @@ export interface ShopifyCartLine {
   image: ShopifyImage | null;
 }
 
+export type ShopifyCartShippingEstimateBasis = typeof ShopifyCartShippingEstimateBasis[keyof typeof ShopifyCartShippingEstimateBasis];
+
+
+export const ShopifyCartShippingEstimateBasis = {
+  selected: 'selected',
+  lowest_available: 'lowest_available',
+} as const;
+
+export interface ShopifyCartShippingEstimate {
+  amount: string;
+  currencyCode: string;
+  method: string;
+  basis: ShopifyCartShippingEstimateBasis;
+}
+
 export interface ShopifyCartResponse {
   id: string;
   /** @nullable */
@@ -196,6 +211,9 @@ export interface ShopifyCartResponse {
   discountAmount: string;
   totalAmount: string;
   currencyCode: string;
+  shippingEstimate: ShopifyCartShippingEstimate | null;
+  /** @nullable */
+  estimatedTotalAmount: string | null;
   discountCodes: ShopifyCartDiscountCode[];
   lines: ShopifyCartLine[];
 }

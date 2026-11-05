@@ -47,6 +47,7 @@ function cart(overrides = {}) {
       subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
       totalAmount: { amount: "1250.00", currencyCode: "INR" },
     },
+    deliveryGroups: { nodes: [] },
     discountCodes: [],
     lines: {
       nodes: [{
@@ -351,6 +352,71 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     });
     assert.equal(removed.status, 200);
     assert.deepEqual(removed.data.discountCodes, []);
+  });
+});
+
+test("returns the selected or lowest Shopify shipping rate and a shipping-inclusive estimate", async () => {
+  await harness(async ({ state, postBuyerIdentity }) => {
+    state.cartMutationResult = {
+      cart: cart({
+        deliveryGroups: {
+          nodes: [
+            {
+              selectedDeliveryOption: null,
+              deliveryOptions: [
+                {
+                  title: "Standard",
+                  deliveryMethodType: "SHIPPING",
+                  estimatedCost: { amount: "100.00", currencyCode: "INR" },
+                },
+                {
+                  title: "Economy",
+                  deliveryMethodType: "SHIPPING",
+                  estimatedCost: { amount: "75.00", currencyCode: "INR" },
+                },
+                {
+                  title: "Pickup",
+                  deliveryMethodType: "PICK_UP",
+                  estimatedCost: { amount: "0.00", currencyCode: "INR" },
+                },
+              ],
+            },
+            {
+              selectedDeliveryOption: {
+                title: "Express",
+                deliveryMethodType: "SHIPPING",
+                estimatedCost: { amount: "250.00", currencyCode: "INR" },
+              },
+              deliveryOptions: [],
+            },
+          ],
+        },
+      }),
+      userErrors: [],
+    };
+
+    const result = await postBuyerIdentity({
+      cartId: "gid://shopify/Cart/cart-123",
+      email: "shopper@example.com",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Chennai",
+        pin: "600001",
+        countryCode: "IN",
+      },
+    });
+
+    assert.equal(result.status, 200);
+    assert.deepEqual(result.data.shippingEstimate, {
+      amount: "325.00",
+      currencyCode: "INR",
+      method: "Economy, Express",
+      basis: "lowest_available",
+    });
+    assert.equal(result.data.estimatedTotalAmount, "1575.00");
+    assert.match(state.calls.at(-1).query, /deliveryGroups\(first: 20\)/);
+    assert.match(state.calls.at(-1).query, /estimatedCost \{ amount currencyCode \}/);
   });
 });
 

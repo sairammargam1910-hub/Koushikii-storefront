@@ -17,6 +17,65 @@ type ShopifyStorefrontConfig = {
 const STOREFRONT_API_VERSION = "2026-04";
 const CONNECTION_CACHE_TTL_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 10_000;
+const CARRIER_RATE_TIMEOUT_MS = 30_000;
+
+type ShopifyGraphqlPayload<T> = {
+  data?: T;
+  errors?: Array<{ message: string }>;
+  incremental?: Array<{
+    path: Array<string | number>;
+    data?: Record<string, unknown>;
+    errors?: Array<{ message: string }>;
+  }>;
+};
+
+function applyIncrementalPatch(
+  data: unknown,
+  patch: NonNullable<ShopifyGraphqlPayload<unknown>["incremental"]>[number],
+): void {
+  let target = data;
+  for (const segment of patch.path) {
+    if (!target || typeof target !== "object") return;
+    target = (target as Record<string | number, unknown>)[segment];
+  }
+  if (target && typeof target === "object" && patch.data) {
+    Object.assign(target, patch.data);
+  }
+}
+
+function parseShopifyGraphqlResponse<T>(
+  body: string,
+  contentType: string,
+): ShopifyGraphqlPayload<T> {
+  if (!contentType.toLowerCase().includes("multipart/mixed")) {
+    return JSON.parse(body) as ShopifyGraphqlPayload<T>;
+  }
+
+  const boundary = contentType.match(/boundary="?([^";\s]+)"?/i)?.[1];
+  if (!boundary) throw new Error("Missing multipart boundary");
+
+  let data: T | undefined;
+  const errors: Array<{ message: string }> = [];
+  for (const part of body.split(`--${boundary}`)) {
+    const trimmedPart = part.trim();
+    if (!trimmedPart || trimmedPart === "--") continue;
+
+    const separator = trimmedPart.search(/\r?\n\r?\n/);
+    if (separator < 0) continue;
+    const json = trimmedPart.slice(separator).replace(/^\r?\n\r?\n/, "").trim();
+    if (!json || json === "--") continue;
+
+    const payload = JSON.parse(json) as ShopifyGraphqlPayload<T>;
+    if (payload.data) data = payload.data;
+    if (payload.errors) errors.push(...payload.errors);
+    for (const patch of payload.incremental ?? []) {
+      if (data) applyIncrementalPatch(data, patch);
+      if (patch.errors) errors.push(...patch.errors);
+    }
+  }
+
+  return { data, errors };
+}
 
 let cachedConfig:
   | { value: ShopifyStorefrontConfig; expiresAt: number }
@@ -118,7 +177,11 @@ export async function shopifyStorefrontRequest<T>(
         "X-Shopify-Storefront-Access-Token": config.storefrontAccessToken,
       },
       body: JSON.stringify({ query, variables }),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(
+        query.includes("withCarrierRates: true")
+          ? CARRIER_RATE_TIMEOUT_MS
+          : REQUEST_TIMEOUT_MS,
+      ),
     },
   );
 
@@ -132,9 +195,11 @@ export async function shopifyStorefrontRequest<T>(
   }
 
   const body = await response.text();
-  let payload: { data?: T; errors?: Array<{ message: string }> };
+  let payload: ShopifyGraphqlPayload<T>;
   try {
-    payload = body ? JSON.parse(body) : {};
+    payload = body
+      ? parseShopifyGraphqlResponse<T>(body, response.headers.get("content-type") ?? "")
+      : {};
   } catch {
     throw new Error(`Shopify returned an unreadable response (${response.status})`);
   }

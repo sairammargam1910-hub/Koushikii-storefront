@@ -42,6 +42,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const [details, setDetails] = useState<CheckoutDetails>(emptyDetails);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [shippingCalculatedFor, setShippingCalculatedFor] = useState<string | null>(null);
 
   const countriesQuery = useQuery({
     queryKey: ["/api/shopify/countries"],
@@ -59,6 +60,10 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
     cart.totalQuantity > 0 &&
     cart.lines.every((line) => line.quantity > 0 && line.availableForSale && !line.isDemo);
   const checkoutHref = getSecureCheckoutHref(cart.checkoutUrl);
+  const shippingAddressKey = getShippingAddressKey(details);
+  const shippingCalculated = shippingCalculatedFor === shippingAddressKey;
+  const shippingEstimate = shippingCalculated ? cart.shippingEstimate : null;
+  const estimatedTotalAmount = shippingCalculated ? cart.estimatedTotalAmount : null;
 
   useEffect(() => {
     if (shopper.loading || detailsEdited.current) return;
@@ -153,6 +158,10 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
 
     try {
       const updatedCart = await prepareCheckout.mutateAsync(payload);
+      if (!shippingCalculated) {
+        setShippingCalculatedFor(shippingAddressKey);
+        return;
+      }
       const secureUrl = getSecureCheckoutHref(updatedCart.checkoutUrl);
       if (!secureUrl) throw new Error("Shopify did not provide a secure checkout link.");
       window.location.assign(secureUrl);
@@ -355,11 +364,13 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
           data-testid="button-submit-checkout-details"
           disabled={!checkoutHref || prepareCheckout.isPending || countriesQuery.isLoading || countriesQuery.isError || availableCountries.length === 0}
         >
-          {prepareCheckout.isPending ? "Preparing secure payment…" : "Continue to secure payment"}
+          {prepareCheckout.isPending
+            ? shippingCalculated ? "Preparing secure payment…" : "Calculating shipping…"
+            : shippingCalculated ? "Continue to secure payment" : "Calculate shipping"}
           <ArrowRight size={15} />
         </button>
         <p className="checkout-secure-note">
-          <LockKeyhole size={13} /> Payment details are entered securely on Shopify.
+          <LockKeyhole size={13} /> Review the delivery estimate here, then pay securely on Shopify.
         </p>
       </form>
 
@@ -394,10 +405,25 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
             </strong>
           </div>
         )}
+        <div className="checkout-total-row">
+          <span>
+            Estimated shipping
+            {shippingEstimate?.method ? ` · ${shippingEstimate.method}` : ""}
+          </span>
+          <strong data-testid="text-shopify-checkout-shipping">
+            {shippingEstimate
+              ? formatShippingEstimate(shippingEstimate.amount, shippingEstimate.currencyCode)
+              : shippingCalculated
+                ? "Not available"
+                : "Calculate after address"}
+          </strong>
+        </div>
         <div className="checkout-total-row checkout-grand-total">
-          <strong>Estimated total</strong>
+          <strong>{estimatedTotalAmount ? "Estimated total incl. shipping" : "Items total before shipping"}</strong>
           <strong data-testid="text-shopify-checkout-total">
-            {formatShopifyMoney(cart.totalAmount, cart.currencyCode)}
+            {estimatedTotalAmount
+              ? formatShopifyMoney(estimatedTotalAmount, cart.currencyCode)
+              : formatShopifyMoney(cart.totalAmount, cart.currencyCode)}
           </strong>
         </div>
         {cart.discountCodes.map((discount) => (
@@ -411,8 +437,12 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
               : `Discount code ${discount.code} does not apply to this bag.`}
           </p>
         ))}
-        <p className="checkout-summary-note">
-          Shipping and taxes are calculated by Shopify after your address is submitted. Shopify shows the final amount before you pay.
+        <p className="checkout-summary-note" data-testid="text-shopify-shipping-note" aria-live="polite">
+          {shippingEstimate
+            ? `Estimate uses Shopify’s ${shippingEstimate.basis === "selected" ? "selected" : "lowest available"} rate. Shopify confirms the shipping choice, taxes, and final amount before payment.`
+            : shippingCalculated
+              ? "Shopify did not return a shipping rate for this address. You can continue, and Shopify will show any available delivery options before payment."
+              : "Enter your delivery details and choose Calculate shipping to see Shopify’s estimate. The final shipping choice and taxes are confirmed before payment."}
         </p>
         <div className="checkout-payment-trust">
           <ShieldCheck size={17} />
@@ -422,6 +452,21 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
       </aside>
     </div>
   );
+}
+
+function getShippingAddressKey(details: CheckoutDetails): string {
+  return [
+    details.countryCode,
+    details.street,
+    details.address2 ?? "",
+    details.city,
+    details.state ?? "",
+    details.pin,
+  ].map((value) => value.trim().toLocaleLowerCase()).join("\u001f");
+}
+
+function formatShippingEstimate(amount: string, currencyCode: string): string {
+  return Number(amount) === 0 ? "Free" : formatShopifyMoney(amount, currencyCode);
 }
 
 function getSecureCheckoutHref(checkoutUrl: string | null | undefined): string | null {
