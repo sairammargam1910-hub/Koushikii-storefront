@@ -231,13 +231,8 @@ const SHOPIFY_CART_SHIPPING_ESTIMATE_QUERY = `#graphql
   query ShopifyCartShippingEstimate($cartId: ID!) {
     cart(id: $cartId) {
       id
-      ...ShopifyCartDeliveryGroups @defer
-    }
-  }
-
-  fragment ShopifyCartDeliveryGroups on Cart {
-    deliveryGroups(first: 20, withCarrierRates: true) {
-      nodes {
+      deliveryGroups(first: 20) {
+        nodes {
         selectedDeliveryOption {
           title
           deliveryMethodType
@@ -247,6 +242,7 @@ const SHOPIFY_CART_SHIPPING_ESTIMATE_QUERY = `#graphql
           title
           deliveryMethodType
           estimatedCost { amount currencyCode }
+        }
         }
       }
     }
@@ -952,7 +948,7 @@ router.post("/shopify/cart/buyer-identity", async (req, res): Promise<void> => {
         };
       }
     } catch {
-      // Keep checkout available when a carrier-calculated rate is temporarily unavailable.
+      // Keep checkout available when Shopify's configured rate is temporarily unavailable.
       // The response explicitly shows that no estimate was returned.
     }
     res.json(mapShopifyCart(cartForResponse));

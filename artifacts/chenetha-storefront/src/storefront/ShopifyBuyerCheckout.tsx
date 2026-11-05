@@ -43,6 +43,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [shippingCalculatedFor, setShippingCalculatedFor] = useState<string | null>(null);
+  const [preparedCheckoutUrl, setPreparedCheckoutUrl] = useState<string | null>(null);
 
   const countriesQuery = useQuery({
     queryKey: ["/api/shopify/countries"],
@@ -157,12 +158,15 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
     };
 
     try {
-      const updatedCart = await prepareCheckout.mutateAsync(payload);
       if (!shippingCalculated) {
+        const updatedCart = await prepareCheckout.mutateAsync(payload);
+        const secureUrl = getSecureCheckoutHref(updatedCart.checkoutUrl);
+        if (!secureUrl) throw new Error("Shopify did not provide a secure checkout link.");
+        setPreparedCheckoutUrl(secureUrl);
         setShippingCalculatedFor(shippingAddressKey);
         return;
       }
-      const secureUrl = getSecureCheckoutHref(updatedCart.checkoutUrl);
+      const secureUrl = preparedCheckoutUrl ?? checkoutHref;
       if (!secureUrl) throw new Error("Shopify did not provide a secure checkout link.");
       window.location.assign(secureUrl);
     } catch (error) {
@@ -456,6 +460,9 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
 
 function getShippingAddressKey(details: CheckoutDetails): string {
   return [
+    details.email,
+    details.phone,
+    details.recipient,
     details.countryCode,
     details.street,
     details.address2 ?? "",

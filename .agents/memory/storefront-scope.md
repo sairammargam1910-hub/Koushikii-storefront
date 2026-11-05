@@ -38,11 +38,11 @@ The user selected sarees as the initial Shopify catalog category.
 
 **How to apply:** Use published Shopify product and variant IDs for the live catalog and checkout. Do not create products or inventory without real product details and explicit approval.
 
-Published Shopify sarees replace the storefront's sample product cards; drafts are not visible through the buyer catalog. Sample pieces remain only as a fallback when Shopify has no published sarees. Demo or placeholder products must be clearly marked and blocked from purchase, including by server-side cart validation. Real orders use Shopify Storefront carts and Shopify-hosted checkout; the app must not collect payment or address details.
+Published Shopify sarees replace the storefront's sample product cards; drafts are not visible through the buyer catalog. Sample pieces remain only as a fallback when Shopify has no published sarees. Demo or placeholder products must be clearly marked and blocked from purchase, including by server-side cart validation. The Chenetha checkout collects buyer contact and delivery details, then hands payment to Shopify-hosted checkout; payment details stay on Shopify.
 
-**Why:** The user wants products entered in Shopify to appear in the storefront and checkout, while avoiding accidental sale of placeholder content or collection of sensitive buyer details in the app.
+**Why:** The user asked for a branded website checkout form for contact and address details while keeping payment on Shopify, and wants products entered in Shopify to appear without risking accidental sales of placeholders.
 
-**How to apply:** Validate product availability and demo markers on the server before adding a cart line. Keep Shopify as the source for variants, prices, shipping, payment, and order status; direct buyers to Shopify-hosted checkout.
+**How to apply:** Validate product availability and demo markers on the server before adding a cart line. Keep Shopify authoritative for variants, prices, shipping, payment, and order status; collect only the buyer details needed to prepare checkout, and never collect card/payment credentials on the website.
 
 Shopify currency is authoritative. Request the India market context for this storefront, but display the currency Shopify returns; never relabel a USD price as INR in app code. Local-currency transaction support depends on Shopify market and payment-provider settings.
 

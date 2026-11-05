@@ -94,6 +94,10 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     },
     calls: [],
     cartMutationResult: { cart: cart(), userErrors: [] },
+    shippingQuote: {
+      id: "gid://shopify/Cart/cart-123",
+      deliveryGroups: { nodes: [] },
+    },
   };
   const module = { exports: {} };
   new Function("require", "module", "exports", "storefrontRequest", compiled.outputFiles[0].text)(
@@ -116,6 +120,9 @@ async function harness(run, { useDevStorePreview = false } = {}) {
             })),
           },
         };
+      }
+      if (query.includes("query ShopifyCartShippingEstimate")) {
+        return { cart: state.shippingQuote };
       }
       if (query.includes("query ShopifyCart")) {
         return { cart: state.cartMutationResult.cart };
@@ -357,42 +364,40 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
 
 test("returns the selected or lowest Shopify shipping rate and a shipping-inclusive estimate", async () => {
   await harness(async ({ state, postBuyerIdentity }) => {
-    state.cartMutationResult = {
-      cart: cart({
-        deliveryGroups: {
-          nodes: [
-            {
-              selectedDeliveryOption: null,
-              deliveryOptions: [
-                {
-                  title: "Standard",
-                  deliveryMethodType: "SHIPPING",
-                  estimatedCost: { amount: "100.00", currencyCode: "INR" },
-                },
-                {
-                  title: "Economy",
-                  deliveryMethodType: "SHIPPING",
-                  estimatedCost: { amount: "75.00", currencyCode: "INR" },
-                },
-                {
-                  title: "Pickup",
-                  deliveryMethodType: "PICK_UP",
-                  estimatedCost: { amount: "0.00", currencyCode: "INR" },
-                },
-              ],
-            },
-            {
-              selectedDeliveryOption: {
-                title: "Express",
+    state.shippingQuote = {
+      id: "gid://shopify/Cart/cart-123",
+      deliveryGroups: {
+        nodes: [
+          {
+            selectedDeliveryOption: null,
+            deliveryOptions: [
+              {
+                title: "Standard",
                 deliveryMethodType: "SHIPPING",
-                estimatedCost: { amount: "250.00", currencyCode: "INR" },
+                estimatedCost: { amount: "100.00", currencyCode: "INR" },
               },
-              deliveryOptions: [],
+              {
+                title: "Economy",
+                deliveryMethodType: "SHIPPING",
+                estimatedCost: { amount: "75.00", currencyCode: "INR" },
+              },
+              {
+                title: "Pickup",
+                deliveryMethodType: "PICK_UP",
+                estimatedCost: { amount: "0.00", currencyCode: "INR" },
+              },
+            ],
+          },
+          {
+            selectedDeliveryOption: {
+              title: "Express",
+              deliveryMethodType: "SHIPPING",
+              estimatedCost: { amount: "250.00", currencyCode: "INR" },
             },
-          ],
-        },
-      }),
-      userErrors: [],
+            deliveryOptions: [],
+          },
+        ],
+      },
     };
 
     const result = await postBuyerIdentity({
@@ -447,7 +452,9 @@ test("prefills Shopify checkout with a saved shopper address", async () => {
         phone: "+919876543210",
       },
     });
-    const addressCall = state.calls.at(-1);
+    const addressCall = state.calls.find((call) =>
+      call.query.includes("ReplaceShopifyCartDeliveryAddress"),
+    );
     assert.match(addressCall.query, /cartDeliveryAddressesReplace/);
     assert.deepEqual(addressCall.variables, {
       cartId: "gid://shopify/Cart/cart-123",
@@ -522,7 +529,9 @@ test("prepares an international Shopify delivery address using active market cou
       email: "shopper@example.com",
       phone: "+12025550101",
     });
-    const addressCall = state.calls.at(-1);
+    const addressCall = state.calls.find((call) =>
+      call.query.includes("ReplaceShopifyCartDeliveryAddress"),
+    );
     assert.deepEqual(addressCall.variables.addresses[0].address.deliveryAddress, {
       firstName: "Mira",
       lastName: "Rao",
