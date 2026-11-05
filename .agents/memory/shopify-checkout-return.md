@@ -3,8 +3,8 @@ name: Shopify checkout return
 description: Distinguishes Shopify's generated checkout URL from the storefront destination used when leaving checkout.
 ---
 
-Do not rewrite the hostname of Shopify's `Cart.checkoutUrl`; Shopify generates this checkout link and its cart key is private. If a customer starts on Railway, enters a `myshopify.com` checkout, then lands on the old Replit site, the return target is not the Shopify primary domain. Check which Shopify Headless storefront/token is used and where its checkout/storefront return flow points.
+Never rewrite Shopify's `Cart.checkoutUrl` hostname or query parameters. On Railway, keep `SHOPIFY_SHOP_DOMAIN` and the Storefront API token paired to the same client store; a Replit-created development-store token sends checkout through the wrong store and can return shoppers to the wrong host.
 
-**Why:** The Railway storefront was confirmed to use a Replit-created Storefront API token. A Railway-started checkout used Shopify's host but eventually returned to the Replit storefront while Shopify's primary domain remained `myshopify.com`.
+**Why:** An earlier Railway checkout returned to the old Replit site because it used a Replit-created Storefront token. Railway now uses a client-specific token for the client's Shopify store.
 
-**How to apply:** Before production handoff, verify the storefront/token and return destination for each hosting environment. Treat trial checkout activation and payment-provider setup as a separate prerequisite.
+**How to apply:** When changing stores or hosts, verify the published client product, Shopify checkout host, and return destination without rewriting Shopify's URL. Confirm payment and shipping setup separately.

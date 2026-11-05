@@ -4,5 +4,5 @@
 - [Browser API fixtures](browser-api-fixtures.md) — mock APIs before navigation and wrap storefront pages with their Clerk and router providers.
 - [Clerk redirect routing](clerk-auth-routing.md) — Clerk may convert relative redirect targets to absolute same-origin URLs when auth screens switch.
 - [Shopper preference persistence](shopper-preferences.md) — keep guest data separate from private account preferences; never merge browser data into an account without explicit confirmation.
-- [External hosting decisions](external-hosting.md) — Railway-generated URLs first; independent Clerk accounts approved; preserve the Replit copy during verification.
-- [Shopify checkout return](shopify-checkout-return.md) — if checkout ends on the old host, inspect Shopify’s Storefront/channel context; the app forwards Shopify’s checkout URL unchanged.
+- [External hosting decisions](external-hosting.md) — Railway hosts both services; koushikii.com is live; preserve Replit during verification.
+- [Shopify checkout return](shopify-checkout-return.md) — keep the client store domain and Storefront token paired; never rewrite Shopify’s checkout URL.

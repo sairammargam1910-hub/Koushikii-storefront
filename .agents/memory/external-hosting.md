@@ -3,11 +3,11 @@ name: External hosting decisions
 description: User-approved hosting scope, deferred custom domain, and the Clerk account boundary.
 ---
 
-Host both the storefront and API on Railway, with Neon Postgres and Cloudflare R2 for persistence. Use Railway-generated URLs initially; do not connect the custom domain or change DNS until the user explicitly requests it after testing.
+Host both the storefront and API on Railway, with Neon Postgres and Cloudflare R2 for persistence. The custom domain `koushikii.com` is now connected to Railway; keep the Replit copy during verification.
 
-**Why:** The user selected Railway for both app services and said they will connect the domain after everything is working.
+**Why:** The user selected Railway for both app services, then requested the custom domain after testing.
 
-**How to apply:** Keep Replit intact during migration and verify the external deployment before retiring any source service.
+**How to apply:** Keep Replit intact during migration and verify the external deployment after changes before retiring any source service.
 
 The user approved using new, independent Clerk accounts for the external site after being told that Replit-managed Clerk cannot be hosted externally or export its users. Existing accounts, profile/address preferences, and wishlists are not promised to transfer.
 

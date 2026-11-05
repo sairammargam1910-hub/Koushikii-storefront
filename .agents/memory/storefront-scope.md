@@ -14,11 +14,11 @@ The merchant dashboard is for the handover client who runs this business, not fo
 
 **How to apply:** Keep merchant access separate from customer navigation, authorize store-changing actions on the server, and keep Shopify authoritative for commerce. Public browsing must remain accessible even during a merchant session; signing in must not replace the storefront home with an admin page.
 
-The current Shopify connection is the user's own account for development; before handover, the user intends to connect the client's Shopify account instead.
+The client's Shopify store (`gtnbsw-x3.myshopify.com`) is now the connected production store. Keep the user's Replit-provisioned development store separate; never reuse its Storefront API token for client commerce.
 
-**Why:** The user said they will configure the client's Shopify account and connect it after having developed against their own account.
+**Why:** On November 5, 2026, the user connected the client's account and approved switching Railway to it. The client-specific Storefront token and store domain were deployed.
 
-**How to apply:** Do not add client inventory or real orders to the user's development store. Before switching production, verify the client store domain and confirm the storefront's Shopify credentials point to that store.
+**How to apply:** Keep product data and checkout tied to the client store. Publish website products to the Online Store channel. Do not seed demo items or modify the client catalog without explicit approval.
 
 The user wants sign-in and sign-out for both shoppers and the merchant. Shopper site accounts use Replit-managed Clerk; Shopify checkout, payments, shipping and order identity remain separate. Phone sign-in is not supported by the managed Clerk integration.
 
