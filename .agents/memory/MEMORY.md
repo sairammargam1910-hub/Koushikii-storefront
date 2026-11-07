@@ -6,3 +6,4 @@
 - [Shopper preference persistence](shopper-preferences.md) — keep guest data separate from private account preferences; never merge browser data into an account without explicit confirmation.
 - [External hosting decisions](external-hosting.md) — Railway hosts both services; koushikii.com is live; preserve Replit during verification.
 - [Shopify checkout return](shopify-checkout-return.md) — keep the client store domain and Storefront token paired; never rewrite Shopify’s checkout URL.
+- [Cashfree account readiness](cashfree-account-readiness.md) — International Cards are merchant-confirmed; settlement is INR, while the current checkout only supports INR.
