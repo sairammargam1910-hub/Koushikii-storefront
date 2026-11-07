@@ -58,14 +58,14 @@ export function Checkout() {
         <PageHero
           eyebrow="Your order"
           title="Delivery details."
-          subtitle="Enter your contact and delivery information here. Shopify securely handles payment."
+          subtitle="Enter your contact and delivery information here. Cashfree securely hosts payment."
         />
         <main className="wrap content">
           {shopifyCart.isLoading && !shopifyCart.data ? (
             <div className="shopify-catalog-status" role="status">Loading your Shopify order…</div>
           ) : shopifyCart.isError || !shopifyCart.data ? (
             <div className="panel" role="alert">
-              <span className="eyebrow">Shopify checkout unavailable</span>
+              <span className="eyebrow">Bag unavailable</span>
               <p className="muted" data-testid="error-shopify-checkout-load">
                 {getCartErrorMessage(shopifyCart.error) || "We could not refresh this bag. Try again here, or return to your bag."}
               </p>
@@ -94,7 +94,7 @@ export function Checkout() {
       <PageHero
         eyebrow="Sample selection · enquiry only"
         title="Review the pieces you found."
-        subtitle="Sample catalogue items are not sold online. For a real order, enter delivery details here before secure payment with Shopify."
+        subtitle="Sample catalogue items are not sold online. For a real order, enter delivery details here before secure payment with Cashfree."
       />
       <main className="wrap content">
         <div className="notice" role="note" data-testid="notice-catalogue-prices">
@@ -129,7 +129,7 @@ export function Checkout() {
               <span>Illustrative sample subtotal</span>
               <strong data-testid="text-enquiry-subtotal">{format(total)}</strong>
             </div>
-            <p className="muted" style={{ fontSize: 12 }}>Sample items cannot be submitted to Shopify checkout.</p>
+            <p className="muted" style={{ fontSize: 12 }}>Sample items cannot be submitted to a real checkout.</p>
             <label className="field" style={{ marginTop: 20 }}>
               Optional enquiry note
               <textarea
@@ -155,8 +155,8 @@ export function Checkout() {
           </section>
           <aside className="panel">
             <span className="eyebrow">For a real order</span>
-            <h3 style={{ margin: "14px 0" }}>Shopify handles payment.</h3>
-            <p className="muted">Add an available, non-demo product published to the Online Store sales channel. Enter delivery details on this website, then complete payment securely with Shopify.</p>
+            <h3 style={{ margin: "14px 0" }}>Cashfree hosts payment.</h3>
+            <p className="muted">Add an available, non-demo product published to the Online Store sales channel. Enter delivery details here, review a current shipping quote, then pay securely on Cashfree.</p>
             <a className="link" href={base + "Cart"}>Return to your bag →</a>
           </aside>
         </div>

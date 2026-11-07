@@ -21,7 +21,10 @@ import type {
 
 import type {
   ApiError,
+  CashfreeWebhookAck,
+  CashfreeWebhookInput,
   GetShopifyCartParams,
+  GetShopifyCheckoutPaymentStatusParams,
   HealthStatus,
   ShopifyAdminArchiveResponse,
   ShopifyAdminDiscountInput,
@@ -47,6 +50,11 @@ import type {
   ShopifyCartDiscountCodesInput,
   ShopifyCartResponse,
   ShopifyCartUpdateInput,
+  ShopifyCheckoutPaymentSessionInput,
+  ShopifyCheckoutPaymentSessionResponse,
+  ShopifyCheckoutPaymentStatusResponse,
+  ShopifyCheckoutQuoteInput,
+  ShopifyCheckoutQuoteResponse,
   ShopifyCustomerAccountResponse,
   ShopifyProductsResponse,
   ShopperPreferencesResponse,
@@ -1168,6 +1176,357 @@ export const useUpdateShopifyCartBuyerIdentity = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getUpdateShopifyCartBuyerIdentityMutationOptions(options));
+    }
+
+export const getCreateShopifyCheckoutQuoteUrl = () => {
+
+
+
+
+  return `/api/shopify/checkout/quote`
+}
+
+/**
+ * Revalidates the live Shopify cart and creates a short-lived shipping quote. Unsupported destinations and unconfirmed carrier routes are rejected.
+ * @summary Create an address and parcel-specific delivery quote
+ */
+export const createShopifyCheckoutQuote = async (shopifyCheckoutQuoteInput: ShopifyCheckoutQuoteInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyCheckoutQuoteResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyCheckoutQuoteResponse>(getCreateShopifyCheckoutQuoteUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyCheckoutQuoteInput)
+  }
+);}
+
+
+
+
+
+export const getCreateShopifyCheckoutQuoteMutationKey = () => ['createShopifyCheckoutQuote'] as const;
+
+export const getCreateShopifyCheckoutQuoteMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopifyCheckoutQuote>>, TError,CreateShopifyCheckoutQuoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShopifyCheckoutQuote>>, TError,CreateShopifyCheckoutQuoteMutationVariables, TContext> => {
+
+const mutationKey = getCreateShopifyCheckoutQuoteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShopifyCheckoutQuote>>, CreateShopifyCheckoutQuoteMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createShopifyCheckoutQuote(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShopifyCheckoutQuoteMutationResult = NonNullable<Awaited<ReturnType<typeof createShopifyCheckoutQuote>>>
+    export type CreateShopifyCheckoutQuoteMutationBody = BodyType<ShopifyCheckoutQuoteInput>
+    export type CreateShopifyCheckoutQuoteMutationError = ErrorType<ApiError>
+    export type CreateShopifyCheckoutQuoteMutationVariables = {data: BodyType<ShopifyCheckoutQuoteInput>}
+
+    /**
+ * @summary Create an address and parcel-specific delivery quote
+ */
+export const useCreateShopifyCheckoutQuote = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopifyCheckoutQuote>>, TError,CreateShopifyCheckoutQuoteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createShopifyCheckoutQuote>>,
+        TError,
+        CreateShopifyCheckoutQuoteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateShopifyCheckoutQuoteMutationOptions(options));
+    }
+
+export const getCreateShopifyCheckoutPaymentSessionUrl = () => {
+
+
+
+
+  return `/api/shopify/checkout/payment-session`
+}
+
+/**
+ * Sandbox is the default. Production requires an explicit live-checkout flag and separate production credentials. The server checks quote expiry, current cart contents, payment currency, and Shopify order-writing permission before creating a session.
+ * @summary Create a Cashfree payment session for a valid quote
+ */
+export const createShopifyCheckoutPaymentSession = async (shopifyCheckoutPaymentSessionInput: ShopifyCheckoutPaymentSessionInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyCheckoutPaymentSessionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ShopifyCheckoutPaymentSessionResponse>(getCreateShopifyCheckoutPaymentSessionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(shopifyCheckoutPaymentSessionInput)
+  }
+);}
+
+
+
+
+
+export const getCreateShopifyCheckoutPaymentSessionMutationKey = () => ['createShopifyCheckoutPaymentSession'] as const;
+
+export const getCreateShopifyCheckoutPaymentSessionMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopifyCheckoutPaymentSession>>, TError,CreateShopifyCheckoutPaymentSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShopifyCheckoutPaymentSession>>, TError,CreateShopifyCheckoutPaymentSessionMutationVariables, TContext> => {
+
+const mutationKey = getCreateShopifyCheckoutPaymentSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShopifyCheckoutPaymentSession>>, CreateShopifyCheckoutPaymentSessionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createShopifyCheckoutPaymentSession(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShopifyCheckoutPaymentSessionMutationResult = NonNullable<Awaited<ReturnType<typeof createShopifyCheckoutPaymentSession>>>
+    export type CreateShopifyCheckoutPaymentSessionMutationBody = BodyType<ShopifyCheckoutPaymentSessionInput>
+    export type CreateShopifyCheckoutPaymentSessionMutationError = ErrorType<ApiError>
+    export type CreateShopifyCheckoutPaymentSessionMutationVariables = {data: BodyType<ShopifyCheckoutPaymentSessionInput>}
+
+    /**
+ * @summary Create a Cashfree payment session for a valid quote
+ */
+export const useCreateShopifyCheckoutPaymentSession = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShopifyCheckoutPaymentSession>>, TError,CreateShopifyCheckoutPaymentSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createShopifyCheckoutPaymentSession>>,
+        TError,
+        CreateShopifyCheckoutPaymentSessionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateShopifyCheckoutPaymentSessionMutationOptions(options));
+    }
+
+export const getGetShopifyCheckoutPaymentStatusUrl = (params: GetShopifyCheckoutPaymentStatusParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shopify/checkout/payment-status?${stringifiedParams}` : `/api/shopify/checkout/payment-status`
+}
+
+/**
+ * @summary Verify a Cashfree payment and recover order synchronization
+ */
+export const getShopifyCheckoutPaymentStatus = async (params: GetShopifyCheckoutPaymentStatusParams, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyCheckoutPaymentStatusResponse> => {
+
+  return customFetch<ShopifyCheckoutPaymentStatusResponse>(getGetShopifyCheckoutPaymentStatusUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyCheckoutPaymentStatusQueryKey = (params?: GetShopifyCheckoutPaymentStatusParams,) => {
+    return [
+    `/api/shopify/checkout/payment-status`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetShopifyCheckoutPaymentStatusQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyCheckoutPaymentStatus>>, TError = ErrorType<ApiError>>(params: GetShopifyCheckoutPaymentStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyCheckoutPaymentStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyCheckoutPaymentStatusQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyCheckoutPaymentStatus>>> = ({ signal }) => getShopifyCheckoutPaymentStatus(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyCheckoutPaymentStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyCheckoutPaymentStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyCheckoutPaymentStatus>>>
+export type GetShopifyCheckoutPaymentStatusQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Verify a Cashfree payment and recover order synchronization
+ */
+
+export function useGetShopifyCheckoutPaymentStatus<TData = Awaited<ReturnType<typeof getShopifyCheckoutPaymentStatus>>, TError = ErrorType<ApiError>>(
+ params: GetShopifyCheckoutPaymentStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyCheckoutPaymentStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyCheckoutPaymentStatusQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReceiveCashfreeCheckoutWebhookUrl = () => {
+
+
+
+
+  return `/api/cashfree/webhook`
+}
+
+/**
+ * Verifies the Cashfree signature over the exact raw body, then queries Cashfree before recording payment as paid.
+ * @summary Reconcile signed Cashfree payment notifications
+ */
+export const receiveCashfreeCheckoutWebhook = async (cashfreeWebhookInput: CashfreeWebhookInput, options?: Parameters<typeof customFetch>[1]): Promise<CashfreeWebhookAck> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CashfreeWebhookAck>(getReceiveCashfreeCheckoutWebhookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(cashfreeWebhookInput)
+  }
+);}
+
+
+
+
+
+export const getReceiveCashfreeCheckoutWebhookMutationKey = () => ['receiveCashfreeCheckoutWebhook'] as const;
+
+export const getReceiveCashfreeCheckoutWebhookMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveCashfreeCheckoutWebhook>>, TError,ReceiveCashfreeCheckoutWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receiveCashfreeCheckoutWebhook>>, TError,ReceiveCashfreeCheckoutWebhookMutationVariables, TContext> => {
+
+const mutationKey = getReceiveCashfreeCheckoutWebhookMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receiveCashfreeCheckoutWebhook>>, ReceiveCashfreeCheckoutWebhookMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  receiveCashfreeCheckoutWebhook(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceiveCashfreeCheckoutWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof receiveCashfreeCheckoutWebhook>>>
+    export type ReceiveCashfreeCheckoutWebhookMutationBody = BodyType<CashfreeWebhookInput>
+    export type ReceiveCashfreeCheckoutWebhookMutationError = ErrorType<ApiError>
+    export type ReceiveCashfreeCheckoutWebhookMutationVariables = {data: BodyType<CashfreeWebhookInput>}
+
+    /**
+ * @summary Reconcile signed Cashfree payment notifications
+ */
+export const useReceiveCashfreeCheckoutWebhook = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveCashfreeCheckoutWebhook>>, TError,ReceiveCashfreeCheckoutWebhookMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof receiveCashfreeCheckoutWebhook>>,
+        TError,
+        ReceiveCashfreeCheckoutWebhookMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReceiveCashfreeCheckoutWebhookMutationOptions(options));
     }
 
 export const getUploadShopifyAdminImageUrl = () => {

@@ -414,6 +414,196 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/checkout/quote:
+    post:
+      operationId: createShopifyCheckoutQuote
+      tags: [shopify]
+      summary: Create an address and parcel-specific delivery quote
+      description: Revalidates the live Shopify cart and creates a short-lived shipping quote. Unsupported destinations and unconfirmed carrier routes are rejected.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyCheckoutQuoteInput"
+      responses:
+        "200":
+          description: Current checkout quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCheckoutQuoteResponse"
+        "400":
+          description: Invalid checkout details or cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Shopify cart could not be found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Cart changed, the address is unsupported, or no carrier service is available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Too many quote requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "422":
+          description: Shipping quote cannot be produced safely for this destination
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify or the carrier could not return a valid quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/checkout/payment-session:
+    post:
+      operationId: createShopifyCheckoutPaymentSession
+      tags: [shopify]
+      summary: Create a Cashfree payment session for a valid quote
+      description: Sandbox is the default. Production requires an explicit live-checkout flag and separate production credentials. The server checks quote expiry, current cart contents, payment currency, and Shopify order-writing permission before creating a session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyCheckoutPaymentSessionInput"
+      responses:
+        "200":
+          description: Existing idempotent or newly created payment session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCheckoutPaymentSessionResponse"
+        "400":
+          description: Invalid quote reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Quote expired or cart contents changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Too many payment attempts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Sandbox payment prerequisites or Shopify order permissions are unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/checkout/payment-status:
+    get:
+      operationId: getShopifyCheckoutPaymentStatus
+      tags: [shopify]
+      summary: Verify a Cashfree payment and recover order synchronization
+      parameters:
+        - name: orderId
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+      responses:
+        "400":
+          description: Invalid Cashfree order reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "200":
+          description: Server-verified payment and synchronization status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCheckoutPaymentStatusResponse"
+        "404":
+          description: Checkout order was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Payment provider or order synchronization could not be reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /cashfree/webhook:
+    post:
+      operationId: receiveCashfreeCheckoutWebhook
+      tags: [shopify]
+      summary: Reconcile signed Cashfree payment notifications
+      description: Verifies the Cashfree signature over the exact raw body, then queries Cashfree before recording payment as paid.
+      parameters:
+        - name: x-webhook-signature
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: x-webhook-timestamp
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CashfreeWebhookInput"
+      responses:
+        "200":
+          description: Verified notification accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashfreeWebhookAck"
+        "400":
+          description: Invalid webhook payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Checkout order was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Webhook reconciliation will be retried
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/admin/images:
     post:
       operationId: uploadShopifyAdminImage
@@ -1529,6 +1719,93 @@ components:
               pattern: "^[A-Z]{2}$"
           required: [recipient, street, city, pin, countryCode]
       required: [cartId, email, deliveryAddress]
+    ShopifyCheckoutQuoteInput:
+      allOf:
+        - $ref: "#/components/schemas/ShopifyCartBuyerIdentityInput"
+    ShopifyCheckoutQuoteResponse:
+      type: object
+      properties:
+        quoteId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+        destinationCountryCode:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        currencyCode:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        itemSubtotal:
+          type: string
+        discountAmount:
+          type: string
+        shippingAmount:
+          type: string
+        taxAmount:
+          type: string
+        totalAmount:
+          type: string
+        carrier:
+          type: string
+        courierName:
+          type: string
+        parcelCount:
+          type: integer
+          minimum: 1
+        excludedCharges:
+          type: array
+          items:
+            type: string
+      required: [quoteId, expiresAt, destinationCountryCode, currencyCode, itemSubtotal, discountAmount, shippingAmount, taxAmount, totalAmount, carrier, courierName, parcelCount, excludedCharges]
+    ShopifyCheckoutPaymentSessionInput:
+      type: object
+      properties:
+        quoteId:
+          type: string
+          format: uuid
+      required: [quoteId]
+    ShopifyCheckoutPaymentSessionResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+        paymentSessionId:
+          type: string
+        amount:
+          type: string
+        currencyCode:
+          type: string
+        environment:
+          type: string
+          enum: [sandbox, production]
+      required: [orderId, paymentSessionId, amount, currencyCode, environment]
+    ShopifyCheckoutPaymentStatusResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+        status:
+          type: string
+          enum: [quote_ready, payment_pending, payment_failed, paid, shopify_sync_pending, shopify_synced, shipment_booking_pending, completed, refund_pending, refunded, reconciliation_required]
+        paymentStatus:
+          type: string
+          enum: [PENDING, PAID, FAILED, REFUNDED, UNKNOWN]
+        shopifyOrderName:
+          type: ["string", "null"]
+        message:
+          type: string
+      required: [orderId, status, paymentStatus, shopifyOrderName, message]
+    CashfreeWebhookAck:
+      type: object
+      properties:
+        received:
+          type: boolean
+      required: [received]
+    CashfreeWebhookInput:
+      type: object
+      additionalProperties: true
     ShopifyCartDiscountCode:
       type: object
       properties:

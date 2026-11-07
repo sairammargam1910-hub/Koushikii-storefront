@@ -77,6 +77,27 @@ async function getShopifyConfig(forceRefresh = false) {
   return config;
 }
 
+export async function getShopifyStorefrontDomain(): Promise<string> {
+  const { shopDomain } = await getShopifyConfig();
+  try {
+    const url = new URL(shopDomain.includes("://") ? shopDomain : `https://${shopDomain}`);
+    if (
+      url.protocol !== "https:" ||
+      !url.hostname ||
+      url.username ||
+      url.password ||
+      (url.pathname !== "/" && url.pathname !== "") ||
+      url.search ||
+      url.hash
+    ) {
+      throw new Error("invalid");
+    }
+    return url.hostname.toLowerCase();
+  } catch {
+    throw new Error("Shopify returned an invalid store domain.");
+  }
+}
+
 export async function getShopifyCustomerAccountUrl(): Promise<string> {
   const { shopDomain } = await getShopifyConfig();
   let storeUrl: URL;

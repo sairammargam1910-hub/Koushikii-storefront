@@ -73,7 +73,7 @@ export function Cart() {
             <p>
               {meta
                 ? "Review your handloom pieces, then enter delivery details on this website."
-                : "Review your saved pieces. Published Shopify sarees can be purchased through secure Shopify checkout."}
+                : "Review your saved pieces. Published Shopify sarees can be purchased with a current delivery quote and secure Cashfree payment."}
             </p>
           </div>
         </header>
@@ -144,7 +144,7 @@ export function Cart() {
               })}
               <div className="cart-note">
                 <Check size={16} aria-hidden="true" />
-                <p>These are sample designs only. They are not included in Shopify checkout and cannot be purchased.</p>
+                <p>These are sample designs only. They are not included in secure checkout and cannot be purchased.</p>
               </div>
             </section>
             <aside className="panel cart-summary">
@@ -161,7 +161,7 @@ export function Cart() {
               </div>
               <p className="muted">Sample items cannot be purchased. Add a verified, published Shopify saree to use secure checkout.</p>
               <a className="btn outline cart-checkout" href={base + "Collections"}>Browse available sarees <ArrowRight size={14} /></a>
-              <p className="secure-caption">Shopify products and checkout are required to place an order.</p>
+              <p className="secure-caption">A verified Shopify product and a current delivery quote are required for Cashfree checkout.</p>
             </aside>
           </div>
         ) : (
@@ -260,8 +260,7 @@ function ShopifyBag({
   }
 
   const hasUnavailableLine = cart.lines.some((line) => !line.availableForSale || line.isDemo);
-  const canCheckout = Boolean(getShopifyCheckoutHref(cart.checkoutUrl)) &&
-    cart.totalQuantity > 0 &&
+  const canCheckout = cart.totalQuantity > 0 &&
     cart.lines.length > 0 &&
     cart.lines.every((line) => line.quantity > 0 && line.availableForSale && !line.isDemo);
   const updateErrorMessage = getCartUpdateErrorMessage(updateError);
@@ -402,28 +401,19 @@ function ShopifyBag({
         {hasUnavailableLine ? (
           <p className="notice cart-action-notice" role="alert">A demo or unavailable listing is in this bag. Remove it or update its Shopify details before checkout.</p>
         ) : !canCheckout ? (
-          <p className="notice cart-action-notice" role="alert">Shopify could not provide a secure checkout link for this bag. Refresh your bag and try again.</p>
+          <p className="notice cart-action-notice" role="alert">This bag could not be verified for secure checkout. Refresh your bag and try again.</p>
         ) : (
           <div className="cart-checkout-block">
             <a className="btn cart-checkout" href={base + "Checkout"} data-testid="link-site-checkout">
               Continue to checkout <ArrowRight size={14} />
             </a>
-            <p className="secure-caption">Enter delivery details here · pay securely with Shopify</p>
+            <p className="secure-caption">Get a current delivery quote here · pay securely on Cashfree</p>
           </div>
         )}
-        <p className="address-footnote cart-summary-footnote">Your delivery details are entered on the next page. Shopify confirms shipping, taxes, and the final payable amount.</p>
+        <p className="address-footnote cart-summary-footnote">Your delivery details and current shipping quote are confirmed on the next page. Import duties or customs charges may be separate.</p>
       </aside>
     </div>
   );
-}
-
-function getShopifyCheckoutHref(checkoutUrl: string | null | undefined): string | null {
-  try {
-    const url = checkoutUrl ? new URL(checkoutUrl) : null;
-    return url?.protocol === "https:" ? url.toString() : null;
-  } catch {
-    return null;
-  }
 }
 
 function getCartUpdateErrorMessage(error: unknown): string | null {

@@ -20,11 +20,11 @@ The client's Shopify store (`gtnbsw-x3.myshopify.com`) is now the connected prod
 
 **How to apply:** Keep product data and checkout tied to the client store. Publish website products to the Online Store channel. Do not seed demo items or modify the client catalog without explicit approval.
 
-The client approved Shopify-managed delivery rates on the current Basic plan, rather than third-party carrier-calculated quotes. Exact India and international rate amounts and countries still require merchant confirmation.
+The merchant selected address-based Shiprocket quotes for the custom storefront checkout and confirmed that the account offers international shipping. Pack each sold unit separately; the confirmed default parcel is 1 kg and 35 × 25 × 8 cm, with pickup postcode 500007. The merchant confirmed Shiprocket export-purpose value `3` and invoice terms `FOB`. Domestic and international prices must come from live provider quotes.
 
-**Why:** The user selected Shopify-managed rates after confirming that carrier-calculated rates are not available on the store's current plan.
+**Why:** The merchant later replaced the earlier Shopify-managed-rate approach, confirmed international service, and specified how each packet is packed.
 
-**How to apply:** Let Shopify apply merchant-configured flat, weight-based, or order-value rates at checkout. Do not hardcode delivery prices or claim international delivery until its market and shipping zone are active.
+**How to apply:** Send the actual weight and dimensions to Shiprocket and use returned serviceability and rates; do not hardcode prices. Use the confirmed export purpose and invoice terms in international quote requests. Volumetric weight is derived from the supplied dimensions by the provider.
 
 The user wants sign-in and sign-out for both shoppers and the merchant. Shopper site accounts use Replit-managed Clerk; Shopify checkout, payments, shipping and order identity remain separate. Phone sign-in is not supported by the managed Clerk integration.
 
@@ -38,23 +38,23 @@ The user selected sarees as the initial Shopify catalog category.
 
 **How to apply:** Use published Shopify product and variant IDs for the live catalog and checkout. Do not create products or inventory without real product details and explicit approval.
 
-Published Shopify sarees replace the storefront's sample product cards; drafts are not visible through the buyer catalog. Sample pieces remain only as a fallback when Shopify has no published sarees. Demo or placeholder products must be clearly marked and blocked from purchase, including by server-side cart validation. The Chenetha checkout collects buyer contact and delivery details, then hands payment to Shopify-hosted checkout; payment details stay on Shopify.
+Published Shopify sarees replace the storefront's sample product cards; drafts are not visible through the buyer catalog. Sample pieces remain only as a fallback when Shopify has no published sarees. Demo or placeholder products must be clearly marked and blocked from purchase, including by server-side cart validation. The Chenetha checkout collects buyer contact and delivery details and hands payment to Cashfree's hosted page; Shopify remains authoritative for products, inventory, and the resulting order. The site must never collect card details.
 
-**Why:** The user asked for a branded website checkout form for contact and address details while keeping payment on Shopify, and wants products entered in Shopify to appear without risking accidental sales of placeholders.
+**Why:** The user selected Cashfree for the branded checkout while keeping Shopify as the commerce record, and wants products entered in Shopify to appear without risking accidental sales of placeholders.
 
-**How to apply:** Validate product availability and demo markers on the server before adding a cart line. Keep Shopify authoritative for variants, prices, shipping, payment, and order status; collect only the buyer details needed to prepare checkout, and never collect card/payment credentials on the website.
+**How to apply:** Validate product availability and demo markers on the server before adding a cart line. Use a verified Cashfree payment plus idempotent Shopify order creation; never claim payment from the browser return alone or collect/store card details.
 
-Before hosted payment, the custom checkout should submit the buyer's current contact and delivery details to Shopify and show Shopify's configured shipping estimate in the order total. Prefer Shopify's selected rate; if none is selected, estimate using the lowest returned shipping option per delivery group. Never hardcode delivery prices. If Shopify returns no rate, say the estimate is unavailable and let Shopify confirm delivery during hosted checkout. Changing the buyer or address details invalidates the previous estimate.
+Before Cashfree payment, the custom checkout must show the current Shopify item subtotal and tax plus a live, address-specific Shiprocket quote. Address, cart, or parcel changes invalidate that quote; it expires after a short period. State that destination duties and customs fees may be excluded from carrier pricing.
 
-**Why:** The user wants the branded checkout to show shipping costs before payment while keeping Shopify authoritative for configured rates and the final checkout.
+**Why:** The merchant asked for a website checkout with a current delivery quote and full total before payment, not Shopify-hosted checkout.
 
-**How to apply:** Calculate after the current address is applied to the Shopify cart, show an estimated total only when a valid estimate is available, and clearly state that Shopify confirms the final shipping choice and taxes before payment.
+**How to apply:** Revalidate the current Shopify cart and address before creating a Cashfree session. Show subtotal, discount, shipping, tax, currency, and total; fail closed when no valid provider quote exists. Do not promise a fixed international price, delivery time, duty, or tax.
 
-Shopify currency is authoritative. Request the India market context for this storefront, but display the currency Shopify returns; never relabel a USD price as INR in app code. Local-currency transaction support depends on Shopify market and payment-provider settings.
+Shopify currency is authoritative. The current checkout implementation accepts INR only; international payment activation, supported buyer currencies, and settlement remain unconfirmed for production.
 
-**Why:** A Shopify product may display a local currency while checkout still charges the store's base currency, depending on the configured payment gateway.
+**Why:** The merchant requested a safe sandbox implementation; no live Cashfree activation or settlement behavior has been approved or verified.
 
-**How to apply:** Keep currency and payment configuration in Shopify. If the storefront API returns USD, tell the merchant to configure the store or India market currency and confirm that the payment provider can process INR before promising an INR charge.
+**How to apply:** Display the currency Shopify returns and stop checkout when it is not INR. Keep Cashfree sandbox as the default; require explicit live activation and separate production credentials before real charges or carrier bookings.
 
 The user explicitly rejected a modern-looking storefront and repeatedly emphasized that the design should resemble Indian culture very deeply, especially South Indian culture. Render and visually inspect supplied HTML references, not only extract their text. Preserve their traditional motifs and page structure while applying the organisation logo colours.
 

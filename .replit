@@ -25,6 +25,13 @@ timeoutMs = 20000
 MERCHANT_ADMIN_EMAIL = "sree.koushikii.2025@gmail.com,sairammargam1910@gmail.com"
 SHOPIFY_DEV_STORE_PREVIEW = "true"
 
+[userenv.development]
+SHIPROCKET_REASON_OF_EXPORT = "3"
+SHIPROCKET_TERMS_OF_INVOICE = "FOB"
+CASHFREE_ENVIRONMENT = "sandbox"
+CHECKOUT_LIVE_ENABLED = "false"
+SHIPROCKET_LIVE_BOOKING_ENABLED = "false"
+
 [objectStorage]
 defaultBucketID = "replit-objstore-2eb914e7-4ecd-4b51-a115-f4c594b5616b"
 

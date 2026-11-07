@@ -8,7 +8,6 @@ import { chromium } from "playwright-core";
 const packageDir = new URL("../../", import.meta.url).pathname;
 const fixtureUrl = "/tests/browser/shopify-checkout-fixture.html";
 const variantId = "gid://shopify/ProductVariant/123";
-const checkoutUrl = "https://chenetha.myshopify.com/checkouts/mock-returned-by-shopify";
 const productResponse = {
   products: [{
     id: "gid://shopify/Product/456",
@@ -30,7 +29,7 @@ const productResponse = {
 };
 const cartResponse = {
   id: "gid://shopify/Cart/browser-cart-123",
-  checkoutUrl,
+  checkoutUrl: null,
   totalQuantity: 1,
   subtotalAmount: "1250.00",
   discountAmount: "0.00",
@@ -146,9 +145,25 @@ async function openCart({ savedCart }) {
   return { context, page };
 }
 
-async function openCheckout({ savedCart, onCartRequest }) {
+async function openCheckout({
+  savedCart,
+  onCartRequest,
+  onQuoteRequest,
+  onPaymentSessionRequest,
+  onPaymentStatusRequest,
+  returnOrderId,
+} = {}) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
+  await context.addInitScript(() => {
+    window.__cashfreeCalls = [];
+    window.Cashfree = (options) => ({
+      checkout: async (checkoutOptions) => {
+        window.__cashfreeCalls.push({ mode: options.mode, ...checkoutOptions });
+        return {};
+      },
+    });
+  });
   const page = await context.newPage();
   await page.route("**/api/shopify/cart**", async (route) => {
     if (route.request().method() !== "GET") {
@@ -169,7 +184,17 @@ async function openCheckout({ savedCart, onCartRequest }) {
       }),
     });
   });
-  await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
+  if (onQuoteRequest) {
+    await page.route("**/api/shopify/checkout/quote", (route) => onQuoteRequest(route));
+  }
+  if (onPaymentSessionRequest) {
+    await page.route("**/api/shopify/checkout/payment-session", (route) => onPaymentSessionRequest(route));
+  }
+  if (onPaymentStatusRequest) {
+    await page.route("**/api/shopify/checkout/payment-status**", (route) => onPaymentStatusRequest(route));
+  }
+  const returnQuery = returnOrderId ? `&cashfree_order_id=${encodeURIComponent(returnOrderId)}` : "";
+  await page.goto(`${origin}${fixtureUrl}?screen=checkout${returnQuery}`);
   return { context, page };
 }
 
@@ -226,7 +251,7 @@ test("hides Shopify's placeholder variant title from shoppers", async () => {
       body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
     }),
   });
-  await checkout.page.getByTestId("text-shopify-checkout-subtotal").waitFor();
+  await checkout.page.getByTestId("button-submit-checkout-details").waitFor();
   assert.equal(await checkout.page.getByText("Default Title").count(), 0);
   await checkout.context.close();
 });
@@ -258,27 +283,9 @@ test("shows Shopify cart user errors without clearing the shopper's saved bag", 
   await context.close();
 });
 
-test("uses Shopify's returned checkout URL in the current tab", async () => {
+test("opens the website checkout from a Shopify bag without a Shopify checkout URL", async () => {
   const { context, page } = await openProduct();
-  await page.route("**/api/shopify/countries**", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({
-      countries: [
-        { isoCode: "IN", name: "India" },
-        { isoCode: "US", name: "United States" },
-      ],
-    }),
-  }));
   await page.route("**/api/shopify/cart**", async (route) => {
-    if (route.request().method() === "POST") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(cartResponse),
-      });
-      return;
-    }
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -292,65 +299,88 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
     await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),
     { id: cartResponse.id, totalQuantity: 1 },
   );
-  const headerCount = page.getByTestId("header-cart-count");
-  await headerCount.waitFor();
-  assert.equal(await headerCount.innerText(), "1");
+
   const viewBagLink = page.getByRole("link", { name: "View bag →" });
-  assert.equal(await viewBagLink.getAttribute("href"), "/Cart");
   await viewBagLink.click();
   await page.waitForURL("**/Cart", { timeout: 5000 });
-  await page.getByTestId("text-cart-quantity").getByText(/Your bag · 1 piece/).waitFor({ timeout: 5000 });
-  await page.getByTestId("text-cart-items-count").getByText(/Shopify products · 1 piece/).waitFor({ timeout: 5000 });
-  const cartCheckoutLink = page.getByTestId("link-site-checkout");
-  await cartCheckoutLink.waitFor();
-  assert.equal(await cartCheckoutLink.getAttribute("href"), "/Checkout");
-  assert.equal(await cartCheckoutLink.getAttribute("target"), null);
+  await page.getByTestId("text-cart-items-count").getByText(/Shopify products · 1 piece/).waitFor();
+  const checkoutLink = page.getByTestId("link-site-checkout");
+  assert.equal(await checkoutLink.getAttribute("href"), "/Checkout");
+  assert.equal(await checkoutLink.getAttribute("target"), null);
+  assert.match(await page.locator(".secure-caption").last().innerText(), /Cashfree/);
+  await context.close();
+});
 
-  await page.goto(`${origin}${fixtureUrl}?screen=checkout`);
-  await page.getByTestId("text-shopify-checkout-total").waitFor();
-  assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,250/);
-  let postedBuyerDetails;
-  await page.route("**/api/shopify/cart/buyer-identity", async (route) => {
-    postedBuyerDetails = route.request().postDataJSON();
-    await route.fulfill({
+test("quotes the current address and hands payment to Cashfree without Shopify checkout", async () => {
+  const savedCart = { id: "gid://shopify/Cart/cashfree-browser-cart", totalQuantity: 1 };
+  const quoteRequests = [];
+  let paymentSessionRequest;
+  const { context, page } = await openCheckout({
+    savedCart,
+    onCartRequest: (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({
-        ...cartResponse,
-        shippingEstimate: {
-          amount: "100.00",
-          currencyCode: "INR",
-          method: "Standard",
-          basis: "lowest_available",
-        },
-        estimatedTotalAmount: "1350.00",
-      }),
-    });
-  });
-  await page.route("https://chenetha.myshopify.com/checkouts/**", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "text/html",
-      body: "<!doctype html><title>Hosted checkout fixture</title>",
+      body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
     }),
-  );
+    onQuoteRequest: async (route) => {
+      quoteRequests.push(route.request().postDataJSON());
+      const quoteId = `quote-${quoteRequests.length}`;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          quoteId,
+          expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+          destinationCountryCode: "IN",
+          currencyCode: "INR",
+          itemSubtotal: "1250.00",
+          discountAmount: "0.00",
+          shippingAmount: "100.00",
+          taxAmount: "50.00",
+          totalAmount: "1400.00",
+          carrier: "Shiprocket",
+          courierName: "Economy",
+          parcelCount: 1,
+          excludedCharges: ["Import duties and customs charges"],
+        }),
+      });
+    },
+    onPaymentSessionRequest: async (route) => {
+      paymentSessionRequest = route.request().postDataJSON();
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          orderId: "cashfree-order-123",
+          paymentSessionId: "sandbox-session-123",
+          amount: "1400.00",
+          currencyCode: "INR",
+          environment: "sandbox",
+        }),
+      });
+    },
+  });
+
   await page.getByTestId("input-checkout-email").fill("buyer@example.com");
+  await page.getByTestId("input-checkout-phone").fill("+919876543210");
   await page.getByTestId("input-checkout-recipient").fill("Asha Rao");
   await page.getByTestId("input-checkout-address1").fill("12 Example Road");
   await page.getByTestId("input-checkout-city").fill("Chennai");
   await page.getByTestId("input-checkout-state").fill("Tamil Nadu");
   await page.getByTestId("input-checkout-postal").fill("600001");
+
   const checkoutButton = page.getByTestId("button-submit-checkout-details");
   await checkoutButton.click();
-  await page.getByTestId("text-shopify-checkout-shipping").getByText(/100/).waitFor();
-  assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,350/);
-  assert.match(await page.getByTestId("text-shopify-shipping-note").innerText(), /lowest available rate/i);
-  assert.match(await checkoutButton.innerText(), /Continue to secure payment/i);
-  await Promise.all([page.waitForURL(checkoutUrl), checkoutButton.click()]);
-  assert.equal(page.url(), checkoutUrl);
-  assert.deepEqual(postedBuyerDetails, {
-    cartId: cartResponse.id,
+  await page.getByTestId("text-checkout-total").getByText(/1,400/).waitFor();
+  assert.match(await page.getByTestId("text-checkout-item-subtotal").innerText(), /1,250/);
+  assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /100/);
+  assert.match(await page.getByTestId("text-checkout-tax").innerText(), /50/);
+  assert.match(await page.getByTestId("checkout-customs-note").innerText(), /duties and customs charges are excluded/i);
+  assert.match(await checkoutButton.innerText(), /Continue to Cashfree/i);
+  assert.deepEqual(quoteRequests[0], {
+    cartId: savedCart.id,
     email: "buyer@example.com",
+    phone: "+919876543210",
     deliveryAddress: {
       recipient: "Asha Rao",
       street: "12 Example Road",
@@ -360,6 +390,23 @@ test("uses Shopify's returned checkout URL in the current tab", async () => {
       countryCode: "IN",
     },
   });
+
+  await page.getByTestId("input-checkout-city").fill("Coimbatore");
+  await checkoutButton.getByText(/Get delivery quote/).waitFor();
+  assert.equal(await page.getByTestId("text-checkout-total").count(), 0);
+  await checkoutButton.click();
+  await page.getByTestId("text-checkout-total").getByText(/1,400/).waitFor();
+  assert.equal(quoteRequests.length, 2);
+  assert.equal(quoteRequests[1].deliveryAddress.city, "Coimbatore");
+
+  await checkoutButton.click();
+  await page.waitForFunction(() => window.__cashfreeCalls?.length === 1);
+  assert.deepEqual(paymentSessionRequest, { quoteId: "quote-2" });
+  assert.deepEqual(await page.evaluate(() => window.__cashfreeCalls), [{
+    mode: "sandbox",
+    paymentSessionId: "sandbox-session-123",
+    redirectTarget: "_self",
+  }]);
   await context.close();
 });
 
@@ -406,8 +453,8 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
   await context.close();
 });
 
-test("keeps shipping out of the total until Shopify returns an address-based estimate", async () => {
-  const savedCart = { id: "gid://shopify/Cart/address-estimate-cart", totalQuantity: 1 };
+test("shows discounts and tax only in the address-based carrier quote total", async () => {
+  const savedCart = { id: "gid://shopify/Cart/discounted-quote-cart", totalQuantity: 1 };
   const { context, page } = await openCheckout({
     savedCart,
     onCartRequest: (route) => route.fulfill({
@@ -417,18 +464,77 @@ test("keeps shipping out of the total until Shopify returns an address-based est
         ...cartResponse,
         id: savedCart.id,
         discountAmount: "125.00",
-        totalAmount: "1385.00",
+        totalAmount: "1125.00",
         discountCodes: [{ code: "SILK10", applicable: true }],
+      }),
+    }),
+    onQuoteRequest: (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        quoteId: "discounted-quote",
+        expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+        destinationCountryCode: "IN",
+        currencyCode: "INR",
+        itemSubtotal: "1250.00",
+        discountAmount: "125.00",
+        shippingAmount: "100.00",
+        taxAmount: "50.00",
+        totalAmount: "1275.00",
+        carrier: "Shiprocket",
+        courierName: "Economy",
+        parcelCount: 1,
+        excludedCharges: [],
       }),
     }),
   });
 
-  await page.getByTestId("text-shopify-checkout-discount").waitFor();
-  assert.match(await page.getByTestId("text-shopify-checkout-subtotal").innerText(), /1,250/);
-  assert.match(await page.getByTestId("text-shopify-checkout-discount").innerText(), /125/);
-  assert.match(await page.getByTestId("text-shopify-checkout-total").innerText(), /1,385/);
-  assert.match(await page.getByTestId("text-shopify-checkout-shipping").innerText(), /Calculate after address/);
-  assert.match(await page.getByTestId("text-shopify-shipping-note").innerText(), /choose Calculate shipping/i);
+  assert.equal(await page.getByTestId("text-checkout-total").count(), 0);
+  await page.getByTestId("input-checkout-email").fill("buyer@example.com");
+  await page.getByTestId("input-checkout-phone").fill("+919876543210");
+  await page.getByTestId("input-checkout-recipient").fill("Asha Rao");
+  await page.getByTestId("input-checkout-address1").fill("12 Example Road");
+  await page.getByTestId("input-checkout-city").fill("Chennai");
+  await page.getByTestId("input-checkout-postal").fill("600001");
+  await page.getByTestId("button-submit-checkout-details").click();
+  await page.getByTestId("text-checkout-total").getByText(/1,275/).waitFor();
+  assert.match(await page.getByTestId("text-checkout-item-subtotal").innerText(), /1,250/);
+  assert.match(await page.getByTestId("text-checkout-discount").innerText(), /125/);
+  assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /100/);
+  assert.match(await page.getByTestId("text-checkout-tax").innerText(), /50/);
+  await context.close();
+});
+
+test("shows only server-verified Shopify order status after Cashfree returns", async () => {
+  const savedCart = { id: "gid://shopify/Cart/verified-return-cart", totalQuantity: 1 };
+  const orderId = "cashfree-return-123";
+  const { context, page } = await openCheckout({
+    savedCart,
+    returnOrderId: orderId,
+    onCartRequest: (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
+    }),
+    onPaymentStatusRequest: async (route) => {
+      assert.equal(new URL(route.request().url()).searchParams.get("orderId"), orderId);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          orderId,
+          status: "shopify_synced",
+          paymentStatus: "PAID",
+          shopifyOrderName: "#1001",
+          message: "Sandbox payment verified and Shopify test order recorded; no shipment was booked.",
+        }),
+      });
+    },
+  });
+
+  await page.getByTestId("status-cashfree-payment").getByRole("heading", { name: "Your order is recorded." }).waitFor();
+  assert.match(await page.getByTestId("status-cashfree-payment").innerText(), /Shopify test order recorded; no shipment was booked/i);
+  assert.equal(await page.getByRole("link", { name: /View your orders/ }).getAttribute("href"), "/Orders");
   await context.close();
 });
 

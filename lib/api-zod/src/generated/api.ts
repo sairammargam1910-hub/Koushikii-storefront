@@ -573,6 +573,121 @@ export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
 
 
 /**
+ * Revalidates the live Shopify cart and creates a short-lived shipping quote. Unsupported destinations and unconfirmed carrier routes are rejected.
+ * @summary Create an address and parcel-specific delivery quote
+ */
+export const createShopifyCheckoutQuoteBodyOneCartIdMax = 1000;
+
+export const createShopifyCheckoutQuoteBodyOneEmailMax = 254;
+
+export const createShopifyCheckoutQuoteBodyOnePhoneMax = 40;
+
+export const createShopifyCheckoutQuoteBodyOneDeliveryAddressRecipientMax = 160;
+
+export const createShopifyCheckoutQuoteBodyOneDeliveryAddressStreetMax = 500;
+
+export const createShopifyCheckoutQuoteBodyOneDeliveryAddressAddress2Max = 500;
+
+export const createShopifyCheckoutQuoteBodyOneDeliveryAddressCityMax = 160;
+
+export const createShopifyCheckoutQuoteBodyOneDeliveryAddressStateMax = 160;
+
+export const createShopifyCheckoutQuoteBodyOneDeliveryAddressPinMax = 32;
+
+export const createShopifyCheckoutQuoteBodyOneDeliveryAddressCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
+
+
+export const CreateShopifyCheckoutQuoteBody = zod.object({
+  "cartId": zod.string().min(1).max(createShopifyCheckoutQuoteBodyOneCartIdMax),
+  "email": zod.email().max(createShopifyCheckoutQuoteBodyOneEmailMax),
+  "phone": zod.string().max(createShopifyCheckoutQuoteBodyOnePhoneMax).optional(),
+  "deliveryAddress": zod.object({
+  "recipient": zod.string().min(1).max(createShopifyCheckoutQuoteBodyOneDeliveryAddressRecipientMax),
+  "street": zod.string().min(1).max(createShopifyCheckoutQuoteBodyOneDeliveryAddressStreetMax),
+  "address2": zod.string().max(createShopifyCheckoutQuoteBodyOneDeliveryAddressAddress2Max).optional(),
+  "city": zod.string().min(1).max(createShopifyCheckoutQuoteBodyOneDeliveryAddressCityMax),
+  "state": zod.string().max(createShopifyCheckoutQuoteBodyOneDeliveryAddressStateMax).optional(),
+  "pin": zod.string().min(1).max(createShopifyCheckoutQuoteBodyOneDeliveryAddressPinMax),
+  "countryCode": zod.string().regex(createShopifyCheckoutQuoteBodyOneDeliveryAddressCountryCodeRegExp)
+})
+})
+
+export const createShopifyCheckoutQuoteResponseDestinationCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
+export const createShopifyCheckoutQuoteResponseCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
+
+
+
+export const CreateShopifyCheckoutQuoteResponse = zod.object({
+  "quoteId": zod.uuid(),
+  "expiresAt": zod.coerce.date(),
+  "destinationCountryCode": zod.string().regex(createShopifyCheckoutQuoteResponseDestinationCountryCodeRegExp),
+  "currencyCode": zod.string().regex(createShopifyCheckoutQuoteResponseCurrencyCodeRegExp),
+  "itemSubtotal": zod.string(),
+  "discountAmount": zod.string(),
+  "shippingAmount": zod.string(),
+  "taxAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "carrier": zod.string(),
+  "courierName": zod.string(),
+  "parcelCount": zod.int().min(1),
+  "excludedCharges": zod.array(zod.string())
+})
+
+
+/**
+ * Sandbox is the default. Production requires an explicit live-checkout flag and separate production credentials. The server checks quote expiry, current cart contents, payment currency, and Shopify order-writing permission before creating a session.
+ * @summary Create a Cashfree payment session for a valid quote
+ */
+export const CreateShopifyCheckoutPaymentSessionBody = zod.object({
+  "quoteId": zod.uuid()
+})
+
+export const CreateShopifyCheckoutPaymentSessionResponse = zod.object({
+  "orderId": zod.string(),
+  "paymentSessionId": zod.string(),
+  "amount": zod.string(),
+  "currencyCode": zod.string(),
+  "environment": zod.enum(['sandbox', 'production'])
+})
+
+
+/**
+ * @summary Verify a Cashfree payment and recover order synchronization
+ */
+export const getShopifyCheckoutPaymentStatusQueryOrderIdMax = 64;
+
+
+
+export const GetShopifyCheckoutPaymentStatusQueryParams = zod.object({
+  "orderId": zod.coerce.string().min(1).max(getShopifyCheckoutPaymentStatusQueryOrderIdMax)
+})
+
+export const GetShopifyCheckoutPaymentStatusResponse = zod.object({
+  "orderId": zod.string(),
+  "status": zod.enum(['quote_ready', 'payment_pending', 'payment_failed', 'paid', 'shopify_sync_pending', 'shopify_synced', 'shipment_booking_pending', 'completed', 'refund_pending', 'refunded', 'reconciliation_required']),
+  "paymentStatus": zod.enum(['PENDING', 'PAID', 'FAILED', 'REFUNDED', 'UNKNOWN']),
+  "shopifyOrderName": zod.string().nullable(),
+  "message": zod.string()
+})
+
+
+/**
+ * Verifies the Cashfree signature over the exact raw body, then queries Cashfree before recording payment as paid.
+ * @summary Reconcile signed Cashfree payment notifications
+ */
+export const ReceiveCashfreeCheckoutWebhookHeader = zod.object({
+  "x-webhook-signature": zod.string(),
+  "x-webhook-timestamp": zod.string()
+})
+
+export const ReceiveCashfreeCheckoutWebhookBody = zod.record(zod.string(), zod.unknown())
+
+export const ReceiveCashfreeCheckoutWebhookResponse = zod.object({
+  "received": zod.boolean()
+})
+
+
+/**
  * Upload one JPEG, PNG, or WebP image up to 10 MiB. Returns a temporary source for the product create/update imageUrl field. No existing product media is changed.
  * @summary Stage a product photo in Shopify (merchant only)
  */

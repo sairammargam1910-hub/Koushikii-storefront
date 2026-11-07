@@ -168,6 +168,90 @@ export interface ShopifyCartBuyerIdentityInput {
   deliveryAddress: ShopifyCartBuyerIdentityInputDeliveryAddress;
 }
 
+export type ShopifyCheckoutQuoteInput = ShopifyCartBuyerIdentityInput;
+
+export interface ShopifyCheckoutQuoteResponse {
+  quoteId: string;
+  expiresAt: string;
+  /** @pattern ^[A-Z]{2}$ */
+  destinationCountryCode: string;
+  /** @pattern ^[A-Z]{3}$ */
+  currencyCode: string;
+  itemSubtotal: string;
+  discountAmount: string;
+  shippingAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  carrier: string;
+  courierName: string;
+  /** @minimum 1 */
+  parcelCount: number;
+  excludedCharges: string[];
+}
+
+export interface ShopifyCheckoutPaymentSessionInput {
+  quoteId: string;
+}
+
+export type ShopifyCheckoutPaymentSessionResponseEnvironment = typeof ShopifyCheckoutPaymentSessionResponseEnvironment[keyof typeof ShopifyCheckoutPaymentSessionResponseEnvironment];
+
+
+export const ShopifyCheckoutPaymentSessionResponseEnvironment = {
+  sandbox: 'sandbox',
+  production: 'production',
+} as const;
+
+export interface ShopifyCheckoutPaymentSessionResponse {
+  orderId: string;
+  paymentSessionId: string;
+  amount: string;
+  currencyCode: string;
+  environment: ShopifyCheckoutPaymentSessionResponseEnvironment;
+}
+
+export type ShopifyCheckoutPaymentStatusResponseStatus = typeof ShopifyCheckoutPaymentStatusResponseStatus[keyof typeof ShopifyCheckoutPaymentStatusResponseStatus];
+
+
+export const ShopifyCheckoutPaymentStatusResponseStatus = {
+  quote_ready: 'quote_ready',
+  payment_pending: 'payment_pending',
+  payment_failed: 'payment_failed',
+  paid: 'paid',
+  shopify_sync_pending: 'shopify_sync_pending',
+  shopify_synced: 'shopify_synced',
+  shipment_booking_pending: 'shipment_booking_pending',
+  completed: 'completed',
+  refund_pending: 'refund_pending',
+  refunded: 'refunded',
+  reconciliation_required: 'reconciliation_required',
+} as const;
+
+export type ShopifyCheckoutPaymentStatusResponsePaymentStatus = typeof ShopifyCheckoutPaymentStatusResponsePaymentStatus[keyof typeof ShopifyCheckoutPaymentStatusResponsePaymentStatus];
+
+
+export const ShopifyCheckoutPaymentStatusResponsePaymentStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export interface ShopifyCheckoutPaymentStatusResponse {
+  orderId: string;
+  status: ShopifyCheckoutPaymentStatusResponseStatus;
+  paymentStatus: ShopifyCheckoutPaymentStatusResponsePaymentStatus;
+  /** @nullable */
+  shopifyOrderName: string | null;
+  message: string;
+}
+
+export interface CashfreeWebhookAck {
+  received: boolean;
+}
+
+export interface CashfreeWebhookInput { [key: string]: unknown }
+
 export interface ShopifyCartDiscountCode {
   code: string;
   applicable: boolean;
@@ -792,5 +876,13 @@ export type GetShopifyCartParams = {
  * @maxLength 1000
  */
 cartId: string;
+};
+
+export type GetShopifyCheckoutPaymentStatusParams = {
+/**
+ * @minLength 1
+ * @maxLength 64
+ */
+orderId: string;
 };
 

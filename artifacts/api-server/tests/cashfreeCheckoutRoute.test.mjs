@@ -1,0 +1,410 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { build } from "esbuild";
+import express from "express";
+
+const routePath = new URL("../src/routes/cashfreeCheckout.ts", import.meta.url).pathname;
+const compiled = await build({
+  entryPoints: [routePath],
+  bundle: true,
+  write: false,
+  format: "cjs",
+  platform: "node",
+  external: ["express"],
+  plugins: [{
+    name: "cashfree-checkout-route-fixtures",
+    setup(builder) {
+      const stubs = {
+        db: `
+          const state = globalThis.__checkoutRouteTest;
+          const columns = (names) => Object.fromEntries(names.map((name) => [name, { key: name }]));
+          export const cashfreeCheckoutOrdersTable = columns(["id","cashfreeOrderId","status","quoteHash","cartId","destinationCountryCode","currencyCode","itemSubtotal","discountAmount","shippingAmount","taxAmount","totalAmount","quoteExpiresAt","checkoutSnapshot","paymentSessionId","paymentReference","paidAt","shopifyOrderId","shopifyOrderName","lastError","createdAt","updatedAt"]);
+          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","packageIndex","shiprocketOrderId","shiprocketShipmentId","courierId","courierName","quotedAmount","status","awbCode","trackingUrl","lastError","createdAt","updatedAt"]);
+          function tableRows(table) { return table === cashfreeCheckoutOrdersTable ? state.orders : state.shipments; }
+          function matches(expression, row) {
+            if (!expression) return true;
+            if (expression.op === "and") return expression.items.every((item) => matches(item, row));
+            if (expression.op === "or") return expression.items.some((item) => matches(item, row));
+            const actual = row[expression.column.key];
+            if (expression.op === "eq") return actual === expression.value;
+            if (expression.op === "lt") return new Date(actual).getTime() < new Date(expression.value).getTime();
+            if (expression.op === "gt") return new Date(actual).getTime() > new Date(expression.value).getTime();
+            return false;
+          }
+          export const db = {
+            select() {
+              let table, condition, max = Infinity;
+              const query = {
+                from(value) { table = value; return this; },
+                where(value) { condition = value; return this; },
+                orderBy() { return this; },
+                limit(value) { max = value; return Promise.resolve(tableRows(table).filter((row) => matches(condition, row)).slice(0, max)); },
+                for() { return this; },
+                then(resolve, reject) { return Promise.resolve(tableRows(table).filter((row) => matches(condition, row)).slice(0, max)).then(resolve, reject); },
+              };
+              return query;
+            },
+            update(table) {
+              let values, condition;
+              const run = () => {
+                const changed = tableRows(table).filter((row) => matches(condition, row));
+                for (const row of changed) Object.assign(row, values);
+                return changed;
+              };
+              const query = {
+                set(value) { values = value; return this; },
+                where(value) { condition = value; return this; },
+                returning() { return Promise.resolve(run()); },
+                then(resolve, reject) { return Promise.resolve(run()).then(resolve, reject); },
+              };
+              return query;
+            },
+            insert(table) {
+              let values;
+              const query = {
+                values(value) { values = value; return this; },
+                returning() {
+                  const rows = Array.isArray(values) ? values : [values];
+                  tableRows(table).push(...rows);
+                  return Promise.resolve(rows);
+                },
+                then(resolve, reject) {
+                  const rows = Array.isArray(values) ? values : [values];
+                  tableRows(table).push(...rows);
+                  return Promise.resolve(rows).then(resolve, reject);
+                },
+              };
+              return query;
+            },
+            async transaction(callback) { return callback(this); },
+          };
+        `,
+        drizzle: `
+          const expression = (op, column, value) => ({ op, column, value });
+          export const eq = (column, value) => expression("eq", column, value);
+          export const lt = (column, value) => expression("lt", column, value);
+          export const gt = (column, value) => expression("gt", column, value);
+          export const and = (...items) => ({ op: "and", items });
+          export const or = (...items) => ({ op: "or", items });
+          export const desc = () => ({});
+        `,
+        apiZod: `
+          const schema = { safeParse: (data) => ({ success: true, data }), parse: (data) => data };
+          export const CreateShopifyCheckoutPaymentSessionBody = schema;
+          export const CreateShopifyCheckoutPaymentSessionResponse = schema;
+          export const CreateShopifyCheckoutQuoteBody = schema;
+          export const CreateShopifyCheckoutQuoteResponse = schema;
+          export const GetShopifyCheckoutPaymentStatusQueryParams = schema;
+          export const GetShopifyCheckoutPaymentStatusResponse = schema;
+        `,
+        cashfree: `
+          const state = globalThis.__checkoutRouteTest;
+          export class CashfreeError extends Error {}
+          export const getCashfreeEnvironment = () => state.environment;
+          export const createCashfreeOrder = async (input) => {
+            state.cashfreeCreateInput = input;
+            return { order_id: input.orderId, order_amount: Number(input.amount), order_currency: input.currencyCode, order_status: "ACTIVE", payment_session_id: "sandbox-session" };
+          };
+          export const getCashfreeOrder = async (orderId) => {
+            state.cashfreeReads += 1;
+            return { order_id: orderId, order_amount: state.order.totalAmount, order_currency: state.order.currencyCode, order_status: state.providerStatus, cf_order_id: "cf-order-ref" };
+          };
+          export const getCashfreePaymentReference = async () => state.paymentReference;
+          export const verifyCashfreeWebhookSignature = () => state.signatureValid;
+        `,
+        pricing: `
+          export const addMoney = (amounts) => amounts.reduce((sum, amount) => sum + Number(amount), 0).toFixed(2);
+          export const checkoutCartFingerprint = () => "hash";
+          export const getCartDiscountAmount = () => "0.00";
+          export const minimalCartSnapshot = (cart) => cart;
+          export const splitMoney = (amount, count) => Array(count).fill((Number(amount) / count).toFixed(2));
+        `,
+        shiprocket: `
+          export class ShiprocketError extends Error {}
+          export const bookShiprocketPackage = async () => ({ awbCode: "awb-test" });
+          export const createAndQuotePackage = async () => ({});
+          export const getConfiguredParcel = () => ({ weightKg: 1, lengthCm: 35, breadthCm: 25, heightCm: 8 });
+        `,
+        shopifyOrder: `
+          const state = globalThis.__checkoutRouteTest;
+          export class ShopifyCheckoutSyncError extends Error {}
+          export const assertShopifyCheckoutCapabilities = async () => {};
+          export const createOrFindShopifyPaidOrder = async () => {
+            state.shopifySyncAttempts += 1;
+            if (state.shopifyFailures > 0) {
+              state.shopifyFailures -= 1;
+              throw new ShopifyCheckoutSyncError("temporary test failure");
+            }
+            return { id: "gid://shopify/Order/100", name: "#1001" };
+          };
+        `,
+        shopifyRoute: `
+          export class ShopifyCheckoutInputError extends Error {
+            constructor(message, statusCode) { super(message); this.statusCode = statusCode; }
+          }
+          export const getAvailableCountries = async () => [];
+          export const prepareShopifyCheckoutCart = async () => globalThis.__checkoutRouteTest.cart;
+        `,
+        storefrontClient: `export const getShopifyStorefrontDomain = async () => "gtnbsw-x3.myshopify.com";`,
+        logger: `export const logger = { error() {}, warn() {} };`,
+      };
+      const routes = [
+        [/@workspace\/db$/, "db"],
+        [/drizzle-orm$/, "drizzle"],
+        [/@workspace\/api-zod$/, "apiZod"],
+        [/cashfreeClient$/, "cashfree"],
+        [/checkoutPricing$/, "pricing"],
+        [/shiprocketClient$/, "shiprocket"],
+        [/shopifyCheckoutOrder$/, "shopifyOrder"],
+        [/^\.\/shopify$/, "shopifyRoute"],
+        [/shopifyStorefrontClient$/, "storefrontClient"],
+        [/logger$/, "logger"],
+      ];
+      for (const [filter, key] of routes) {
+        builder.onResolve({ filter }, () => ({ path: key, namespace: "checkout-test" }));
+      }
+      builder.onLoad({ filter: /.*/, namespace: "checkout-test" }, ({ path }) => ({
+        contents: stubs[path],
+        loader: "js",
+      }));
+    },
+  }],
+});
+
+function makeOrder(overrides = {}) {
+  const cart = {
+    id: "gid://shopify/Cart/1",
+    totalQuantity: 1,
+    cost: {
+      subtotalAmount: { amount: "100.00", currencyCode: "INR" },
+      totalAmount: { amount: "100.00", currencyCode: "INR" },
+      totalTaxAmount: { amount: "0.00", currencyCode: "INR" },
+    },
+    lines: {
+      nodes: [{
+        id: "gid://shopify/CartLine/1",
+        quantity: 1,
+        cost: {
+          subtotalAmount: { amount: "100.00", currencyCode: "INR" },
+          totalAmount: { amount: "100.00", currencyCode: "INR" },
+        },
+        merchandise: {
+          id: "gid://shopify/ProductVariant/1",
+          title: "Default",
+          sku: "TEST-1",
+          availableForSale: true,
+          product: { title: "Handwoven saree", description: "Silk saree", tags: ["saree"] },
+        },
+      }],
+    },
+  };
+  return {
+    id: "f991fda7-d46f-4113-a93a-64020aab037a",
+    cashfreeOrderId: "chenetha_test-order",
+    status: "payment_pending",
+    quoteHash: "hash",
+    cartId: "gid://shopify/Cart/1",
+    destinationCountryCode: "IN",
+    currencyCode: "INR",
+    itemSubtotal: "100.00",
+    discountAmount: "0.00",
+    shippingAmount: "20.00",
+    taxAmount: "0.00",
+    totalAmount: "120.00",
+    quoteExpiresAt: new Date(Date.now() + 600_000),
+    checkoutSnapshot: {
+      email: "buyer@example.com",
+      phone: "+919876543210",
+      address: { recipient: "Asha Rao", street: "12 Example Road", city: "Hyderabad", pin: "500008", countryCode: "IN" },
+      cart,
+      providerPackages: [],
+      courierName: "Economy",
+      parcelCount: 1,
+    },
+    paymentSessionId: "session-test",
+    paymentReference: null,
+    paidAt: null,
+    shopifyOrderId: null,
+    shopifyOrderName: null,
+    lastError: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+}
+
+async function harness(run, options = {}) {
+  const state = {
+    environment: "sandbox",
+    providerStatus: "PAID",
+    paymentReference: "cf-payment-1",
+    signatureValid: true,
+    cashfreeReads: 0,
+    cashfreeCreateInput: null,
+    shopifySyncAttempts: 0,
+    shopifyFailures: 0,
+    orders: [makeOrder(options.order)],
+    shipments: [],
+  };
+  state.order = state.orders[0];
+  state.cart = state.order.checkoutSnapshot.cart;
+  globalThis.__checkoutRouteTest = state;
+  const module = { exports: {} };
+  new Function("require", "module", "exports", compiled.outputFiles[0].text)(
+    createRequire(import.meta.url),
+    module,
+    module.exports,
+  );
+  const app = express();
+  app.use("/api/cashfree/webhook", express.raw({ type: "application/json" }));
+  app.use(express.json());
+  app.use("/api", module.exports.default);
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const getStatus = async () => {
+    const response = await fetch(`${base}/shopify/checkout/payment-status?orderId=${encodeURIComponent(state.order.cashfreeOrderId)}`);
+    return { status: response.status, body: await response.json() };
+  };
+  const postSession = async (body, headers = {}) => {
+    const response = await fetch(`${base}/shopify/checkout/payment-session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.json() };
+  };
+  const sendWebhook = async (event) => {
+    const response = await fetch(`${base}/cashfree/webhook`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-webhook-signature": "valid-test-signature",
+        "x-webhook-timestamp": "1762516800",
+      },
+      body: JSON.stringify(event),
+    });
+    return { status: response.status, body: await response.json() };
+  };
+  try {
+    await run({ state, getStatus, postSession, sendWebhook });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    delete globalThis.__checkoutRouteTest;
+  }
+}
+
+test("duplicate Cashfree success notifications create only one Shopify order", async () => {
+  await harness(async ({ state, sendWebhook }) => {
+    const event = {
+      type: "PAYMENT_SUCCESS_WEBHOOK",
+      data: { order: { order_id: state.order.cashfreeOrderId }, payment: { cf_payment_id: "cf-payment-1" } },
+    };
+    assert.equal((await sendWebhook(event)).status, 200);
+    assert.equal((await sendWebhook(event)).status, 200);
+    assert.equal(state.shopifySyncAttempts, 1);
+    assert.equal(state.order.status, "shopify_synced");
+    assert.equal(state.order.shopifyOrderName, "#1001");
+    assert.deepEqual(state.order.checkoutSnapshot, {});
+  });
+});
+
+test("an expired or failed Cashfree payment never creates a paid Shopify order", async () => {
+  await harness(async ({ state, getStatus }) => {
+    state.providerStatus = "EXPIRED";
+    const result = await getStatus();
+    assert.equal(result.status, 200);
+    assert.equal(result.body.status, "payment_failed");
+    assert.equal(result.body.paymentStatus, "FAILED");
+    assert.equal(state.shopifySyncAttempts, 0);
+  });
+});
+
+test("an unauthenticated Cashfree webhook cannot change payment state", async () => {
+  await harness(async ({ state, sendWebhook }) => {
+    state.signatureValid = false;
+    const result = await sendWebhook({
+      type: "PAYMENT_SUCCESS_WEBHOOK",
+      data: { order: { order_id: state.order.cashfreeOrderId }, payment: { cf_payment_id: "fake-payment" } },
+    });
+    assert.equal(result.status, 401);
+    assert.equal(state.order.status, "payment_pending");
+    assert.equal(state.shopifySyncAttempts, 0);
+  });
+});
+
+test("a failed Shopify synchronization remains recoverable without asking for another payment", async () => {
+  await harness(async ({ state, getStatus }) => {
+    state.shopifyFailures = 1;
+    const first = await getStatus();
+    assert.equal(first.body.status, "shopify_sync_pending");
+    assert.match(first.body.message, /do not pay again/i);
+    assert.equal(state.shopifySyncAttempts, 1);
+
+    state.order.updatedAt = new Date(Date.now() - 61_000);
+    const recovered = await getStatus();
+    assert.equal(recovered.body.status, "shopify_synced");
+    assert.equal(recovered.body.shopifyOrderName, "#1001");
+    assert.equal(state.shopifySyncAttempts, 2);
+  });
+});
+
+test("signed refund notifications stop subsequent payment callbacks from creating an order", async () => {
+  await harness(async ({ state, sendWebhook }) => {
+    const refund = await sendWebhook({
+      type: "REFUND_STATUS_WEBHOOK",
+      data: { order: { order_id: state.order.cashfreeOrderId }, refund: { refund_status: "SUCCESS" } },
+    });
+    assert.equal(refund.status, 200);
+    assert.equal(state.order.status, "refunded");
+    const paid = await sendWebhook({
+      type: "PAYMENT_SUCCESS_WEBHOOK",
+      data: { order: { order_id: state.order.cashfreeOrderId }, payment: { cf_payment_id: "cf-payment-1" } },
+    });
+    assert.equal(paid.status, 200);
+    assert.equal(state.shopifySyncAttempts, 0);
+    assert.equal(state.order.status, "refunded");
+  });
+});
+
+test("payment sessions use the validated quote and return to the same Replit preview origin", async () => {
+  await harness(async ({ state, postSession }) => {
+    const origin = "https://preview.replit.dev";
+    const result = await postSession(
+      { quoteId: state.order.id },
+      { Origin: origin, Referer: `${origin}/chenetha-storefront/Checkout` },
+    );
+    assert.equal(result.status, 200);
+    assert.equal(result.body.paymentSessionId, "sandbox-session");
+    assert.equal(result.body.environment, "sandbox");
+    assert.equal(state.cashfreeCreateInput.amount, "120.00");
+    assert.equal(
+      state.cashfreeCreateInput.returnUrl,
+      `${origin}/chenetha-storefront/Checkout?cashfree_order_id=${state.order.cashfreeOrderId}`,
+    );
+    assert.equal(state.order.status, "payment_pending");
+  }, {
+    order: {
+      status: "quote_ready",
+      paymentSessionId: null,
+    },
+  });
+});
+
+test("expired quotes cannot create Cashfree payment sessions", async () => {
+  await harness(async ({ state, postSession }) => {
+    state.order.quoteExpiresAt = new Date(Date.now() - 1_000);
+    const result = await postSession(
+      { quoteId: state.order.id },
+      { Origin: "https://preview.replit.dev" },
+    );
+    assert.equal(result.status, 409);
+    assert.equal(state.cashfreeCreateInput, null);
+  }, {
+    order: {
+      status: "quote_ready",
+      paymentSessionId: null,
+    },
+  });
+});

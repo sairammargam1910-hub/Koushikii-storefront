@@ -177,8 +177,8 @@ export function Profile() {
             <a className="btn gold" href={base + "Account"}>Account information</a>
             <p style={{ fontSize: 10 }}>
               {signedIn
-                ? "These preferences are private to your signed-in account. They do not affect Shopify checkout."
-                : "Guest preferences stay in this browser and do not affect Shopify checkout."}
+                ? "These preferences are private to your signed-in account and can prefill delivery details at Chenetha checkout."
+                : "Guest preferences stay in this browser and can prefill delivery details at Chenetha checkout."}
             </p>
           </aside>
           <div>
@@ -331,7 +331,7 @@ export function Profile() {
                 <div className="guide-note">
                   <h3>No addresses, yet.</h3>
                   <p className="muted">
-                    Add a saved delivery address to prefill Shopify checkout after you sign in. You can also enter an address directly in Shopify checkout.
+                    Add a saved delivery address to prefill Chenetha checkout after you sign in. You can also enter an address directly before requesting a quote.
                   </p>
                 </div>
               )}
@@ -345,7 +345,7 @@ export function Profile() {
                   <p className="muted" style={{ fontSize: 11 }}>
                     {signedIn
                       ? "Saved privately with your account. It is sent to Shopify only when you choose saved details at checkout."
-                      : "Saved locally in this browser. Sign in to save it to your account and prefill Shopify checkout."}
+                      : "Saved locally in this browser. Sign in to save it to your account and prefill Chenetha checkout."}
                   </p>
                   {(
                     [

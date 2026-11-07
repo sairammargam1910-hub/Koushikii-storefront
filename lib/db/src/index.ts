@@ -4,14 +4,20 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
+const developmentDatabaseUrl =
+  process.env.NODE_ENV === "development"
+    ? process.env.NEON_DEV_DATABASE_URL?.trim() || undefined
+    : undefined;
+const databaseUrl = developmentDatabaseUrl ?? process.env.DATABASE_URL;
+
+if (!databaseUrl) {
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",
   );
 }
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: databaseUrl,
   max: 5,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,

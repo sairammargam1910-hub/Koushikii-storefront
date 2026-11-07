@@ -4,10 +4,12 @@ import shopifyRouter from "./shopify";
 import shopifyAdminRouter from "./shopifyAdmin";
 import shopperRouter from "./shopper";
 import siteContentRouter from "./siteContent";
+import cashfreeCheckoutRouter from "./cashfreeCheckout";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(cashfreeCheckoutRouter);
 router.use(shopifyRouter);
 router.use(shopifyAdminRouter);
 router.use(shopperRouter);
