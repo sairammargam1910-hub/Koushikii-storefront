@@ -51,6 +51,20 @@ function fixtureState(overrides = {}) {
     domain: "gtnbsw-x3.myshopify.com",
     scopes: ["read_orders", "write_orders"],
     existing: null,
+    savedOrder: {
+      id: "gid://shopify/Order/999",
+      name: "#1001",
+      test: true,
+      currencyCode: "INR",
+      transactions: [{
+        kind: "SALE",
+        status: "SUCCESS",
+        gateway: "Cashfree",
+        authorizationCode: "cf_payment_123",
+        test: true,
+        amountSet: { shopMoney: { amount: "120.00", currencyCode: "INR" } },
+      }],
+    },
     calls: [],
     adminRequest: async (query, variables) => {
       state.calls.push({ query, variables });
@@ -62,6 +76,9 @@ function fixtureState(overrides = {}) {
       }
       if (query.includes("FindCashfreeOrder")) {
         return { orders: { nodes: state.existing ? [state.existing] : [] } };
+      }
+      if (query.includes("ReadCashfreeTestOrderPayment")) {
+        return { order: state.savedOrder };
       }
       if (query.includes("CreateCashfreePaidOrder")) {
         state.createdOrderInput = variables.order;
@@ -164,12 +181,97 @@ test("creates an idempotent Shopify test order with the external payment referen
   assert.equal(state.createdOrderInput.lineItems.length, 2);
   assert.equal(state.createdOrderInput.lineItems[0].priceSet.shopMoney.amount, "50.00");
   assert.equal(state.createdOptions.inventoryBehaviour, "BYPASS");
+  assert.equal(
+    state.calls.some((call) =>
+      call.query.includes("ReadCashfreeTestOrderPayment") &&
+      call.variables.id === "gid://shopify/Order/999"
+    ),
+    true,
+  );
 
   state.existing = { id: "gid://shopify/Order/999", name: "#1001" };
   state.calls.length = 0;
   const recovered = await createOrFindShopifyPaidOrder(orderInput());
   assert.equal(recovered.id, "gid://shopify/Order/999");
   assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
+});
+
+test("rejects sandbox orders when Shopify did not retain the quoted payment details", async () => {
+  const mismatches = [
+    ["amount", (transaction) => {
+      transaction.amountSet.shopMoney.amount = "121.00";
+    }],
+    ["currency", (transaction) => {
+      transaction.amountSet.shopMoney.currencyCode = "USD";
+    }],
+    ["payment reference", (transaction) => {
+      transaction.authorizationCode = "cf_payment_other";
+    }],
+  ];
+
+  for (const [label, alterTransaction] of mismatches) {
+    const savedOrder = {
+      id: "gid://shopify/Order/999",
+      name: "#1001",
+      test: true,
+      currencyCode: "INR",
+      transactions: [{
+        kind: "SALE",
+        status: "SUCCESS",
+        gateway: "Cashfree",
+        authorizationCode: "cf_payment_123",
+        test: true,
+        amountSet: { shopMoney: { amount: "120.00", currencyCode: "INR" } },
+      }],
+    };
+    alterTransaction(savedOrder.transactions[0]);
+    const state = fixtureState({
+      existing: { id: "gid://shopify/Order/999", name: "#1001" },
+      savedOrder,
+    });
+    const { createOrFindShopifyPaidOrder } = loadModule(state);
+    await assert.rejects(
+      createOrFindShopifyPaidOrder(orderInput()),
+      /did not retain the confirmed Cashfree payment details/,
+      label,
+    );
+    assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
+  }
+});
+
+test("retries a created sandbox order by reading it back without creating a duplicate", async () => {
+  const state = fixtureState({
+    savedOrder: {
+      id: "gid://shopify/Order/999",
+      name: "#1001",
+      test: true,
+      currencyCode: "INR",
+      transactions: [{
+        kind: "SALE",
+        status: "SUCCESS",
+        gateway: "Cashfree",
+        authorizationCode: "cf_payment_123",
+        test: true,
+        amountSet: { shopMoney: { amount: "121.00", currencyCode: "INR" } },
+      }],
+    },
+  });
+  const { createOrFindShopifyPaidOrder } = loadModule(state);
+
+  await assert.rejects(
+    createOrFindShopifyPaidOrder(orderInput()),
+    /did not retain the confirmed Cashfree payment details/,
+  );
+  assert.equal(state.calls.filter((call) => call.query.includes("CreateCashfreePaidOrder")).length, 1);
+
+  state.existing = { id: "gid://shopify/Order/999", name: "#1001" };
+  state.savedOrder.transactions[0].amountSet.shopMoney.amount = "120.00";
+  state.calls.length = 0;
+  const recovered = await createOrFindShopifyPaidOrder(orderInput());
+
+  assert.equal(recovered.id, "gid://shopify/Order/999");
+  assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
+  assert.equal(state.calls.some((call) => call.query.includes("ReadCashfreeTestOrderPayment")), true);
 });
 
 test("refuses to synchronize against a different Shopify store", async () => {
@@ -185,4 +287,5 @@ test("production order records are not marked as Shopify test orders", async () 
   assert.equal(state.createdOrderInput.test, false);
   assert.equal(state.createdOrderInput.transactions[0].test, false);
   assert.equal(state.createdOptions.inventoryBehaviour, "DECREMENT_IGNORING_POLICY");
+  assert.equal(state.calls.some((call) => call.query.includes("ReadCashfreeTestOrderPayment")), false);
 });

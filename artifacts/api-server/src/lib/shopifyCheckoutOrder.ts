@@ -23,6 +23,30 @@ const FIND_ORDER_QUERY = `#graphql
   }
 `;
 
+const READ_ORDER_PAYMENT_QUERY = `#graphql
+  query ReadCashfreeTestOrderPayment($id: ID!) {
+    order(id: $id) {
+      id
+      name
+      test
+      currencyCode
+      transactions {
+        kind
+        status
+        gateway
+        authorizationCode
+        test
+        amountSet {
+          shopMoney {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+`;
+
 const CREATE_ORDER_MUTATION = `#graphql
   mutation CreateCashfreePaidOrder(
     $order: OrderCreateOrderInput!
@@ -72,6 +96,58 @@ function scaled(amount: string, scale: number): bigint {
   const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(amount);
   if (!match) throw new ShopifyCheckoutSyncError("Shopify returned an invalid order amount.");
   return BigInt(`${match[1]}${match[2]}${(match[3] ?? "").padEnd(scale, "0")}`);
+}
+
+function inMinorUnits(amount: string): bigint | null {
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(amount);
+  if (!match) return null;
+  return BigInt(`${match[1]}${match[2]}${(match[3] ?? "").padEnd(2, "0")}`);
+}
+
+async function verifySandboxOrderPayment(input: {
+  order: { id: string; name: string };
+  amount: string;
+  currencyCode: string;
+  paymentReference: string;
+}): Promise<void> {
+  const data = await shopifyAdminRequest<{
+    order: {
+      id: string;
+      name: string;
+      test: boolean;
+      currencyCode: string;
+      transactions: Array<{
+        kind: string;
+        status: string;
+        gateway: string;
+        authorizationCode: string | null;
+        test: boolean;
+        amountSet: {
+          shopMoney: { amount: string; currencyCode: string };
+        };
+      }>;
+    } | null;
+  }>(READ_ORDER_PAYMENT_QUERY, { id: input.order.id });
+  const savedOrder = data.order;
+  const expectedAmount = inMinorUnits(input.amount);
+  const paymentWasSaved = savedOrder?.id === input.order.id &&
+    savedOrder.test === true &&
+    savedOrder.currencyCode === input.currencyCode &&
+    expectedAmount !== null &&
+    savedOrder.transactions.some((transaction) =>
+      transaction.kind === "SALE" &&
+      transaction.status === "SUCCESS" &&
+      transaction.gateway === "Cashfree" &&
+      transaction.test === true &&
+      transaction.authorizationCode === input.paymentReference &&
+      transaction.amountSet.shopMoney.currencyCode === input.currencyCode &&
+      inMinorUnits(transaction.amountSet.shopMoney.amount) === expectedAmount
+    );
+  if (!paymentWasSaved) {
+    throw new ShopifyCheckoutSyncError(
+      "Shopify did not retain the confirmed Cashfree payment details on the sandbox test order.",
+    );
+  }
 }
 
 function amountFromMinorUnits(value: bigint, scale: number): string {
@@ -140,12 +216,6 @@ export async function createOrFindShopifyPaidOrder(input: {
   await assertShopifyCheckoutCapabilities();
   const tag = `cashfree-${input.orderId}`;
   const sourceId = input.orderId.replace(/[^a-zA-Z0-9_-]/g, "");
-  const existing = await shopifyAdminRequest<{
-    orders: { nodes: Array<{ id: string; name: string }> };
-  }>(FIND_ORDER_QUERY, { query: `source_identifier:${sourceId}` });
-  const found = existing.orders.nodes[0];
-  if (found) return found;
-
   const cart = input.snapshot.cart;
   const currencyCode = cart.cost.totalAmount.currencyCode;
   if (
@@ -165,6 +235,22 @@ export async function createOrFindShopifyPaidOrder(input: {
     throw new ShopifyCheckoutSyncError(
       "Shopify order lines, tax, and shipping do not match the confirmed Cashfree payment.",
     );
+  }
+  const sandbox = getCashfreeEnvironment() === "sandbox";
+  const existing = await shopifyAdminRequest<{
+    orders: { nodes: Array<{ id: string; name: string }> };
+  }>(FIND_ORDER_QUERY, { query: `source_identifier:${sourceId}` });
+  const found = existing.orders.nodes[0];
+  if (found) {
+    if (sandbox) {
+      await verifySandboxOrderPayment({
+        order: found,
+        amount: transactionAmount,
+        currencyCode,
+        paymentReference: input.paymentReference,
+      });
+    }
+    return found;
   }
   const { firstName, lastName } = splitName(input.snapshot.address.recipient);
   const lineItems = cart.lines.nodes.flatMap((line) => {
@@ -194,7 +280,6 @@ export async function createOrFindShopifyPaidOrder(input: {
     throw new ShopifyCheckoutSyncError("Shopify returned a tax total without a valid taxable base.");
   }
   const taxRate = taxBase > 0 ? Number(totals.totalTax) / taxBase : 0;
-  const sandbox = getCashfreeEnvironment() === "sandbox";
   const order = {
     currency: currencyCode,
     presentmentCurrency: currencyCode,
@@ -275,6 +360,14 @@ export async function createOrFindShopifyPaidOrder(input: {
   assertNoUserErrors(created.orderCreate.userErrors);
   if (!created.orderCreate.order) {
     throw new ShopifyAdminError("Shopify did not return the created checkout order.");
+  }
+  if (sandbox) {
+    await verifySandboxOrderPayment({
+      order: created.orderCreate.order,
+      amount: transactionAmount,
+      currencyCode,
+      paymentReference: input.paymentReference,
+    });
   }
   return created.orderCreate.order;
 }
