@@ -47,7 +47,9 @@ function mockShiprocketFetch(calls) {
     }
     if (target.pathname.endsWith("/settings/company/pickup")) {
       return new Response(JSON.stringify({
-        data: [{ id: 123, pickup_location: "Hyderabad", pin_code: "500007" }],
+        data: {
+          shipping_address: [{ id: 123, pickup_location: "Primary", pin_code: "500007" }],
+        },
       }), { status: 200 });
     }
     if (target.pathname.endsWith("/international/orders/create/adhoc") ||
@@ -56,6 +58,7 @@ function mockShiprocketFetch(calls) {
     }
     if (target.pathname.includes("/courier/serviceability")) {
       return new Response(JSON.stringify({
+        currency: "INR",
         data: {
           available_courier_companies: [
             { courier_company_id: 20, courier_name: "Higher", rate: 325 },
@@ -139,15 +142,44 @@ test("international quote uses export settings and the selected destination coun
       const { createAndQuotePackage } = loadModule();
       const result = await createAndQuotePackage({
         ...baseInput,
+        hsnCode: "5007",
         destination: { ...baseInput.destination, countryCode: "US", countryName: "United States" },
       });
       assert.equal(result.currencyCode, "INR");
       const create = calls.find((call) => call.url.pathname.endsWith("/international/orders/create/adhoc"));
       assert.equal(create.body.reasonOfExport, 3);
       assert.equal(create.body.Terms_Of_Invoice, "FOB");
+      assert.equal(create.body.order_items[0].hsn, 5007);
       const quote = calls.find((call) => call.url.pathname.endsWith("/international/courier/serviceability"));
       assert.equal(quote.url.searchParams.get("delivery_country"), "US");
       assert.equal(calls.some((call) => call.url.pathname.includes("/international/courier/assign/awb")), false);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("international quote requires an HSN code before creating an order", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = mockShiprocketFetch(calls);
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+      SHIPROCKET_PICKUP_POSTCODE: "500007",
+      SHIPROCKET_REASON_OF_EXPORT: "3",
+      SHIPROCKET_TERMS_OF_INVOICE: "FOB",
+    }, async () => {
+      const { createAndQuotePackage } = loadModule();
+      await assert.rejects(
+        createAndQuotePackage({
+          ...baseInput,
+          destination: { ...baseInput.destination, countryCode: "US", countryName: "United States" },
+        }),
+        /valid Shiprocket HSN code must be configured/,
+      );
+      assert.equal(calls.some((call) => call.url.pathname.endsWith("/international/orders/create/adhoc")), false);
     });
   } finally {
     globalThis.fetch = originalFetch;
@@ -169,11 +201,41 @@ test("international quotes fail closed when export terms are not configured", as
       await assert.rejects(
         createAndQuotePackage({
           ...baseInput,
+          hsnCode: "5007",
           destination: { ...baseInput.destination, countryCode: "US", countryName: "United States" },
         }),
         /export purpose must be configured/,
       );
       assert.equal(calls.some((call) => call.url.pathname.endsWith("/international/orders/create/adhoc")), false);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("an unsupported destination fails clearly without booking a shipment", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  const mockedFetch = mockShiprocketFetch(calls);
+  globalThis.fetch = async (url, init = {}) => {
+    const target = new URL(String(url));
+    if (target.pathname.includes("/courier/serviceability")) {
+      calls.push({ url: target, method: init.method ?? "GET", body: undefined });
+      return new Response(JSON.stringify({ message: "No serviceable couriers available." }), { status: 400 });
+    }
+    return mockedFetch(url, init);
+  };
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+      SHIPROCKET_PICKUP_POSTCODE: "500007",
+      SHIPROCKET_REASON_OF_EXPORT: null,
+      SHIPROCKET_TERMS_OF_INVOICE: null,
+    }, async () => {
+      const { createAndQuotePackage } = loadModule();
+      await assert.rejects(createAndQuotePackage(baseInput), /no serviceable courier/i);
+      assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
     });
   } finally {
     globalThis.fetch = originalFetch;

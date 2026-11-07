@@ -43,6 +43,7 @@ export type ShiprocketPackageInput = {
   sku: string;
   sellingPrice: string;
   currencyCode: string;
+  hsnCode?: string;
   weightKg: number;
   lengthCm: number;
   breadthCm: number;
@@ -112,6 +113,9 @@ async function request<T>(
   });
   const payload = await readPayload(response);
   if (!response.ok || payload.status_code && Number(payload.status_code) >= 400) {
+    if (/no serviceable couriers available|destination.*not serviceable/i.test(String(payload.message ?? ""))) {
+      throw new ShiprocketError("Shiprocket has no serviceable courier for this address.");
+    }
     throw new ShiprocketError(`Shiprocket request failed (${response.status}).`);
   }
   return payload as T;
@@ -143,15 +147,20 @@ function getParcelDimensions() {
 
 async function getPickupLocation(): Promise<ShiprocketPickup> {
   const payload = await request<{
-    data?: ShiprocketPickup[] | { data?: ShiprocketPickup[] };
+    data?: ShiprocketPickup[] | {
+      data?: ShiprocketPickup[];
+      shipping_address?: ShiprocketPickup[];
+    };
   }>("/settings/company/pickup");
-  const data = Array.isArray(payload.data)
+  const locations = Array.isArray(payload.data)
     ? payload.data
     : Array.isArray(payload.data?.data)
       ? payload.data.data
-      : [];
+      : Array.isArray(payload.data?.shipping_address)
+        ? payload.data.shipping_address
+        : [];
   const requestedPostcode = getConfiguredPickupPostcode();
-  const pickup = data.find((item) =>
+  const pickup = locations.find((item) =>
     String(item.pin_code ?? item.pincode ?? item.pin ?? "") === requestedPostcode,
   );
   if (!pickup || !pickup.id || !(pickup.pickup_location ?? pickup.pickup_location_name)) {
@@ -235,6 +244,7 @@ function makeShiprocketOrderBody(
       sku: input.sku.slice(0, 80),
       units: 1,
       selling_price: itemPrice,
+      ...(international && input.hsnCode ? { hsn: Number(input.hsnCode) } : {}),
     }],
     payment_method: "Prepaid",
     shipping_charges: 0,
@@ -245,6 +255,9 @@ function makeShiprocketOrderBody(
     weight: input.weightKg,
   };
   if (international) {
+    if (!input.hsnCode || !/^\d{4,8}$/.test(input.hsnCode.trim())) {
+      throw new ShiprocketError("A valid Shiprocket HSN code must be configured before international quotes can be requested.");
+    }
     const reasonOfExport = process.env.SHIPROCKET_REASON_OF_EXPORT?.trim();
     const invoiceTerms = process.env.SHIPROCKET_TERMS_OF_INVOICE?.trim().toUpperCase();
     if (!reasonOfExport || !["0", "1", "2", "3"].includes(reasonOfExport)) {
@@ -307,8 +320,12 @@ export async function createAndQuotePackage(
       : { delivery_postcode: input.destination.postalCode }),
   });
   const serviceability = await request<{
+    currency?: string;
     data?: { available_courier_companies?: ShiprocketCourier[] } | ShiprocketCourier[];
   }>(`${quotePath}?${query.toString()}`, { method: "GET" });
+  if (serviceability.currency?.toUpperCase() !== "INR") {
+    throw new ShiprocketError("Shiprocket did not return a supported INR shipping quote.");
+  }
   const selected = selectLowestCourier(parseCouriers(serviceability));
   return {
     orderId: created.orderId,

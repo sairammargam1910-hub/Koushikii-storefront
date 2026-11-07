@@ -567,6 +567,7 @@ function buildProviderPackageInputs(input: {
       sku: merchandise.sku || merchandise.id.split("/").at(-1) || merchandise.id,
       sellingPrice,
       currencyCode: input.cart.cost.totalAmount.currencyCode,
+      hsnCode: process.env.SHIPROCKET_HSN_CODE?.trim(),
       ...parcel,
     }));
   });
@@ -718,11 +719,11 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       return;
     }
     if (error instanceof ShiprocketError) {
-      const needsConfiguration = /not configured|no configured pickup|invoice terms|export purpose/i.test(error.message);
+      const needsConfiguration = /not configured|no configured pickup|invoice terms|export purpose|HSN code/i.test(error.message);
       const noRoute = /no serviceable courier|not serviceable/i.test(error.message);
       res.status(needsConfiguration ? 422 : 409).json({
         error: needsConfiguration
-          ? "The shipping account needs approved pickup and export settings before this destination can be quoted."
+          ? "The shipping account or product export settings are incomplete for this destination."
           : noRoute
             ? "The carrier has no serviceable route for this delivery address."
             : "Shiprocket could not confirm a current quote. No payment was taken.",

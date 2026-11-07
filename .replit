@@ -31,9 +31,22 @@ SHIPROCKET_TERMS_OF_INVOICE = "FOB"
 CASHFREE_ENVIRONMENT = "sandbox"
 CHECKOUT_LIVE_ENABLED = "false"
 SHIPROCKET_LIVE_BOOKING_ENABLED = "false"
+SHIPROCKET_HSN_CODE = "5007"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-2eb914e7-4ecd-4b51-a115-f4c594b5616b"
 
 [nix]
 channel = "stable-25_05"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 20119
+externalPort = 80
