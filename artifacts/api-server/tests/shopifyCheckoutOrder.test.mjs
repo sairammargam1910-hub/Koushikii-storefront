@@ -147,9 +147,20 @@ test("creates an idempotent Shopify test order with the external payment referen
   assert.equal(result.name, "#1001");
   assert.equal(state.createdOrderInput.sourceIdentifier, "chenetha_test-123");
   assert.equal(state.createdOrderInput.test, true);
+  assert.equal(state.createdOrderInput.currency, "INR");
+  assert.equal(state.createdOrderInput.presentmentCurrency, "INR");
   assert.equal(state.createdOrderInput.transactions[0].test, true);
   assert.equal(state.createdOrderInput.transactions[0].authorizationCode, "cf_payment_123");
+  assert.deepEqual(state.createdOrderInput.transactions[0].amountSet.shopMoney, {
+    amount: "120.00",
+    currencyCode: "INR",
+  });
+  assert.deepEqual(state.createdOrderInput.transactions[0].receiptJson, {
+    cashfree_order_id: "chenetha_test-123",
+    cashfree_payment_reference: "cf_payment_123",
+  });
   assert.equal(state.createdOrderInput.customAttributes[0].value, "chenetha_test-123");
+  assert.equal(state.createdOrderInput.customAttributes[1].value, "cf_payment_123");
   assert.equal(state.createdOrderInput.lineItems.length, 2);
   assert.equal(state.createdOrderInput.lineItems[0].priceSet.shopMoney.amount, "50.00");
   assert.equal(state.createdOptions.inventoryBehaviour, "BYPASS");

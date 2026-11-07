@@ -112,7 +112,7 @@ const compiled = await build({
           };
           export const getCashfreeOrder = async (orderId) => {
             state.cashfreeReads += 1;
-            return { order_id: orderId, order_amount: state.order.totalAmount, order_currency: state.order.currencyCode, order_status: state.providerStatus, cf_order_id: "cf-order-ref" };
+            return state.remoteOrder ?? { order_id: orderId, order_amount: state.order.totalAmount, order_currency: state.order.currencyCode, order_status: state.providerStatus, cf_order_id: "cf-order-ref" };
           };
           export const getCashfreePaymentReference = async () => state.paymentReference;
           export const verifyCashfreeWebhookSignature = () => state.signatureValid;
@@ -134,8 +134,9 @@ const compiled = await build({
           const state = globalThis.__checkoutRouteTest;
           export class ShopifyCheckoutSyncError extends Error {}
           export const assertShopifyCheckoutCapabilities = async () => {};
-          export const createOrFindShopifyPaidOrder = async () => {
+          export const createOrFindShopifyPaidOrder = async (input) => {
             state.shopifySyncAttempts += 1;
+            state.shopifySyncInput = input;
             if (state.shopifyFailures > 0) {
               state.shopifyFailures -= 1;
               throw new ShopifyCheckoutSyncError("temporary test failure");
@@ -242,13 +243,15 @@ async function harness(run, options = {}) {
   const state = {
     environment: "sandbox",
     providerStatus: "PAID",
-    paymentReference: "cf-payment-1",
+    paymentReference: options.paymentReference ?? "cf-payment-1",
+    remoteOrder: options.remoteOrder ?? null,
     signatureValid: true,
     cashfreeReads: 0,
     cashfreeCreateInput: null,
     cashfreeReadinessCheck: null,
     cashfreeReadinessError: null,
     shopifySyncAttempts: 0,
+    shopifySyncInput: null,
     shopifyFailures: 0,
     orders: [makeOrder(options.order)],
     shipments: [],
@@ -314,6 +317,69 @@ test("duplicate Cashfree success notifications create only one Shopify order", a
     assert.equal(state.order.shopifyOrderName, "#1001");
     assert.deepEqual(state.order.checkoutSnapshot, {});
   });
+});
+
+test("a paid international-destination sandbox checkout matches the quote and syncs its payment reference", async () => {
+  await harness(async ({ state, getStatus }) => {
+    const result = await getStatus();
+    assert.equal(result.status, 200);
+    assert.equal(result.body.status, "shopify_synced");
+    assert.equal(state.cashfreeReads, 1);
+    assert.equal(state.shopifySyncAttempts, 1);
+    assert.equal(state.order.paymentReference, "cf-intl-payment-42");
+    assert.equal(state.shopifySyncInput.paymentReference, "cf-intl-payment-42");
+    assert.equal(state.shopifySyncInput.snapshot.totalAmount, "120.00");
+    assert.equal(state.shopifySyncInput.snapshot.shippingCurrencyCode, "INR");
+    assert.equal(state.shopifySyncInput.snapshot.cart.cost.totalAmount.amount, "100.00");
+    assert.equal(state.shopifySyncInput.snapshot.cart.cost.totalAmount.currencyCode, "INR");
+  }, {
+    order: {
+      status: "payment_pending",
+      destinationCountryCode: "US",
+      currencyCode: "INR",
+      checkoutSnapshot: {
+        ...makeOrder().checkoutSnapshot,
+        address: {
+          ...makeOrder().checkoutSnapshot.address,
+          countryCode: "US",
+        },
+      },
+    },
+    remoteOrder: {
+      order_id: "chenetha_test-order",
+      order_amount: 120,
+      order_currency: "INR",
+      order_status: "PAID",
+      cf_order_id: "cf-order-reference",
+    },
+    paymentReference: "cf-intl-payment-42",
+  });
+});
+
+test("a paid Cashfree order with a different amount or currency is not synced to Shopify", async (t) => {
+  for (const [label, remoteOrder] of [
+    ["amount", {
+      order_id: "chenetha_test-order",
+      order_amount: 121,
+      order_currency: "INR",
+      order_status: "PAID",
+    }],
+    ["currency", {
+      order_id: "chenetha_test-order",
+      order_amount: 120,
+      order_currency: "USD",
+      order_status: "PAID",
+    }],
+  ]) {
+    await t.test(`rejects a mismatched ${label}`, async () => {
+      await harness(async ({ state, getStatus }) => {
+        const result = await getStatus();
+        assert.equal(result.body.status, "reconciliation_required");
+        assert.match(state.order.lastError, /amount or currency does not match/i);
+        assert.equal(state.shopifySyncAttempts, 0);
+      }, { remoteOrder });
+    });
+  }
 });
 
 test("an expired or failed Cashfree payment never creates a paid Shopify order", async () => {
