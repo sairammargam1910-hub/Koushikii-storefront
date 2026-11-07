@@ -46,6 +46,19 @@ test("money sums use integer minor units", () => {
   assert.equal(addMoney(["100.01", "20.99", "0.10"]), "121.10");
 });
 
+test("checkout item totals use final Shopify line prices without adding a separate tax amount", () => {
+  const { getCheckoutItemTotal } = loadModule();
+  const cartWithoutTaxTotal = {
+    ...cart,
+    cost: {
+      ...cart.cost,
+      totalAmount: { amount: "109.99", currencyCode: "INR" },
+      totalTaxAmount: null,
+    },
+  };
+  assert.equal(getCheckoutItemTotal(cartWithoutTaxTotal), "99.99");
+});
+
 test("per-item parcel values preserve the exact discounted line total", () => {
   const { addMoney, divideMoney, splitMoney } = loadModule();
   const pieces = splitMoney("99.99", 3);

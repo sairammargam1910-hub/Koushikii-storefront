@@ -27,6 +27,7 @@ import {
   addMoney,
   checkoutCartFingerprint,
   getCartDiscountAmount,
+  getCheckoutItemTotal,
   minimalCartSnapshot,
   splitMoney,
   type CheckoutAddress,
@@ -526,12 +527,6 @@ function validateCartForCheckout(cart: ShopifyCartNode): void {
       422,
     );
   }
-  if (!cart.cost.totalTaxAmount || cart.cost.totalTaxAmount.currencyCode !== "INR") {
-    throw new ShopifyCheckoutInputError(
-      "Shopify did not return a tax total for this address, so checkout cannot confirm the amount.",
-      422,
-    );
-  }
 }
 
 function buildProviderPackageInputs(input: {
@@ -667,8 +662,9 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       return;
     }
     const shippingAmount = addMoney(providerPackages.map(({ amount }) => amount));
-    const taxAmount = cart.cost.totalTaxAmount!.amount;
-    const totalAmount = addMoney([cart.cost.totalAmount.amount, shippingAmount]);
+    const itemTotal = getCheckoutItemTotal(cart);
+    const taxAmount = "0.00";
+    const totalAmount = addMoney([itemTotal, shippingAmount]);
     const quoteExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
     const courierNames = [...new Set(providerPackages.map(({ courierName }) => courierName))];
     const courierName = courierNames.join(", ");

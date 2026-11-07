@@ -3,7 +3,7 @@ import {
   shopifyAdminRequest,
   ShopifyAdminError,
 } from "./shopifyAdminClient";
-import { splitMoney } from "./checkoutPricing";
+import { getCheckoutItemTotal, splitMoney } from "./checkoutPricing";
 import { getCashfreeEnvironment } from "./cashfreeClient";
 import type { ShopifyCartNode } from "../routes/shopify";
 
@@ -168,24 +168,8 @@ function splitName(value: string) {
   return { firstName, lastName: rest.join(" ") || firstName };
 }
 
-function orderTotals(cart: ShopifyCartNode, shippingAmount: string) {
-  const lineTotals = cart.lines.nodes.map(({ cost }) => cost.totalAmount.amount);
-  const itemLinesTotal = addAmounts(lineTotals);
-  const totalTax = cart.cost.totalTaxAmount?.amount;
-  if (totalTax === undefined || totalTax === null) {
-    throw new ShopifyCheckoutSyncError("Shopify did not return a tax total for this address.");
-  }
-  const cartTotal = cart.cost.totalAmount.amount;
-  const withTax = addAmounts([itemLinesTotal, totalTax]);
-  if (withTax === cartTotal) {
-    return { itemLinesTotal, taxesIncluded: false, totalTax };
-  }
-  if (itemLinesTotal === cartTotal) {
-    return { itemLinesTotal, taxesIncluded: true, totalTax };
-  }
-  throw new ShopifyCheckoutSyncError(
-    "Shopify's item and tax totals do not match the amount quoted to the shopper.",
-  );
+function orderTotals(cart: ShopifyCartNode) {
+  return { itemLinesTotal: getCheckoutItemTotal(cart) };
 }
 
 export async function createOrFindShopifyPaidOrder(input: {
@@ -224,16 +208,12 @@ export async function createOrFindShopifyPaidOrder(input: {
   ) {
     throw new ShopifyCheckoutSyncError("Shopify and Cashfree order currencies do not match.");
   }
-  const totals = orderTotals(cart, input.snapshot.shippingAmount);
+  const totals = orderTotals(cart);
   const transactionAmount = input.snapshot.totalAmount;
-  const sum = addAmounts([
-    totals.itemLinesTotal,
-    ...(totals.taxesIncluded ? [] : [totals.totalTax]),
-    input.snapshot.shippingAmount,
-  ]);
+  const sum = addAmounts([totals.itemLinesTotal, input.snapshot.shippingAmount]);
   if (sum !== transactionAmount) {
     throw new ShopifyCheckoutSyncError(
-      "Shopify order lines, tax, and shipping do not match the confirmed Cashfree payment.",
+      "Shopify order lines and shipping do not match the confirmed Cashfree payment.",
     );
   }
   const sandbox = getCashfreeEnvironment() === "sandbox";
@@ -263,7 +243,7 @@ export async function createOrFindShopifyPaidOrder(input: {
       title: `${merchandise.product.title} · ${merchandise.title}`,
       sku: merchandise.sku || merchandise.id.split("/").at(-1),
       quantity: 1,
-      taxable: true,
+          taxable: false,
       requiresShipping: true,
       priceSet: {
         shopMoney: {
@@ -273,13 +253,6 @@ export async function createOrFindShopifyPaidOrder(input: {
       },
     }));
   });
-  const taxBase = totals.taxesIncluded
-    ? Number(totals.itemLinesTotal) - Number(totals.totalTax)
-    : Number(totals.itemLinesTotal);
-  if (Number(totals.totalTax) > 0 && taxBase <= 0) {
-    throw new ShopifyCheckoutSyncError("Shopify returned a tax total without a valid taxable base.");
-  }
-  const taxRate = taxBase > 0 ? Number(totals.totalTax) / taxBase : 0;
   const order = {
     currency: currencyCode,
     presentmentCurrency: currencyCode,
@@ -293,7 +266,7 @@ export async function createOrFindShopifyPaidOrder(input: {
       `Carrier quote: Shiprocket · ${input.snapshot.courierName}`,
       `Item subtotal before discounts: ${input.snapshot.itemSubtotal} ${currencyCode}`,
       `Discount applied: ${input.snapshot.discountAmount} ${currencyCode}`,
-      `Tax from Shopify cart: ${input.snapshot.taxAmount} ${currencyCode}`,
+      "Catalog prices are final; checkout adds shipping only.",
     ].join("\n"),
     customAttributes: [
       { key: "Cashfree order ID", value: input.orderId },
@@ -322,14 +295,7 @@ export async function createOrFindShopifyPaidOrder(input: {
       code: "SHIPROCKET_QUOTE",
       priceSet: { shopMoney: { amount: input.snapshot.shippingAmount, currencyCode } },
     }],
-    taxesIncluded: totals.taxesIncluded,
-    ...(Number(totals.totalTax) > 0 ? {
-      taxLines: [{
-        title: "Shopify checkout tax",
-        rate: taxRate,
-        priceSet: { shopMoney: { amount: totals.totalTax, currencyCode } },
-      }],
-    } : {}),
+    taxesIncluded: false,
     transactions: [{
       kind: "SALE",
       status: "SUCCESS",

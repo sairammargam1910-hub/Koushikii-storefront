@@ -121,6 +121,7 @@ const compiled = await build({
           export const addMoney = (amounts) => amounts.reduce((sum, amount) => sum + Number(amount), 0).toFixed(2);
           export const checkoutCartFingerprint = () => "hash";
           export const getCartDiscountAmount = () => "0.00";
+          export const getCheckoutItemTotal = () => "100.00";
           export const minimalCartSnapshot = (cart) => cart;
           export const splitMoney = (amount, count) => Array(count).fill((Number(amount) / count).toFixed(2));
         `,

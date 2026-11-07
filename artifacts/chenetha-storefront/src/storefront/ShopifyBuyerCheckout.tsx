@@ -391,7 +391,6 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
             <div className="checkout-total-row"><span>Items subtotal</span><strong data-testid="text-checkout-item-subtotal">{formatShopifyMoney(quote.itemSubtotal, quote.currencyCode)}</strong></div>
             <div className="checkout-total-row is-discount"><span>Discount</span><strong data-testid="text-checkout-discount">−{formatShopifyMoney(quote.discountAmount, quote.currencyCode)}</strong></div>
             <div className="checkout-total-row"><span>Shipping · {quote.courierName || quote.carrier}</span><strong data-testid="text-checkout-shipping">{formatShopifyMoney(quote.shippingAmount, quote.currencyCode)}</strong></div>
-            <div className="checkout-total-row"><span>Tax</span><strong data-testid="text-checkout-tax">{formatShopifyMoney(quote.taxAmount, quote.currencyCode)}</strong></div>
             <div className="checkout-total-row checkout-grand-total"><strong>Total to pay</strong><strong data-testid="text-checkout-total">{formatShopifyMoney(quote.totalAmount, quote.currencyCode)}</strong></div>
             <div className="checkout-quote-meta">
               <span>{quote.carrier} · {quote.courierName} · {quote.parcelCount} {quote.parcelCount === 1 ? "parcel" : "parcels"}</span>
@@ -401,7 +400,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
         ) : (
           <>
             <div className="checkout-total-row"><span>Items subtotal</span><strong data-testid="text-checkout-item-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</strong></div>
-            <div className="checkout-total-row"><span>Shipping, tax and total</span><strong>Shown after quote</strong></div>
+            <div className="checkout-total-row"><span>Shipping and total</span><strong>Shown after quote</strong></div>
           </>
         )}
         <p className="checkout-customs-note" role="note" data-testid="checkout-customs-note">

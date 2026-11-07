@@ -44,11 +44,11 @@ Published Shopify sarees replace the storefront's sample product cards; drafts a
 
 **How to apply:** Validate product availability and demo markers on the server before adding a cart line. Use a verified Cashfree payment plus idempotent Shopify order creation; never claim payment from the browser return alone or collect/store card details.
 
-Before Cashfree payment, the custom checkout must show the current Shopify item subtotal and tax plus a live, address-specific Shiprocket quote. Address, cart, or parcel changes invalidate that quote; it expires after a short period. State that destination duties and customs fees may be excluded from carrier pricing.
+Before Cashfree payment, the custom checkout must show the current item subtotal, discounts, a live address-specific Shiprocket quote, currency, and final total. The client says they do not have a GST number and wants listed product prices to be final, with only carrier-calculated shipping added; do not show or collect a separate checkout tax amount. Address, cart, or parcel changes invalidate the quote; it expires after a short period. State that destination duties and customs fees may be excluded from carrier pricing.
 
-**Why:** The merchant asked for a website checkout with a current delivery quote and full total before payment, not Shopify-hosted checkout.
+**Why:** The merchant asked for a website checkout with a current delivery quote and full total before payment, and clarified that final catalog prices plus shipping are the intended checkout amount.
 
-**How to apply:** Revalidate the current Shopify cart and address before creating a Cashfree session. Show subtotal, discount, shipping, tax, currency, and total; fail closed when no valid provider quote exists. Do not promise a fixed international price, delivery time, duty, or tax.
+**How to apply:** Revalidate the current Shopify cart and address before creating a Cashfree session. Use Shopify line prices as final item amounts, add the live shipping quote only, and record the matching Shopify order as non-taxable for this custom checkout. Fail closed when no valid provider quote exists. Do not change Shopify tax settings or infer legal tax obligations from GST registration status. Do not promise a fixed international price, delivery time, duty, or tax.
 
 Shopify currency is authoritative. The current checkout implementation accepts INR only; international payment activation, supported buyer currencies, and settlement remain unconfirmed for production.
 

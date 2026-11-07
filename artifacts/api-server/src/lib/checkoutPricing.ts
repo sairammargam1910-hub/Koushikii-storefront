@@ -73,6 +73,12 @@ export function getCartDiscountAmount(cart: ShopifyCartNode): string {
   return fromMinorUnits(discount, scale);
 }
 
+export function getCheckoutItemTotal(cart: ShopifyCartNode): string {
+  return addMoney(
+    cart.lines.nodes.map((line) => line.cost.totalAmount.amount),
+  );
+}
+
 export function checkoutCartFingerprint(input: {
   cart: ShopifyCartNode;
   email: string;

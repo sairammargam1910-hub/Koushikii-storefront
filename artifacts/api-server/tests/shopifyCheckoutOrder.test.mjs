@@ -180,6 +180,10 @@ test("creates an idempotent Shopify test order with the external payment referen
   assert.equal(state.createdOrderInput.customAttributes[1].value, "cf_payment_123");
   assert.equal(state.createdOrderInput.lineItems.length, 2);
   assert.equal(state.createdOrderInput.lineItems[0].priceSet.shopMoney.amount, "50.00");
+  assert.equal(state.createdOrderInput.lineItems[0].taxable, false);
+  assert.equal(state.createdOrderInput.taxesIncluded, false);
+  assert.equal(state.createdOrderInput.taxLines, undefined);
+  assert.match(state.createdOrderInput.note, /Catalog prices are final; checkout adds shipping only/);
   assert.equal(state.createdOptions.inventoryBehaviour, "BYPASS");
   assert.equal(
     state.calls.some((call) =>
@@ -194,6 +198,20 @@ test("creates an idempotent Shopify test order with the external payment referen
   const recovered = await createOrFindShopifyPaidOrder(orderInput());
   assert.equal(recovered.id, "gid://shopify/Order/999");
   assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
+});
+
+test("syncs final item prices when Shopify omits its cart tax total", async () => {
+  const state = fixtureState();
+  const input = orderInput();
+  input.snapshot.cart.cost.totalTaxAmount = null;
+  const { createOrFindShopifyPaidOrder } = loadModule(state);
+
+  const result = await createOrFindShopifyPaidOrder(input);
+
+  assert.equal(result.name, "#1001");
+  assert.equal(state.createdOrderInput.transactions[0].amountSet.shopMoney.amount, "120.00");
+  assert.equal(state.createdOrderInput.lineItems[0].taxable, false);
+  assert.equal(state.createdOrderInput.taxLines, undefined);
 });
 
 test("rejects sandbox orders when Shopify did not retain the quoted payment details", async () => {

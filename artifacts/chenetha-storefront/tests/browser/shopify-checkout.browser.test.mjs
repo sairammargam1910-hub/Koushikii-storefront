@@ -336,8 +336,8 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
           itemSubtotal: "1250.00",
           discountAmount: "0.00",
           shippingAmount: "100.00",
-          taxAmount: "50.00",
-          totalAmount: "1400.00",
+          taxAmount: "0.00",
+          totalAmount: "1350.00",
           carrier: "Shiprocket",
           courierName: "Economy",
           parcelCount: 1,
@@ -353,7 +353,7 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
         body: JSON.stringify({
           orderId: "cashfree-order-123",
           paymentSessionId: "sandbox-session-123",
-          amount: "1400.00",
+          amount: "1350.00",
           currencyCode: "INR",
           environment: "sandbox",
         }),
@@ -371,10 +371,10 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
 
   const checkoutButton = page.getByTestId("button-submit-checkout-details");
   await checkoutButton.click();
-  await page.getByTestId("text-checkout-total").getByText(/1,400/).waitFor();
+  await page.getByTestId("text-checkout-total").getByText(/1,350/).waitFor();
   assert.match(await page.getByTestId("text-checkout-item-subtotal").innerText(), /1,250/);
   assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /100/);
-  assert.match(await page.getByTestId("text-checkout-tax").innerText(), /50/);
+  assert.equal(await page.getByTestId("text-checkout-tax").count(), 0);
   assert.match(await page.getByTestId("checkout-customs-note").innerText(), /duties and customs charges are excluded/i);
   assert.match(await checkoutButton.innerText(), /Continue to Cashfree/i);
   assert.deepEqual(quoteRequests[0], {
@@ -395,7 +395,7 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
   await checkoutButton.getByText(/Get delivery quote/).waitFor();
   assert.equal(await page.getByTestId("text-checkout-total").count(), 0);
   await checkoutButton.click();
-  await page.getByTestId("text-checkout-total").getByText(/1,400/).waitFor();
+  await page.getByTestId("text-checkout-total").getByText(/1,350/).waitFor();
   assert.equal(quoteRequests.length, 2);
   assert.equal(quoteRequests[1].deliveryAddress.city, "Coimbatore");
 
@@ -453,7 +453,7 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
   await context.close();
 });
 
-test("shows discounts and tax only in the address-based carrier quote total", async () => {
+test("shows discounted final item prices plus the address-based carrier quote", async () => {
   const savedCart = { id: "gid://shopify/Cart/discounted-quote-cart", totalQuantity: 1 };
   const { context, page } = await openCheckout({
     savedCart,
@@ -479,8 +479,8 @@ test("shows discounts and tax only in the address-based carrier quote total", as
         itemSubtotal: "1250.00",
         discountAmount: "125.00",
         shippingAmount: "100.00",
-        taxAmount: "50.00",
-        totalAmount: "1275.00",
+        taxAmount: "0.00",
+        totalAmount: "1225.00",
         carrier: "Shiprocket",
         courierName: "Economy",
         parcelCount: 1,
@@ -497,11 +497,11 @@ test("shows discounts and tax only in the address-based carrier quote total", as
   await page.getByTestId("input-checkout-city").fill("Chennai");
   await page.getByTestId("input-checkout-postal").fill("600001");
   await page.getByTestId("button-submit-checkout-details").click();
-  await page.getByTestId("text-checkout-total").getByText(/1,275/).waitFor();
+  await page.getByTestId("text-checkout-total").getByText(/1,225/).waitFor();
   assert.match(await page.getByTestId("text-checkout-item-subtotal").innerText(), /1,250/);
   assert.match(await page.getByTestId("text-checkout-discount").innerText(), /125/);
   assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /100/);
-  assert.match(await page.getByTestId("text-checkout-tax").innerText(), /50/);
+  assert.equal(await page.getByTestId("text-checkout-tax").count(), 0);
   await context.close();
 });
 
