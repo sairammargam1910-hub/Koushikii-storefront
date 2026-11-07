@@ -13,7 +13,7 @@ A GitHub push is not proof that Railway has deployed the new version. Before say
 
 **Why:** The user expects Railway to serve the latest storefront while the Replit copy remains available during verification.
 
-**How to apply:** After a source push, check Railway deployment status and test the public flow before reporting that production is updated.
+**How to apply:** After a source push, check Railway deployment status and test the public flow before reporting that production is updated. If Railway's status API denies read access, compare the remote Git ref with the pushed commit and smoke-test the public bundle and API readiness endpoint; report that this verifies the app responds but does not expose Railway's exact deployment revision. A push can reach the remote even if the Replit Git wrapper then blocks updating the local remote-tracking ref, so verify the remote ref before treating a nonzero push exit as a failed push.
 
 The user approved using new, independent Clerk accounts for the external site after being told that Replit-managed Clerk cannot be hosted externally or export its users. Existing accounts, profile/address preferences, and wishlists are not promised to transfer.
 
