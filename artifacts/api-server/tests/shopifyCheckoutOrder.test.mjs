@@ -45,26 +45,51 @@ function loadModule(state) {
   return module.exports;
 }
 
+function savedOrder(overrides = {}) {
+  return {
+    id: "gid://shopify/Order/999",
+    name: "#1001",
+    test: true,
+    currencyCode: "INR",
+    totalPriceSet: { shopMoney: { amount: "120.00", currencyCode: "INR" } },
+    totalShippingPriceSet: { shopMoney: { amount: "20.00", currencyCode: "INR" } },
+    totalTaxSet: { shopMoney: { amount: "0.00", currencyCode: "INR" } },
+    taxLines: [],
+    lineItems: {
+      nodes: [{
+        quantity: 2,
+        variant: { id: "gid://shopify/ProductVariant/55" },
+        originalUnitPriceSet: { shopMoney: { amount: "50.00", currencyCode: "INR" } },
+        taxLines: [],
+      }],
+    },
+    shippingLines: {
+      nodes: [{
+        title: "Shiprocket · Economy",
+        source: "Shiprocket",
+        code: "SHIPROCKET_QUOTE",
+        originalPriceSet: { shopMoney: { amount: "20.00", currencyCode: "INR" } },
+      }],
+    },
+    transactions: [{
+      kind: "SALE",
+      status: "SUCCESS",
+      gateway: "Cashfree",
+      authorizationCode: "cf_payment_123",
+      test: true,
+      amountSet: { shopMoney: { amount: "120.00", currencyCode: "INR" } },
+    }],
+    ...overrides,
+  };
+}
+
 function fixtureState(overrides = {}) {
   const state = {
     environment: "sandbox",
     domain: "gtnbsw-x3.myshopify.com",
     scopes: ["read_orders", "write_orders"],
     existing: null,
-    savedOrder: {
-      id: "gid://shopify/Order/999",
-      name: "#1001",
-      test: true,
-      currencyCode: "INR",
-      transactions: [{
-        kind: "SALE",
-        status: "SUCCESS",
-        gateway: "Cashfree",
-        authorizationCode: "cf_payment_123",
-        test: true,
-        amountSet: { shopMoney: { amount: "120.00", currencyCode: "INR" } },
-      }],
-    },
+    savedOrder: savedOrder(),
     calls: [],
     adminRequest: async (query, variables) => {
       state.calls.push({ query, variables });
@@ -184,6 +209,10 @@ test("creates an idempotent Shopify test order with the external payment referen
   assert.equal(state.createdOrderInput.taxesIncluded, false);
   assert.equal(state.createdOrderInput.taxLines, undefined);
   assert.match(state.createdOrderInput.note, /Catalog prices are final; checkout adds shipping only/);
+  assert.match(state.calls.find((call) => call.query.includes("ReadCashfreeTestOrderPayment")).query, /totalShippingPriceSet/);
+  assert.match(state.calls.find((call) => call.query.includes("ReadCashfreeTestOrderPayment")).query, /originalUnitPriceSet/);
+  assert.match(state.calls.find((call) => call.query.includes("ReadCashfreeTestOrderPayment")).query, /shippingLines/);
+  assert.match(state.calls.find((call) => call.query.includes("ReadCashfreeTestOrderPayment")).query, /taxLines/);
   assert.equal(state.createdOptions.inventoryBehaviour, "BYPASS");
   assert.equal(
     state.calls.some((call) =>
@@ -228,29 +257,16 @@ test("rejects sandbox orders when Shopify did not retain the quoted payment deta
   ];
 
   for (const [label, alterTransaction] of mismatches) {
-    const savedOrder = {
-      id: "gid://shopify/Order/999",
-      name: "#1001",
-      test: true,
-      currencyCode: "INR",
-      transactions: [{
-        kind: "SALE",
-        status: "SUCCESS",
-        gateway: "Cashfree",
-        authorizationCode: "cf_payment_123",
-        test: true,
-        amountSet: { shopMoney: { amount: "120.00", currencyCode: "INR" } },
-      }],
-    };
-    alterTransaction(savedOrder.transactions[0]);
+    const savedOrderFixture = savedOrder();
+    alterTransaction(savedOrderFixture.transactions[0]);
     const state = fixtureState({
       existing: { id: "gid://shopify/Order/999", name: "#1001" },
-      savedOrder,
+      savedOrder: savedOrderFixture,
     });
     const { createOrFindShopifyPaidOrder } = loadModule(state);
     await assert.rejects(
       createOrFindShopifyPaidOrder(orderInput()),
-      /did not retain the confirmed Cashfree payment details/,
+      /did not retain the quoted item, shipping, tax, total, and Cashfree payment details/,
       label,
     );
     assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
@@ -259,11 +275,7 @@ test("rejects sandbox orders when Shopify did not retain the quoted payment deta
 
 test("retries a created sandbox order by reading it back without creating a duplicate", async () => {
   const state = fixtureState({
-    savedOrder: {
-      id: "gid://shopify/Order/999",
-      name: "#1001",
-      test: true,
-      currencyCode: "INR",
+    savedOrder: savedOrder({
       transactions: [{
         kind: "SALE",
         status: "SUCCESS",
@@ -272,13 +284,13 @@ test("retries a created sandbox order by reading it back without creating a dupl
         test: true,
         amountSet: { shopMoney: { amount: "121.00", currencyCode: "INR" } },
       }],
-    },
+    }),
   });
   const { createOrFindShopifyPaidOrder } = loadModule(state);
 
   await assert.rejects(
     createOrFindShopifyPaidOrder(orderInput()),
-    /did not retain the confirmed Cashfree payment details/,
+    /did not retain the quoted item, shipping, tax, total, and Cashfree payment details/,
   );
   assert.equal(state.calls.filter((call) => call.query.includes("CreateCashfreePaidOrder")).length, 1);
 
@@ -290,6 +302,44 @@ test("retries a created sandbox order by reading it back without creating a dupl
   assert.equal(recovered.id, "gid://shopify/Order/999");
   assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
   assert.equal(state.calls.some((call) => call.query.includes("ReadCashfreeTestOrderPayment")), true);
+});
+
+test("rejects sandbox orders when Shopify saved incorrect item, shipping, tax, or total values", async (t) => {
+  const mismatches = [
+    ["final item price", (order) => {
+      order.lineItems.nodes[0].originalUnitPriceSet.shopMoney.amount = "51.00";
+    }],
+    ["separate tax line", (order) => {
+      order.taxLines.push({ priceSet: { shopMoney: { amount: "1.00", currencyCode: "INR" } } });
+    }],
+    ["shipping quote", (order) => {
+      order.shippingLines.nodes[0].originalPriceSet.shopMoney.amount = "21.00";
+    }],
+    ["order tax total", (order) => {
+      order.totalTaxSet.shopMoney.amount = "1.00";
+    }],
+    ["order total", (order) => {
+      order.totalPriceSet.shopMoney.amount = "121.00";
+    }],
+  ];
+
+  for (const [label, alterOrder] of mismatches) {
+    await t.test(`rejects a mismatched ${label}`, async () => {
+      const savedOrderFixture = savedOrder();
+      alterOrder(savedOrderFixture);
+      const state = fixtureState({
+        existing: { id: "gid://shopify/Order/999", name: "#1001" },
+        savedOrder: savedOrderFixture,
+      });
+      const { createOrFindShopifyPaidOrder } = loadModule(state);
+
+      await assert.rejects(
+        createOrFindShopifyPaidOrder(orderInput()),
+        /did not retain the quoted item, shipping, tax, total, and Cashfree payment details/,
+      );
+      assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
+    });
+  }
 });
 
 test("refuses to synchronize against a different Shopify store", async () => {

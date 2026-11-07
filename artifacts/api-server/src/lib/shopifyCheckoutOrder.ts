@@ -30,6 +30,40 @@ const READ_ORDER_PAYMENT_QUERY = `#graphql
       name
       test
       currencyCode
+      totalPriceSet {
+        shopMoney { amount currencyCode }
+      }
+      totalShippingPriceSet {
+        shopMoney { amount currencyCode }
+      }
+      totalTaxSet {
+        shopMoney { amount currencyCode }
+      }
+      taxLines {
+        priceSet { shopMoney { amount currencyCode } }
+      }
+      lineItems(first: 100) {
+        nodes {
+          quantity
+          variant { id }
+          originalUnitPriceSet {
+            shopMoney { amount currencyCode }
+          }
+          taxLines {
+            priceSet { shopMoney { amount currencyCode } }
+          }
+        }
+      }
+      shippingLines(first: 10) {
+        nodes {
+          title
+          source
+          code
+          originalPriceSet {
+            shopMoney { amount currencyCode }
+          }
+        }
+      }
       transactions {
         kind
         status
@@ -107,8 +141,10 @@ function inMinorUnits(amount: string): bigint | null {
 async function verifySandboxOrderPayment(input: {
   order: { id: string; name: string };
   amount: string;
+  shippingAmount: string;
   currencyCode: string;
   paymentReference: string;
+  cart: ShopifyCartNode;
 }): Promise<void> {
   const data = await shopifyAdminRequest<{
     order: {
@@ -116,6 +152,26 @@ async function verifySandboxOrderPayment(input: {
       name: string;
       test: boolean;
       currencyCode: string;
+      totalPriceSet: { shopMoney: { amount: string; currencyCode: string } };
+      totalShippingPriceSet: { shopMoney: { amount: string; currencyCode: string } };
+      totalTaxSet: { shopMoney: { amount: string; currencyCode: string } };
+      taxLines: Array<unknown>;
+      lineItems: {
+        nodes: Array<{
+          quantity: number;
+          variant: { id: string } | null;
+          originalUnitPriceSet: { shopMoney: { amount: string; currencyCode: string } };
+          taxLines: Array<unknown>;
+        }>;
+      };
+      shippingLines: {
+        nodes: Array<{
+          title: string;
+          source: string;
+          code: string;
+          originalPriceSet: { shopMoney: { amount: string; currencyCode: string } };
+        }>;
+      };
       transactions: Array<{
         kind: string;
         status: string;
@@ -130,6 +186,56 @@ async function verifySandboxOrderPayment(input: {
   }>(READ_ORDER_PAYMENT_QUERY, { id: input.order.id });
   const savedOrder = data.order;
   const expectedAmount = inMinorUnits(input.amount);
+  const expectedShippingAmount = inMinorUnits(input.shippingAmount);
+  const expectedItems = new Map<string, number>();
+  for (const line of input.cart.lines.nodes) {
+    if (!line.merchandise) {
+      throw new ShopifyCheckoutSyncError("The paid Shopify cart is missing a product variant.");
+    }
+    for (const price of splitMoney(line.cost.totalAmount.amount, line.quantity)) {
+      const minorUnits = inMinorUnits(price);
+      if (minorUnits === null) {
+        throw new ShopifyCheckoutSyncError("The paid Shopify cart contains an invalid item price.");
+      }
+      const key = `${line.merchandise.id}:${minorUnits}`;
+      expectedItems.set(key, (expectedItems.get(key) ?? 0) + 1);
+    }
+  }
+  const savedItems = new Map<string, number>();
+  for (const line of savedOrder?.lineItems.nodes ?? []) {
+    const minorUnits = inMinorUnits(line.originalUnitPriceSet.shopMoney.amount);
+    if (
+      !line.variant ||
+      minorUnits === null ||
+      line.originalUnitPriceSet.shopMoney.currencyCode !== input.currencyCode ||
+      !Number.isInteger(line.quantity) ||
+      line.quantity < 1 ||
+      line.taxLines.length > 0
+    ) {
+      continue;
+    }
+    const key = `${line.variant.id}:${minorUnits}`;
+    savedItems.set(key, (savedItems.get(key) ?? 0) + line.quantity);
+  }
+  const itemsMatch = expectedItems.size === savedItems.size &&
+    [...expectedItems].every(([key, quantity]) => savedItems.get(key) === quantity);
+  const shippingLines = savedOrder?.shippingLines.nodes ?? [];
+  const shippingMatches = shippingLines.length === 1 &&
+    shippingLines[0].title.startsWith("Shiprocket · ") &&
+    shippingLines[0].source === "Shiprocket" &&
+    shippingLines[0].code === "SHIPROCKET_QUOTE" &&
+    expectedShippingAmount !== null &&
+    shippingLines[0].originalPriceSet.shopMoney.currencyCode === input.currencyCode &&
+    inMinorUnits(shippingLines[0].originalPriceSet.shopMoney.amount) === expectedShippingAmount;
+  const totalsMatch = expectedAmount !== null &&
+    savedOrder?.totalPriceSet.shopMoney.currencyCode === input.currencyCode &&
+    inMinorUnits(savedOrder.totalPriceSet.shopMoney.amount) === expectedAmount &&
+    expectedShippingAmount !== null &&
+    savedOrder?.totalShippingPriceSet.shopMoney.currencyCode === input.currencyCode &&
+    inMinorUnits(savedOrder.totalShippingPriceSet.shopMoney.amount) === expectedShippingAmount &&
+    savedOrder?.totalTaxSet.shopMoney.currencyCode === input.currencyCode &&
+    inMinorUnits(savedOrder.totalTaxSet.shopMoney.amount) === 0n &&
+    savedOrder.taxLines.length === 0;
   const paymentWasSaved = savedOrder?.id === input.order.id &&
     savedOrder.test === true &&
     savedOrder.currencyCode === input.currencyCode &&
@@ -143,9 +249,9 @@ async function verifySandboxOrderPayment(input: {
       transaction.amountSet.shopMoney.currencyCode === input.currencyCode &&
       inMinorUnits(transaction.amountSet.shopMoney.amount) === expectedAmount
     );
-  if (!paymentWasSaved) {
+  if (!paymentWasSaved || !itemsMatch || !shippingMatches || !totalsMatch) {
     throw new ShopifyCheckoutSyncError(
-      "Shopify did not retain the confirmed Cashfree payment details on the sandbox test order.",
+      "Shopify did not retain the quoted item, shipping, tax, total, and Cashfree payment details on the sandbox test order.",
     );
   }
 }
@@ -226,8 +332,10 @@ export async function createOrFindShopifyPaidOrder(input: {
       await verifySandboxOrderPayment({
         order: found,
         amount: transactionAmount,
+        shippingAmount: input.snapshot.shippingAmount,
         currencyCode,
         paymentReference: input.paymentReference,
+        cart,
       });
     }
     return found;
@@ -243,7 +351,7 @@ export async function createOrFindShopifyPaidOrder(input: {
       title: `${merchandise.product.title} · ${merchandise.title}`,
       sku: merchandise.sku || merchandise.id.split("/").at(-1),
       quantity: 1,
-          taxable: false,
+      taxable: false,
       requiresShipping: true,
       priceSet: {
         shopMoney: {
@@ -331,8 +439,10 @@ export async function createOrFindShopifyPaidOrder(input: {
     await verifySandboxOrderPayment({
       order: created.orderCreate.order,
       amount: transactionAmount,
+      shippingAmount: input.snapshot.shippingAmount,
       currencyCode,
       paymentReference: input.paymentReference,
+      cart,
     });
   }
   return created.orderCreate.order;
