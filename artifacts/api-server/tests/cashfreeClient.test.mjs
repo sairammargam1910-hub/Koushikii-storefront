@@ -68,6 +68,7 @@ test("creates a hosted sandbox session with server-side idempotency", async () =
         returnUrl: "https://shop.example/Checkout?cashfree_order_id=chenetha_order123",
         expiresAt: "2026-11-07T12:10:00.000Z",
         idempotencyKey: "f991fda7-d46f-4113-a93a-64020aab037a",
+        isInternational: false,
       });
       assert.equal(request.url, "https://sandbox.cashfree.com/pg/orders");
       assert.equal(request.init.headers["x-api-version"], "2026-01-01");
@@ -85,6 +86,9 @@ test("production mode fails closed without the explicit live flag and separate c
   await withEnvironment({
     CASHFREE_ENVIRONMENT: "production",
     CHECKOUT_LIVE_ENABLED: null,
+    CASHFREE_INTERNATIONAL_PAYMENTS_CONFIRMED: "true",
+    CASHFREE_SUPPORTED_CURRENCIES: "INR",
+    CASHFREE_SETTLEMENT_CURRENCY: "INR",
     CASHFREE_LIVE_APP_ID: null,
     CASHFREE_LIVE_SECRET_KEY: null,
   }, async () => {
@@ -102,9 +106,37 @@ test("production mode fails closed without the explicit live flag and separate c
         returnUrl: "https://shop.example/Checkout",
         expiresAt: "2026-11-07T12:10:00.000Z",
         idempotencyKey: "f991fda7-d46f-4113-a93a-64020aab037a",
+        isInternational: false,
       }),
       /Live Cashfree credentials/,
     );
+  });
+});
+
+test("live checkout requires Cashfree international confirmation and matching currency settlement", async () => {
+  await withEnvironment({
+    CASHFREE_ENVIRONMENT: "production",
+    CHECKOUT_LIVE_ENABLED: "true",
+    CASHFREE_INTERNATIONAL_PAYMENTS_CONFIRMED: null,
+    CASHFREE_SUPPORTED_CURRENCIES: "INR, USD",
+    CASHFREE_SETTLEMENT_CURRENCY: "INR",
+  }, async () => {
+    const { assertCashfreeLiveReadiness } = loadModule();
+    assert.throws(
+      () => assertCashfreeLiveReadiness("INR", true),
+      /confirms international payments/,
+    );
+
+    process.env.CASHFREE_INTERNATIONAL_PAYMENTS_CONFIRMED = "true";
+    assert.throws(
+      () => assertCashfreeLiveReadiness("USD", true),
+      /does not match the confirmed INR settlement currency/,
+    );
+    assert.throws(
+      () => assertCashfreeLiveReadiness("EUR", false),
+      /has not confirmed support for EUR/,
+    );
+    assert.doesNotThrow(() => assertCashfreeLiveReadiness("INR", true));
   });
 });
 

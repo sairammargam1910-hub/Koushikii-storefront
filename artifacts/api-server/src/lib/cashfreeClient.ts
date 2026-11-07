@@ -30,6 +30,56 @@ export function getCashfreeEnvironment(): CashfreeEnvironment {
   return environment;
 }
 
+/**
+ * Live checkout requires account-specific facts to be verified in Cashfree.
+ * These values are intentionally separate from the live-enable approval so
+ * credentials alone can never activate production payments.
+ */
+export function assertCashfreeLiveReadiness(
+  currencyCode: string,
+  isInternational: boolean,
+): void {
+  if (getCashfreeEnvironment() !== "production") return;
+
+  if (process.env.CASHFREE_INTERNATIONAL_PAYMENTS_CONFIRMED !== "true") {
+    throw new CashfreeError(
+      isInternational
+        ? "Live checkout to this destination is paused until Cashfree confirms international payments are enabled for this account."
+        : "Live checkout is paused until Cashfree confirms international payments are enabled for this account.",
+    );
+  }
+
+  const supportedCurrencies = new Set(
+    (process.env.CASHFREE_SUPPORTED_CURRENCIES ?? "")
+      .split(",")
+      .map((currency) => currency.trim().toUpperCase())
+      .filter(Boolean),
+  );
+  if (!supportedCurrencies.size) {
+    throw new CashfreeError(
+      "Live checkout is paused until the currencies confirmed by Cashfree are configured.",
+    );
+  }
+  const normalizedCurrency = currencyCode.trim().toUpperCase();
+  if (!supportedCurrencies.has(normalizedCurrency)) {
+    throw new CashfreeError(
+      `Live checkout is paused because Cashfree has not confirmed support for ${normalizedCurrency}.`,
+    );
+  }
+
+  const settlementCurrency = process.env.CASHFREE_SETTLEMENT_CURRENCY?.trim().toUpperCase();
+  if (!settlementCurrency || !/^[A-Z]{3}$/.test(settlementCurrency)) {
+    throw new CashfreeError(
+      "Live checkout is paused until Cashfree's settlement currency is confirmed and configured.",
+    );
+  }
+  if (settlementCurrency !== normalizedCurrency) {
+    throw new CashfreeError(
+      `Live checkout is paused because the quoted ${normalizedCurrency} currency does not match the confirmed ${settlementCurrency} settlement currency.`,
+    );
+  }
+}
+
 function baseUrl(): string {
   return getCashfreeEnvironment() === "production"
     ? "https://api.cashfree.com/pg"
@@ -84,7 +134,9 @@ export async function createCashfreeOrder(input: {
   returnUrl: string;
   expiresAt: string;
   idempotencyKey: string;
+  isInternational: boolean;
 }): Promise<CashfreeOrder> {
+  assertCashfreeLiveReadiness(input.currencyCode, input.isInternational);
   const response = await fetch(`${baseUrl()}/orders`, {
     method: "POST",
     headers: headers(input.idempotencyKey),

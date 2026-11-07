@@ -101,6 +101,10 @@ const compiled = await build({
         cashfree: `
           const state = globalThis.__checkoutRouteTest;
           export class CashfreeError extends Error {}
+          export const assertCashfreeLiveReadiness = (currencyCode, isInternational) => {
+            state.cashfreeReadinessCheck = { currencyCode, isInternational };
+            if (state.cashfreeReadinessError) throw new CashfreeError(state.cashfreeReadinessError);
+          };
           export const getCashfreeEnvironment = () => state.environment;
           export const createCashfreeOrder = async (input) => {
             state.cashfreeCreateInput = input;
@@ -242,6 +246,8 @@ async function harness(run, options = {}) {
     signatureValid: true,
     cashfreeReads: 0,
     cashfreeCreateInput: null,
+    cashfreeReadinessCheck: null,
+    cashfreeReadinessError: null,
     shopifySyncAttempts: 0,
     shopifyFailures: 0,
     orders: [makeOrder(options.order)],
@@ -379,11 +385,51 @@ test("payment sessions use the validated quote and return to the same Replit pre
     assert.equal(result.body.paymentSessionId, "sandbox-session");
     assert.equal(result.body.environment, "sandbox");
     assert.equal(state.cashfreeCreateInput.amount, "120.00");
+    assert.deepEqual(state.cashfreeReadinessCheck, { currencyCode: "INR", isInternational: false });
+    assert.equal(state.cashfreeCreateInput.isInternational, false);
     assert.equal(
       state.cashfreeCreateInput.returnUrl,
       `${origin}/chenetha-storefront/Checkout?cashfree_order_id=${state.order.cashfreeOrderId}`,
     );
     assert.equal(state.order.status, "payment_pending");
+  }, {
+    order: {
+      status: "quote_ready",
+      paymentSessionId: null,
+    },
+  });
+});
+
+test("international payment sessions identify their destination when checking Cashfree readiness", async () => {
+  await harness(async ({ state, postSession }) => {
+    state.order.destinationCountryCode = "US";
+    const result = await postSession(
+      { quoteId: state.order.id },
+      { Origin: "https://preview.replit.dev" },
+    );
+    assert.equal(result.status, 200);
+    assert.deepEqual(state.cashfreeReadinessCheck, { currencyCode: "INR", isInternational: true });
+    assert.equal(state.cashfreeCreateInput.isInternational, true);
+  }, {
+    order: {
+      status: "quote_ready",
+      paymentSessionId: null,
+      destinationCountryCode: "US",
+    },
+  });
+});
+
+test("unconfirmed Cashfree account setup blocks payment with a clear message", async () => {
+  await harness(async ({ state, postSession }) => {
+    state.cashfreeReadinessError =
+      "Live checkout is paused until Cashfree confirms international payments are enabled for this account.";
+    const result = await postSession(
+      { quoteId: state.order.id },
+      { Origin: "https://preview.replit.dev" },
+    );
+    assert.equal(result.status, 503);
+    assert.match(result.body.error, /Cashfree confirms international payments/);
+    assert.equal(state.cashfreeCreateInput, null);
   }, {
     order: {
       status: "quote_ready",

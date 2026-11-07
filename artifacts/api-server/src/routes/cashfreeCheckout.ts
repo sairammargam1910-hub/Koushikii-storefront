@@ -15,6 +15,8 @@ import {
   db,
 } from "@workspace/db";
 import {
+  assertCashfreeLiveReadiness,
+  CashfreeError,
   createCashfreeOrder,
   getCashfreeEnvironment,
   getCashfreeOrder,
@@ -520,7 +522,7 @@ function validateCartForCheckout(cart: ShopifyCartNode): void {
   }
   if (cart.cost.totalAmount.currencyCode !== "INR") {
     throw new ShopifyCheckoutInputError(
-      "Cashfree sandbox checkout is currently configured to charge in INR only.",
+      "This checkout currently supports INR only. The Shopify cart currency must be INR.",
       422,
     );
   }
@@ -759,6 +761,15 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
     res.status(409).json({ error: "This shipping quote expired. Request a fresh quote before payment." });
     return;
   }
+  try {
+    assertCashfreeLiveReadiness(row.currencyCode, row.destinationCountryCode !== "IN");
+  } catch (error) {
+    if (error instanceof CashfreeError) {
+      res.status(503).json({ error: error.message });
+      return;
+    }
+    throw error;
+  }
   if (row.status === "payment_pending" && row.paymentSessionId) {
     res.json(CreateShopifyCheckoutPaymentSessionResponse.parse({
       orderId: row.cashfreeOrderId,
@@ -806,6 +817,7 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
       returnUrl: cashfreeReturnUrl(row.cashfreeOrderId, req),
       expiresAt: row.quoteExpiresAt.toISOString(),
       idempotencyKey: row.id,
+      isInternational: row.destinationCountryCode !== "IN",
     });
     await db.update(cashfreeCheckoutOrdersTable)
       .set({
@@ -825,6 +837,10 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
       environment: getCashfreeEnvironment(),
     }));
   } catch (error) {
+    if (error instanceof CashfreeError) {
+      res.status(503).json({ error: error.message });
+      return;
+    }
     if (error instanceof ShopifyCheckoutInputError || error instanceof ShopifyCheckoutSyncError) {
       res.status(error instanceof ShopifyCheckoutInputError ? error.statusCode : 503)
         .json({ error: error.message });
