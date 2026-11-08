@@ -213,6 +213,49 @@ test("international quotes fail closed when export terms are not configured", as
   }
 });
 
+test("captures sanitized provider diagnostics for quote failures", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  const mockedFetch = mockShiprocketFetch(calls);
+  globalThis.fetch = async (url, init = {}) => {
+    const target = new URL(String(url));
+    if (target.pathname.endsWith("/courier/serviceability/")) {
+      calls.push({ url: target, method: init.method ?? "GET", body: undefined });
+      return new Response(JSON.stringify({
+        error_code: "INVALID_DESTINATION",
+        message: "Quote rejected for postcode 505001; phone +91 98765 43210; email buyer@example.com; address: 42 Test Street; Authorization: Bearer test-private-token",
+      }), { status: 400 });
+    }
+    return mockedFetch(url, init);
+  };
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+      SHIPROCKET_PICKUP_POSTCODE: "500007",
+      SHIPROCKET_REASON_OF_EXPORT: null,
+      SHIPROCKET_TERMS_OF_INVOICE: null,
+    }, async () => {
+      const { createAndQuotePackage, ShiprocketError } = loadModule();
+      await assert.rejects(createAndQuotePackage(baseInput), (error) => {
+        assert.ok(error instanceof ShiprocketError);
+        assert.equal(error.message, "Shiprocket request failed (400).");
+        assert.equal(error.diagnostics.endpoint, "/courier/serviceability/");
+        assert.equal(error.diagnostics.httpStatus, 400);
+        assert.equal(error.diagnostics.errorCode, "INVALID_DESTINATION");
+        assert.match(error.diagnostics.message, /Quote rejected/);
+        assert.doesNotMatch(
+          error.diagnostics.message,
+          /505001|98765|buyer@example|Test Street|test-private-token/,
+        );
+        return true;
+      });
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("an unsupported destination fails clearly without booking a shipment", async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];

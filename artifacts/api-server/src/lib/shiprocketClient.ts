@@ -68,10 +68,77 @@ export type ShiprocketPackageInput = {
 };
 
 export class ShiprocketError extends Error {
-  constructor(message: string) {
+  readonly diagnostics: {
+    endpoint?: string;
+    httpStatus?: number;
+    errorCode?: string;
+    message: string;
+  };
+
+  constructor(
+    message: string,
+    details: {
+      endpoint?: string;
+      httpStatus?: number;
+      errorCode?: unknown;
+      providerMessage?: unknown;
+    } = {},
+  ) {
     super(message);
     this.name = "ShiprocketError";
+    const diagnosticMessage = sanitizeShiprocketDiagnosticMessage(
+      details.providerMessage,
+    ) ?? sanitizeShiprocketDiagnosticMessage(message) ?? "Shiprocket request failed.";
+    const errorCode = sanitizeShiprocketErrorCode(details.errorCode);
+    const endpoint = details.endpoint
+      ? sanitizeShiprocketEndpoint(details.endpoint)
+      : undefined;
+    const httpStatus = Number.isInteger(details.httpStatus) &&
+      details.httpStatus! >= 100 &&
+      details.httpStatus! <= 599
+      ? details.httpStatus
+      : undefined;
+
+    this.diagnostics = {
+      ...(endpoint ? { endpoint } : {}),
+      ...(httpStatus !== undefined ? { httpStatus } : {}),
+      ...(errorCode ? { errorCode } : {}),
+      message: diagnosticMessage,
+    };
   }
+}
+
+function sanitizeShiprocketEndpoint(endpoint: string): string {
+  return endpoint
+    .split("?")[0]
+    .replace(/\/\d{5,}(?=\/|$)/g, "/[redacted]")
+    .slice(0, 120);
+}
+
+function sanitizeShiprocketErrorCode(value: unknown): string | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value !== "string") return undefined;
+  const code = value.trim();
+  return /^[A-Za-z0-9_.:-]{1,64}$/.test(code) ? code : undefined;
+}
+
+function sanitizeShiprocketDiagnosticMessage(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  let message = value.replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  if (!message) return undefined;
+
+  message = message
+    .replace(/\bBearer\s+\S+/gi, "Bearer [redacted]")
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[redacted-email]")
+    .replace(/((?:authorization|token|password|secret|api[_ -]?key)\b\s*[:=]\s*)["']?[^\s,;}\]]+/gi, "$1[redacted]")
+    .replace(/((?:customer(?:[_\s-]?name)?|recipient|contact|address(?:[_\s-]?[12])?|billing[_\s-]?address|shipping[_\s-]?address|phone|mobile|email|post(?:al)?[_\s-]?code|pin[_\s-]?code)\b["']?\s*[:=]\s*["']?)[^,;}\]]+/gi, "$1[redacted]")
+    .replace(/https?:\/\/\S+/gi, "[redacted-url]")
+    .replace(/\+?\d[\d().\s-]{5,}\d/g, "[redacted-number]")
+    .replace(/\b\d{5,}\b/g, "[redacted-number]")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return message.slice(0, 240);
 }
 
 const API_BASE = "https://apiv2.shiprocket.in/v1/external";
@@ -96,7 +163,12 @@ async function authenticate(): Promise<string> {
     const payload = await readPayload(response);
     const token = typeof payload.token === "string" ? payload.token : "";
     if (!response.ok || !token) {
-      throw new ShiprocketError(`Shiprocket authentication failed (${response.status}).`);
+      throw new ShiprocketError(`Shiprocket authentication failed (${response.status}).`, {
+        endpoint: "/auth/login",
+        httpStatus: response.status,
+        errorCode: payload.error_code ?? payload.code ?? payload.status_code,
+        providerMessage: payload.message ?? payload.error,
+      });
     }
     cachedToken = { token, expiresAt: Date.now() + 4 * 60 * 60 * 1000 };
     return token;
@@ -130,10 +202,17 @@ async function request<T>(
   });
   const payload = await readPayload(response);
   if (!response.ok || payload.status_code && Number(payload.status_code) >= 400) {
-    if (/no serviceable couriers available|destination.*not serviceable/i.test(String(payload.message ?? ""))) {
-      throw new ShiprocketError("Shiprocket has no serviceable courier for this address.");
+    const providerMessage = payload.message ?? payload.error;
+    const details = {
+      endpoint: path.split("?")[0],
+      httpStatus: response.status,
+      errorCode: payload.error_code ?? payload.code ?? payload.status_code,
+      providerMessage,
+    };
+    if (/no serviceable couriers available|destination.*not serviceable/i.test(String(providerMessage ?? ""))) {
+      throw new ShiprocketError("Shiprocket has no serviceable courier for this address.", details);
     }
-    throw new ShiprocketError(`Shiprocket request failed (${response.status}).`);
+    throw new ShiprocketError(`Shiprocket request failed (${response.status}).`, details);
   }
   return payload as T;
 }

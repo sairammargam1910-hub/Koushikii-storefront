@@ -779,6 +779,12 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       return;
     }
     if (error instanceof ShiprocketError) {
+      logger.warn({
+        shiprocketEndpoint: error.diagnostics.endpoint,
+        shiprocketHttpStatus: error.diagnostics.httpStatus,
+        shiprocketErrorCode: error.diagnostics.errorCode,
+        shiprocketMessage: error.diagnostics.message,
+      }, "Shiprocket checkout quote failed");
       const needsConfiguration = /not configured|no configured pickup|invoice terms|export purpose|HSN code/i.test(error.message);
       const noRoute = /no serviceable courier|not serviceable/i.test(error.message);
       res.status(needsConfiguration ? 422 : 409).json({
