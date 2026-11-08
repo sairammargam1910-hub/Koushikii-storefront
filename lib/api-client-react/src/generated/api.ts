@@ -25,6 +25,7 @@ import type {
   CashfreeWebhookInput,
   GetShopifyCartParams,
   GetShopifyCheckoutPaymentStatusParams,
+  GetShopifyOrdersParams,
   HealthStatus,
   ShopifyAdminArchiveResponse,
   ShopifyAdminDiscountInput,
@@ -56,6 +57,9 @@ import type {
   ShopifyCheckoutQuoteInput,
   ShopifyCheckoutQuoteResponse,
   ShopifyCustomerAccountResponse,
+  ShopifyOrderDetailsResponse,
+  ShopifyOrderTrackingResponse,
+  ShopifyOrdersResponse,
   ShopifyProductsResponse,
   ShopperPreferencesResponse,
   ShopperProfileUpdate,
@@ -317,6 +321,247 @@ export function useGetShopifyCustomerAccount<TData = Awaited<ReturnType<typeof g
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetShopifyCustomerAccountQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetShopifyOrdersUrl = (params?: GetShopifyOrdersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shopify/orders?${stringifiedParams}` : `/api/shopify/orders`
+}
+
+/**
+ * Returns orders matching a verified email address on the authenticated shopper's Clerk account.
+ * @summary List Shopify orders for the signed-in shopper
+ */
+export const getShopifyOrders = async (params?: GetShopifyOrdersParams, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyOrdersResponse> => {
+
+  return customFetch<ShopifyOrdersResponse>(getGetShopifyOrdersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyOrdersQueryKey = (params?: GetShopifyOrdersParams,) => {
+    return [
+    `/api/shopify/orders`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetShopifyOrdersQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyOrders>>, TError = ErrorType<ApiError>>(params?: GetShopifyOrdersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyOrdersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyOrders>>> = ({ signal }) => getShopifyOrders(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyOrdersQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyOrders>>>
+export type GetShopifyOrdersQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List Shopify orders for the signed-in shopper
+ */
+
+export function useGetShopifyOrders<TData = Awaited<ReturnType<typeof getShopifyOrders>>, TError = ErrorType<ApiError>>(
+ params?: GetShopifyOrdersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyOrdersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetShopifyOrderDetailsUrl = (orderRef: string,) => {
+
+
+
+
+  return `/api/shopify/orders/${encodeURIComponent(String(orderRef))}`
+}
+
+/**
+ * Returns details only when the order's email matches a verified email on the authenticated shopper's account.
+ * @summary Get an owned Shopify order
+ */
+export const getShopifyOrderDetails = async (orderRef: string, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyOrderDetailsResponse> => {
+
+  return customFetch<ShopifyOrderDetailsResponse>(getGetShopifyOrderDetailsUrl(orderRef),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyOrderDetailsQueryKey = (orderRef: string,) => {
+    return [
+    `/api/shopify/orders/${orderRef}`
+    ] as const;
+    }
+
+
+export const getGetShopifyOrderDetailsQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyOrderDetails>>, TError = ErrorType<ApiError>>(orderRef: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrderDetails>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyOrderDetailsQueryKey(orderRef);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyOrderDetails>>> = ({ signal }) => getShopifyOrderDetails(orderRef, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orderRef !== null && orderRef !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrderDetails>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyOrderDetailsQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyOrderDetails>>>
+export type GetShopifyOrderDetailsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get an owned Shopify order
+ */
+
+export function useGetShopifyOrderDetails<TData = Awaited<ReturnType<typeof getShopifyOrderDetails>>, TError = ErrorType<ApiError>>(
+ orderRef: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrderDetails>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyOrderDetailsQueryOptions(orderRef,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetShopifyOrderTrackingUrl = (orderRef: string,) => {
+
+
+
+
+  return `/api/shopify/orders/${encodeURIComponent(String(orderRef))}/tracking`
+}
+
+/**
+ * Returns Shopify fulfillment tracking and available Shiprocket tracking events for the authenticated shopper's order.
+ * @summary Get tracking updates for an owned order
+ */
+export const getShopifyOrderTracking = async (orderRef: string, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyOrderTrackingResponse> => {
+
+  return customFetch<ShopifyOrderTrackingResponse>(getGetShopifyOrderTrackingUrl(orderRef),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyOrderTrackingQueryKey = (orderRef: string,) => {
+    return [
+    `/api/shopify/orders/${orderRef}/tracking`
+    ] as const;
+    }
+
+
+export const getGetShopifyOrderTrackingQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyOrderTracking>>, TError = ErrorType<ApiError>>(orderRef: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrderTracking>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyOrderTrackingQueryKey(orderRef);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyOrderTracking>>> = ({ signal }) => getShopifyOrderTracking(orderRef, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: orderRef !== null && orderRef !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrderTracking>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyOrderTrackingQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyOrderTracking>>>
+export type GetShopifyOrderTrackingQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get tracking updates for an owned order
+ */
+
+export function useGetShopifyOrderTracking<TData = Awaited<ReturnType<typeof getShopifyOrderTracking>>, TError = ErrorType<ApiError>>(
+ orderRef: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyOrderTracking>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyOrderTrackingQueryOptions(orderRef,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

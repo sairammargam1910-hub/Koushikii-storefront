@@ -68,6 +68,136 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/orders:
+    get:
+      operationId: getShopifyOrders
+      tags: [shopper]
+      summary: List Shopify orders for the signed-in shopper
+      description: Returns orders matching a verified email address on the authenticated shopper's Clerk account.
+      parameters:
+        - name: after
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 2048
+      responses:
+        "200":
+          description: A page of the shopper's Shopify orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyOrdersResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: A verified email is required to match orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify order history could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/orders/{orderRef}:
+    get:
+      operationId: getShopifyOrderDetails
+      tags: [shopper]
+      summary: Get an owned Shopify order
+      description: Returns details only when the order's email matches a verified email on the authenticated shopper's account.
+      parameters:
+        - name: orderRef
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: "^[A-Za-z0-9_-]+$"
+      responses:
+        "200":
+          description: Shopper-owned order details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyOrderDetailsResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: A verified email is required to match orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify order details could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/orders/{orderRef}/tracking:
+    get:
+      operationId: getShopifyOrderTracking
+      tags: [shopper]
+      summary: Get tracking updates for an owned order
+      description: Returns Shopify fulfillment tracking and available Shiprocket tracking events for the authenticated shopper's order.
+      parameters:
+        - name: orderRef
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: "^[A-Za-z0-9_-]+$"
+      responses:
+        "200":
+          description: Shipment tracking for the shopper-owned order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyOrderTrackingResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: A verified email is required to match orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shipment tracking could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopper/preferences:
     get:
       operationId: getShopperPreferences
@@ -1519,6 +1649,146 @@ components:
         error:
           type: string
       required: [error]
+    ShopifyOrderLineItem:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        variantTitle:
+          type: [string, "null"]
+        sku:
+          type: [string, "null"]
+        quantity:
+          type: integer
+          minimum: 1
+        unitPrice:
+          type: string
+        totalPrice:
+          type: string
+        currencyCode:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        image:
+          anyOf:
+            - $ref: "#/components/schemas/ShopifyImage"
+            - type: "null"
+      required: [id, title, variantTitle, sku, quantity, unitPrice, totalPrice, currencyCode, image]
+    ShopifyOrderSummary:
+      type: object
+      properties:
+        orderRef:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: [string, "null"]
+          format: date-time
+        financialStatus:
+          type: string
+        fulfillmentStatus:
+          type: [string, "null"]
+        totalAmount:
+          type: string
+        currencyCode:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyOrderLineItem"
+      required: [orderRef, name, createdAt, processedAt, financialStatus, fulfillmentStatus, totalAmount, currencyCode, lineItems]
+    ShopifyOrderFulfillment:
+      type: object
+      properties:
+        status:
+          type: string
+        trackingCompany:
+          type: [string, "null"]
+        trackingNumber:
+          type: [string, "null"]
+        trackingUrl:
+          type: [string, "null"]
+          format: uri
+        estimatedDeliveryAt:
+          type: [string, "null"]
+          format: date-time
+      required: [status, trackingCompany, trackingNumber, trackingUrl, estimatedDeliveryAt]
+    ShopifyOrderDetails:
+      allOf:
+        - $ref: "#/components/schemas/ShopifyOrderSummary"
+        - type: object
+          properties:
+            fulfillments:
+              type: array
+              items:
+                $ref: "#/components/schemas/ShopifyOrderFulfillment"
+          required: [fulfillments]
+    ShopifyOrdersResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyOrderSummary"
+        nextCursor:
+          type: [string, "null"]
+      required: [orders, nextCursor]
+    ShopifyOrderDetailsResponse:
+      type: object
+      properties:
+        order:
+          $ref: "#/components/schemas/ShopifyOrderDetails"
+      required: [order]
+    ShopifyOrderTrackingEvent:
+      type: object
+      properties:
+        occurredAt:
+          type: [string, "null"]
+          format: date-time
+        status:
+          type: string
+        description:
+          type: string
+        location:
+          type: [string, "null"]
+      required: [occurredAt, status, description, location]
+    ShopifyOrderTrackingShipment:
+      type: object
+      properties:
+        status:
+          type: string
+        statusCode:
+          type: [string, "null"]
+        awbCode:
+          type: [string, "null"]
+        courierName:
+          type: [string, "null"]
+        trackingUrl:
+          type: [string, "null"]
+          format: uri
+        estimatedDeliveryAt:
+          type: [string, "null"]
+          format: date-time
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyOrderTrackingEvent"
+      required: [status, statusCode, awbCode, courierName, trackingUrl, estimatedDeliveryAt, events]
+    ShopifyOrderTrackingResponse:
+      type: object
+      properties:
+        orderRef:
+          type: string
+        shipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyOrderTrackingShipment"
+      required: [orderRef, shipments]
     ShopifyImage:
       type: object
       properties:

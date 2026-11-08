@@ -599,6 +599,38 @@ export async function getShopifyCheckoutCart(cartId: string) {
   return getShopifyCart(cartId);
 }
 
+export async function removePurchasedCartQuantities(input: {
+  cartId: string;
+  lines: Array<{ id: string; quantity: number }>;
+}): Promise<void> {
+  if (!input.lines.length) return;
+  const cart = await getShopifyCart(input.cartId);
+  if (!cart) return;
+
+  const purchased = new Map<string, number>();
+  for (const line of input.lines) {
+    if (line.id && Number.isInteger(line.quantity) && line.quantity > 0) {
+      purchased.set(line.id, (purchased.get(line.id) ?? 0) + line.quantity);
+    }
+  }
+  const updates = cart.lines.nodes.flatMap((line) => {
+    const quantity = purchased.get(line.id);
+    if (!quantity) return [];
+    return [{ id: line.id, quantity: Math.max(0, line.quantity - quantity) }];
+  });
+  if (!updates.length) return;
+
+  const result = await shopifyStorefrontRequest<{
+    cartLinesUpdate: ShopifyCartMutationResult;
+  }>(SHOPIFY_CART_UPDATE_LINES, { cartId: input.cartId, lines: updates });
+  if (result.cartLinesUpdate.userErrors.length) {
+    throw new Error("Shopify rejected the purchased cart quantity cleanup.");
+  }
+  if (!result.cartLinesUpdate.cart) {
+    throw new Error("Shopify did not return the updated cart after checkout.");
+  }
+}
+
 export class ShopifyCheckoutInputError extends Error {
   constructor(message: string, readonly statusCode: number) {
     super(message);

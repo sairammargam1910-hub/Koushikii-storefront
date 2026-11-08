@@ -34,12 +34,37 @@ export const checkoutShipmentStatusEnum = pgEnum("checkout_shipment_status", [
   "failed",
 ]);
 
+export const checkoutPaymentStatusEnum = pgEnum("checkout_payment_status", [
+  "not_started",
+  "pending",
+  "paid",
+  "failed",
+  "refund_pending",
+  "refunded",
+  "reconciliation_required",
+]);
+
+export const checkoutCartCleanupStatusEnum = pgEnum("checkout_cart_cleanup_status", [
+  "not_started",
+  "processing",
+  "completed",
+  "failed",
+]);
+
 export const cashfreeCheckoutOrdersTable = pgTable("cashfree_checkout_orders", {
   id: uuid("id").primaryKey().defaultRandom(),
   cashfreeOrderId: text("cashfree_order_id").notNull().unique(),
   status: cashfreeCheckoutStatusEnum("status").notNull().default("quote_ready"),
+  paymentStatus: checkoutPaymentStatusEnum("payment_status").notNull().default("not_started"),
   quoteHash: text("quote_hash").notNull(),
   cartId: text("cart_id").notNull(),
+  purchasedCartLines: jsonb("purchased_cart_lines")
+    .$type<Array<{ id: string; quantity: number }>>()
+    .notNull()
+    .default([]),
+  cartCleanupStatus: checkoutCartCleanupStatusEnum("cart_cleanup_status")
+    .notNull()
+    .default("not_started"),
   destinationCountryCode: text("destination_country_code").notNull(),
   currencyCode: text("currency_code").notNull(),
   itemSubtotal: numeric("item_subtotal", { precision: 16, scale: 4 }).notNull(),
@@ -76,6 +101,13 @@ export const checkoutShipmentPackagesTable = pgTable("cashfree_checkout_shipment
   status: checkoutShipmentStatusEnum("status").notNull().default("quoted"),
   awbCode: text("awb_code"),
   trackingUrl: text("tracking_url"),
+  trackingStatus: text("tracking_status"),
+  trackingEvents: jsonb("tracking_events")
+    .$type<Array<{ occurredAt: string | null; status: string; description: string; location: string | null }>>()
+    .notNull()
+    .default([]),
+  estimatedDeliveryAt: timestamp("estimated_delivery_at", { withTimezone: true }),
+  trackingUpdatedAt: timestamp("tracking_updated_at", { withTimezone: true }),
   lastError: text("last_error"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

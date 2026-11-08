@@ -46,6 +46,7 @@ import {
 } from "../lib/shopifyCheckoutOrder";
 import {
   getAvailableCountries,
+  removePurchasedCartQuantities,
   prepareShopifyCheckoutCart,
   ShopifyCheckoutInputError,
   type ShopifyCartNode,
@@ -199,22 +200,28 @@ function responseForQuote(row: CheckoutOrderRow) {
   });
 }
 
-function paymentStatusForOrder(status: CheckoutOrderRow["status"]):
+function paymentStatusForOrder(status: CheckoutOrderRow["paymentStatus"]):
   "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "UNKNOWN" {
-  if (status === "payment_failed") return "FAILED";
-  if (status === "refund_pending" || status === "refunded") return "REFUNDED";
-  if ([
-    "paid",
-    "shopify_sync_pending",
-    "shopify_synced",
-    "shipment_booking_pending",
-    "completed",
-  ].includes(status)) return "PAID";
-  if (status === "payment_pending" || status === "quote_ready") return "PENDING";
-  return "UNKNOWN";
+  switch (status) {
+    case "not_started":
+    case "pending":
+      return "PENDING";
+    case "paid":
+      return "PAID";
+    case "failed":
+      return "FAILED";
+    case "refund_pending":
+    case "refunded":
+      return "REFUNDED";
+    case "reconciliation_required":
+      return "UNKNOWN";
+  }
 }
 
 function messageForOrder(row: CheckoutOrderRow): string {
+  if (row.shopifyOrderId && row.cartCleanupStatus === "failed") {
+    return `Order ${row.shopifyOrderName ?? "confirmation"} is saved, but your bag could not be refreshed. Review the bag before placing another order.`;
+  }
   switch (row.status) {
     case "quote_ready":
       return "Your shipping quote is ready. Payment has not started.";
@@ -249,6 +256,54 @@ function safeErrorForSync(error: unknown): string {
   return "Shopify order synchronization is temporarily unavailable.";
 }
 
+async function cleanPurchasedCart(row: CheckoutOrderRow): Promise<CheckoutOrderRow> {
+  if (
+    !row.shopifyOrderId ||
+    row.cartCleanupStatus !== "not_started" ||
+    !row.purchasedCartLines.length
+  ) return row;
+
+  const [claimed] = await db.update(cashfreeCheckoutOrdersTable)
+    .set({ cartCleanupStatus: "processing", updatedAt: new Date() })
+    .where(and(
+      eq(cashfreeCheckoutOrdersTable.id, row.id),
+      eq(cashfreeCheckoutOrdersTable.cartCleanupStatus, "not_started"),
+    ))
+    .returning();
+  if (!claimed) {
+    return (await db.select().from(cashfreeCheckoutOrdersTable)
+      .where(eq(cashfreeCheckoutOrdersTable.id, row.id)).limit(1))[0] ?? row;
+  }
+
+  try {
+    await removePurchasedCartQuantities({
+      cartId: claimed.cartId,
+      lines: claimed.purchasedCartLines,
+    });
+    const [updated] = await db.update(cashfreeCheckoutOrdersTable)
+      .set({ cartCleanupStatus: "completed", updatedAt: new Date() })
+      .where(and(
+        eq(cashfreeCheckoutOrdersTable.id, claimed.id),
+        eq(cashfreeCheckoutOrdersTable.cartCleanupStatus, "processing"),
+      ))
+      .returning();
+    return updated ?? claimed;
+  } catch (error) {
+    logger.warn({
+      checkoutOrderId: claimed.cashfreeOrderId,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    }, "Paid Shopify order cart cleanup failed");
+    const [updated] = await db.update(cashfreeCheckoutOrdersTable)
+      .set({ cartCleanupStatus: "failed", updatedAt: new Date() })
+      .where(and(
+        eq(cashfreeCheckoutOrdersTable.id, claimed.id),
+        eq(cashfreeCheckoutOrdersTable.cartCleanupStatus, "processing"),
+      ))
+      .returning();
+    return updated ?? claimed;
+  }
+}
+
 async function syncShopifyOrder(orderId: string, paymentReference: string): Promise<CheckoutOrderRow | null> {
   const [row] = await db.select()
     .from(cashfreeCheckoutOrdersTable)
@@ -256,12 +311,13 @@ async function syncShopifyOrder(orderId: string, paymentReference: string): Prom
     .limit(1);
   if (!row) return null;
   if (["refund_pending", "refunded", "reconciliation_required"].includes(row.status)) return row;
-  if (row.shopifyOrderId) return row;
+  if (row.shopifyOrderId) return cleanPurchasedCart(row);
 
   const retryAfter = new Date(Date.now() - 60_000);
   const [claimed] = await db.update(cashfreeCheckoutOrdersTable)
     .set({
       status: "shopify_sync_pending",
+      paymentStatus: "paid",
       paymentReference,
       paidAt: row.paidAt ?? new Date(),
       lastError: null,
@@ -288,6 +344,10 @@ async function syncShopifyOrder(orderId: string, paymentReference: string): Prom
 
   try {
     const snapshot = snapshotFromRow(claimed);
+    const purchasedCartLines = snapshot.cart.lines.nodes.map((line) => ({
+      id: line.id,
+      quantity: line.quantity,
+    }));
     const order = await createOrFindShopifyPaidOrder({
       orderId: claimed.cashfreeOrderId,
       paymentReference,
@@ -309,8 +369,10 @@ async function syncShopifyOrder(orderId: string, paymentReference: string): Prom
     const [updated] = await db.update(cashfreeCheckoutOrdersTable)
       .set({
         status: sandbox ? "shopify_synced" : "shipment_booking_pending",
+        paymentStatus: "paid",
         shopifyOrderId: order.id,
         shopifyOrderName: order.name,
+        purchasedCartLines,
         paymentReference,
         paidAt: claimed.paidAt ?? new Date(),
         checkoutSnapshot: {},
@@ -319,7 +381,7 @@ async function syncShopifyOrder(orderId: string, paymentReference: string): Prom
       })
       .where(eq(cashfreeCheckoutOrdersTable.id, row.id))
       .returning();
-    return updated ?? claimed;
+    return cleanPurchasedCart(updated ?? claimed);
   } catch (error) {
     logger.error({
       checkoutOrderId: row.cashfreeOrderId,
@@ -453,6 +515,7 @@ async function processConfirmedPayment(
     await db.update(cashfreeCheckoutOrdersTable)
       .set({
         status: "reconciliation_required",
+        paymentStatus: "reconciliation_required",
         lastError: "Cashfree order amount or currency does not match the saved quote.",
         updatedAt: new Date(),
       })
@@ -465,6 +528,7 @@ async function processConfirmedPayment(
       await db.update(cashfreeCheckoutOrdersTable)
         .set({
           status: "payment_failed",
+          paymentStatus: "failed",
           checkoutSnapshot: {},
           lastError: null,
           updatedAt: new Date(),
@@ -819,6 +883,7 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
     await db.update(cashfreeCheckoutOrdersTable)
       .set({
         status: "payment_pending",
+        paymentStatus: "pending",
         paymentSessionId: cashfreeOrder.payment_session_id,
         lastError: null,
       })
@@ -891,7 +956,7 @@ router.get("/shopify/checkout/payment-status", async (req, res): Promise<void> =
     res.json(GetShopifyCheckoutPaymentStatusResponse.parse({
       orderId: row.cashfreeOrderId,
       status: row.status,
-      paymentStatus: paymentStatusForOrder(row.status),
+      paymentStatus: paymentStatusForOrder(row.paymentStatus),
       shopifyOrderName: row.shopifyOrderName,
       message: messageForOrder(row),
     }));
@@ -958,6 +1023,7 @@ router.post("/cashfree/webhook", async (req, res): Promise<void> => {
       await db.update(cashfreeCheckoutOrdersTable)
         .set({
           status,
+          paymentStatus: status,
           checkoutSnapshot: {},
           lastError: status === "refunded"
             ? "Cashfree refund confirmed; verify the refund is represented in Shopify."

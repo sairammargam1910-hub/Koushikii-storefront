@@ -117,7 +117,7 @@ const accountLinks = [
     href: "Orders",
     icon: PackageCheck,
     title: "Order updates",
-    detail: "Check order status with Shopify",
+    detail: "Payment confirmation and delivery progress",
     testId: "link-account-orders",
   },
 ];
@@ -177,8 +177,8 @@ export function Account() {
             <span className="account-boundary-symbol" aria-hidden="true"><PackageCheck size={18} /></span>
             <div>
               <h3>Shopify orders</h3>
-              <p>Shopify handles checkout, payments, shipping and order updates. Order history is not linked to your Chenetha sign-in.</p>
-              <a href={base + "Orders"}>Visit order updates <ArrowRight size={13} aria-hidden="true" /></a>
+              <p>Shopify handles checkout, payments and shipping. Your orders appear here when the checkout email matches a verified email on your Chenetha account.</p>
+              <a href={base + "Orders"} data-testid="link-account-order-history">View your orders <ArrowRight size={13} aria-hidden="true" /></a>
             </div>
           </div>
           <div className="account-boundary-detail">

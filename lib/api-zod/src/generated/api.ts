@@ -60,6 +60,140 @@ export const GetShopifyCustomerAccountResponse = zod.object({
 
 
 /**
+ * Returns orders matching a verified email address on the authenticated shopper's Clerk account.
+ * @summary List Shopify orders for the signed-in shopper
+ */
+export const getShopifyOrdersQueryAfterMax = 2048;
+
+
+
+export const GetShopifyOrdersQueryParams = zod.object({
+  "after": zod.coerce.string().max(getShopifyOrdersQueryAfterMax).optional()
+})
+
+export const getShopifyOrdersResponseOrdersItemCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
+
+export const getShopifyOrdersResponseOrdersItemLineItemsItemCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const GetShopifyOrdersResponse = zod.object({
+  "orders": zod.array(zod.object({
+  "orderRef": zod.string(),
+  "name": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "processedAt": zod.coerce.date().nullable(),
+  "financialStatus": zod.string(),
+  "fulfillmentStatus": zod.string().nullable(),
+  "totalAmount": zod.string(),
+  "currencyCode": zod.string().regex(getShopifyOrdersResponseOrdersItemCurrencyCodeRegExp),
+  "lineItems": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "variantTitle": zod.string().nullable(),
+  "sku": zod.string().nullable(),
+  "quantity": zod.int().min(1),
+  "unitPrice": zod.string(),
+  "totalPrice": zod.string(),
+  "currencyCode": zod.string().regex(getShopifyOrdersResponseOrdersItemLineItemsItemCurrencyCodeRegExp),
+  "image": zod.union([zod.object({
+  "url": zod.url(),
+  "altText": zod.string().nullable()
+}),zod.null()])
+}))
+})),
+  "nextCursor": zod.string().nullable()
+})
+
+
+/**
+ * Returns details only when the order's email matches a verified email on the authenticated shopper's account.
+ * @summary Get an owned Shopify order
+ */
+export const getShopifyOrderDetailsPathOrderRefMax = 128;
+
+
+export const getShopifyOrderDetailsPathOrderRefRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+
+export const GetShopifyOrderDetailsParams = zod.object({
+  "orderRef": zod.coerce.string().min(1).max(getShopifyOrderDetailsPathOrderRefMax).regex(getShopifyOrderDetailsPathOrderRefRegExp)
+})
+
+export const getShopifyOrderDetailsResponseOrderOneCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
+
+export const getShopifyOrderDetailsResponseOrderOneLineItemsItemCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const GetShopifyOrderDetailsResponse = zod.object({
+  "order": zod.object({
+  "orderRef": zod.string(),
+  "name": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "processedAt": zod.coerce.date().nullable(),
+  "financialStatus": zod.string(),
+  "fulfillmentStatus": zod.string().nullable(),
+  "totalAmount": zod.string(),
+  "currencyCode": zod.string().regex(getShopifyOrderDetailsResponseOrderOneCurrencyCodeRegExp),
+  "lineItems": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "variantTitle": zod.string().nullable(),
+  "sku": zod.string().nullable(),
+  "quantity": zod.int().min(1),
+  "unitPrice": zod.string(),
+  "totalPrice": zod.string(),
+  "currencyCode": zod.string().regex(getShopifyOrderDetailsResponseOrderOneLineItemsItemCurrencyCodeRegExp),
+  "image": zod.union([zod.object({
+  "url": zod.url(),
+  "altText": zod.string().nullable()
+}),zod.null()])
+}))
+}).and(zod.object({
+  "fulfillments": zod.array(zod.object({
+  "status": zod.string(),
+  "trackingCompany": zod.string().nullable(),
+  "trackingNumber": zod.string().nullable(),
+  "trackingUrl": zod.url().nullable(),
+  "estimatedDeliveryAt": zod.coerce.date().nullable()
+}))
+}))
+})
+
+
+/**
+ * Returns Shopify fulfillment tracking and available Shiprocket tracking events for the authenticated shopper's order.
+ * @summary Get tracking updates for an owned order
+ */
+export const getShopifyOrderTrackingPathOrderRefMax = 128;
+
+
+export const getShopifyOrderTrackingPathOrderRefRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+
+
+export const GetShopifyOrderTrackingParams = zod.object({
+  "orderRef": zod.coerce.string().min(1).max(getShopifyOrderTrackingPathOrderRefMax).regex(getShopifyOrderTrackingPathOrderRefRegExp)
+})
+
+export const GetShopifyOrderTrackingResponse = zod.object({
+  "orderRef": zod.string(),
+  "shipments": zod.array(zod.object({
+  "status": zod.string(),
+  "statusCode": zod.string().nullable(),
+  "awbCode": zod.string().nullable(),
+  "courierName": zod.string().nullable(),
+  "trackingUrl": zod.url().nullable(),
+  "estimatedDeliveryAt": zod.coerce.date().nullable(),
+  "events": zod.array(zod.object({
+  "occurredAt": zod.coerce.date().nullable(),
+  "status": zod.string(),
+  "description": zod.string(),
+  "location": zod.string().nullable()
+}))
+}))
+})
+
+
+/**
  * Returns wishlist and profile preferences stored privately for the authenticated Clerk user.
  * @summary Get the signed-in shopper's saved preferences
  */

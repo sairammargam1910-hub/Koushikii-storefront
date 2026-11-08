@@ -22,6 +22,7 @@ import { SareeCare } from "./storefront/SareeCare";
 import { Account } from "./storefront/Account";
 import { Profile } from "./storefront/Profile";
 import { Orders } from "./storefront/Orders";
+import { OrderDetail } from "./storefront/OrderDetail";
 import { Videos } from "./storefront/Videos";
 import { AdminDashboard, AdminDiscounts, AdminProducts, AdminSignInPrompt } from "./admin/Admin";
 import { AdminContent } from "./admin/ContentAdmin";
@@ -89,7 +90,7 @@ const pageTitles: Record<string,string> = {
   "/Cart": "Your bag", "/Wishlist": "Wishlist", "/Checkout": "Delivery details",
   "/Confirmation": "Order confirmation", "/OurStory": "Our story", "/Contact": "Contact",
   "/CustomerCare": "Customer care", "/SareeCare": "Saree care", "/Account": "Saved preferences",
-  "/Profile": "Your details", "/Orders": "Order information", "/Videos": "Videos",
+  "/Profile": "Your details", "/Orders": "Your orders", "/Videos": "Videos",
   "/admin": "Merchant workroom", "/admin/products": "Manage products",
   "/admin/discounts": "Manage discounts", "/admin/content": "Storefront content", "/sign-in": "Account sign in",
   "/sign-up": "Create an account",
@@ -179,6 +180,7 @@ function Router() {
         <Route path="/SareeCare" component={SareeCare}/>
         <Route path="/Account" component={Account}/>
         <Route path="/Profile" component={Profile}/>
+        <Route path="/Orders/:orderRef" component={OrderDetail}/>
         <Route path="/Orders" component={Orders}/>
         <Route path="/Videos" component={Videos}/>
         <Route component={NotFound}/>

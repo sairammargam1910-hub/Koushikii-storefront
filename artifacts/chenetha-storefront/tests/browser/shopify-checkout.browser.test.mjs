@@ -152,18 +152,22 @@ async function openCheckout({
   onPaymentSessionRequest,
   onPaymentStatusRequest,
   returnOrderId,
+  holdCashfreeCheckout = false,
 } = {}) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
-  await context.addInitScript(() => {
+  await context.addInitScript((holdCheckout) => {
     window.__cashfreeCalls = [];
     window.Cashfree = (options) => ({
       checkout: async (checkoutOptions) => {
         window.__cashfreeCalls.push({ mode: options.mode, ...checkoutOptions });
+        if (holdCheckout) {
+          return new Promise((resolve) => { window.__cashfreeCheckoutResolver = resolve; });
+        }
         return {};
       },
     });
-  });
+  }, holdCashfreeCheckout);
   const page = await context.newPage();
   await page.route("**/api/shopify/cart**", async (route) => {
     if (route.request().method() !== "GET") {
@@ -315,8 +319,10 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
   const savedCart = { id: "gid://shopify/Cart/cashfree-browser-cart", totalQuantity: 1 };
   const quoteRequests = [];
   let paymentSessionRequest;
+  let paymentStatusChecks = 0;
   const { context, page } = await openCheckout({
     savedCart,
+    holdCashfreeCheckout: true,
     onCartRequest: (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -356,6 +362,22 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
           amount: "1350.00",
           currencyCode: "INR",
           environment: "sandbox",
+        }),
+      });
+    },
+    onPaymentStatusRequest: async (route) => {
+      assert.equal(new URL(route.request().url()).searchParams.get("orderId"), "cashfree-order-123");
+      paymentStatusChecks += 1;
+      const confirmed = paymentStatusChecks > 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          orderId: "cashfree-order-123",
+          status: confirmed ? "shopify_synced" : "payment_pending",
+          paymentStatus: confirmed ? "PAID" : "PENDING",
+          shopifyOrderName: confirmed ? "#1001" : null,
+          message: confirmed ? "Payment confirmed." : "Cashfree is still processing this payment.",
         }),
       });
     },
@@ -401,12 +423,18 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
 
   await checkoutButton.click();
   await page.waitForFunction(() => window.__cashfreeCalls?.length === 1);
+  await page.waitForFunction(() => typeof window.__cashfreeCheckoutResolver === "function");
   assert.deepEqual(paymentSessionRequest, { quoteId: "quote-2" });
   assert.deepEqual(await page.evaluate(() => window.__cashfreeCalls), [{
     mode: "sandbox",
     paymentSessionId: "sandbox-session-123",
-    redirectTarget: "_self",
+    redirectTarget: "_modal",
   }]);
+  await page.getByTestId("status-cashfree-payment").getByRole("heading", { name: "Payment is pending." }).waitFor();
+  assert.match(await page.getByTestId("status-cashfree-payment").innerText(), /scan its QR code with your phone/i);
+  await page.getByRole("button", { name: /Check payment status/i }).click();
+  await page.getByTestId("status-cashfree-payment").getByRole("heading", { name: "Your order is recorded." }).waitFor();
+  assert.equal(paymentStatusChecks, 2);
   await context.close();
 });
 

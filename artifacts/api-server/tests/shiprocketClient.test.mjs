@@ -241,3 +241,60 @@ test("an unsupported destination fails clearly without booking a shipment", asyn
     globalThis.fetch = originalFetch;
   }
 });
+
+test("fetches and normalizes Shiprocket tracking by AWB without booking another shipment", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    const target = new URL(String(url));
+    calls.push({ url: target, method: init.method ?? "GET" });
+    if (target.pathname.endsWith("/auth/login")) {
+      return new Response(JSON.stringify({ token: "test-token" }), { status: 200 });
+    }
+    if (target.pathname.endsWith("/courier/track/awb/9876543210")) {
+      return new Response(JSON.stringify({
+        tracking_data: {
+          shipment_status: 6,
+          track_url: "https://shiprocket.co/tracking/9876543210",
+          etd: "2026-11-12",
+          shipment_track: [{ awb_code: "9876543210", current_status: "In Transit", courier_name: "Test Courier" }],
+          shipment_track_activities: [
+            { date: "2026-11-08 12:00:00", activity: "Departed facility", location: "Hyderabad" },
+            { date: "2026-11-08 08:00:00", activity: "Picked up", location: "Hyderabad" },
+          ],
+        },
+      }), { status: 200 });
+    }
+    throw new Error(`Unexpected tracking request: ${target.pathname}`);
+  };
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+    }, async () => {
+      const { getShiprocketTracking } = loadModule();
+      const result = await getShiprocketTracking("9876543210");
+      assert.equal(result.status, "In Transit");
+      assert.equal(result.statusCode, "6");
+      assert.equal(result.awbCode, "9876543210");
+      assert.equal(result.courierName, "Test Courier");
+      assert.equal(result.trackingUrl, "https://shiprocket.co/tracking/9876543210");
+      assert.equal(result.estimatedDeliveryAt, "2026-11-12T00:00:00.000Z");
+      assert.deepEqual(result.events.map((event) => event.description), ["Picked up", "Departed facility"]);
+      assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("tracking normalization rejects a non-HTTPS provider URL", () => {
+  const { normalizeShiprocketTracking } = loadModule();
+  const result = normalizeShiprocketTracking({
+    tracking_data: {
+      track_url: "http://example.invalid/track",
+      shipment_track: [{ current_status: "In Transit" }],
+    },
+  }, "9876543210");
+  assert.equal(result.trackingUrl, null);
+});

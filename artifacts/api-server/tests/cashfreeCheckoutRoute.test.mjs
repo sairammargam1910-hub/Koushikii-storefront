@@ -19,8 +19,8 @@ const compiled = await build({
         db: `
           const state = globalThis.__checkoutRouteTest;
           const columns = (names) => Object.fromEntries(names.map((name) => [name, { key: name }]));
-          export const cashfreeCheckoutOrdersTable = columns(["id","cashfreeOrderId","status","quoteHash","cartId","destinationCountryCode","currencyCode","itemSubtotal","discountAmount","shippingAmount","taxAmount","totalAmount","quoteExpiresAt","checkoutSnapshot","paymentSessionId","paymentReference","paidAt","shopifyOrderId","shopifyOrderName","lastError","createdAt","updatedAt"]);
-          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","packageIndex","shiprocketOrderId","shiprocketShipmentId","courierId","courierName","quotedAmount","status","awbCode","trackingUrl","lastError","createdAt","updatedAt"]);
+          export const cashfreeCheckoutOrdersTable = columns(["id","cashfreeOrderId","status","paymentStatus","quoteHash","cartId","purchasedCartLines","cartCleanupStatus","destinationCountryCode","currencyCode","itemSubtotal","discountAmount","shippingAmount","taxAmount","totalAmount","quoteExpiresAt","checkoutSnapshot","paymentSessionId","paymentReference","paidAt","shopifyOrderId","shopifyOrderName","lastError","createdAt","updatedAt"]);
+          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","packageIndex","shiprocketOrderId","shiprocketShipmentId","courierId","courierName","quotedAmount","status","awbCode","trackingUrl","trackingStatus","trackingEvents","estimatedDeliveryAt","trackingUpdatedAt","lastError","createdAt","updatedAt"]);
           function tableRows(table) { return table === cashfreeCheckoutOrdersTable ? state.orders : state.shipments; }
           function matches(expression, row) {
             if (!expression) return true;
@@ -158,6 +158,9 @@ const compiled = await build({
             constructor(message, statusCode) { super(message); this.statusCode = statusCode; }
           }
           export const getAvailableCountries = async () => [];
+          export const removePurchasedCartQuantities = async (input) => {
+            globalThis.__checkoutRouteTest.cartCleanupCalls.push(input);
+          };
           export const prepareShopifyCheckoutCart = async () => globalThis.__checkoutRouteTest.cart;
         `,
         storefrontClient: `export const getShopifyStorefrontDomain = async () => "gtnbsw-x3.myshopify.com";`,
@@ -223,8 +226,11 @@ function makeOrder(overrides = {}) {
     id: "f991fda7-d46f-4113-a93a-64020aab037a",
     cashfreeOrderId: "chenetha_test-order",
     status: "payment_pending",
+    paymentStatus: "pending",
     quoteHash: "hash",
     cartId: "gid://shopify/Cart/1",
+    purchasedCartLines: [],
+    cartCleanupStatus: "not_started",
     destinationCountryCode: "IN",
     currencyCode: "INR",
     itemSubtotal: "100.00",
@@ -270,6 +276,7 @@ async function harness(run, options = {}) {
     shopifySyncAttempts: 0,
     shopifySyncInput: null,
     shopifyFailures: 0,
+    cartCleanupCalls: [],
     orders: [makeOrder(options.order)],
     shipments: [],
   };
@@ -331,6 +338,13 @@ test("duplicate Cashfree success notifications create only one Shopify order", a
     assert.equal((await sendWebhook(event)).status, 200);
     assert.equal(state.shopifySyncAttempts, 1);
     assert.equal(state.order.status, "shopify_synced");
+    assert.equal(state.order.paymentStatus, "paid");
+    assert.equal(state.order.cartCleanupStatus, "completed");
+    assert.deepEqual(state.order.purchasedCartLines, [{
+      id: "gid://shopify/CartLine/1",
+      quantity: 1,
+    }]);
+    assert.equal(state.cartCleanupCalls.length, 1);
     assert.equal(state.order.shopifyOrderName, "#1001");
     assert.deepEqual(state.order.checkoutSnapshot, {});
   });

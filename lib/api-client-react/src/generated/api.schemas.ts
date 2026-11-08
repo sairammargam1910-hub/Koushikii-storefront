@@ -19,6 +19,92 @@ export interface ShopifyImage {
   altText: string | null;
 }
 
+export interface ShopifyOrderLineItem {
+  id: string;
+  title: string;
+  /** @nullable */
+  variantTitle: string | null;
+  /** @nullable */
+  sku: string | null;
+  /** @minimum 1 */
+  quantity: number;
+  unitPrice: string;
+  totalPrice: string;
+  /** @pattern ^[A-Z]{3}$ */
+  currencyCode: string;
+  image: ShopifyImage | null;
+}
+
+export interface ShopifyOrderSummary {
+  orderRef: string;
+  name: string;
+  createdAt: string;
+  /** @nullable */
+  processedAt: string | null;
+  financialStatus: string;
+  /** @nullable */
+  fulfillmentStatus: string | null;
+  totalAmount: string;
+  /** @pattern ^[A-Z]{3}$ */
+  currencyCode: string;
+  lineItems: ShopifyOrderLineItem[];
+}
+
+export interface ShopifyOrderFulfillment {
+  status: string;
+  /** @nullable */
+  trackingCompany: string | null;
+  /** @nullable */
+  trackingNumber: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  /** @nullable */
+  estimatedDeliveryAt: string | null;
+}
+
+export type ShopifyOrderDetails = ShopifyOrderSummary & {
+  fulfillments: ShopifyOrderFulfillment[];
+};
+
+export interface ShopifyOrdersResponse {
+  orders: ShopifyOrderSummary[];
+  /** @nullable */
+  nextCursor: string | null;
+}
+
+export interface ShopifyOrderDetailsResponse {
+  order: ShopifyOrderDetails;
+}
+
+export interface ShopifyOrderTrackingEvent {
+  /** @nullable */
+  occurredAt: string | null;
+  status: string;
+  description: string;
+  /** @nullable */
+  location: string | null;
+}
+
+export interface ShopifyOrderTrackingShipment {
+  status: string;
+  /** @nullable */
+  statusCode: string | null;
+  /** @nullable */
+  awbCode: string | null;
+  /** @nullable */
+  courierName: string | null;
+  /** @nullable */
+  trackingUrl: string | null;
+  /** @nullable */
+  estimatedDeliveryAt: string | null;
+  events: ShopifyOrderTrackingEvent[];
+}
+
+export interface ShopifyOrderTrackingResponse {
+  orderRef: string;
+  shipments: ShopifyOrderTrackingShipment[];
+}
+
 export interface ShopifyOption {
   name: string;
   value: string;
@@ -869,6 +955,13 @@ export interface SiteContentUploadResponse {
   objectPath: string;
   assetUrl: string;
 }
+
+export type GetShopifyOrdersParams = {
+/**
+ * @maxLength 2048
+ */
+after?: string;
+};
 
 export type GetShopifyCartParams = {
 /**

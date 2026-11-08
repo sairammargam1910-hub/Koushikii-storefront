@@ -140,6 +140,9 @@ async function harness(run, { useDevStorePreview = false } = {}) {
       if (query.includes("mutation UpdateShopifyCartBuyerIdentity")) {
         return { cartBuyerIdentityUpdate: state.cartMutationResult };
       }
+      if (query.includes("mutation UpdateShopifyCartLines")) {
+        return { cartLinesUpdate: state.cartMutationResult };
+      }
       if (query.includes("mutation ReplaceShopifyCartDeliveryAddress")) {
         return { cartDeliveryAddressesReplace: state.cartMutationResult };
       }
@@ -188,7 +191,7 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     return { status: response.status, data: await response.json() };
   };
   try {
-    await run({ state, post, postDiscount, postBuyerIdentity, getCart, getCountries });
+    await run({ state, post, postDiscount, postBuyerIdentity, getCart, getCountries, removePurchasedCartQuantities: module.exports.removePurchasedCartQuantities });
   } finally {
     await new Promise((resolve) => server.close(resolve));
     if (previousDevStorePreview === undefined) {
@@ -198,6 +201,40 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     }
   }
 }
+
+test("removes only purchased quantities and preserves other or newly added cart items", async () => {
+  await harness(async ({ state, removePurchasedCartQuantities }) => {
+    state.cartMutationResult.cart = cart({
+      totalQuantity: 8,
+      lines: {
+        nodes: [
+          { id: "gid://shopify/CartLine/line-123", quantity: 3 },
+          { id: "gid://shopify/CartLine/line-456", quantity: 1 },
+          { id: "gid://shopify/CartLine/line-789", quantity: 4 },
+        ],
+      },
+    });
+
+    await removePurchasedCartQuantities({
+      cartId: "gid://shopify/Cart/cart-123",
+      lines: [
+        { id: "gid://shopify/CartLine/line-123", quantity: 2 },
+        { id: "gid://shopify/CartLine/line-456", quantity: 1 },
+      ],
+    });
+
+    assert.deepEqual(state.calls.map(({ variables }) => variables), [
+      { cartId: "gid://shopify/Cart/cart-123" },
+      {
+        cartId: "gid://shopify/Cart/cart-123",
+        lines: [
+          { id: "gid://shopify/CartLine/line-123", quantity: 1 },
+          { id: "gid://shopify/CartLine/line-456", quantity: 0 },
+        ],
+      },
+    ]);
+  });
+});
 
 test("rejects malformed variant IDs before contacting Shopify", async () => {
   await harness(async ({ state, post }) => {

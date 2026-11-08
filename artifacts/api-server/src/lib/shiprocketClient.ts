@@ -24,6 +24,23 @@ export type ShiprocketQuote = {
   currencyCode: "INR";
 };
 
+export type ShiprocketTrackingEvent = {
+  occurredAt: string | null;
+  status: string;
+  description: string;
+  location: string | null;
+};
+
+export type ShiprocketTracking = {
+  status: string;
+  statusCode: string | null;
+  awbCode: string;
+  courierName: string | null;
+  trackingUrl: string | null;
+  estimatedDeliveryAt: string | null;
+  events: ShiprocketTrackingEvent[];
+};
+
 export type ShiprocketPackageInput = {
   orderId: string;
   packageIndex: number;
@@ -364,6 +381,88 @@ export async function bookShiprocketPackage(input: {
       ? { trackingUrl: payload.response?.data?.tracking_url ?? payload.tracking_url }
       : {}),
   };
+}
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function text(value: unknown): string | null {
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : typeof value === "number" && Number.isFinite(value)
+      ? String(value)
+      : null;
+}
+
+function toIsoDate(value: unknown): string | null {
+  const raw = text(value);
+  if (!raw) return null;
+  const normalized = raw.replace(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)/, "$1T$2");
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function safeTrackingUrl(value: unknown): string | null {
+  const raw = text(value);
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function normalizeShiprocketTracking(
+  payload: Record<string, unknown>,
+  expectedAwbCode: string,
+): ShiprocketTracking {
+  const tracking = record(payload.tracking_data ?? payload);
+  const latestTrack = record(Array.isArray(tracking.shipment_track) ? tracking.shipment_track[0] : null);
+  const code = text(tracking.shipment_status ?? latestTrack.shipment_status);
+  const status =
+    text(latestTrack.current_status) ??
+    text(tracking.current_status) ??
+    (code ? `Shipment status ${code}` : "Tracking update unavailable");
+  const rawEvents = Array.isArray(tracking.shipment_track_activities)
+    ? tracking.shipment_track_activities
+    : [];
+  const events = rawEvents.flatMap((rawEvent): ShiprocketTrackingEvent[] => {
+    const event = record(rawEvent);
+    const description = text(event.activity) ?? text(event["sr-status-label"]) ?? text(event.status);
+    if (!description) return [];
+    return [{
+      occurredAt: toIsoDate(event.date),
+      status: text(event["sr-status-label"]) ?? text(event.status) ?? description,
+      description,
+      location: text(event.location),
+    }];
+  }).sort((left, right) => (left.occurredAt ?? "").localeCompare(right.occurredAt ?? ""));
+
+  return {
+    status,
+    statusCode: code,
+    awbCode: text(latestTrack.awb_code) ?? expectedAwbCode,
+    courierName: text(latestTrack.courier_name) ?? text(latestTrack.courier_company_name),
+    trackingUrl: safeTrackingUrl(tracking.track_url ?? latestTrack.tracking_url),
+    estimatedDeliveryAt: toIsoDate(tracking.etd ?? latestTrack.etd),
+    events,
+  };
+}
+
+export async function getShiprocketTracking(awbCode: string): Promise<ShiprocketTracking> {
+  const normalizedAwb = awbCode.trim();
+  if (!/^[A-Za-z0-9-]{4,40}$/.test(normalizedAwb)) {
+    throw new ShiprocketError("Shiprocket returned an invalid tracking reference.");
+  }
+  const payload = await request<Record<string, unknown>>(
+    `/courier/track/awb/${encodeURIComponent(normalizedAwb)}`,
+    { method: "GET" },
+  );
+  return normalizeShiprocketTracking(payload, normalizedAwb);
 }
 
 export function getConfiguredParcel() {

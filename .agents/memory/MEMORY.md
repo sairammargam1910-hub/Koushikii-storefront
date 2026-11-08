@@ -8,3 +8,4 @@
 - [External hosting decisions](external-hosting.md) — Railway hosts both services; koushikii.com is live; preserve Replit during verification.
 - [Shopify checkout return](shopify-checkout-return.md) — keep the client store domain and Storefront token paired; never rewrite Shopify’s checkout URL.
 - [Cashfree account readiness](cashfree-account-readiness.md) — International Cards are merchant-confirmed; settlement is INR, while the current checkout only supports INR.
+- [Cashfree cross-device payment](cashfree-cross-device.md) — keep checkout open for QR payments and rely on server-verified status, not the browser redirect.

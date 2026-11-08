@@ -25,7 +25,7 @@ type CheckoutDetails = ShopifyCartBuyerIdentityInput["deliveryAddress"] & {
 declare global {
   interface Window {
     Cashfree?: (options: { mode: "sandbox" | "production" }) => {
-      checkout: (options: { paymentSessionId: string; redirectTarget: "_self" }) => Promise<unknown>;
+      checkout: (options: { paymentSessionId: string; redirectTarget: "_modal" }) => Promise<unknown>;
     };
   }
 }
@@ -53,6 +53,12 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const [submitError, setSubmitError] = useState("");
   const [quote, setQuote] = useState<ShopifyCheckoutQuoteResponse | null>(null);
   const [returnOrderId] = useState(() => new URLSearchParams(window.location.search).get("cashfree_order_id")?.trim() ?? "");
+  const [paymentOrderId, setPaymentOrderId] = useState(returnOrderId);
+  const [paymentPollingStartedAt, setPaymentPollingStartedAt] = useState<number | null>(
+    () => returnOrderId ? Date.now() : null,
+  );
+  const [paymentWindowOpen, setPaymentWindowOpen] = useState(false);
+  const [paymentWindowNotice, setPaymentWindowNotice] = useState("");
   const cartFingerprint = JSON.stringify([cart.id, cart.subtotalAmount, cart.discountAmount, cart.totalAmount, cart.currencyCode, cart.lines.map((line) => [line.id, line.quantity, line.unitPrice])]);
   const previousCartFingerprint = useRef(cartFingerprint);
   const latestDetails = useRef(details);
@@ -65,19 +71,29 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const createQuote = useCreateShopifyCheckoutQuote();
   const createPaymentSession = useCreateShopifyCheckoutPaymentSession();
   const paymentStatus = useGetShopifyCheckoutPaymentStatus(
-    { orderId: returnOrderId },
+    { orderId: paymentOrderId },
     {
       query: {
-        enabled: Boolean(returnOrderId),
-        queryKey: getGetShopifyCheckoutPaymentStatusQueryKey({ orderId: returnOrderId }),
+        enabled: Boolean(paymentOrderId),
+        queryKey: getGetShopifyCheckoutPaymentStatusQueryKey({ orderId: paymentOrderId }),
         refetchInterval: (query) => {
           const status = query.state.data;
-          return status?.status === "completed" || status?.status === "payment_failed" ||
-              status?.status === "shopify_synced" || status?.status === "refunded" ||
-              status?.status === "refund_pending" || status?.status === "reconciliation_required" ||
-              status?.paymentStatus === "FAILED" || status?.paymentStatus === "REFUNDED"
-            ? false
-            : 3000;
+          const terminal =
+            status?.status === "payment_failed" ||
+            status?.status === "shopify_synced" ||
+            status?.status === "shipment_booking_pending" ||
+            status?.status === "completed" ||
+            status?.status === "refund_pending" ||
+            status?.status === "refunded" ||
+            status?.status === "reconciliation_required" ||
+            status?.paymentStatus === "FAILED" ||
+            status?.paymentStatus === "REFUNDED";
+          if (terminal) return false;
+          if (
+            !paymentPollingStartedAt ||
+            Date.now() - paymentPollingStartedAt >= 20 * 60 * 1000
+          ) return false;
+          return 3000;
         },
       },
     },
@@ -263,27 +279,44 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
         throw new Error("Your delivery details or bag changed before payment opened. Request a fresh quote.");
       }
       await loadCashfreeSdk();
+      setPaymentOrderId(session.orderId);
+      setPaymentPollingStartedAt(Date.now());
+      setPaymentWindowNotice("");
+      setPaymentWindowOpen(true);
       const result = await window.Cashfree!({ mode: session.environment }).checkout({
         paymentSessionId: session.paymentSessionId,
-        redirectTarget: "_self",
+        redirectTarget: "_modal",
       });
+      setPaymentWindowOpen(false);
       if (result && typeof result === "object" && "error" in result) {
-        throw new Error("Cashfree could not open the secure payment step. Please try again.");
+        setPaymentWindowNotice("The Cashfree window closed or stopped. We’re still checking whether payment completed.");
       }
     } catch (error) {
+      setPaymentWindowOpen(false);
       setSubmitError(getApiError(error) ?? (error instanceof Error ? error.message : null) ??
         "We couldn’t prepare secure payment. Your bag is unchanged; please try again.");
     }
   }
 
-  if (returnOrderId) {
+  if (paymentOrderId) {
+    const pollingExpired = Boolean(
+      paymentPollingStartedAt &&
+      Date.now() - paymentPollingStartedAt >= 20 * 60 * 1000 &&
+      paymentStatus.data?.paymentStatus === "PENDING",
+    );
     return (
       <PaymentReturnState
-        orderId={returnOrderId}
+        orderId={paymentOrderId}
         status={paymentStatus.data}
         isLoading={paymentStatus.isLoading}
         isError={paymentStatus.isError}
-        onRetry={() => void paymentStatus.refetch()}
+        paymentWindowOpen={paymentWindowOpen}
+        paymentWindowNotice={paymentWindowNotice}
+        pollingExpired={pollingExpired}
+        onRetry={() => {
+          setPaymentPollingStartedAt(Date.now());
+          void paymentStatus.refetch();
+        }}
       />
     );
   }
@@ -420,12 +453,18 @@ function PaymentReturnState({
   status,
   isLoading,
   isError,
+  paymentWindowOpen,
+  paymentWindowNotice,
+  pollingExpired,
   onRetry,
 }: {
   orderId: string;
   status: ShopifyCheckoutPaymentStatusResponse | undefined;
   isLoading: boolean;
   isError: boolean;
+  paymentWindowOpen: boolean;
+  paymentWindowNotice: string;
+  pollingExpired: boolean;
   onRetry: () => void;
 }) {
   const completed = status?.status === "completed";
@@ -467,8 +506,11 @@ function PaymentReturnState({
       <span className="eyebrow">{failed || reconciliation ? "Payment status" : completed ? "Order complete" : orderRecorded ? "Order recorded" : "Secure payment verification"}</span>
       <h2>{title}</h2>
       <p>{description}</p>
+      {paymentWindowOpen && status?.paymentStatus !== "PAID" && <p className="checkout-summary-note">Complete payment in the Cashfree window, or scan its QR code with your phone. This page will keep checking for confirmation.</p>}
+      {paymentWindowNotice && <p className="checkout-summary-note" role="status">{paymentWindowNotice}</p>}
       {isLoading && <div className="checkout-status-skeleton" role="status">Contacting the payment service…</div>}
       {isError && <div className="checkout-status-retry" role="alert">We can’t confirm the payment status yet. <button className="checkout-retry" type="button" onClick={onRetry}>Check again</button></div>}
+      {pollingExpired && <div className="checkout-status-retry" role="status">Automatic checks paused after 20 minutes. If you completed payment, check again before trying another payment. <button className="checkout-retry" type="button" onClick={onRetry}>Resume checks</button></div>}
       {!completed && !orderRecorded && !failed && !reconciliation && <p className="checkout-summary-note">Please keep this page open while we verify the result. The return from Cashfree alone does not confirm payment.</p>}
       {(completed || orderRecorded) && status?.shopifyOrderName && <p className="checkout-order-number">Order reference <strong>{status.shopifyOrderName}</strong></p>}
       {completed || orderRecorded ? (
