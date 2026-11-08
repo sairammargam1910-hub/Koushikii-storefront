@@ -25,3 +25,9 @@ Do not remove a product's previous photo until Shopify reports the replacement m
 **Why:** Shopify media creation can return a processing or failed item without failing the mutation. Removing the existing image immediately can leave the product without a usable photo when the replacement later fails.
 
 **How to apply:** Keep the prior media in place while a replacement is `UPLOADED` or `PROCESSING`; retain it on `FAILED`, and remove it only when the replacement is `READY`.
+
+For Shopify Admin API 2026-04, `Order.fulfillments` is a plain list, not a connection; request `fulfillments { ... }` rather than `fulfillments(first: ...) { nodes { ... } }`.
+
+**Why:** The connection-shaped query failed against Shopify and broke both shopper order details and tracking, while fixture tests alone could not validate the live GraphQL contract.
+
+**How to apply:** Map the field directly as an array and verify nested order queries against the connected store's pinned API version.

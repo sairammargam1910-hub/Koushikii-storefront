@@ -56,7 +56,7 @@ type ShopifyOrderNode = {
   totalPriceSet?: ShopifyMoneySet;
   currentTotalPriceSet?: ShopifyMoneySet;
   lineItems: { nodes: ShopifyOrderLine[] };
-  fulfillments?: { nodes: ShopifyFulfillment[] } | null;
+  fulfillments?: ShopifyFulfillment[] | null;
 };
 type ShopifyOrdersPage = {
   orders: {
@@ -123,12 +123,10 @@ const ORDER_DETAILS_QUERY = `#graphql
             image { url altText }
           }
         }
-        fulfillments(first: 20) {
-          nodes {
-            status
-            estimatedDeliveryAt
-            trackingInfo { company number url }
-          }
+        fulfillments {
+          status
+          estimatedDeliveryAt
+          trackingInfo { company number url }
         }
       }
     }
@@ -223,7 +221,7 @@ function mapOrderSummary(order: ShopifyOrderNode) {
 function mapOrderDetails(order: ShopifyOrderNode) {
   return {
     ...mapOrderSummary(order),
-    fulfillments: (order.fulfillments?.nodes ?? []).map((fulfillment) => {
+    fulfillments: (order.fulfillments ?? []).map((fulfillment) => {
       const tracking = fulfillment.trackingInfo?.[0];
       return {
         status: fulfillment.status ?? "UNKNOWN",
@@ -537,7 +535,7 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
       });
     }
 
-    for (const fulfillment of order.fulfillments?.nodes ?? []) {
+    for (const fulfillment of order.fulfillments ?? []) {
       for (const tracking of fulfillment.trackingInfo ?? []) {
         if (tracking.number && packageTrackingNumbers.has(tracking.number)) continue;
         shipments.push({

@@ -176,7 +176,7 @@ function order(id, email) {
         image: { url: "https://cdn.shopify.com/saree.jpg", altText: "Maroon saree" },
       }],
     },
-    fulfillments: { nodes: [] },
+    fulfillments: [],
   };
 }
 
@@ -329,7 +329,24 @@ test("order detail response omits the shopper email and preserves Shopify order 
     assert.equal(body.order.name, "#1001");
     assert.equal(body.order.currencyCode, "INR");
     assert.equal(body.order.lineItems[0].image.url, "https://cdn.shopify.com/saree.jpg");
+    assert.deepEqual(body.order.fulfillments, []);
     assert.equal("email" in body.order, false);
+    assert.match(state.adminCalls[0].query, /fulfillments\s*\{\s*status/);
+    assert.doesNotMatch(state.adminCalls[0].query, /fulfillments\s*\(\s*first\s*:/);
+    assert.doesNotMatch(state.adminCalls[0].query, /fulfillments\s*\{\s*nodes/);
+  });
+});
+
+test("tracking returns no shipments for a sandbox order before a shipment is booked", async () => {
+  const state = stateFixture();
+  const ownOrderRef = Buffer.from("gid://shopify/Order/1001").toString("base64url");
+  await withServer(state, async (base) => {
+    const response = await fetch(`${base}/shopify/orders/${ownOrderRef}/tracking`, {
+      headers: { "x-test-user": "shopper-1" },
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { orderRef: ownOrderRef, shipments: [] });
+    assert.match(state.adminCalls[0].query, /fulfillments\s*\{\s*status/);
   });
 });
 
