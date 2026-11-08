@@ -812,7 +812,7 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
       email: snapshot.email,
       phone: snapshot.phone,
       returnUrl: cashfreeReturnUrl(row.cashfreeOrderId, req),
-      expiresAt: row.quoteExpiresAt.toISOString(),
+      expiresAt: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
       idempotencyKey: row.id,
       isInternational: row.destinationCountryCode !== "IN",
     });

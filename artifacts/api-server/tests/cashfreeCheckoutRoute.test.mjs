@@ -470,6 +470,9 @@ test("payment sessions use the validated quote and return to the same Replit pre
     assert.equal(state.cashfreeCreateInput.amount, "120.00");
     assert.deepEqual(state.cashfreeReadinessCheck, { currencyCode: "INR", isInternational: false });
     assert.equal(state.cashfreeCreateInput.isInternational, false);
+    const cashfreeExpiryMs = Date.parse(state.cashfreeCreateInput.expiresAt) - Date.now();
+    assert.ok(cashfreeExpiryMs > 19 * 60 * 1000 && cashfreeExpiryMs <= 20 * 60 * 1000);
+    assert.ok(state.order.quoteExpiresAt.getTime() - Date.now() < 15 * 60 * 1000);
     assert.equal(
       state.cashfreeCreateInput.returnUrl,
       `${origin}/chenetha-storefront/Checkout?cashfree_order_id=${state.order.cashfreeOrderId}`,
