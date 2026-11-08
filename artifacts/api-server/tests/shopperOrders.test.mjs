@@ -286,6 +286,22 @@ test("order history requires sign-in and returns only orders matching verified e
     assert.equal(response.headers.get("cache-control"), "no-store");
     assert.match(state.adminCalls[0].variables.query, /buyer@example\.com/);
     assert.doesNotMatch(state.adminCalls[0].variables.query, /unverified@example\.com/);
+    assert.doesNotMatch(state.adminCalls[0].query, /customer\s*\{\s*email\s*\}/);
+  });
+});
+
+test("order history does not use customer email to expose an order", async () => {
+  const state = stateFixture();
+  const customerOnlyOrder = order("gid://shopify/Order/1003", "");
+  customerOnlyOrder.customer = { email: "buyer@example.com" };
+  state.orders = [customerOnlyOrder];
+  await withServer(state, async (base) => {
+    const response = await fetch(`${base}/shopify/orders`, {
+      headers: { "x-test-user": "shopper-1" },
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual((await response.json()).orders, []);
+    assert.doesNotMatch(state.adminCalls[0].query, /customer\s*\{\s*email\s*\}/);
   });
 });
 

@@ -49,7 +49,6 @@ type ShopifyOrderNode = {
   id: string;
   name: string;
   email?: string | null;
-  customer?: { email?: string | null } | null;
   createdAt: string;
   processedAt?: string | null;
   displayFinancialStatus?: string | null;
@@ -75,7 +74,6 @@ const LIST_ORDERS_QUERY = `#graphql
         id
         name
         email
-        customer { email }
         createdAt
         processedAt
         displayFinancialStatus
@@ -107,7 +105,6 @@ const ORDER_DETAILS_QUERY = `#graphql
         id
         name
         email
-        customer { email }
         createdAt
         processedAt
         displayFinancialStatus
@@ -173,10 +170,8 @@ function shopifyOrderIdForRef(orderRef: string): string | null {
 }
 
 function emailMatchesOrder(order: ShopifyOrderNode, emails: Set<string>): boolean {
-  const orderEmails = [order.email, order.customer?.email]
-    .filter((email): email is string => typeof email === "string")
-    .map((email) => email.trim().toLowerCase());
-  return orderEmails.some((email) => emails.has(email));
+  const email = order.email;
+  return typeof email === "string" && emails.has(email.trim().toLowerCase());
 }
 
 function amountFrom(set: ShopifyMoneySet | undefined | null): string | null {
