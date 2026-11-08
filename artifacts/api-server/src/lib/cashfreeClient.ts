@@ -17,10 +17,14 @@ export type CashfreeCreateOrderRequestSummary = {
   orderAmount: number;
   orderCurrency: string;
   orderIdValid: boolean;
+  orderAmountValid: boolean;
+  orderCurrencyValid: boolean;
   customerIdLength: number;
   customerIdAlphanumeric: boolean;
   customerEmailValid: boolean;
   customerPhoneDigitCount: number;
+  returnUrlLength: number;
+  returnUrlLengthValid: boolean;
   returnUrlProtocol: string;
   returnUrlHost: string;
   returnUrlPath: string;
@@ -231,10 +235,16 @@ export async function createCashfreeOrder(input: {
     orderAmount: requestBody.order_amount,
     orderCurrency: requestBody.order_currency,
     orderIdValid: /^[A-Za-z0-9_-]{3,45}$/.test(requestBody.order_id),
+    orderAmountValid: Number.isFinite(requestBody.order_amount) &&
+      requestBody.order_amount >= 1 &&
+      Math.round(requestBody.order_amount * 100) / 100 === requestBody.order_amount,
+    orderCurrencyValid: /^[A-Z]{3}$/.test(requestBody.order_currency),
     customerIdLength: requestBody.customer_details.customer_id.length,
     customerIdAlphanumeric: /^[A-Za-z0-9]+$/.test(requestBody.customer_details.customer_id),
     customerEmailValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestBody.customer_details.customer_email),
     customerPhoneDigitCount: requestBody.customer_details.customer_phone.length,
+    returnUrlLength: input.returnUrl.length,
+    returnUrlLengthValid: input.returnUrl.length <= 250,
     returnUrlProtocol: returnUrl?.protocol ?? "invalid",
     returnUrlHost: returnUrl?.host ?? "",
     returnUrlPath: returnUrl?.pathname ?? "",
