@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
-import { ClerkProvider, Show, SignIn, SignUp, useClerk } from "@clerk/react";
+import { ClerkProvider, Show, SignIn, SignUp, useAuth, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Home } from "./storefront/Home";
@@ -116,6 +116,25 @@ function ProtectedAdmin({ page }: { page: ReactNode }) {
   return <Show when="signed-in" fallback={<AdminSignInPrompt/>}>{page}</Show>;
 }
 
+function ProtectedShopperRoute({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  const [, setLocation] = useLocation();
+  const browserPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const intendedPath = basePath && (browserPath === basePath || browserPath.startsWith(`${basePath}/`))
+    ? browserPath.slice(basePath.length) || "/"
+    : browserPath;
+  const signInHref = `/sign-in?redirect_url=${encodeURIComponent(intendedPath)}`;
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) setLocation(signInHref);
+  }, [isLoaded, isSignedIn, setLocation, signInHref]);
+
+  if (!isLoaded || !isSignedIn) {
+    return <main className="clerk-screen" role="status">Checking your account…</main>;
+  }
+  return <>{children}</>;
+}
+
 function SignInPage() {
   const redirectPath = authRedirectPath();
   return <div className="clerk-screen"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={authWidgetUrl("/sign-up", redirectPath)} forceRedirectUrl={`${basePath}${redirectPath}`}/></div>;
@@ -172,14 +191,14 @@ function Router() {
         <Route path="/Product" component={Product}/>
         <Route path="/Cart" component={Cart}/>
         <Route path="/Wishlist" component={Wishlist}/>
-        <Route path="/Checkout" component={Checkout}/>
+        <Route path="/Checkout"><ProtectedShopperRoute><Checkout/></ProtectedShopperRoute></Route>
         <Route path="/Confirmation" component={Confirmation}/>
         <Route path="/OurStory" component={OurStory}/>
         <Route path="/Contact" component={Contact}/>
         <Route path="/CustomerCare" component={CustomerCare}/>
         <Route path="/SareeCare" component={SareeCare}/>
         <Route path="/Account" component={Account}/>
-        <Route path="/Profile" component={Profile}/>
+        <Route path="/Profile"><ProtectedShopperRoute><Profile/></ProtectedShopperRoute></Route>
         <Route path="/Orders/:orderRef" component={OrderDetail}/>
         <Route path="/Orders" component={Orders}/>
         <Route path="/Videos" component={Videos}/>

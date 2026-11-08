@@ -315,6 +315,29 @@ test("opens the website checkout from a Shopify bag without a Shopify checkout U
   await context.close();
 });
 
+test("Buy now saves the selected Shopify product to the guest bag before checkout", async () => {
+  const { context, page } = await openProduct();
+  let cartMutation;
+  await page.route("**/api/shopify/cart**", async (route) => {
+    cartMutation = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(cartResponse),
+    });
+  });
+
+  await page.getByTestId("button-buy-shopify-now").click();
+  await page.waitForURL("**/Checkout", { timeout: 5000 });
+  assert.equal(cartMutation.merchandiseId, variantId);
+  assert.equal(cartMutation.quantity, 1);
+  assert.deepEqual(
+    await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),
+    { id: cartResponse.id, totalQuantity: cartResponse.totalQuantity },
+  );
+  await context.close();
+});
+
 test("quotes the current address and hands payment to Cashfree without Shopify checkout", async () => {
   const savedCart = { id: "gid://shopify/Cart/cashfree-browser-cart", totalQuantity: 1 };
   const quoteRequests = [];

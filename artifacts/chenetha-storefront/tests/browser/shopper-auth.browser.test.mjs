@@ -118,3 +118,44 @@ test("shopper account shows email/password entry and recovery guidance", async (
     await page.close();
   }
 });
+
+test("guests can browse and keep their bag, while checkout and profile require sign-in", async () => {
+  const page = await browser.newPage();
+  try {
+    for (const path of [
+      "/",
+      "/Collections",
+      "/Product?id=guest-saree",
+      "/Cart",
+      "/Wishlist",
+      "/OurStory",
+      "/Contact",
+      "/CustomerCare",
+      "/SareeCare",
+      "/Videos",
+    ]) {
+      await page.goto(`${origin}${path}`);
+      assert.equal(new URL(page.url()).pathname, path.split("?")[0], `${path} should remain public`);
+    }
+
+    const guestCart = { id: "gid://shopify/Cart/guest-auth-test", totalQuantity: 2 };
+    await page.evaluate((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), guestCart);
+    await page.goto(`${origin}/Checkout?source=guest-bag`);
+    await page.getByText("Welcome back", { exact: true }).waitFor();
+    assert.equal(new URL(page.url()).pathname, "/sign-in");
+    assert.equal(redirectPath(page), "/Checkout");
+    const redirect = new URLSearchParams(new URL(page.url()).search).get("redirect_url");
+    assert.equal(new URL(redirect, origin).searchParams.get("source"), "guest-bag");
+    assert.deepEqual(
+      await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),
+      guestCart,
+      "the guest bag should survive the sign-in redirect",
+    );
+
+    await page.goto(`${origin}/Profile`);
+    await page.getByText("Welcome back", { exact: true }).waitFor();
+    assert.equal(redirectPath(page), "/Profile");
+  } finally {
+    await page.close();
+  }
+});

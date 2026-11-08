@@ -98,6 +98,12 @@ The client's designated patented brand red is `#B22222`; use it consistently whe
 
 **How to apply:** Prefer the shared red token and use `#B22222` for red brand accents and surfaces across storefront pages.
 
+Shoppers should be able to browse the storefront and manage a guest bag without signing in. Require Clerk sign-in when starting checkout or using Buy Now, and for private order/profile pages. Preserve the guest Shopify cart through the sign-in return; do not create a separate account-cart merge without an explicit product decision.
+
+**Why:** The user requested a guest-first storefront because Shopify's shipping and payment setup is not the desired flow; checkout and private account data still need shopper authentication.
+
+**How to apply:** Keep catalog, product, wishlist, and cart routes public. Gate checkout and private account routes in the storefront and independently require the authenticated Clerk user on checkout quote/payment/status and shopper-data APIs. Keep the existing Shopify cart ID through redirects.
+
 Use the Home page's Kanjeevaram-inspired motif across storefront backgrounds. Use cream-white kolam linework on brand red for hero and footer dividers on every page.
 
 **Why:** The user explicitly asked for one shared background pattern, then specified cream-white kolam dividers on the same red as the hero/footer across the whole site.

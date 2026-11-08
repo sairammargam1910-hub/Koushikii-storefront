@@ -80,6 +80,23 @@ const compiled = await build({
             async transaction(callback) { return callback(this); },
           };
         `,
+        clerk: `
+          const state = globalThis.__checkoutRouteTest;
+          export const getAuth = (req) => {
+            const requestedUser = req.get("x-test-user");
+            return { userId: requestedUser === "anonymous" ? null : requestedUser || "shopper-1" };
+          };
+          export const clerkClient = {
+            users: {
+              getUser: async (userId) => ({
+                emailAddresses: [{
+                  emailAddress: userId === "shopper-2" ? "other@example.com" : "buyer@example.com",
+                  verification: { status: "verified" },
+                }],
+              }),
+            },
+          };
+        `,
         drizzle: `
           const expression = (op, column, value) => ({ op, column, value });
           export const eq = (column, value) => expression("eq", column, value);
@@ -174,6 +191,7 @@ const compiled = await build({
       };
       const routes = [
         [/@workspace\/db$/, "db"],
+        [/@clerk\/express$/, "clerk"],
         [/drizzle-orm$/, "drizzle"],
         [/@workspace\/api-zod$/, "apiZod"],
         [/cashfreeClient$/, "cashfree"],
@@ -240,6 +258,7 @@ function makeOrder(overrides = {}) {
     totalAmount: "120.00",
     quoteExpiresAt: new Date(Date.now() + 600_000),
     checkoutSnapshot: {
+      shopperUserId: "shopper-1",
       email: "buyer@example.com",
       phone: "+919876543210",
       address: { recipient: "Asha Rao", street: "12 Example Road", city: "Hyderabad", pin: "500008", countryCode: "IN" },
@@ -296,14 +315,24 @@ async function harness(run, options = {}) {
   const server = app.listen(0, "127.0.0.1");
   await new Promise((resolve) => server.once("listening", resolve));
   const base = `http://127.0.0.1:${server.address().port}/api`;
-  const getStatus = async () => {
-    const response = await fetch(`${base}/shopify/checkout/payment-status?orderId=${encodeURIComponent(state.order.cashfreeOrderId)}`);
+  const getStatus = async (headers = {}) => {
+    const response = await fetch(`${base}/shopify/checkout/payment-status?orderId=${encodeURIComponent(state.order.cashfreeOrderId)}`, {
+      headers: { "x-test-user": "shopper-1", ...headers },
+    });
     return { status: response.status, body: await response.json() };
   };
   const postSession = async (body, headers = {}) => {
     const response = await fetch(`${base}/shopify/checkout/payment-session`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...headers },
+      headers: { "Content-Type": "application/json", "x-test-user": "shopper-1", ...headers },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.json() };
+  };
+  const postQuote = async (body, headers = {}) => {
+    const response = await fetch(`${base}/shopify/checkout/quote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-user": "shopper-1", ...headers },
       body: JSON.stringify(body),
     });
     return { status: response.status, body: await response.json() };
@@ -321,15 +350,74 @@ async function harness(run, options = {}) {
     return { status: response.status, body: await response.json() };
   };
   try {
-    await run({ state, getStatus, postSession, sendWebhook });
+    await run({ state, getStatus, postQuote, postSession, sendWebhook });
   } finally {
     await new Promise((resolve) => server.close(resolve));
     delete globalThis.__checkoutRouteTest;
   }
 }
 
+test("checkout quote, payment session, and status require Clerk sign-in", async () => {
+  await harness(async ({ state, getStatus, postQuote, postSession }) => {
+    const quote = await postQuote({}, { "x-test-user": "anonymous" });
+    const session = await postSession(
+      { quoteId: state.order.id },
+      { "x-test-user": "anonymous" },
+    );
+    const status = await getStatus({ "x-test-user": "anonymous" });
+
+    assert.equal(quote.status, 401);
+    assert.equal(session.status, 401);
+    assert.equal(status.status, 401);
+    assert.equal(state.cashfreeCreateInput, null);
+    assert.equal(state.cashfreeReads, 0);
+    assert.equal(state.shopifySyncAttempts, 0);
+  });
+});
+
+test("a shopper cannot use another account's quote or payment status", async () => {
+  await harness(async ({ state, getStatus, postSession }) => {
+    const session = await postSession(
+      { quoteId: state.order.id },
+      { "x-test-user": "shopper-2", Origin: "https://preview.replit.dev" },
+    );
+    const status = await getStatus({ "x-test-user": "shopper-2" });
+
+    assert.equal(session.status, 404);
+    assert.equal(status.status, 404);
+    assert.equal(state.cashfreeCreateInput, null);
+    assert.equal(state.cashfreeReads, 0);
+  });
+});
+
+test("legacy quote ownership is bound only to a matching verified account email", async () => {
+  await harness(async ({ state, postSession }) => {
+    delete state.order.checkoutSnapshot.shopperUserId;
+    const result = await postSession(
+      { quoteId: state.order.id },
+      { Origin: "https://preview.replit.dev" },
+    );
+
+    assert.equal(result.status, 200);
+    assert.equal(state.order.checkoutSnapshot.shopperUserId, "shopper-1");
+  });
+});
+
+test("legacy quotes cannot be claimed with another account's email", async () => {
+  await harness(async ({ state, postSession }) => {
+    delete state.order.checkoutSnapshot.shopperUserId;
+    const result = await postSession(
+      { quoteId: state.order.id },
+      { "x-test-user": "shopper-2", Origin: "https://preview.replit.dev" },
+    );
+
+    assert.equal(result.status, 404);
+    assert.equal(state.cashfreeCreateInput, null);
+  });
+});
+
 test("duplicate Cashfree success notifications create only one Shopify order", async () => {
-  await harness(async ({ state, sendWebhook }) => {
+  await harness(async ({ state, sendWebhook, getStatus }) => {
     const event = {
       type: "PAYMENT_SUCCESS_WEBHOOK",
       data: { order: { order_id: state.order.cashfreeOrderId }, payment: { cf_payment_id: "cf-payment-1" } },
@@ -346,7 +434,10 @@ test("duplicate Cashfree success notifications create only one Shopify order", a
     }]);
     assert.equal(state.cartCleanupCalls.length, 1);
     assert.equal(state.order.shopifyOrderName, "#1001");
-    assert.deepEqual(state.order.checkoutSnapshot, {});
+    assert.deepEqual(state.order.checkoutSnapshot, { shopperUserId: "shopper-1" });
+    const status = await getStatus();
+    assert.equal(status.status, 200);
+    assert.equal(status.body.status, "shopify_synced");
   });
 });
 

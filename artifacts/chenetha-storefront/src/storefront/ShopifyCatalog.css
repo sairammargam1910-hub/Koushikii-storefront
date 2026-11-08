@@ -40,8 +40,10 @@
 .kq .shopify-placement-note{margin:12px 0 0;color:var(--muted);font-size:10px;line-height:1.6}
 .kq .shopify-buy-controls{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:end;margin:22px 0}
 .kq .shopify-buy-controls .shopify-quantity-label{display:grid;gap:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
-.kq .shopify-buy-controls>.btn{min-height:44px}
-.kq .shopify-buy-controls>.btn:disabled{opacity:.58;cursor:not-allowed}
+.kq .shopify-buy-actions{display:grid;gap:8px;min-width:0}
+.kq .shopify-buy-actions .btn{min-height:44px;width:100%;justify-content:center}
+.kq .shopify-buy-actions .shopify-buy-now{border:1px solid var(--red);background:transparent;color:var(--red)}
+.kq .shopify-buy-actions .btn:disabled{opacity:.58;cursor:not-allowed}
 .kq .shopify-cart-feedback{grid-column:1/-1;margin:0;color:#315b37;font-size:13px}
 .kq .shopify-cart-feedback a{color:var(--red);font-weight:700}
 .kq .shopify-cart-feedback.is-error{color:#9d2f22}

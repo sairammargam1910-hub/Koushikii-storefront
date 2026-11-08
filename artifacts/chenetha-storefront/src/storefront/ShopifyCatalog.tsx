@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Heart } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -333,6 +334,7 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
   const [quantity, setQuantity] = useState(1);
   const [cartMessage, setCartMessage] = useState("");
   const [cartError, setCartError] = useState("");
+  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const image = product.images[imageIndex];
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
@@ -341,7 +343,7 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
   const hasVariantChoice = product.variants.length > 1 ||
     (product.variants.length === 1 && !isDefaultShopifyVariantTitle(product.variants[0].title));
   const addToCart = useMutation({
-    mutationFn: ({ merchandiseId, quantity: lineQuantity }: { merchandiseId: string; quantity: number }) => {
+    mutationFn: ({ merchandiseId, quantity: lineQuantity }: { merchandiseId: string; quantity: number; intent?: "add" | "buy_now" }) => {
       const input: ShopifyCartAddInput = {
         cartId: readShopifyCartMeta()?.id,
         merchandiseId,
@@ -349,10 +351,11 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
       };
       return addShopifyCartLine(input);
     },
-    onSuccess: (cart) => {
+    onSuccess: (cart, variables) => {
       updateShopifyCartCache(queryClient, cart);
       setCartError("");
       setCartMessage("Added to your Shopify bag.");
+      if (variables.intent === "buy_now") setLocation("/Checkout");
     },
     onError: (error) => {
       const data = error && typeof error === "object" && "data" in error
@@ -441,7 +444,7 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
                     ? "Your selected Shopify variant and current price will be checked again before checkout."
                     : "Choose an available option. Availability and price come from the current Shopify catalog."}
                   <br />
-                  Shipping and payment are completed securely on Shopify.
+                  Shipping is quoted at checkout and payment is completed securely with Cashfree.
                 </>
               )}
             </div>
@@ -450,27 +453,44 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
                 Quantity
                 <Qty value={quantity} onChange={setQuantity} />
               </label>
-              <button
-                className="btn"
-                type="button"
-                data-testid="button-add-shopify-to-cart"
-                disabled={!canPurchase || addToCart.isPending}
-                onClick={() => {
-                  if (variant && canPurchase) {
-                    setCartMessage("");
-                    setCartError("");
-                    addToCart.mutate({ merchandiseId: variant.id, quantity });
-                  }
-                }}
-              >
-                {demo
-                  ? "Demo listing · not for sale"
-                  : !variant?.availableForSale
-                    ? "Currently unavailable"
-                    : addToCart.isPending
-                      ? "Adding to bag…"
-                      : `Add to bag${price ? ` · ${formatShopifyMoney(String(Number(variant?.price || 0) * quantity), variant?.currencyCode || "INR")}` : ""}`}
-              </button>
+              <div className="shopify-buy-actions">
+                <button
+                  className="btn"
+                  type="button"
+                  data-testid="button-add-shopify-to-cart"
+                  disabled={!canPurchase || addToCart.isPending}
+                  onClick={() => {
+                    if (variant && canPurchase) {
+                      setCartMessage("");
+                      setCartError("");
+                      addToCart.mutate({ merchandiseId: variant.id, quantity, intent: "add" });
+                    }
+                  }}
+                >
+                  {demo
+                    ? "Demo listing · not for sale"
+                    : !variant?.availableForSale
+                      ? "Currently unavailable"
+                      : addToCart.isPending
+                        ? "Adding to bag…"
+                        : `Add to bag${price ? ` · ${formatShopifyMoney(String(Number(variant?.price || 0) * quantity), variant?.currencyCode || "INR")}` : ""}`}
+                </button>
+                <button
+                  className="btn shopify-buy-now"
+                  type="button"
+                  data-testid="button-buy-shopify-now"
+                  disabled={!canPurchase || addToCart.isPending}
+                  onClick={() => {
+                    if (variant && canPurchase) {
+                      setCartMessage("");
+                      setCartError("");
+                      addToCart.mutate({ merchandiseId: variant.id, quantity, intent: "buy_now" });
+                    }
+                  }}
+                >
+                  {addToCart.isPending ? "Preparing checkout…" : "Buy now"}
+                </button>
+              </div>
               {cartMessage && (
                 <p className="shopify-cart-feedback" role="status">
                   {cartMessage} <a href={`${base}Cart`}>View bag →</a>

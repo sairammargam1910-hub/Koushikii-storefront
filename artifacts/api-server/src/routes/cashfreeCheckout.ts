@@ -1,6 +1,7 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq, gt, lt, or } from "drizzle-orm";
-import { Router, type Request } from "express";
+import { clerkClient, getAuth } from "@clerk/express";
+import { Router, type Request, type Response } from "express";
 import {
   CreateShopifyCheckoutPaymentSessionBody,
   CreateShopifyCheckoutPaymentSessionResponse,
@@ -55,6 +56,7 @@ import { logger } from "../lib/logger";
 import { getShopifyStorefrontDomain } from "../lib/shopifyStorefrontClient";
 
 type CheckoutSnapshot = {
+  shopperUserId?: string;
   email: string;
   phone: string;
   address: CheckoutAddress;
@@ -128,6 +130,66 @@ function snapshotFromRow(row: CheckoutOrderRow): CheckoutSnapshot {
     throw new Error("Checkout snapshot is incomplete.");
   }
   return snapshot;
+}
+
+function rawCheckoutSnapshot(row: CheckoutOrderRow): Record<string, unknown> {
+  const value: unknown = row.checkoutSnapshot;
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function ownershipSnapshot(row: CheckoutOrderRow): { shopperUserId?: string } {
+  const shopperUserId = rawCheckoutSnapshot(row).shopperUserId;
+  return typeof shopperUserId === "string" ? { shopperUserId } : {};
+}
+
+function requireCheckoutUser(req: Request, res: Response): string | null {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Sign in to continue to checkout." });
+    return null;
+  }
+  return userId;
+}
+
+async function checkoutBelongsToShopper(
+  row: CheckoutOrderRow,
+  userId: string,
+): Promise<boolean> {
+  const snapshot = rawCheckoutSnapshot(row);
+  if (typeof snapshot.shopperUserId === "string") {
+    return snapshot.shopperUserId === userId;
+  }
+  if (typeof snapshot.email !== "string") return false;
+
+  const checkoutEmail = snapshot.email.trim().toLowerCase();
+  if (!checkoutEmail) return false;
+  const user = await clerkClient.users.getUser(userId);
+  const ownsLegacyQuote = user.emailAddresses.some((address) =>
+    address.verification?.status === "verified" &&
+    address.emailAddress.trim().toLowerCase() === checkoutEmail,
+  );
+  if (!ownsLegacyQuote) return false;
+
+  const boundSnapshot = { ...snapshot, shopperUserId: userId };
+  const [bound] = await db.update(cashfreeCheckoutOrdersTable)
+    .set({ checkoutSnapshot: boundSnapshot, updatedAt: new Date() })
+    .where(and(
+      eq(cashfreeCheckoutOrdersTable.id, row.id),
+      eq(cashfreeCheckoutOrdersTable.checkoutSnapshot, row.checkoutSnapshot),
+    ))
+    .returning();
+  if (bound) {
+    row.checkoutSnapshot = bound.checkoutSnapshot;
+    return true;
+  }
+
+  const [latest] = await db.select()
+    .from(cashfreeCheckoutOrdersTable)
+    .where(eq(cashfreeCheckoutOrdersTable.id, row.id))
+    .limit(1);
+  return rawCheckoutSnapshot(latest ?? row).shopperUserId === userId;
 }
 
 function moneyForCashfree(amount: string): string {
@@ -375,7 +437,7 @@ async function syncShopifyOrder(orderId: string, paymentReference: string): Prom
         purchasedCartLines,
         paymentReference,
         paidAt: claimed.paidAt ?? new Date(),
-        checkoutSnapshot: {},
+        checkoutSnapshot: ownershipSnapshot(claimed),
         lastError: null,
         updatedAt: new Date(),
       })
@@ -529,7 +591,7 @@ async function processConfirmedPayment(
         .set({
           status: "payment_failed",
           paymentStatus: "failed",
-          checkoutSnapshot: {},
+          checkoutSnapshot: ownershipSnapshot(row),
           lastError: null,
           updatedAt: new Date(),
         })
@@ -634,6 +696,8 @@ function buildProviderPackageInputs(input: {
 }
 
 router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
+  const shopperUserId = requireCheckoutUser(req, res);
+  if (!shopperUserId) return;
   const parsed = CreateShopifyCheckoutQuoteBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Enter valid contact and delivery details." });
@@ -655,17 +719,26 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
   try {
     await assertRailwayShopifyStore();
     const now = new Date();
-    await db.update(cashfreeCheckoutOrdersTable)
-      .set({
-        status: "payment_failed",
-        checkoutSnapshot: {},
-        lastError: "Shipping quote expired before payment.",
-        updatedAt: now,
-      })
+    const expiredQuotes = await db.select()
+      .from(cashfreeCheckoutOrdersTable)
       .where(and(
         eq(cashfreeCheckoutOrdersTable.status, "quote_ready"),
         lt(cashfreeCheckoutOrdersTable.quoteExpiresAt, now),
       ));
+    for (const expiredQuote of expiredQuotes) {
+      await db.update(cashfreeCheckoutOrdersTable)
+        .set({
+          status: "payment_failed",
+          checkoutSnapshot: ownershipSnapshot(expiredQuote),
+          lastError: "Shipping quote expired before payment.",
+          updatedAt: now,
+        })
+        .where(and(
+          eq(cashfreeCheckoutOrdersTable.id, expiredQuote.id),
+          eq(cashfreeCheckoutOrdersTable.status, "quote_ready"),
+          lt(cashfreeCheckoutOrdersTable.quoteExpiresAt, now),
+        ));
+    }
     const address = {
       ...parsed.data.deliveryAddress,
       countryCode: parsed.data.deliveryAddress.countryCode.toUpperCase(),
@@ -681,13 +754,16 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       return;
     }
     const parcel = getConfiguredParcel();
-    const quoteHash = checkoutCartFingerprint({
+    const quoteFingerprint = checkoutCartFingerprint({
       cart,
       email: parsed.data.email,
       phone: parsed.data.phone,
       address,
       parcel,
     });
+    const quoteHash = createHash("sha256")
+      .update(`${shopperUserId}\0${quoteFingerprint}`)
+      .digest("hex");
     const existing = await db.select()
       .from(cashfreeCheckoutOrdersTable)
       .where(and(
@@ -733,6 +809,7 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
     const courierNames = [...new Set(providerPackages.map(({ courierName }) => courierName))];
     const courierName = courierNames.join(", ");
     const snapshot: CheckoutSnapshot = {
+      shopperUserId,
       email: parsed.data.email.trim(),
       phone: parsed.data.phone.trim(),
       address,
@@ -806,6 +883,8 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
 });
 
 router.post("/shopify/checkout/payment-session", async (req, res): Promise<void> => {
+  const shopperUserId = requireCheckoutUser(req, res);
+  if (!shopperUserId) return;
   const parsed = CreateShopifyCheckoutPaymentSessionBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "A valid shipping quote is required before payment." });
@@ -821,6 +900,10 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
     .where(eq(cashfreeCheckoutOrdersTable.id, parsed.data.quoteId))
     .limit(1);
   if (!row) {
+    res.status(404).json({ error: "This shipping quote could not be found. Request a new quote." });
+    return;
+  }
+  if (!await checkoutBelongsToShopper(row, shopperUserId)) {
     res.status(404).json({ error: "This shipping quote could not be found. Request a new quote." });
     return;
   }
@@ -935,6 +1018,8 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
 });
 
 router.get("/shopify/checkout/payment-status", async (req, res): Promise<void> => {
+  const shopperUserId = requireCheckoutUser(req, res);
+  if (!shopperUserId) return;
   const parsed = GetShopifyCheckoutPaymentStatusQueryParams.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: "A valid Cashfree order reference is required." });
@@ -947,6 +1032,10 @@ router.get("/shopify/checkout/payment-status", async (req, res): Promise<void> =
       .where(eq(cashfreeCheckoutOrdersTable.cashfreeOrderId, parsed.data.orderId))
       .limit(1);
     if (!row) {
+      res.status(404).json({ error: "Checkout order was not found." });
+      return;
+    }
+    if (!await checkoutBelongsToShopper(row, shopperUserId)) {
       res.status(404).json({ error: "Checkout order was not found." });
       return;
     }
@@ -1030,7 +1119,7 @@ router.post("/cashfree/webhook", async (req, res): Promise<void> => {
         .set({
           status,
           paymentStatus: status,
-          checkoutSnapshot: {},
+          checkoutSnapshot: ownershipSnapshot(row),
           lastError: status === "refunded"
             ? "Cashfree refund confirmed; verify the refund is represented in Shopify."
             : status === "refund_pending"
