@@ -100,7 +100,12 @@ const compiled = await build({
         `,
         cashfree: `
           const state = globalThis.__checkoutRouteTest;
-          export class CashfreeError extends Error {}
+          export class CashfreeError extends Error {
+            constructor(message, details = {}) {
+              super(message);
+              Object.assign(this, details);
+            }
+          }
           export const assertCashfreeLiveReadiness = (currencyCode, isInternational) => {
             state.cashfreeReadinessCheck = { currencyCode, isInternational };
             if (state.cashfreeReadinessError) throw new CashfreeError(state.cashfreeReadinessError);
@@ -108,6 +113,9 @@ const compiled = await build({
           export const getCashfreeEnvironment = () => state.environment;
           export const createCashfreeOrder = async (input) => {
             state.cashfreeCreateInput = input;
+            if (state.cashfreeCreateError) {
+              throw new CashfreeError(state.cashfreeCreateError.message, state.cashfreeCreateError.details);
+            }
             return { order_id: input.orderId, order_amount: Number(input.amount), order_currency: input.currencyCode, order_status: "ACTIVE", payment_session_id: "sandbox-session" };
           };
           export const getCashfreeOrder = async (orderId) => {
@@ -153,7 +161,13 @@ const compiled = await build({
           export const prepareShopifyCheckoutCart = async () => globalThis.__checkoutRouteTest.cart;
         `,
         storefrontClient: `export const getShopifyStorefrontDomain = async () => "gtnbsw-x3.myshopify.com";`,
-        logger: `export const logger = { error() {}, warn() {} };`,
+        logger: `
+          const state = globalThis.__checkoutRouteTest;
+          export const logger = {
+            error(fields, message) { state.logs.push({ level: "error", fields, message }); },
+            warn(fields, message) { state.logs.push({ level: "warn", fields, message }); },
+          };
+        `,
       };
       const routes = [
         [/@workspace\/db$/, "db"],
@@ -249,8 +263,10 @@ async function harness(run, options = {}) {
     signatureValid: true,
     cashfreeReads: 0,
     cashfreeCreateInput: null,
+    cashfreeCreateError: null,
     cashfreeReadinessCheck: null,
     cashfreeReadinessError: null,
+    logs: [],
     shopifySyncAttempts: 0,
     shopifySyncInput: null,
     shopifyFailures: 0,
@@ -482,6 +498,40 @@ test("international payment sessions identify their destination when checking Ca
       status: "quote_ready",
       paymentSessionId: null,
       destinationCountryCode: "US",
+    },
+  });
+});
+
+test("Cashfree provider errors are logged privately and frontend receives a sanitized message", async () => {
+  await harness(async ({ state, postSession }) => {
+    state.cashfreeCreateError = {
+      message: "Secure payment could not be prepared. Your bag has not been charged. Please try again.",
+      details: {
+        upstreamStatus: 400,
+        providerCode: "request_invalid",
+        providerType: "invalid_request_error",
+        providerMessage: "The order request was rejected.",
+        createOrderRequest: { orderCurrency: "INR", orderAmount: 120 },
+      },
+    };
+    const result = await postSession(
+      { quoteId: state.order.id },
+      { Origin: "https://preview.replit.dev" },
+    );
+    assert.equal(result.status, 503);
+    assert.match(result.body.error, /Your bag has not been charged/);
+    assert.doesNotMatch(result.body.error, /request_invalid|rejected/);
+    const providerLog = state.logs.find((entry) => entry.message ===
+      "Cashfree Create Order API rejected the checkout request");
+    assert.equal(providerLog.fields.cashfreeHttpStatus, 400);
+    assert.equal(providerLog.fields.cashfreeErrorCode, "request_invalid");
+    assert.equal(providerLog.fields.cashfreeErrorType, "invalid_request_error");
+    assert.equal(providerLog.fields.cashfreeErrorMessage, "The order request was rejected.");
+    assert.deepEqual(providerLog.fields.createOrderRequest, { orderCurrency: "INR", orderAmount: 120 });
+  }, {
+    order: {
+      status: "quote_ready",
+      paymentSessionId: null,
     },
   });
 });

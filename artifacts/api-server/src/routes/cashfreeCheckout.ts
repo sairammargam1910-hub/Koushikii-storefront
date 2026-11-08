@@ -835,6 +835,16 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
     }));
   } catch (error) {
     if (error instanceof CashfreeError) {
+      if (error.upstreamStatus !== undefined) {
+        logger.error({
+          checkoutOrderId: row.cashfreeOrderId,
+          cashfreeHttpStatus: error.upstreamStatus,
+          cashfreeErrorCode: error.providerCode ?? null,
+          cashfreeErrorType: error.providerType ?? null,
+          cashfreeErrorMessage: error.providerMessage ?? null,
+          createOrderRequest: error.createOrderRequest ?? null,
+        }, "Cashfree Create Order API rejected the checkout request");
+      }
       res.status(503).json({ error: error.message });
       return;
     }

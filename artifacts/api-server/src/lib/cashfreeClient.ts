@@ -12,10 +12,45 @@ export type CashfreeOrder = {
   cf_order_id?: string;
 };
 
+export type CashfreeCreateOrderRequestSummary = {
+  orderId: string;
+  orderAmount: number;
+  orderCurrency: string;
+  orderIdValid: boolean;
+  customerIdLength: number;
+  customerIdAlphanumeric: boolean;
+  customerEmailValid: boolean;
+  customerPhoneDigitCount: number;
+  returnUrlProtocol: string;
+  returnUrlHost: string;
+  returnUrlPath: string;
+  returnUrlValid: boolean;
+  idempotencyKeyUuid: boolean;
+};
+
+type CashfreeErrorDetails = {
+  upstreamStatus?: number;
+  providerCode?: string;
+  providerType?: string;
+  providerMessage?: string;
+  createOrderRequest?: CashfreeCreateOrderRequestSummary;
+};
+
 export class CashfreeError extends Error {
-  constructor(message: string) {
+  readonly upstreamStatus?: number;
+  readonly providerCode?: string;
+  readonly providerType?: string;
+  readonly providerMessage?: string;
+  readonly createOrderRequest?: CashfreeCreateOrderRequestSummary;
+
+  constructor(message: string, details: CashfreeErrorDetails = {}) {
     super(message);
     this.name = "CashfreeError";
+    this.upstreamStatus = details.upstreamStatus;
+    this.providerCode = details.providerCode;
+    this.providerType = details.providerType;
+    this.providerMessage = details.providerMessage;
+    this.createOrderRequest = details.createOrderRequest;
   }
 }
 
@@ -111,16 +146,51 @@ function headers(idempotencyKey?: string): Record<string, string> {
   };
 }
 
-async function readResponse<T>(response: Response): Promise<T> {
+function boundedProviderText(value: unknown, maxLength: number): string | undefined {
+  if (typeof value !== "string") return undefined;
+  return value
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .trim()
+    .slice(0, maxLength) || undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+async function readResponse<T>(
+  response: Response,
+  createOrderRequest?: CashfreeCreateOrderRequestSummary,
+): Promise<T> {
   const body = await response.text();
   let payload: unknown;
   try {
     payload = body ? JSON.parse(body) : {};
   } catch {
+    if (!response.ok) {
+      throw new CashfreeError(
+        "Secure payment could not be prepared. Your bag has not been charged. Please try again.",
+        {
+          upstreamStatus: response.status,
+          providerMessage: boundedProviderText(body, 500),
+          createOrderRequest,
+        },
+      );
+    }
     throw new CashfreeError("Cashfree returned an unreadable response.");
   }
   if (!response.ok) {
-    throw new CashfreeError(`Cashfree request failed (${response.status}).`);
+    const errorPayload = isRecord(payload) ? payload : {};
+    throw new CashfreeError(
+      "Secure payment could not be prepared. Your bag has not been charged. Please try again.",
+      {
+        upstreamStatus: response.status,
+        providerCode: boundedProviderText(errorPayload.code, 100),
+        providerType: boundedProviderText(errorPayload.type, 100),
+        providerMessage: boundedProviderText(errorPayload.message, 500),
+        createOrderRequest,
+      },
+    );
   }
   return payload as T;
 }
@@ -137,25 +207,47 @@ export async function createCashfreeOrder(input: {
   isInternational: boolean;
 }): Promise<CashfreeOrder> {
   assertCashfreeLiveReadiness(input.currencyCode, input.isInternational);
+  const requestBody = {
+    order_id: input.orderId,
+    order_amount: Number(input.amount),
+    order_currency: input.currencyCode,
+    customer_details: {
+      customer_id: input.orderId.slice(0, 50),
+      customer_email: input.email,
+      customer_phone: input.phone.replace(/\D/g, ""),
+    },
+    order_meta: { return_url: input.returnUrl },
+    order_expiry_time: input.expiresAt,
+    order_note: "Chenetha storefront order",
+  };
+  let returnUrl: URL | undefined;
+  try {
+    returnUrl = new URL(input.returnUrl);
+  } catch {
+    // The summary records an invalid URL without logging the raw value.
+  }
+  const createOrderRequest: CashfreeCreateOrderRequestSummary = {
+    orderId: requestBody.order_id,
+    orderAmount: requestBody.order_amount,
+    orderCurrency: requestBody.order_currency,
+    orderIdValid: /^[A-Za-z0-9_-]{3,45}$/.test(requestBody.order_id),
+    customerIdLength: requestBody.customer_details.customer_id.length,
+    customerIdAlphanumeric: /^[A-Za-z0-9]+$/.test(requestBody.customer_details.customer_id),
+    customerEmailValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestBody.customer_details.customer_email),
+    customerPhoneDigitCount: requestBody.customer_details.customer_phone.length,
+    returnUrlProtocol: returnUrl?.protocol ?? "invalid",
+    returnUrlHost: returnUrl?.host ?? "",
+    returnUrlPath: returnUrl?.pathname ?? "",
+    returnUrlValid: Boolean(returnUrl && returnUrl.protocol === "https:" && !returnUrl.username && !returnUrl.password),
+    idempotencyKeyUuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.idempotencyKey),
+  };
   const response = await fetch(`${baseUrl()}/orders`, {
     method: "POST",
     headers: headers(input.idempotencyKey),
-    body: JSON.stringify({
-      order_id: input.orderId,
-      order_amount: Number(input.amount),
-      order_currency: input.currencyCode,
-      customer_details: {
-        customer_id: input.orderId.slice(0, 50),
-        customer_email: input.email,
-        customer_phone: input.phone.replace(/\D/g, ""),
-      },
-      order_meta: { return_url: input.returnUrl },
-      order_expiry_time: input.expiresAt,
-      order_note: "Chenetha storefront order",
-    }),
+    body: JSON.stringify(requestBody),
     signal: AbortSignal.timeout(15_000),
   });
-  const order = await readResponse<CashfreeOrder>(response);
+  const order = await readResponse<CashfreeOrder>(response, createOrderRequest);
   if (
     order.order_id !== input.orderId ||
     !order.payment_session_id ||

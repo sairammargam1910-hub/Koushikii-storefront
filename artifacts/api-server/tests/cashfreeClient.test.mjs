@@ -82,6 +82,65 @@ test("creates a hosted sandbox session with server-side idempotency", async () =
   }
 });
 
+test("captures Cashfree Create Order error details without exposing them in the client error", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    code: "request_invalid",
+    type: "invalid_request_error",
+    message: "The order request was rejected.",
+  }), { status: 400 });
+  try {
+    await withEnvironment({
+      CASHFREE_ENVIRONMENT: "sandbox",
+      CHECKOUT_LIVE_ENABLED: null,
+      CASHFREE_APP_ID: "sandbox-app-id",
+      CASHFREE_SECRET_KEY: "sandbox-secret",
+    }, async () => {
+      const { createCashfreeOrder, CashfreeError } = loadModule();
+      await assert.rejects(
+        createCashfreeOrder({
+          orderId: "chenetha_order123",
+          amount: "1234.50",
+          currencyCode: "INR",
+          email: "buyer@example.com",
+          phone: "+919876543210",
+          returnUrl: "https://shop.example/Checkout?cashfree_order_id=chenetha_order123",
+          expiresAt: "2026-11-07T12:10:00.000Z",
+          idempotencyKey: "f991fda7-d46f-4113-a93a-64020aab037a",
+          isInternational: false,
+        }),
+        (error) => {
+          assert.ok(error instanceof CashfreeError);
+          assert.equal(error.upstreamStatus, 400);
+          assert.equal(error.providerCode, "request_invalid");
+          assert.equal(error.providerType, "invalid_request_error");
+          assert.equal(error.providerMessage, "The order request was rejected.");
+          assert.match(error.message, /Your bag has not been charged/);
+          assert.doesNotMatch(error.message, /request_invalid|The order request/);
+          assert.deepEqual(error.createOrderRequest, {
+            orderId: "chenetha_order123",
+            orderAmount: 1234.5,
+            orderCurrency: "INR",
+            orderIdValid: true,
+            customerIdLength: 17,
+            customerIdAlphanumeric: false,
+            customerEmailValid: true,
+            customerPhoneDigitCount: 12,
+            returnUrlProtocol: "https:",
+            returnUrlHost: "shop.example",
+            returnUrlPath: "/Checkout",
+            returnUrlValid: true,
+            idempotencyKeyUuid: true,
+          });
+          return true;
+        },
+      );
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("production mode fails closed without the explicit live flag and separate credentials", async () => {
   await withEnvironment({
     CASHFREE_ENVIRONMENT: "production",
