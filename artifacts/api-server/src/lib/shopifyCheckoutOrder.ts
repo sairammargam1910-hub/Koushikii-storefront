@@ -133,9 +133,11 @@ function scaled(amount: string, scale: number): bigint {
 }
 
 function inMinorUnits(amount: string): bigint | null {
-  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(amount);
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(amount);
   if (!match) return null;
-  return BigInt(`${match[1]}${match[2]}${(match[3] ?? "").padEnd(2, "0")}`);
+  const fraction = match[3] ?? "";
+  if (fraction.length > 2 && /[1-9]/.test(fraction.slice(2))) return null;
+  return BigInt(`${match[1]}${match[2]}${fraction.slice(0, 2).padEnd(2, "0")}`);
 }
 
 async function verifySandboxOrderPayment(input: {

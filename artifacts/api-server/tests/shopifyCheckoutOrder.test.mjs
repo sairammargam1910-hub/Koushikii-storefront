@@ -229,6 +229,22 @@ test("creates an idempotent Shopify test order with the external payment referen
   assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
 });
 
+test("recovers an existing sandbox order when database amounts have trailing zero decimals", async () => {
+  const state = fixtureState({
+    existing: { id: "gid://shopify/Order/999", name: "#1001" },
+  });
+  const input = orderInput();
+  input.snapshot.totalAmount = "120.0000";
+  input.snapshot.shippingAmount = "20.0000";
+  const { createOrFindShopifyPaidOrder } = loadModule(state);
+
+  const recovered = await createOrFindShopifyPaidOrder(input);
+
+  assert.equal(recovered.id, "gid://shopify/Order/999");
+  assert.equal(state.calls.some((call) => call.query.includes("CreateCashfreePaidOrder")), false);
+  assert.equal(state.calls.some((call) => call.query.includes("ReadCashfreeTestOrderPayment")), true);
+});
+
 test("syncs final item prices when Shopify omits its cart tax total", async () => {
   const state = fixtureState();
   const input = orderInput();
