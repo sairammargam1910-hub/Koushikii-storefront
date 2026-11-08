@@ -23,27 +23,51 @@ const compiled = await build({
           };
         `,
         db: `
+          const state = globalThis.__shopperOrdersTest;
           const columns = (names) => Object.fromEntries(names.map((name) => [name, { key: name }]));
           export const cashfreeCheckoutOrdersTable = columns(["id","shopifyOrderId"]);
-          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId"]);
+          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","awbCode","trackingStatus","trackingEvents","trackingUrl","estimatedDeliveryAt","trackingUpdatedAt","lastError","updatedAt"]);
+          const rowsFor = (table, condition) => {
+            if (table !== checkoutShipmentPackagesTable || !condition) return [];
+            if (condition.column.key === "awbCode") return state.shipments.filter((row) => row.awbCode === condition.value);
+            if (condition.column.key === "id") return state.shipments.filter((row) => row.id === condition.value);
+            return [];
+          };
+          const select = () => {
+            const query = {
+              table: null,
+              condition: null,
+              count: Infinity,
+              from(table) { this.table = table; return this; },
+              where(condition) { this.condition = condition; return this; },
+              limit(count) { this.count = count; return this; },
+              for() { return this; },
+              then(resolve, reject) {
+                return Promise.resolve(rowsFor(this.table, this.condition).slice(0, this.count)).then(resolve, reject);
+              },
+            };
+            return query;
+          };
+          const update = (table) => {
+            const query = {
+              values: null,
+              condition: null,
+              set(values) { this.values = values; return this; },
+              where(condition) { this.condition = condition; return this; },
+              then(resolve, reject) {
+                if (table === checkoutShipmentPackagesTable && this.condition?.column.key === "id") {
+                  const row = state.shipments.find((entry) => entry.id === this.condition.value);
+                  if (row) Object.assign(row, this.values);
+                }
+                return Promise.resolve([]).then(resolve, reject);
+              },
+            };
+            return query;
+          };
           export const db = {
-            select() {
-              const query = {
-                from() { return this; },
-                where() { return this; },
-                limit() { return Promise.resolve([]); },
-                then(resolve, reject) { return Promise.resolve([]).then(resolve, reject); },
-              };
-              return query;
-            },
-            update() {
-              const query = {
-                set() { return this; },
-                where() { return this; },
-                then(resolve, reject) { return Promise.resolve([]).then(resolve, reject); },
-              };
-              return query;
-            },
+            select,
+            update,
+            transaction: async (callback) => callback({ select, update }),
           };
         `,
         drizzle: `
@@ -76,7 +100,31 @@ const compiled = await build({
             throw new Error("Unexpected Shopify request.");
           }
         `,
-        shiprocket: `export const getShiprocketTracking = async () => { throw new Error("Not used in these tests."); };`,
+        shiprocket: `
+          const state = globalThis.__shopperOrdersTest;
+          export async function getShiprocketTracking(awbCode) {
+            state.trackingCalls.push(awbCode);
+            if (state.trackingError) throw state.trackingError;
+            return state.trackingResults?.length ? state.trackingResults.shift() : state.trackingResult;
+          }
+          export function mergeShiprocketTrackingSnapshot(current, incoming) {
+            const events = new Map();
+            for (const event of [...current.events, ...incoming.events]) {
+              const key = [event.occurredAt ?? "", event.status, event.description, event.location ?? ""].join("|");
+              if (!events.has(key)) events.set(key, event);
+            }
+            const mergedEvents = [...events.values()].sort((a, b) => (a.occurredAt ?? "").localeCompare(b.occurredAt ?? ""));
+            const currentTime = Math.max(...current.events.map((event) => Date.parse(event.occurredAt ?? "")).filter(Number.isFinite), -Infinity);
+            const incomingTime = Math.max(...incoming.events.map((event) => Date.parse(event.occurredAt ?? "")).filter(Number.isFinite), -Infinity);
+            return {
+              ...incoming,
+              status: currentTime !== -Infinity && (incomingTime === -Infinity || incomingTime < currentTime) && current.status
+                ? current.status
+                : incoming.status,
+              events: mergedEvents,
+            };
+          }
+        `,
         logger: `
           export const logger = {
             error() {},
@@ -132,6 +180,27 @@ function order(id, email) {
   };
 }
 
+function shipment(overrides = {}) {
+  return {
+    id: "shipment-package-1",
+    checkoutOrderId: "checkout-1",
+    awbCode: "19041424751540",
+    courierName: "Delhivery Surface",
+    trackingUrl: "https://shiprocket.co/tracking/19041424751540",
+    trackingStatus: "Out for Delivery",
+    trackingEvents: [{
+      occurredAt: "2026-11-08T12:00:00.000Z",
+      status: "Out for Delivery",
+      description: "Shipment out for delivery",
+      location: "Hyderabad",
+    }],
+    estimatedDeliveryAt: null,
+    trackingUpdatedAt: null,
+    updatedAt: new Date("2026-11-08T12:00:00.000Z"),
+    ...overrides,
+  };
+}
+
 function loadRouter(state) {
   globalThis.__shopperOrdersTest = state;
   const module = { exports: {} };
@@ -145,6 +214,7 @@ function loadRouter(state) {
 
 async function withServer(state, callback) {
   const app = express();
+  app.use(express.json());
   app.use(loadRouter(state));
   const server = app.listen(0);
   try {
@@ -171,7 +241,31 @@ function stateFixture() {
       order("gid://shopify/Order/1002", "someone-else@example.com"),
     ],
     adminCalls: [],
+    shipments: [],
+    trackingCalls: [],
+    trackingResults: [],
+    trackingResult: {
+      status: "In Transit",
+      statusCode: "5",
+      awbCode: "19041424751540",
+      courierName: "Delhivery Surface",
+      trackingUrl: "https://shiprocket.co/tracking/19041424751540",
+      estimatedDeliveryAt: null,
+      events: [],
+    },
   };
+}
+
+async function withWebhookSecret(secret, callback) {
+  const previous = process.env.SHIPROCKET_WEBHOOK_SECRET;
+  if (secret === null) delete process.env.SHIPROCKET_WEBHOOK_SECRET;
+  else process.env.SHIPROCKET_WEBHOOK_SECRET = secret;
+  try {
+    await callback();
+  } finally {
+    if (previous === undefined) delete process.env.SHIPROCKET_WEBHOOK_SECRET;
+    else process.env.SHIPROCKET_WEBHOOK_SECRET = previous;
+  }
 }
 
 test("order history requires sign-in and returns only orders matching verified emails", async () => {
@@ -221,4 +315,111 @@ test("order detail response omits the shopper email and preserves Shopify order 
     assert.equal(body.order.lineItems[0].image.url, "https://cdn.shopify.com/saree.jpg");
     assert.equal("email" in body.order, false);
   });
+});
+
+test("delivery tracking callback rejects missing or invalid x-api-key values", async () => {
+  const state = stateFixture();
+  state.shipments = [shipment()];
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    for (const headers of [
+      { "content-type": "application/json" },
+      { "content-type": "application/json", "x-api-key": "wrong-token" },
+    ]) {
+      const response = await fetch(`${base}/events/delivery`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ awb: "19041424751540" }),
+      });
+      assert.equal(response.status, 401);
+    }
+    assert.deepEqual(state.trackingCalls, []);
+    assert.equal(state.shipments[0].trackingStatus, "Out for Delivery");
+  }));
+});
+
+test("delivery tracking callback fails closed when its secret is not configured", async () => {
+  const state = stateFixture();
+  state.shipments = [shipment()];
+  await withWebhookSecret(null, () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": "local-test-token",
+      },
+      body: JSON.stringify({ awb: "19041424751540" }),
+    });
+    assert.equal(response.status, 503);
+    assert.deepEqual(state.trackingCalls, []);
+    assert.equal(state.shipments[0].trackingStatus, "Out for Delivery");
+  }));
+});
+
+test("delivery callback refreshes only the matched AWB and preserves history on stale replays", async () => {
+  const state = stateFixture();
+  state.shipments = [
+    shipment(),
+    shipment({
+      id: "shipment-package-2",
+      awbCode: "99998888777766",
+      trackingStatus: "Shipment booked",
+      trackingEvents: [],
+    }),
+  ];
+  state.trackingResult = {
+    status: "In Transit",
+    statusCode: "5",
+    awbCode: "19041424751540",
+    courierName: "Delhivery Surface",
+    trackingUrl: "https://shiprocket.co/tracking/19041424751540",
+    estimatedDeliveryAt: null,
+    events: [{
+      occurredAt: "2026-11-08T10:00:00.000Z",
+      status: "In Transit",
+      description: "Arrived at the regional hub",
+      location: "Vijayawada",
+    }],
+  };
+
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const response = await fetch(`${base}/events/delivery`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": "local-test-token",
+        },
+        body: JSON.stringify({ awb: "19041424751540", current_status: "In Transit" }),
+      });
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { received: true });
+    }
+
+    assert.deepEqual(state.trackingCalls, ["19041424751540", "19041424751540"]);
+    assert.equal(state.shipments[0].trackingStatus, "Out for Delivery");
+    assert.deepEqual(
+      state.shipments[0].trackingEvents.map((event) => event.description),
+      ["Arrived at the regional hub", "Shipment out for delivery"],
+    );
+    assert.equal(state.shipments[0].trackingUpdatedAt instanceof Date, true);
+    assert.equal(state.shipments[1].trackingStatus, "Shipment booked");
+    assert.deepEqual(state.shipments[1].trackingEvents, []);
+  }));
+});
+
+test("delivery callback acknowledges an unknown AWB without requesting provider tracking", async () => {
+  const state = stateFixture();
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": "local-test-token",
+      },
+      body: JSON.stringify({ awb: "12345678901234" }),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { received: true });
+    assert.deepEqual(state.trackingCalls, []);
+  }));
 });

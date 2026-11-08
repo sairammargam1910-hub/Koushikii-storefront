@@ -1,5 +1,6 @@
 - [Storefront scope](storefront-scope.md) — client-led handloom storefront, logo palette, language needs, and careful handling of customer reviews.
 - [Shiprocket HSN](shiprocket-hsn.md) — HSN 5007 is confirmed for the representative saree only; verify customs codes for other products.
+- [Shiprocket webhooks](shiprocket-webhooks.md) — Shiprocket sends the configured webhook security token in `x-api-key`; use a provider-neutral callback URL.
 - [Artifact workflow ports](artifact-workflow-ports.md) — if a restart hits EADDRINUSE, stop the managed service and confirm its port is clear before restarting.
 - [Shopify API contracts](shopify-api-version-contracts.md) — verify inventory examples against the connected version; newer schemas require different comparison and idempotency inputs.
 - [Browser API fixtures](browser-api-fixtures.md) — mock APIs before navigation and wrap storefront pages with their Clerk and router providers.

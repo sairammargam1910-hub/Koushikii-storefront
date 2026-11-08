@@ -288,6 +288,35 @@ test("fetches and normalizes Shiprocket tracking by AWB without booking another 
   }
 });
 
+test("rejects a provider tracking response for a different AWB", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const target = new URL(String(url));
+    if (target.pathname.endsWith("/auth/login")) {
+      return new Response(JSON.stringify({ token: "test-token" }), { status: 200 });
+    }
+    if (target.pathname.endsWith("/courier/track/awb/9876543210")) {
+      return new Response(JSON.stringify({
+        tracking_data: {
+          shipment_track: [{ awb_code: "99998888777766", current_status: "Delivered" }],
+        },
+      }), { status: 200 });
+    }
+    throw new Error(`Unexpected tracking request: ${target.pathname}`);
+  };
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+    }, async () => {
+      const { getShiprocketTracking } = loadModule();
+      await assert.rejects(getShiprocketTracking("9876543210"), /different AWB/i);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("tracking normalization rejects a non-HTTPS provider URL", () => {
   const { normalizeShiprocketTracking } = loadModule();
   const result = normalizeShiprocketTracking({
@@ -297,4 +326,72 @@ test("tracking normalization rejects a non-HTTPS provider URL", () => {
     },
   }, "9876543210");
   assert.equal(result.trackingUrl, null);
+});
+
+test("tracking snapshots retain distinct history and keep status from an older provider snapshot", () => {
+  const { mergeShiprocketTrackingSnapshot } = loadModule();
+  const newest = {
+    occurredAt: "2026-11-08T12:00:00.000Z",
+    status: "Out for Delivery",
+    description: "Shipment out for delivery",
+    location: "Hyderabad",
+  };
+  const older = {
+    occurredAt: "2026-11-08T10:00:00.000Z",
+    status: "In Transit",
+    description: "Arrived at the regional hub",
+    location: "Vijayawada",
+  };
+  const incoming = {
+    status: "In Transit",
+    statusCode: "5",
+    awbCode: "19041424751540",
+    courierName: "Delhivery Surface",
+    trackingUrl: null,
+    estimatedDeliveryAt: null,
+    events: [older, { ...older }],
+  };
+
+  const result = mergeShiprocketTrackingSnapshot({
+    status: "Out for Delivery",
+    events: [newest],
+  }, incoming);
+
+  assert.equal(result.status, "Out for Delivery");
+  assert.deepEqual(result.events, [older, newest]);
+});
+
+test("tracking snapshots accept a newer status and deduplicate its event", () => {
+  const { mergeShiprocketTrackingSnapshot } = loadModule();
+  const delivered = {
+    occurredAt: "2026-11-08T13:00:00.000Z",
+    status: "Delivered",
+    description: "Delivered to recipient",
+    location: "Hyderabad",
+  };
+  const current = {
+    status: "Out for Delivery",
+    events: [{
+      occurredAt: "2026-11-08T12:00:00.000Z",
+      status: "Out for Delivery",
+      description: "Shipment out for delivery",
+      location: "Hyderabad",
+    }],
+  };
+  const incoming = {
+    status: "Delivered",
+    statusCode: "7",
+    awbCode: "19041424751540",
+    courierName: "Delhivery Surface",
+    trackingUrl: null,
+    estimatedDeliveryAt: null,
+    events: [delivered, { ...delivered }],
+  };
+
+  const result = mergeShiprocketTrackingSnapshot(current, incoming);
+  assert.equal(result.status, "Delivered");
+  assert.deepEqual(result.events.map((event) => event.description), [
+    "Shipment out for delivery",
+    "Delivered to recipient",
+  ]);
 });

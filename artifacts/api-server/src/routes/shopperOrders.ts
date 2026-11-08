@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { clerkClient, getAuth } from "@clerk/express";
 import { eq } from "drizzle-orm";
 import { Router, type IRouter, type Request, type Response } from "express";
@@ -15,7 +16,11 @@ import {
   db,
 } from "@workspace/db";
 import { shopifyAdminRequest } from "../lib/shopifyAdminClient";
-import { getShiprocketTracking } from "../lib/shiprocketClient";
+import {
+  getShiprocketTracking,
+  mergeShiprocketTrackingSnapshot,
+  type ShiprocketTracking,
+} from "../lib/shiprocketClient";
 import { logger } from "../lib/logger";
 
 type ShopifyMoney = { amount?: string | null; currencyCode?: string | null };
@@ -250,6 +255,65 @@ function parseTrackingDate(value: string | null): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+async function refreshStoredShipmentTracking(
+  shipmentPackageId: string,
+  expectedAwbCode: string,
+): Promise<ShiprocketTracking | null> {
+  const incoming = await getShiprocketTracking(expectedAwbCode);
+  return db.transaction(async (tx) => {
+    const [current] = await tx.select()
+      .from(checkoutShipmentPackagesTable)
+      .where(eq(checkoutShipmentPackagesTable.id, shipmentPackageId))
+      .limit(1)
+      .for("update");
+    if (!current || current.awbCode !== expectedAwbCode) return null;
+
+    const merged = mergeShiprocketTrackingSnapshot({
+      status: current.trackingStatus,
+      events: current.trackingEvents ?? [],
+    }, incoming);
+    const trackingUrl = incoming.trackingUrl ?? current.trackingUrl;
+    const estimatedDeliveryAt = incoming.estimatedDeliveryAt
+      ? new Date(incoming.estimatedDeliveryAt)
+      : current.estimatedDeliveryAt;
+    const now = new Date();
+    await tx.update(checkoutShipmentPackagesTable)
+      .set({
+        trackingStatus: merged.status,
+        trackingEvents: merged.events,
+        trackingUrl,
+        estimatedDeliveryAt,
+        trackingUpdatedAt: now,
+        lastError: null,
+        updatedAt: now,
+      })
+      .where(eq(checkoutShipmentPackagesTable.id, current.id));
+
+    return {
+      ...incoming,
+      status: merged.status,
+      awbCode: expectedAwbCode,
+      courierName: incoming.courierName ?? current.courierName,
+      trackingUrl,
+      estimatedDeliveryAt: estimatedDeliveryAt?.toISOString() ?? null,
+      events: merged.events,
+    };
+  });
+}
+
+function validShiprocketWebhookKey(received: string | undefined): boolean {
+  const expected = process.env.SHIPROCKET_WEBHOOK_SECRET?.trim();
+  const provided = received?.trim();
+  if (!expected || !provided) return false;
+  const expectedDigest = createHash("sha256").update(expected, "utf8").digest();
+  const providedDigest = createHash("sha256").update(provided, "utf8").digest();
+  return timingSafeEqual(expectedDigest, providedDigest);
+}
+
+function validTrackingAwb(value: string): boolean {
+  return /^[A-Za-z0-9-]{4,40}$/.test(value);
+}
+
 function orderRefFromParams(req: Request): string | null {
   const parsed = GetShopifyOrderDetailsParams.safeParse(req.params);
   return parsed.success ? parsed.data.orderRef : null;
@@ -354,6 +418,62 @@ router.get("/shopify/orders/:orderRef", async (req, res): Promise<void> => {
   }
 });
 
+// Shiprocket's public webhook guide requires the configured security token in x-api-key.
+// Keep the URL provider-neutral; Shiprocket documents that provider names in the URL can prevent delivery.
+router.post("/events/delivery", async (req, res): Promise<void> => {
+  if (!process.env.SHIPROCKET_WEBHOOK_SECRET?.trim()) {
+    logger.error({}, "Delivery tracking callback is not configured");
+    res.status(503).json({ error: "Tracking callback is not configured." });
+    return;
+  }
+  if (!validShiprocketWebhookKey(req.get("x-api-key"))) {
+    res.status(401).json({ error: "Unauthorized." });
+    return;
+  }
+  if (!req.is("application/json")) {
+    res.status(415).json({ error: "A JSON tracking update is required." });
+    return;
+  }
+
+  const body = req.body && typeof req.body === "object" && !Array.isArray(req.body)
+    ? req.body as Record<string, unknown>
+    : {};
+  const awbCode = typeof body.awb === "string" ? body.awb.trim() : "";
+  if (!validTrackingAwb(awbCode)) {
+    logger.warn({}, "Authenticated delivery callback had no valid AWB");
+    res.status(200).json({ received: true });
+    return;
+  }
+
+  try {
+    const matches = await db.select()
+      .from(checkoutShipmentPackagesTable)
+      .where(eq(checkoutShipmentPackagesTable.awbCode, awbCode))
+      .limit(2);
+    if (matches.length !== 1) {
+      logger.warn({ matchCount: matches.length }, "Delivery callback did not match exactly one shipment");
+      res.status(200).json({ received: true });
+      return;
+    }
+
+    try {
+      await refreshStoredShipmentTracking(matches[0].id, awbCode);
+      res.status(200).json({ received: true });
+    } catch (error) {
+      logger.warn({
+        shipmentPackageId: matches[0].id,
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      }, "Delivery callback tracking refresh failed");
+      res.status(503).json({ error: "Tracking update will be retried." });
+    }
+  } catch (error) {
+    logger.error({
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    }, "Delivery tracking callback could not be processed");
+    res.status(503).json({ error: "Tracking callback could not be processed." });
+  }
+});
+
 router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void> => {
   const userId = requireUserId(req, res);
   if (!userId) return;
@@ -388,34 +508,19 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
         Date.now() - shipment.trackingUpdatedAt.getTime() > 2 * 60_000;
       if (shipment.awbCode && isStale) {
         try {
-          const tracking = await getShiprocketTracking(shipment.awbCode);
-          const trackingEvents = tracking.events.map((event) => ({
-            ...event,
-            occurredAt: parseTrackingDate(event.occurredAt),
-          }));
-          await db.update(checkoutShipmentPackagesTable)
-            .set({
-              trackingStatus: tracking.status,
-              trackingEvents,
-              trackingUrl: tracking.trackingUrl ?? shipment.trackingUrl,
-              estimatedDeliveryAt: tracking.estimatedDeliveryAt
-                ? new Date(tracking.estimatedDeliveryAt)
-                : null,
-              trackingUpdatedAt: new Date(),
-              lastError: null,
-              updatedAt: new Date(),
-            })
-            .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
-          shipments.push({
-            status: tracking.status,
-            statusCode: tracking.statusCode,
-            awbCode: tracking.awbCode,
-            courierName: tracking.courierName ?? shipment.courierName,
-            trackingUrl: tracking.trackingUrl ?? shipment.trackingUrl,
-            estimatedDeliveryAt: tracking.estimatedDeliveryAt,
-            events: trackingEvents,
-          });
-          continue;
+          const tracking = await refreshStoredShipmentTracking(shipment.id, shipment.awbCode);
+          if (tracking) {
+            shipments.push({
+              status: tracking.status,
+              statusCode: tracking.statusCode,
+              awbCode: tracking.awbCode,
+              courierName: tracking.courierName,
+              trackingUrl: tracking.trackingUrl,
+              estimatedDeliveryAt: tracking.estimatedDeliveryAt,
+              events: tracking.events,
+            });
+            continue;
+          }
         } catch (error) {
           logger.warn({
             shipmentPackageId: shipment.id,

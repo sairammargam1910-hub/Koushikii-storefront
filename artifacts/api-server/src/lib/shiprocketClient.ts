@@ -453,6 +453,64 @@ export function normalizeShiprocketTracking(
   };
 }
 
+function normalizedEvent(event: ShiprocketTrackingEvent): ShiprocketTrackingEvent {
+  return {
+    occurredAt: toIsoDate(event.occurredAt),
+    status: event.status.trim(),
+    description: event.description.trim(),
+    location: event.location?.trim() || null,
+  };
+}
+
+function trackingEventKey(event: ShiprocketTrackingEvent): string {
+  return [
+    event.occurredAt ?? "",
+    event.status.toLocaleLowerCase(),
+    event.description.toLocaleLowerCase(),
+    event.location?.toLocaleLowerCase() ?? "",
+  ].join("\u001f");
+}
+
+function latestEventTime(events: ShiprocketTrackingEvent[]): number | null {
+  let latest: number | null = null;
+  for (const event of events) {
+    if (!event.occurredAt) continue;
+    const time = Date.parse(event.occurredAt);
+    if (!Number.isFinite(time)) continue;
+    if (latest === null || time > latest) latest = time;
+  }
+  return latest;
+}
+
+export function mergeShiprocketTrackingSnapshot(
+  current: { status: string | null; events: ShiprocketTrackingEvent[] },
+  incoming: ShiprocketTracking,
+): ShiprocketTracking {
+  const mergedByKey = new Map<string, ShiprocketTrackingEvent>();
+  for (const event of [...current.events, ...incoming.events]) {
+    const normalized = normalizedEvent(event);
+    if (!normalized.status && !normalized.description) continue;
+    const key = trackingEventKey(normalized);
+    if (!mergedByKey.has(key)) mergedByKey.set(key, normalized);
+  }
+  const events = [...mergedByKey.values()].sort((left, right) => {
+    if (!left.occurredAt && !right.occurredAt) return trackingEventKey(left).localeCompare(trackingEventKey(right));
+    if (!left.occurredAt) return -1;
+    if (!right.occurredAt) return 1;
+    return left.occurredAt.localeCompare(right.occurredAt);
+  });
+  const currentLatest = latestEventTime(current.events);
+  const incomingLatest = latestEventTime(incoming.events);
+  const incomingIsOlder = currentLatest !== null &&
+    (incomingLatest === null || incomingLatest < currentLatest);
+
+  return {
+    ...incoming,
+    status: incomingIsOlder && current.status ? current.status : incoming.status,
+    events,
+  };
+}
+
 export async function getShiprocketTracking(awbCode: string): Promise<ShiprocketTracking> {
   const normalizedAwb = awbCode.trim();
   if (!/^[A-Za-z0-9-]{4,40}$/.test(normalizedAwb)) {
@@ -462,7 +520,11 @@ export async function getShiprocketTracking(awbCode: string): Promise<Shiprocket
     `/courier/track/awb/${encodeURIComponent(normalizedAwb)}`,
     { method: "GET" },
   );
-  return normalizeShiprocketTracking(payload, normalizedAwb);
+  const tracking = normalizeShiprocketTracking(payload, normalizedAwb);
+  if (tracking.awbCode.toUpperCase() !== normalizedAwb.toUpperCase()) {
+    throw new ShiprocketError("Shiprocket returned tracking for a different AWB.");
+  }
+  return tracking;
 }
 
 export function getConfiguredParcel() {
