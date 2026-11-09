@@ -881,8 +881,6 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       await tx.insert(checkoutShipmentPackagesTable).values(providerPackages.map((item, packageIndex) => ({
         checkoutOrderId: quoteId,
         packageIndex,
-        shiprocketOrderId: item.orderId,
-        shiprocketShipmentId: item.shipmentId,
         courierId: item.courierId,
         courierName: item.courierName,
         quotedAmount: item.amount,
