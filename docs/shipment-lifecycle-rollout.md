@@ -92,9 +92,8 @@ successfully to production on 2026-11-09 and its temporary branch was deleted.
 All 18 order rows and 18 package rows retained the recorded fingerprints.
 All 12 enum labels are present. No order rows or references were changed.
 
-Railway's SHIPROCKET_LIVE_BOOKING_ENABLED was explicitly set to false with
-deployment skipped, so it takes effect with the upcoming application rollout.
-No payment settings were changed.
+Railway's SHIPROCKET_LIVE_BOOKING_ENABLED was explicitly set to false before
+the application rollout. No payment settings were changed.
 
 Completed migration context:
 
@@ -106,3 +105,28 @@ Completed migration context:
 
 Retain the recovery snapshot until its documented expiration. Do not attempt to
 complete or discard this migration again; its temporary branch no longer exists.
+
+## Deployment verification
+
+Railway deployment `7ed83141-0686-4d5d-a798-5ff18b9063bf` succeeded at
+2026-11-09T13:14:11Z with commit
+`b61d7be0e759c9da541965f330e6cc80539dac0d`. The single service builds and serves
+both the API and storefront. Railway reports one running replica, no issues and
+no pending deployment work.
+
+Production checks at https://koushikii.com:
+
+- Storefront and lifecycle-enabled JavaScript bundle: HTTP 200.
+- `/api/healthz` and `/api/readyz`: HTTP 200.
+- Unauthenticated `/api/shopify/orders`: HTTP 401.
+- `/api/events/delivery` with missing or incorrect x-api-key: HTTP 401.
+- All order/package fingerprints and the held order fingerprint still match
+  the pre-migration baseline.
+
+No valid tracking callback was submitted to the held production shipment.
+Authenticated status synchronization is covered by the automated API tests;
+a real provider event and signed-in production order-page review remain
+unexercised during this no-shipment-action rollout.
+
+Product eligibility remains unresolved. The held order still has no AWB or
+tracking URL. Do not book it without eligibility confirmation and final approval.

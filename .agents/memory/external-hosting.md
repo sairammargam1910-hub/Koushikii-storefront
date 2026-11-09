@@ -15,6 +15,12 @@ A GitHub push is not proof that Railway has deployed the new version. Before say
 
 **How to apply:** After a source push, check Railway deployment status and test the public flow before reporting that production is updated. If Railway's status API denies read access, compare the remote Git ref with the pushed commit and smoke-test the public bundle and API readiness endpoint; report that this verifies the app responds but does not expose Railway's exact deployment revision. A push can reach the remote even if the Replit Git wrapper then blocks updating the local remote-tracking ref, so verify the remote ref before treating a nonzero push exit as a failed push.
 
+Railway OAuth variable inspection may return names only. An omitted value does not mean a variable is absent, empty or false.
+
+**Why:** The connected Railway integration redacts values even when the variable names are visible.
+
+**How to apply:** Do not infer payment or booking flags from variable existence. For an authorized safety setting, set only the intended non-secret flag and confirm a subsequent successful deployment, without changing unrelated variables.
+
 The user approved using new, independent Clerk accounts for the external site after being told that Replit-managed Clerk cannot be hosted externally or export its users. Existing accounts, profile/address preferences, and wishlists are not promised to transfer.
 
 **Why:** On 2026-11-05, the user explicitly selected “Proceed with new Clerk accounts” after the account and preference implications were explained.
