@@ -34,7 +34,11 @@ function readable(value: string | null | undefined) {
   return value.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function shipmentIsActive(status: string | null | undefined) {
+function shipmentIsActive(status: string | null | undefined, shipmentStatus?: string | null) {
+  if (shipmentStatus) {
+    return ["booked", "pickup_scheduled", "picked_up", "in_transit", "out_for_delivery"]
+      .includes(shipmentStatus);
+  }
   const normalized = (status ?? "").toLowerCase();
   return Boolean(normalized) && !/(delivered|cancelled|canceled|returned|failed|expired|exception|rto)/.test(normalized);
 }
@@ -60,7 +64,7 @@ export function OrderDetail() {
       queryKey: getGetShopifyOrderTrackingQueryKey(orderRef),
       refetchInterval: (query) => {
         const shipments = query.state.data?.shipments ?? [];
-        return shipments.some((shipment) => shipmentIsActive(shipment.status)) ? 45_000 : false;
+        return shipments.some((shipment) => shipmentIsActive(shipment.status, shipment.shipmentStatus)) ? 45_000 : false;
       },
     },
   });
@@ -112,7 +116,7 @@ export function OrderDetail() {
                 <p>We can’t reach the courier updates just now. Your order details are still here.</p>
                 <button type="button" className="orders-inline-button" onClick={() => void trackingQuery.refetch()} data-testid="button-retry-tracking">Try tracking again</button>
               </div> : trackingQuery.isLoading ? <div className="tracking-placeholder" data-testid="loading-tracking"><i/><i/><i/></div> : shipments.length ? shipments.map((shipment, index) => {
-                const active = shipmentIsActive(shipment.status);
+                const active = shipmentIsActive(shipment.status, shipment.shipmentStatus);
                 const events = [...shipment.events].sort((a, b) => (b.occurredAt ? new Date(b.occurredAt).getTime() : 0) - (a.occurredAt ? new Date(a.occurredAt).getTime() : 0));
                 return <div className="shipment-unit" key={`${shipment.awbCode ?? shipment.status}-${index}`} data-testid={`shipment-${index}`}>
                   <div className="shipment-status-line">
@@ -152,7 +156,7 @@ export function OrderDetail() {
               <span className="eyebrow">Order summary</span><h3 data-testid="text-summary-order-name">{order.name}</h3>
               <dl><div><dt>Placed</dt><dd>{formatDate(order.createdAt)}</dd></div>{order.processedAt && <div><dt>Confirmed</dt><dd>{formatDate(order.processedAt)}</dd></div>}
                 <div><dt>Payment</dt><dd data-testid="text-summary-payment">{readable(order.financialStatus)}</dd></div>
-                <div><dt>Fulfilment</dt><dd data-testid="text-summary-fulfillment">{readable(order.fulfillmentStatus)}</dd></div>
+                <div><dt>Fulfilment</dt><dd data-testid="text-summary-fulfillment">{order.financialStatus.toUpperCase() === "PAID" ? readable(order.fulfillmentStatus) : "Not shipped"}</dd></div>
                 <div className="summary-total"><dt>Total paid</dt><dd>{formatMoney(order.totalAmount, order.currencyCode)}</dd></div>
               </dl>
             </section>

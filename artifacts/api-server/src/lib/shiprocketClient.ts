@@ -42,6 +42,16 @@ export type ShiprocketTracking = {
   events: ShiprocketTrackingEvent[];
 };
 
+export type ShiprocketShipmentDetails = {
+  orderId: string | null;
+  shipmentId: string | null;
+  awbCode: string | null;
+  courierId: string | null;
+  courierName: string | null;
+  trackingUrl: string | null;
+  status: string | null;
+};
+
 export type ShiprocketPackageInput = {
   orderId: string;
   packageIndex: number;
@@ -446,16 +456,32 @@ export async function bookShiprocketPackage(input: {
   shipmentId: string;
   courierId: string;
   international: boolean;
-}): Promise<{ awbCode: string; trackingUrl?: string }> {
+}): Promise<{
+  awbCode: string;
+  courierId?: string;
+  courierName?: string;
+  trackingUrl?: string;
+}> {
   const path = input.international
     ? "/international/courier/assign/awb"
     : "/courier/assign/awb";
   const payload = await request<{
     response?: {
-      data?: { awb_code?: string; tracking_url?: string };
+      data?: {
+        awb_code?: string;
+        tracking_url?: string;
+        courier_company_id?: number | string;
+        courier_id?: number | string;
+        courier_name?: string;
+        courier_company_name?: string;
+      };
     };
     awb_code?: string;
     tracking_url?: string;
+    courier_company_id?: number | string;
+    courier_id?: number | string;
+    courier_name?: string;
+    courier_company_name?: string;
   }>(path, {
     method: "POST",
     body: JSON.stringify({
@@ -465,11 +491,17 @@ export async function bookShiprocketPackage(input: {
   });
   const awbCode = payload.response?.data?.awb_code ?? payload.awb_code;
   if (!awbCode) throw new ShiprocketError("Shiprocket did not confirm an AWB booking.");
+  const data = payload.response?.data;
+  const courierId = text(data?.courier_company_id ?? data?.courier_id ??
+    payload.courier_company_id ?? payload.courier_id);
+  const courierName = text(data?.courier_name ?? data?.courier_company_name ??
+    payload.courier_name ?? payload.courier_company_name);
+  const trackingUrl = safeTrackingUrl(data?.tracking_url ?? payload.tracking_url);
   return {
     awbCode,
-    ...(payload.response?.data?.tracking_url ?? payload.tracking_url
-      ? { trackingUrl: payload.response?.data?.tracking_url ?? payload.tracking_url }
-      : {}),
+    ...(courierId ? { courierId } : {}),
+    ...(courierName ? { courierName } : {}),
+    ...(trackingUrl ? { trackingUrl } : {}),
   };
 }
 
@@ -504,6 +536,29 @@ function safeTrackingUrl(value: unknown): string | null {
   } catch {
     return null;
   }
+}
+
+export async function getShiprocketShipmentDetails(
+  shipmentId: string,
+): Promise<ShiprocketShipmentDetails> {
+  const normalizedShipmentId = shipmentId.trim();
+  if (!/^\d{1,24}$/.test(normalizedShipmentId)) {
+    throw new ShiprocketError("Shiprocket returned an invalid shipment reference.");
+  }
+  const payload = await request<Record<string, unknown>>(
+    `/shipments/${encodeURIComponent(normalizedShipmentId)}`,
+    { method: "GET" },
+  );
+  const data = record(payload.data ?? payload);
+  return {
+    orderId: text(data.order_id),
+    shipmentId: text(data.shipment_id) ?? normalizedShipmentId,
+    awbCode: text(data.awb) ?? text(data.awb_code),
+    courierId: text(data.courier_id) ?? text(data.courier_company_id),
+    courierName: text(data.courier_name) ?? text(data.courier_company_name),
+    trackingUrl: safeTrackingUrl(data.tracking_url ?? data.track_url),
+    status: text(data.shipment_status) ?? text(data.status),
+  };
 }
 
 export type ShiprocketTrackingWebhook = {

@@ -13,6 +13,7 @@ export * from './getShopifyCartParams';
 export * from './getShopifyCheckoutPaymentStatusParams';
 export * from './getShopifyOrdersParams';
 export * from './healthStatus';
+export * from './shipmentLifecycleStatus';
 export * from './shopifyAdminArchiveResponse';
 export * from './shopifyAdminDiscount';
 export * from './shopifyAdminDiscountInput';

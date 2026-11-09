@@ -5,10 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShipmentLifecycleStatus } from './shipmentLifecycleStatus';
 import type { ShopifyOrderTrackingEvent } from './shopifyOrderTrackingEvent';
 
 export interface ShopifyOrderTrackingShipment {
   status: string;
+  shipmentStatus: ShipmentLifecycleStatus | null;
   /** @nullable */
   statusCode: string | null;
   /** @nullable */

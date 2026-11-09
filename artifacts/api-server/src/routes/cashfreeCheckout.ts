@@ -40,9 +40,15 @@ import {
   quoteShiprocketPackage,
   createShiprocketPackage,
   getConfiguredParcel,
+  getShiprocketShipmentDetails,
   ShiprocketError,
   type ShiprocketQuote,
 } from "../lib/shiprocketClient";
+import {
+  advanceShipmentLifecycle,
+  isShipmentBookedOrBeyond,
+  shipmentLifecycleFromTracking,
+} from "../lib/shipmentLifecycle";
 import {
   assertShopifyCheckoutCapabilities,
   createOrFindShopifyPaidOrder,
@@ -478,36 +484,84 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
   const packages = await db.select()
     .from(checkoutShipmentPackagesTable)
     .where(eq(checkoutShipmentPackagesTable.checkoutOrderId, row.id));
+  const now = new Date();
   const retryAfter = new Date(Date.now() - 60_000);
   for (const shipment of packages) {
-    if (shipment.status === "booked") continue;
-    if (shipment.shiprocketOrderId && shipment.shiprocketShipmentId && !allowAwb) continue;
+    if (shipment.awbCode) {
+      const status = advanceShipmentLifecycle(shipment.status, "booked", true);
+      if (status !== shipment.status) {
+        await db.update(checkoutShipmentPackagesTable)
+          .set({ status, updatedAt: now })
+          .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
+      }
+      continue;
+    }
+    if (shipment.status === "cancelled" || shipment.status === "returned" || shipment.status === "delivered") {
+      continue;
+    }
+    if (!allowAwb && shipment.shiprocketOrderId && shipment.shiprocketShipmentId) continue;
+
+    const isManualReconciliationState =
+      shipment.status === "booking_pending" ||
+      shipment.status === "booking_failed" ||
+      shipment.status === "failed";
+    const hasPartialProviderReference = Boolean(
+      shipment.shiprocketOrderId || shipment.shiprocketShipmentId,
+    ) && !(shipment.shiprocketOrderId && shipment.shiprocketShipmentId);
+    if (hasPartialProviderReference) {
+      // Never create a second provider order to repair a partial response.
+      await db.update(checkoutShipmentPackagesTable)
+        .set({
+          status: "booking_pending",
+          lastError: "Shiprocket references are incomplete. Reconcile the existing order before retrying.",
+          updatedAt: now,
+        })
+        .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
+      continue;
+    }
     if (
       shipment.status === "booking_pending" &&
       shipment.updatedAt.getTime() > retryAfter.getTime()
     ) continue;
-    if (shipment.status === "booking_pending" || shipment.status === "failed") continue;
+    if (isManualReconciliationState || isShipmentBookedOrBeyond(shipment.status)) {
+      if (!allowAwb || !shipment.shiprocketShipmentId) continue;
+      try {
+        const existing = await getShiprocketShipmentDetails(shipment.shiprocketShipmentId);
+        if (!existing.awbCode) continue;
+        const providerStatus = shipmentLifecycleFromTracking(existing.status, null);
+        const status = advanceShipmentLifecycle("booked", providerStatus, true);
+        await db.update(checkoutShipmentPackagesTable)
+          .set({
+            status,
+            awbCode: existing.awbCode,
+            courierId: existing.courierId ?? shipment.courierId,
+            courierName: existing.courierName ?? shipment.courierName,
+            trackingUrl: existing.trackingUrl ?? shipment.trackingUrl,
+            lastError: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
+      } catch (error) {
+        logger.warn({
+          checkoutOrderId: row.cashfreeOrderId,
+          shipmentPackageId: shipment.id,
+          errorName: error instanceof Error ? error.name : "UnknownError",
+        }, "Existing Shiprocket assignment could not be reconciled");
+      }
+      continue;
+    }
+    if (shipment.status !== "quoted") continue;
     const [claimed] = await db.update(checkoutShipmentPackagesTable)
       .set({ status: "booking_pending", lastError: null, updatedAt: new Date() })
       .where(and(
         eq(checkoutShipmentPackagesTable.id, shipment.id),
-        or(
-          eq(checkoutShipmentPackagesTable.status, "quoted"),
-          and(
-            eq(checkoutShipmentPackagesTable.status, "failed"),
-            lt(checkoutShipmentPackagesTable.updatedAt, retryAfter),
-          ),
-          and(
-            eq(checkoutShipmentPackagesTable.status, "booking_pending"),
-            lt(checkoutShipmentPackagesTable.updatedAt, retryAfter),
-          ),
-        ),
+        eq(checkoutShipmentPackagesTable.status, "quoted"),
       ))
       .returning();
     if (!claimed) continue;
     try {
       let shipmentId = shipment.shiprocketShipmentId;
-      if (!shipmentId || !shipment.shiprocketOrderId) {
+      if (!shipmentId && !shipment.shiprocketOrderId) {
         const snapshot = snapshotFromRow(row);
         const input = buildProviderPackageInputs({
           quoteId: row.id,
@@ -529,9 +583,35 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
           })
           .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
       }
+      if (!shipmentId) {
+        await db.update(checkoutShipmentPackagesTable)
+          .set({
+            status: "booking_pending",
+            lastError: "The existing Shiprocket shipment reference could not be confirmed.",
+            updatedAt: new Date(),
+          })
+          .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
+        continue;
+      }
       if (!allowAwb) {
         await db.update(checkoutShipmentPackagesTable)
           .set({ status: "quoted", updatedAt: new Date() })
+          .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
+        continue;
+      }
+      const existing = await getShiprocketShipmentDetails(shipmentId);
+      if (existing.awbCode) {
+        const providerStatus = shipmentLifecycleFromTracking(existing.status, null);
+        await db.update(checkoutShipmentPackagesTable)
+          .set({
+            status: advanceShipmentLifecycle("booked", providerStatus, true),
+            awbCode: existing.awbCode,
+            courierId: existing.courierId ?? shipment.courierId,
+            courierName: existing.courierName ?? shipment.courierName,
+            trackingUrl: existing.trackingUrl ?? shipment.trackingUrl,
+            lastError: null,
+            updatedAt: new Date(),
+          })
           .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
         continue;
       }
@@ -544,20 +624,30 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
         .set({
           status: "booked",
           awbCode: booked.awbCode,
-          trackingUrl: booked.trackingUrl,
+          courierId: booked.courierId ?? shipment.courierId,
+          courierName: booked.courierName ?? shipment.courierName,
+          trackingUrl: booked.trackingUrl ?? existing.trackingUrl ?? shipment.trackingUrl,
           lastError: null,
           updatedAt: new Date(),
         })
         .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
     } catch (error) {
+      const httpStatus = error instanceof ShiprocketError
+        ? error.diagnostics.httpStatus
+        : undefined;
+      const definitelyRejected = httpStatus !== undefined &&
+        httpStatus >= 400 && httpStatus < 500 && httpStatus !== 409;
       logger.error({
         checkoutOrderId: row.cashfreeOrderId,
         shipmentPackageId: shipment.id,
-      }, "Paid checkout carrier booking failed");
+        providerHttpStatus: httpStatus,
+      }, "Paid checkout carrier booking did not complete");
       await db.update(checkoutShipmentPackagesTable)
         .set({
-          status: "failed",
-          lastError: "Shiprocket booking failed; retry or reconcile in the merchant dashboard.",
+          status: definitelyRejected ? "booking_failed" : "booking_pending",
+          lastError: definitelyRejected
+            ? "Shiprocket rejected AWB assignment. Verify courier eligibility before retrying."
+            : "Shiprocket may have accepted the request. Reconcile shipment details before any retry.",
           updatedAt: new Date(),
         })
         .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
@@ -567,9 +657,15 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
     .from(checkoutShipmentPackagesTable)
     .where(eq(checkoutShipmentPackagesTable.checkoutOrderId, row.id));
   const allBooked = updatedPackages.length > 0 &&
-    updatedPackages.every((shipment) => shipment.status === "booked");
+    updatedPackages.every((shipment) =>
+      Boolean(shipment.awbCode) &&
+      ["booked", "pickup_scheduled", "picked_up", "in_transit", "out_for_delivery", "delivered", "returned"]
+        .includes(shipment.status),
+    );
   const needsReconciliation = updatedPackages.some((shipment) =>
+    shipment.status === "booking_failed" ||
     shipment.status === "failed" ||
+    (isShipmentBookedOrBeyond(shipment.status) && !shipment.awbCode) ||
     (shipment.status === "booking_pending" && shipment.updatedAt.getTime() <= retryAfter.getTime()),
   );
   const [updated] = await db.update(cashfreeCheckoutOrdersTable)

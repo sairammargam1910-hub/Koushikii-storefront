@@ -85,8 +85,26 @@ export interface ShopifyOrderTrackingEvent {
   location: string | null;
 }
 
+export type ShipmentLifecycleStatus = typeof ShipmentLifecycleStatus[keyof typeof ShipmentLifecycleStatus];
+
+
+export const ShipmentLifecycleStatus = {
+  quoted: 'quoted',
+  booking_pending: 'booking_pending',
+  booked: 'booked',
+  pickup_scheduled: 'pickup_scheduled',
+  picked_up: 'picked_up',
+  in_transit: 'in_transit',
+  out_for_delivery: 'out_for_delivery',
+  delivered: 'delivered',
+  booking_failed: 'booking_failed',
+  cancelled: 'cancelled',
+  returned: 'returned',
+} as const;
+
 export interface ShopifyOrderTrackingShipment {
   status: string;
+  shipmentStatus: ShipmentLifecycleStatus | null;
   /** @nullable */
   statusCode: string | null;
   /** @nullable */

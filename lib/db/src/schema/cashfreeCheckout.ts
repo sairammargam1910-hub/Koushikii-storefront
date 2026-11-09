@@ -31,6 +31,15 @@ export const checkoutShipmentStatusEnum = pgEnum("checkout_shipment_status", [
   "quoted",
   "booking_pending",
   "booked",
+  "pickup_scheduled",
+  "picked_up",
+  "in_transit",
+  "out_for_delivery",
+  "delivered",
+  "booking_failed",
+  "cancelled",
+  "returned",
+  // Preserve existing rows while older deployments finish rolling forward.
   "failed",
 ]);
 

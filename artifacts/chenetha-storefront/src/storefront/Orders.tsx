@@ -101,7 +101,7 @@ export function Orders() {
                   </div>
                   <div className="order-statuses">
                     <span className={`order-status ${order.financialStatus.toLowerCase() === "paid" ? "is-confirmed" : ""}`} data-testid={`status-payment-${order.orderRef}`}><i/>{statusLabel(order.financialStatus)}</span>
-                    <span className="order-status" data-testid={`status-fulfillment-${order.orderRef}`}><i/>{statusLabel(order.fulfillmentStatus)}</span>
+                    <span className="order-status" data-testid={`status-fulfillment-${order.orderRef}`}><i/>{order.financialStatus.toUpperCase() === "PAID" ? statusLabel(order.fulfillmentStatus) : "Not shipped"}</span>
                   </div>
                   <a className="order-view-link" href={`${base}Orders/${encodeURIComponent(order.orderRef)}`} data-testid={`link-order-details-${order.orderRef}`}>View order <ArrowRight size={15}/></a>
                 </div>

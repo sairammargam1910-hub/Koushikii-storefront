@@ -1757,11 +1757,29 @@ components:
         location:
           type: [string, "null"]
       required: [occurredAt, status, description, location]
+    ShipmentLifecycleStatus:
+      type: string
+      enum:
+        - quoted
+        - booking_pending
+        - booked
+        - pickup_scheduled
+        - picked_up
+        - in_transit
+        - out_for_delivery
+        - delivered
+        - booking_failed
+        - cancelled
+        - returned
     ShopifyOrderTrackingShipment:
       type: object
       properties:
         status:
           type: string
+        shipmentStatus:
+          anyOf:
+            - $ref: "#/components/schemas/ShipmentLifecycleStatus"
+            - type: "null"
         statusCode:
           type: [string, "null"]
         awbCode:
@@ -1778,7 +1796,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyOrderTrackingEvent"
-      required: [status, statusCode, awbCode, courierName, trackingUrl, estimatedDeliveryAt, events]
+      required: [status, shipmentStatus, statusCode, awbCode, courierName, trackingUrl, estimatedDeliveryAt, events]
     ShopifyOrderTrackingResponse:
       type: object
       properties:

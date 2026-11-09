@@ -15,6 +15,15 @@ import {
   checkoutShipmentPackagesTable,
   db,
 } from "@workspace/db";
+import {
+  advanceShipmentLifecycle,
+  isShipmentBookedOrBeyond,
+  isShipmentProgressStatus,
+  normalizeShipmentLifecycleStatus,
+  shipmentLifecycleFromTracking,
+  shipmentLifecycleLabel,
+  type ShipmentLifecycleStatus,
+} from "../lib/shipmentLifecycle";
 import { shopifyAdminRequest } from "../lib/shopifyAdminClient";
 import {
   getShiprocketTracking,
@@ -206,13 +215,15 @@ function mapLineItem(line: ShopifyOrderLine, orderCurrency: string) {
 function mapOrderSummary(order: ShopifyOrderNode) {
   const totalSet = order.currentTotalPriceSet ?? order.totalPriceSet;
   const currencyCode = currencyFrom(totalSet) ?? "INR";
+  const isPaid = order.displayFinancialStatus?.toUpperCase() === "PAID";
   return {
     orderRef: orderRefForId(order.id),
     name: order.name,
     createdAt: order.createdAt,
     processedAt: order.processedAt ?? null,
     financialStatus: order.displayFinancialStatus ?? "UNKNOWN",
-    fulfillmentStatus: order.displayFulfillmentStatus ?? null,
+    // A Shopify fulfillment must not make an unpaid order look shipped.
+    fulfillmentStatus: isPaid ? order.displayFulfillmentStatus ?? null : null,
     totalAmount: amountFrom(totalSet) ?? "0.00",
     currencyCode,
     lineItems: order.lineItems.nodes.map((line) => mapLineItem(line, currencyCode)),
@@ -222,7 +233,8 @@ function mapOrderSummary(order: ShopifyOrderNode) {
 function mapOrderDetails(order: ShopifyOrderNode) {
   return {
     ...mapOrderSummary(order),
-    fulfillments: (order.fulfillments ?? []).map((fulfillment) => {
+    fulfillments: order.displayFinancialStatus?.toUpperCase() === "PAID"
+      ? (order.fulfillments ?? []).map((fulfillment) => {
       const tracking = fulfillment.trackingInfo?.[0];
       return {
         status: fulfillment.status ?? "UNKNOWN",
@@ -231,7 +243,8 @@ function mapOrderDetails(order: ShopifyOrderNode) {
         trackingUrl: tracking?.url && isSafeHttpsUrl(tracking.url) ? tracking.url : null,
         estimatedDeliveryAt: fulfillment.estimatedDeliveryAt ?? null,
       };
-    }),
+      })
+      : [],
   };
 }
 
@@ -261,7 +274,7 @@ async function persistStoredShipmentTracking(
   shipmentPackageId: string,
   incoming: ShiprocketTracking,
   expected: { awbCode?: string | null; shipmentId?: string | null; orderId?: string | null },
-): Promise<ShiprocketTracking | null> {
+): Promise<(ShiprocketTracking & { shipmentStatus: ShipmentLifecycleStatus }) | null> {
   return db.transaction(async (tx) => {
     const [current] = await tx.select()
       .from(checkoutShipmentPackagesTable)
@@ -277,10 +290,36 @@ async function persistStoredShipmentTracking(
     if (expected.orderId && current.shiprocketOrderId &&
         current.shiprocketOrderId !== expected.orderId) return null;
 
+    const [checkout] = await tx.select()
+      .from(cashfreeCheckoutOrdersTable)
+      .where(eq(cashfreeCheckoutOrdersTable.id, current.checkoutOrderId))
+      .limit(1)
+      .for("update");
+    if (
+      !checkout ||
+      checkout.paymentStatus !== "paid" ||
+      !checkout.shopifyOrderId ||
+      ["refund_pending", "refunded", "reconciliation_required"].includes(checkout.status)
+    ) return null;
+
     const merged = mergeShiprocketTrackingSnapshot({
       status: current.trackingStatus,
       events: current.trackingEvents ?? [],
     }, incoming);
+    const incomingLifecycle = shipmentLifecycleFromTracking(
+      merged.status,
+      merged.statusCode,
+    );
+    const hasConfirmedAwb = Boolean(current.awbCode || incoming.awbCode);
+    const lifecycleStatus = advanceShipmentLifecycle(
+      current.status,
+      incomingLifecycle,
+      hasConfirmedAwb,
+    );
+    if (
+      isShipmentProgressStatus(incomingLifecycle) &&
+      !hasConfirmedAwb
+    ) return null;
     const trackingUrl = incoming.trackingUrl ?? current.trackingUrl;
     const estimatedDeliveryAt = incoming.estimatedDeliveryAt
       ? new Date(incoming.estimatedDeliveryAt)
@@ -289,6 +328,7 @@ async function persistStoredShipmentTracking(
     await tx.update(checkoutShipmentPackagesTable)
       .set({
         awbCode: current.awbCode ?? (incoming.awbCode || null),
+        status: lifecycleStatus,
         courierName: incoming.courierName ?? current.courierName,
         trackingStatus: merged.status,
         trackingEvents: merged.events,
@@ -303,6 +343,7 @@ async function persistStoredShipmentTracking(
     return {
       ...incoming,
       status: merged.status,
+      shipmentStatus: lifecycleStatus,
       awbCode: incoming.awbCode || current.awbCode || "",
       courierName: incoming.courierName ?? current.courierName,
       trackingUrl,
@@ -529,6 +570,33 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
       return;
     }
 
+    const [checkout] = await db.select()
+      .from(cashfreeCheckoutOrdersTable)
+      .where(eq(cashfreeCheckoutOrdersTable.id, matched.checkoutOrderId))
+      .limit(1);
+    if (
+      !checkout ||
+      checkout.paymentStatus !== "paid" ||
+      !checkout.shopifyOrderId ||
+      ["refund_pending", "refunded", "reconciliation_required"].includes(checkout.status)
+    ) {
+      res.status(200).json({ received: true, matched: false });
+      return;
+    }
+    const reportedLifecycle = shipmentLifecycleFromTracking(
+      webhook.tracking.status,
+      webhook.tracking.statusCode,
+    );
+    if (
+      isShipmentProgressStatus(reportedLifecycle) &&
+      !matched.awbCode &&
+      !awbCode
+    ) {
+      // A status-only event cannot prove the quoted/booking-pending package was booked.
+      res.status(200).json({ received: true, matched: false });
+      return;
+    }
+
     const updated = await persistStoredShipmentTracking(matched.id, webhook.tracking, {
       awbCode: awbCode || null,
       shipmentId: shipmentId || null,
@@ -568,7 +636,11 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
       .from(cashfreeCheckoutOrdersTable)
       .where(eq(cashfreeCheckoutOrdersTable.shopifyOrderId, order.id))
       .limit(1);
-    const packages = checkout
+    const shopifyPaid = order.displayFinancialStatus?.toUpperCase() === "PAID";
+    const checkoutPaid = checkout?.paymentStatus === "paid" &&
+      Boolean(checkout.shopifyOrderId) &&
+      !["refund_pending", "refunded", "reconciliation_required"].includes(checkout.status);
+    const packages = checkoutPaid && shopifyPaid
       ? await db.select().from(checkoutShipmentPackagesTable)
           .where(eq(checkoutShipmentPackagesTable.checkoutOrderId, checkout.id))
       : [];
@@ -576,15 +648,19 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
     const packageTrackingNumbers = new Set<string>();
 
     for (const shipment of packages) {
-      if (shipment.awbCode) packageTrackingNumbers.add(shipment.awbCode);
-      const isStale = !shipment.trackingUpdatedAt ||
-        Date.now() - shipment.trackingUpdatedAt.getTime() > 2 * 60_000;
-      if (shipment.awbCode && isStale) {
+      const shipmentStatus = normalizeShipmentLifecycleStatus(shipment.status) ?? "quoted";
+      const hasConfirmedBooking = isShipmentBookedOrBeyond(shipmentStatus) &&
+        Boolean(shipment.awbCode);
+      if (hasConfirmedBooking && shipment.awbCode) packageTrackingNumbers.add(shipment.awbCode);
+      const isStale = hasConfirmedBooking && (!shipment.trackingUpdatedAt ||
+        Date.now() - shipment.trackingUpdatedAt.getTime() > 2 * 60_000);
+      if (hasConfirmedBooking && shipment.awbCode && isStale) {
         try {
           const tracking = await refreshStoredShipmentTracking(shipment.id, shipment.awbCode);
           if (tracking) {
             shipments.push({
-              status: tracking.status,
+              status: shipmentLifecycleLabel(tracking.shipmentStatus),
+              shipmentStatus: tracking.shipmentStatus,
               statusCode: tracking.statusCode,
               awbCode: tracking.awbCode,
               courierName: tracking.courierName,
@@ -605,25 +681,28 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
         (typeof shipment.trackingEvents)[number] & { statusCode?: string | null }
       >;
       shipments.push({
-        status: shipment.trackingStatus ?? shipmentStatusLabel(shipment.status),
-        statusCode: [...storedTrackingEvents].reverse()
-          .find((event) => event.statusCode)?.statusCode ?? null,
-        awbCode: shipment.awbCode,
+        status: shipmentLifecycleLabel(shipmentStatus),
+        shipmentStatus,
+        statusCode: hasConfirmedBooking
+          ? [...storedTrackingEvents].reverse().find((event) => event.statusCode)?.statusCode ?? null
+          : null,
+        awbCode: hasConfirmedBooking ? shipment.awbCode : null,
         courierName: shipment.courierName,
-        trackingUrl: shipment.trackingUrl,
-        estimatedDeliveryAt: shipment.estimatedDeliveryAt?.toISOString() ?? null,
-        events: storedTrackingEvents.map((event) => ({
+        trackingUrl: hasConfirmedBooking ? shipment.trackingUrl : null,
+        estimatedDeliveryAt: hasConfirmedBooking ? shipment.estimatedDeliveryAt?.toISOString() ?? null : null,
+        events: hasConfirmedBooking ? storedTrackingEvents.map((event) => ({
           ...event,
           occurredAt: parseTrackingDate(event.occurredAt),
-        })),
+        })) : [],
       });
     }
 
-    for (const fulfillment of order.fulfillments ?? []) {
+    for (const fulfillment of checkout ? [] : shopifyPaid ? order.fulfillments ?? [] : []) {
       for (const tracking of fulfillment.trackingInfo ?? []) {
         if (tracking.number && packageTrackingNumbers.has(tracking.number)) continue;
         shipments.push({
           status: fulfillment.status ?? "Tracking information available",
+          shipmentStatus: null,
           statusCode: null,
           awbCode: tracking.number ?? null,
           courierName: tracking.company ?? null,
@@ -643,18 +722,5 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
     res.status(502).json({ error: "Shipment tracking is temporarily unavailable." });
   }
 });
-
-function shipmentStatusLabel(status: "quoted" | "booking_pending" | "booked" | "failed"): string {
-  switch (status) {
-    case "quoted":
-      return "Shipping quote ready";
-    case "booking_pending":
-      return "Shipment booking pending";
-    case "booked":
-      return "Shipment booked";
-    case "failed":
-      return "Shipment update needed";
-  }
-}
 
 export default router;

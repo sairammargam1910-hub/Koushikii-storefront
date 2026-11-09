@@ -154,10 +154,22 @@ const compiled = await build({
         `,
         shiprocket: `
           const state = globalThis.__checkoutRouteTest;
-          export class ShiprocketError extends Error {}
+          export class ShiprocketError extends Error {
+            constructor(message, diagnostics = {}) {
+              super(message);
+              this.diagnostics = diagnostics;
+            }
+          }
           export const bookShiprocketPackage = async () => {
             state.awbCalls += 1;
+            if (state.awbErrorStatus) throw new ShiprocketError("test booking rejected", { httpStatus: state.awbErrorStatus });
+            if (state.awbError) throw new Error("test ambiguous network failure");
             return { awbCode: "awb-test" };
+          };
+          export const getShiprocketShipmentDetails = async (shipmentId) => {
+            state.shipmentDetailsCalls.push(shipmentId);
+            if (state.shipmentDetailsError) throw new Error("test provider read failed");
+            return state.shipmentDetails ?? { awbCode: null };
           };
           export const quoteShiprocketPackage = async () => {
             state.rateCalls += 1;
@@ -313,6 +325,11 @@ async function harness(run, options = {}) {
     rateCalls: 0,
     carrierCreateCalls: [],
     awbCalls: 0,
+    awbError: false,
+    awbErrorStatus: null,
+    shipmentDetailsCalls: [],
+    shipmentDetails: null,
+    shipmentDetailsError: false,
     orders: [makeOrder(options.order)],
     shipments: [],
   };
@@ -371,6 +388,17 @@ async function harness(run, options = {}) {
   } finally {
     await new Promise((resolve) => server.close(resolve));
     delete globalThis.__checkoutRouteTest;
+  }
+}
+
+async function withLiveAwbBooking(callback) {
+  const previous = process.env.SHIPROCKET_LIVE_BOOKING_ENABLED;
+  process.env.SHIPROCKET_LIVE_BOOKING_ENABLED = "true";
+  try {
+    await callback();
+  } finally {
+    if (previous === undefined) delete process.env.SHIPROCKET_LIVE_BOOKING_ENABLED;
+    else process.env.SHIPROCKET_LIVE_BOOKING_ENABLED = previous;
   }
 }
 
@@ -626,6 +654,117 @@ test("verified payment creates exactly one Shiprocket order; AWB stays gated", a
     assert.equal(state.carrierCreateCalls.length, 1);
     assert.equal(state.awbCalls, 0);
   });
+});
+
+test("an existing AWB is reconciled instead of assigning or creating another Shiprocket order", async () => {
+  await withLiveAwbBooking(() => harness(async ({ state, getStatus }) => {
+    state.environment = "production";
+    state.providerStatus = "PAID";
+    state.shipments = [{
+      id: "existing-package",
+      checkoutOrderId: state.order.id,
+      packageIndex: 0,
+      shiprocketOrderId: "1716900471",
+      shiprocketShipmentId: "1712529624",
+      courierId: "44",
+      courierName: "Delhivery Surface 2 Kgs",
+      quotedAmount: "116.72",
+      status: "quoted",
+      awbCode: null,
+      trackingUrl: null,
+      updatedAt: new Date(),
+    }];
+    state.shipmentDetails = {
+      orderId: "1716900471",
+      shipmentId: "1712529624",
+      awbCode: "awb-existing",
+      courierId: "44",
+      courierName: "Delhivery Surface 2 Kgs",
+      trackingUrl: "https://shiprocket.co/tracking/awb-existing",
+      status: "PENDING",
+    };
+
+    await getStatus();
+    assert.equal(state.awbCalls, 0);
+    assert.equal(state.carrierCreateCalls.length, 0);
+    assert.equal(state.shipments[0].shiprocketOrderId, "1716900471");
+    assert.equal(state.shipments[0].shiprocketShipmentId, "1712529624");
+    assert.equal(state.shipments[0].status, "booked");
+    assert.equal(state.shipments[0].awbCode, "awb-existing");
+    assert.equal(state.shipments[0].courierId, "44");
+    assert.equal(state.shipments[0].courierName, "Delhivery Surface 2 Kgs");
+    assert.equal(state.shipments[0].trackingUrl, "https://shiprocket.co/tracking/awb-existing");
+  }));
+});
+
+test("ambiguous AWB responses are reconciled but never blindly retried", async () => {
+  await withLiveAwbBooking(() => harness(async ({ state, getStatus }) => {
+    state.environment = "production";
+    state.providerStatus = "PAID";
+    state.shipments = [{
+      id: "existing-package",
+      checkoutOrderId: state.order.id,
+      packageIndex: 0,
+      shiprocketOrderId: "1716900471",
+      shiprocketShipmentId: "1712529624",
+      courierId: "44",
+      courierName: "Delhivery Surface 2 Kgs",
+      quotedAmount: "116.72",
+      status: "quoted",
+      awbCode: null,
+      trackingUrl: null,
+      updatedAt: new Date(),
+    }];
+    state.awbError = true;
+
+    await getStatus();
+    assert.equal(state.awbCalls, 1);
+    assert.equal(state.shipments[0].status, "booking_pending");
+    assert.equal(state.shipments[0].shiprocketOrderId, "1716900471");
+    assert.equal(state.shipments[0].shiprocketShipmentId, "1712529624");
+
+    state.shipmentDetails = {
+      orderId: "1716900471",
+      shipmentId: "1712529624",
+      awbCode: "awb-after-timeout",
+      courierId: "44",
+      courierName: "Delhivery Surface 2 Kgs",
+      trackingUrl: "https://shiprocket.co/tracking/awb-after-timeout",
+      status: "Pickup Scheduled",
+    };
+    await getStatus();
+    assert.equal(state.awbCalls, 1);
+    assert.equal(state.shipments[0].status, "pickup_scheduled");
+    assert.equal(state.shipments[0].awbCode, "awb-after-timeout");
+    assert.equal(state.shipments[0].trackingUrl, "https://shiprocket.co/tracking/awb-after-timeout");
+  }));
+});
+
+test("a definite provider rejection records booking_failed and does not auto-retry", async () => {
+  await withLiveAwbBooking(() => harness(async ({ state, getStatus }) => {
+    state.environment = "production";
+    state.providerStatus = "PAID";
+    state.shipments = [{
+      id: "existing-package",
+      checkoutOrderId: state.order.id,
+      packageIndex: 0,
+      shiprocketOrderId: "1716900471",
+      shiprocketShipmentId: "1712529624",
+      courierId: "44",
+      courierName: "Delhivery Surface 2 Kgs",
+      quotedAmount: "116.72",
+      status: "quoted",
+      awbCode: null,
+      updatedAt: new Date(),
+    }];
+    state.awbErrorStatus = 422;
+
+    await getStatus();
+    assert.equal(state.awbCalls, 1);
+    assert.equal(state.shipments[0].status, "booking_failed");
+    await getStatus();
+    assert.equal(state.awbCalls, 1);
+  }));
 });
 
 test("an unauthenticated Cashfree webhook cannot change payment state", async () => {

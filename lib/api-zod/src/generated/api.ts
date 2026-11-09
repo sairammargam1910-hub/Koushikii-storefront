@@ -178,6 +178,7 @@ export const GetShopifyOrderTrackingResponse = zod.object({
   "orderRef": zod.string(),
   "shipments": zod.array(zod.object({
   "status": zod.string(),
+  "shipmentStatus": zod.union([zod.enum(['quoted', 'booking_pending', 'booked', 'pickup_scheduled', 'picked_up', 'in_transit', 'out_for_delivery', 'delivered', 'booking_failed', 'cancelled', 'returned']),zod.null()]),
   "statusCode": zod.string().nullable(),
   "awbCode": zod.string().nullable(),
   "courierName": zod.string().nullable(),

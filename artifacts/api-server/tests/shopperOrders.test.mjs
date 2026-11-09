@@ -25,13 +25,20 @@ const compiled = await build({
         db: `
           const state = globalThis.__shopperOrdersTest;
           const columns = (names) => Object.fromEntries(names.map((name) => [name, { key: name }]));
-          export const cashfreeCheckoutOrdersTable = columns(["id","shopifyOrderId"]);
-          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","shiprocketOrderId","shiprocketShipmentId","awbCode","courierName","trackingStatus","trackingEvents","trackingUrl","estimatedDeliveryAt","trackingUpdatedAt","lastError","updatedAt"]);
+          export const cashfreeCheckoutOrdersTable = columns(["id","shopifyOrderId","paymentStatus","status"]);
+          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","shiprocketOrderId","shiprocketShipmentId","courierId","courierName","status","awbCode","trackingStatus","trackingEvents","trackingUrl","estimatedDeliveryAt","trackingUpdatedAt","lastError","updatedAt"]);
           const rowsFor = (table, condition) => {
-            if (table !== checkoutShipmentPackagesTable || !condition) return [];
+            if (!condition) return [];
+            if (table === cashfreeCheckoutOrdersTable) {
+              if (condition.column.key === "id") return state.checkouts.filter((row) => row.id === condition.value);
+              if (condition.column.key === "shopifyOrderId") return state.checkouts.filter((row) => row.shopifyOrderId === condition.value);
+              return [];
+            }
+            if (table !== checkoutShipmentPackagesTable) return [];
             if (condition.column.key === "awbCode") return state.shipments.filter((row) => row.awbCode === condition.value);
             if (condition.column.key === "shiprocketShipmentId") return state.shipments.filter((row) => row.shiprocketShipmentId === condition.value);
             if (condition.column.key === "shiprocketOrderId") return state.shipments.filter((row) => row.shiprocketOrderId === condition.value);
+            if (condition.column.key === "checkoutOrderId") return state.shipments.filter((row) => row.checkoutOrderId === condition.value);
             if (condition.column.key === "id") return state.shipments.filter((row) => row.id === condition.value);
             return [];
           };
@@ -57,8 +64,9 @@ const compiled = await build({
               set(values) { this.values = values; return this; },
               where(condition) { this.condition = condition; return this; },
               then(resolve, reject) {
-                if (table === checkoutShipmentPackagesTable && this.condition?.column.key === "id") {
-                  const row = state.shipments.find((entry) => entry.id === this.condition.value);
+                const rows = table === checkoutShipmentPackagesTable ? state.shipments : state.checkouts;
+                if (this.condition?.column.key === "id") {
+                  const row = rows.find((entry) => entry.id === this.condition.value);
                   if (row) Object.assign(row, this.values);
                 }
                 return Promise.resolve([]).then(resolve, reject);
@@ -236,7 +244,9 @@ function shipment(overrides = {}) {
     checkoutOrderId: "checkout-1",
     shiprocketOrderId: "shiprocket-order-1",
     shiprocketShipmentId: "shiprocket-shipment-1",
+    courierId: "44",
     awbCode: "19041424751540",
+    status: "booked",
     courierName: "Delhivery Surface",
     trackingUrl: "https://shiprocket.co/tracking/19041424751540",
     trackingStatus: "Out for Delivery",
@@ -292,6 +302,12 @@ function stateFixture() {
       order("gid://shopify/Order/1001", "buyer@example.com"),
       order("gid://shopify/Order/1002", "someone-else@example.com"),
     ],
+    checkouts: [{
+      id: "checkout-1",
+      shopifyOrderId: "gid://shopify/Order/1001",
+      paymentStatus: "paid",
+      status: "completed",
+    }],
     adminCalls: [],
     shipments: [],
     trackingCalls: [],
@@ -490,10 +506,192 @@ test("delivery callback parses and idempotently stores tracking details from Shi
       "Arrived at the regional hub",
     ]);
     assert.equal(state.shipments[0].trackingEvents[0].statusCode, "5");
+    assert.equal(state.shipments[0].status, "in_transit");
     assert.equal(state.shipments[0].trackingUpdatedAt instanceof Date, true);
     assert.equal(state.shipments[1].trackingStatus, "Shipment booked");
     assert.deepEqual(state.shipments[1].trackingEvents, []);
   }));
+});
+
+test("an unpaid order cannot be advanced to a shipped state by a webhook", async () => {
+  const state = stateFixture();
+  state.checkouts[0].paymentStatus = "pending";
+  state.shipments = [shipment({
+    status: "quoted",
+    awbCode: null,
+    trackingUrl: null,
+    trackingStatus: null,
+    trackingEvents: [],
+  })];
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": "local-test-token" },
+      body: JSON.stringify({
+        awb: "19041424751540",
+        shipment_id: "shiprocket-shipment-1",
+        current_status: "In Transit",
+        current_status_id: 5,
+      }),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { received: true, matched: false });
+    assert.equal(state.shipments[0].status, "quoted");
+    assert.equal(state.shipments[0].awbCode, null);
+    assert.equal(state.shipments[0].trackingStatus, null);
+    assert.deepEqual(state.shipments[0].trackingEvents, []);
+  }));
+});
+
+test("an unbooked package ignores a transit callback without an AWB", async () => {
+  const state = stateFixture();
+  state.shipments = [shipment({
+    status: "quoted",
+    awbCode: null,
+    trackingUrl: null,
+    trackingStatus: null,
+    trackingEvents: [],
+  })];
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": "local-test-token" },
+      body: JSON.stringify({
+        shipment_id: "shiprocket-shipment-1",
+        current_status: "In Transit",
+        current_status_id: 5,
+      }),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { received: true, matched: false });
+    assert.equal(state.shipments[0].status, "quoted");
+    assert.equal(state.shipments[0].trackingStatus, null);
+    assert.deepEqual(state.shipments[0].trackingEvents, []);
+  }));
+});
+
+test("out-of-order tracking callbacks cannot move lifecycle status backwards", async () => {
+  const state = stateFixture();
+  state.shipments = [shipment({
+    status: "out_for_delivery",
+    trackingStatus: "Out for Delivery",
+    trackingEvents: [{
+      occurredAt: "2026-11-09T12:00:00.000Z",
+      status: "Out for Delivery",
+      description: "Out for delivery",
+      location: null,
+      statusCode: "6",
+    }],
+  })];
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": "local-test-token" },
+      body: JSON.stringify({
+        awb: "19041424751540",
+        shipment_id: "shiprocket-shipment-1",
+        current_status: "In Transit",
+        current_status_id: 5,
+        current_timestamp: "2026-11-09 10:00:00",
+        scans: [{
+          activity: "Arrived at hub",
+          date: "2026-11-09 10:00:00",
+          "sr-status-label": "In Transit",
+        }],
+      }),
+    });
+    assert.equal(response.status, 200);
+    assert.equal(state.shipments[0].status, "out_for_delivery");
+    assert.equal(state.shipments[0].trackingStatus, "Out for Delivery");
+  }));
+});
+
+test("a cancellation callback updates lifecycle without claiming the parcel shipped", async () => {
+  const state = stateFixture();
+  state.shipments = [shipment({
+    status: "quoted",
+    awbCode: null,
+    trackingUrl: null,
+    trackingStatus: null,
+    trackingEvents: [],
+  })];
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": "local-test-token" },
+      body: JSON.stringify({
+        shipment_id: "shiprocket-shipment-1",
+        current_status: "Cancelled",
+        current_status_id: 8,
+      }),
+    });
+    assert.equal(response.status, 200);
+    assert.equal(state.shipments[0].status, "cancelled");
+    const orderRef = Buffer.from("gid://shopify/Order/1001").toString("base64url");
+    const trackingResponse = await fetch(`${base}/shopify/orders/${orderRef}/tracking`, {
+      headers: { "x-test-user": "shopper-1" },
+    });
+    const body = await trackingResponse.json();
+    assert.equal(body.shipments[0].shipmentStatus, "cancelled");
+    assert.equal(body.shipments[0].status, "Shipment cancelled");
+    assert.equal(body.shipments[0].awbCode, null);
+    assert.deepEqual(body.shipments[0].events, []);
+  }));
+});
+
+test("tracking detail hides stored provider scans for a package that is not booked", async () => {
+  const state = stateFixture();
+  state.shipments = [shipment({
+    status: "quoted",
+    awbCode: null,
+    trackingStatus: "In Transit",
+    trackingEvents: [{
+      occurredAt: "2026-11-09T10:00:00.000Z",
+      status: "In Transit",
+      description: "Stale provider activity",
+      location: null,
+    }],
+  })];
+  const orderRef = Buffer.from("gid://shopify/Order/1001").toString("base64url");
+  await withServer(state, async (base) => {
+    const response = await fetch(`${base}/shopify/orders/${orderRef}/tracking`, {
+      headers: { "x-test-user": "shopper-1" },
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.shipments[0].shipmentStatus, "quoted");
+    assert.equal(body.shipments[0].status, "Shipping quote ready");
+    assert.equal(body.shipments[0].awbCode, null);
+    assert.deepEqual(body.shipments[0].events, []);
+  });
+});
+
+test("unpaid Shopify orders never expose fulfillment tracking", async () => {
+  const state = stateFixture();
+  state.checkouts = [];
+  state.orders[0].displayFinancialStatus = "PENDING";
+  state.orders[0].displayFulfillmentStatus = "FULFILLED";
+  state.orders[0].fulfillments = [{
+    status: "SUCCESS",
+    trackingInfo: [{
+      company: "Delhivery",
+      number: "19041424751540",
+      url: "https://shiprocket.co/tracking/19041424751540",
+    }],
+  }];
+  const orderRef = Buffer.from("gid://shopify/Order/1001").toString("base64url");
+  await withServer(state, async (base) => {
+    const detailsResponse = await fetch(`${base}/shopify/orders/${orderRef}`, {
+      headers: { "x-test-user": "shopper-1" },
+    });
+    const details = await detailsResponse.json();
+    assert.equal(details.order.fulfillmentStatus, null);
+    assert.deepEqual(details.order.fulfillments, []);
+    const trackingResponse = await fetch(`${base}/shopify/orders/${orderRef}/tracking`, {
+      headers: { "x-test-user": "shopper-1" },
+    });
+    assert.deepEqual((await trackingResponse.json()).shipments, []);
+  });
 });
 
 test("delivery callback matches a shipment by reference when the AWB is omitted", async () => {

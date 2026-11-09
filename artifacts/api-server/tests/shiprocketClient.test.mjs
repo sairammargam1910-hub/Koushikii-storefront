@@ -328,6 +328,53 @@ test("fetches and normalizes Shiprocket tracking by AWB without booking another 
   }
 });
 
+test("reads existing Shiprocket shipment assignment details without changing shipment state", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    const target = new URL(String(url));
+    calls.push({ url: target, method: init.method ?? "GET" });
+    if (target.pathname.endsWith("/auth/login")) {
+      return new Response(JSON.stringify({ token: "test-token" }), { status: 200 });
+    }
+    if (target.pathname.endsWith("/shipments/1712529624")) {
+      return new Response(JSON.stringify({
+        data: {
+          order_id: 1716900471,
+          shipment_id: 1712529624,
+          awb: null,
+          courier_id: "",
+          status: 11,
+          tracking_url: null,
+        },
+      }), { status: 200 });
+    }
+    throw new Error(`Unexpected shipment request: ${target.pathname}`);
+  };
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+    }, async () => {
+      const { getShiprocketShipmentDetails } = loadModule();
+      const result = await getShiprocketShipmentDetails("1712529624");
+      assert.deepEqual(result, {
+        orderId: "1716900471",
+        shipmentId: "1712529624",
+        awbCode: null,
+        courierId: null,
+        courierName: null,
+        trackingUrl: null,
+        status: "11",
+      });
+      assert.equal(calls.find((call) => call.url.pathname.endsWith("/shipments/1712529624")).method, "GET");
+      assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("rejects a provider tracking response for a different AWB", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url) => {
