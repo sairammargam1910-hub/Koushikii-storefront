@@ -146,7 +146,7 @@ const compiled = await build({
         pricing: `
           export const addMoney = (amounts) => amounts.reduce((sum, amount) => sum + Number(amount), 0).toFixed(2);
           export const checkoutCartFingerprint = () => "hash";
-          export const getShopperQuoteHash = (shopperUserId, fingerprint) => `${shopperUserId}:${fingerprint}`;
+          export const getShopperQuoteHash = (shopperUserId, fingerprint) => shopperUserId + ":" + fingerprint;
           export const getCartDiscountAmount = () => "0.00";
           export const getCheckoutItemTotal = () => "100.00";
           export const minimalCartSnapshot = (cart) => cart;
@@ -434,7 +434,7 @@ test("legacy quotes cannot be claimed with another account's email", async () =>
 });
 
 test("shipping quote performs rate lookup only and saves no carrier order IDs", async () => {
-  await harness(async ({ state, postQuote }) => {
+  await harness(async ({ state, postQuote, postSession }) => {
     state.order.quoteHash = "old-hash";
     const result = await postQuote({
       cartId: state.order.cartId,

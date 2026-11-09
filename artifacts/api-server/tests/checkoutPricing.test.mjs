@@ -67,6 +67,13 @@ test("per-item parcel values preserve the exact discounted line total", () => {
   assert.throws(() => divideMoney("10.00", 3), /represented exactly/);
 });
 
+test("shopper quote hashes stay stable and remain shopper-specific", () => {
+  const { getShopperQuoteHash } = loadModule();
+  const first = getShopperQuoteHash("shopper-1", "fingerprint");
+  assert.equal(getShopperQuoteHash("shopper-1", "fingerprint"), first);
+  assert.notEqual(getShopperQuoteHash("shopper-2", "fingerprint"), first);
+});
+
 test("quote fingerprint changes when destination, cart, or parcel changes", () => {
   const { checkoutCartFingerprint } = loadModule();
   const baseInput = {
