@@ -18,3 +18,15 @@ but subsequent GET records did not contain its detailed rejection text.
 
 **How to apply:** Keep the response's sanitized business outcome and remarks
 together. Never repeat an assignment just to recover missing diagnostics.
+
+A configured pickup address and an offered courier rate do not establish that
+the downstream carrier's warehouse mapping exists.
+
+**Why:** An authorized assignment returned `ClientWarehouse matching query does
+not exist.` even though the order matched an existing Shiprocket pickup record
+and courier serviceability returned a rate.
+
+**How to apply:** Treat this error as a warehouse-record/mapping investigation,
+not proof of a product restriction. Preserve existing orders and pickup
+references; do not change dangerous-goods classifications or create replacement
+orders to work around it.

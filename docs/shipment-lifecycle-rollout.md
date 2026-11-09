@@ -153,3 +153,24 @@ Chenetha now records the package as booking_failed and its paid checkout as
 reconciliation_required. Payment and all Shopify/Shiprocket references are
 unchanged. No new provider order or pickup was created. Automatic live booking
 remains disabled until carrier acceptance is resolved.
+
+## Subsequent user-authorized retry — 2026-11-09
+
+After a new explicit user request, preflight again confirmed no AWB, the same
+existing provider references, and courier 44 offered at INR 116.72.
+One assignment request was submitted; no automatic retry followed.
+
+Shiprocket returned HTTP 200, awb_assign_status=0, error=true, success=false
+and the exact remark: `ClientWarehouse matching query does not exist.`
+A read-only shipment lookup confirmed no AWB and shipment status 11.
+
+The existing order's pickup reference matches the sole configured Shiprocket
+pickup record (ID 80267; status value 2; primary flag 1). The meaning of status
+2 has not been established. A pickup record existing in Shiprocket does not
+prove its downstream courier warehouse mapping exists.
+
+The rejection has been saved in Chenetha as booking_failed while payment remains
+paid and Shopify/Shiprocket references stay unchanged. No new order, pickup,
+classification change or courier substitution was made.
+Verify the existing pickup warehouse's carrier-side mapping before any further
+assignment request. The warehouse error does not establish a product restriction.
