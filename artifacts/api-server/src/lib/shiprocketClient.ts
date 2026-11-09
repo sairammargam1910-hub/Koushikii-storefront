@@ -519,7 +519,8 @@ export function parseShiprocketTrackingWebhook(
   const orderId = text(data.order_id) ?? text(data.orderId) ??
     text(root.order_id) ?? text(root.orderId);
   const rawShipmentStatus = text(data.shipment_status);
-  const statusCode = text(data.shipment_status_id) ??
+  const statusCode = text(data.current_status_id) ??
+    text(data.shipment_status_id) ??
     text(data.status_id) ??
     text(data.status_code) ??
     text(latestTrack.shipment_status_id) ??
@@ -531,6 +532,7 @@ export function parseShiprocketTrackingWebhook(
   const activityValue = data.shipment_track_activities ??
     data.tracking_activity ??
     data.activities ??
+    data.scans ??
     data.activity;
   const rawActivities = Array.isArray(activityValue)
     ? activityValue
@@ -543,6 +545,7 @@ export function parseShiprocketTrackingWebhook(
     text(data.currentStatus) ??
     text(data.status_label) ??
     text(data.status) ??
+    text(data.shipment_status) ??
     text(latestTrack.current_status) ??
     text(latestTrack.status) ??
     (text(latestTrack.shipment_status) && !/^\d+$/.test(text(latestTrack.shipment_status)!)
@@ -558,11 +561,10 @@ export function parseShiprocketTrackingWebhook(
     if (!description) return [];
     return [{
       occurredAt: toIsoDate(event.date ?? event.timestamp ?? event.occurred_at),
-      status: text(event["sr-status-label"]) ?? text(event.status) ?? currentStatus ?? description,
+      status: text(event["sr-status-label"]) ?? text(event.status) ?? description,
       description,
       location: text(event.location),
-      statusCode: statusCode ??
-        text(event["sr-status"]) ??
+      statusCode: text(event["sr-status"]) ??
         text(event.status_id) ??
         text(event.status_code),
     }];
@@ -575,7 +577,7 @@ export function parseShiprocketTrackingWebhook(
 
   if (currentStatus && !events.some((event) => event.status.toLowerCase() === currentStatus.toLowerCase())) {
     events.push({
-      occurredAt: toIsoDate(data.status_date ?? data.updated_at ?? root.timestamp),
+      occurredAt: toIsoDate(data.current_timestamp ?? data.status_date ?? data.updated_at ?? root.timestamp),
       status: currentStatus,
       description: currentStatus,
       location: text(data.location),

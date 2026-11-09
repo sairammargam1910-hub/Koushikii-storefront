@@ -128,7 +128,8 @@ const compiled = await build({
           }
           export function parseShiprocketTrackingWebhook(payload) {
             const data = payload.tracking_data ?? payload.data ?? payload;
-            const activities = data.shipment_track_activities ?? data.tracking_activity ?? data.activities ?? data.activity ?? [];
+            const activities = data.shipment_track_activities ?? data.tracking_activity ??
+              data.activities ?? data.scans ?? data.activity ?? [];
             const events = (Array.isArray(activities) ? activities : [activities]).flatMap((event) => {
               if (!event || typeof event !== "object") return [];
               const description = event.activity ?? event.description ?? event.status;
@@ -145,12 +146,12 @@ const compiled = await build({
             const awbCode = data.awb ?? data.awb_code ?? data.shipment_track?.[0]?.awb_code ?? null;
             const shipmentId = data.shipment_id ?? data.shipmentId ?? null;
             const orderId = data.order_id ?? data.orderId ?? null;
-            const statusCode = data.shipment_status_id ?? data.status_id ?? data.status_code ?? null;
-            const status = data.current_status ?? data.status ?? events.at(-1)?.status ??
+            const statusCode = data.current_status_id ?? data.shipment_status_id ?? data.status_id ?? data.status_code ?? null;
+            const status = data.current_status ?? data.status ?? data.shipment_status ?? events.at(-1)?.status ??
               (statusCode ? "Shipment status " + statusCode : "Tracking update unavailable");
             if (data.current_status && !events.some((event) => event.status === data.current_status)) {
               events.push({
-                occurredAt: data.status_date ?? null,
+                occurredAt: data.current_timestamp ?? data.status_date ?? null,
                 status: data.current_status,
                 description: data.current_status,
                 location: data.location ?? null,
@@ -537,5 +538,34 @@ test("delivery callback rejects authenticated payloads without a valid shipment 
       body: JSON.stringify({ current_status: "Delivered" }),
     });
     assert.equal(response.status, 400);
+  }));
+});
+
+test("delivery callback acknowledges Shiprocket's downloaded scans sample", async () => {
+  const state = stateFixture();
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": "local-test-token",
+      },
+      body: JSON.stringify({
+        awb: 59629792084,
+        current_status: "Delivered",
+        order_id: "13905312",
+        current_timestamp: "2021-07-02 16:41:59",
+        current_status_id: 7,
+        shipment_status: "Delivered",
+        shipment_status_id: 7,
+        courier_name: "Sample courier",
+        scans: [{ date: "2019-06-25 12:08:00", activity: "SHIPMENT DELIVERED", location: "PATIALA" }],
+      }),
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { received: true, matched: false });
+    assert.deepEqual(state.trackingCalls, []);
+    assert.deepEqual(state.shipments, []);
   }));
 });

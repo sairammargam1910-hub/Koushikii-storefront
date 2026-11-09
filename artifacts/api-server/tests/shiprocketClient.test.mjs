@@ -401,6 +401,46 @@ test("tracking webhook parser captures shipment references, status code, courier
   assert.equal(result.tracking.events[0].statusCode, "5");
 });
 
+test("tracking webhook parser accepts Shiprocket's downloaded scans payload", () => {
+  const { parseShiprocketTrackingWebhook } = loadModule();
+  const result = parseShiprocketTrackingWebhook({
+    awb: 59629792084,
+    current_status: "Delivered",
+    order_id: "13905312",
+    current_timestamp: "2021-07-02 16:41:59",
+    etd: "2021-07-02 16:41:59",
+    current_status_id: 7,
+    shipment_status: "Delivered",
+    shipment_status_id: 7,
+    channel_order_id: "enter your channel order id",
+    channel: "enter your channel name",
+    courier_name: "Sample courier",
+    scans: [
+      {
+        date: "2019-06-25 12:08:00",
+        activity: "SHIPMENT DELIVERED",
+        location: "PATIALA",
+      },
+      {
+        date: "2019-06-25 12:06:00",
+        activity: "NECESSARY CHARGES PENDING FROM CONSIGNEE",
+        location: "PATIALA",
+      },
+    ],
+  });
+
+  assert.equal(result.awbCode, "59629792084");
+  assert.equal(result.orderId, "13905312");
+  assert.equal(result.tracking.status, "Delivered");
+  assert.equal(result.tracking.statusCode, "7");
+  assert.equal(result.tracking.courierName, "Sample courier");
+  assert.deepEqual(result.tracking.events.map((event) => event.description), [
+    "NECESSARY CHARGES PENDING FROM CONSIGNEE",
+    "SHIPMENT DELIVERED",
+    "Delivered",
+  ]);
+});
+
 test("tracking snapshots retain distinct history and keep status from an older provider snapshot", () => {
   const { mergeShiprocketTrackingSnapshot } = loadModule();
   const newest = {
