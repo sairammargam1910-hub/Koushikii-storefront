@@ -593,3 +593,43 @@ test("delivery callback acknowledges Shiprocket's downloaded scans sample", asyn
     assert.deepEqual(state.shipments, []);
   }));
 });
+
+test("delivery callback matches opaque order references without slug restrictions", async () => {
+  const state = stateFixture();
+  const reference = "#Shiprocket Test / order: 123";
+  state.shipments = [shipment({
+    shiprocketOrderId: reference,
+    trackingStatus: "In Transit",
+    trackingEvents: [],
+  })];
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": "local-test-token" },
+      body: JSON.stringify({ order_id: reference, current_status: "Delivered" }),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { received: true, matched: true });
+    assert.equal(state.shipments[0].trackingStatus, "Delivered");
+    assert.equal(state.shipments[0].shiprocketOrderId, reference);
+  }));
+});
+
+test("delivery callback rejects oversized or control-character order references", async () => {
+  const state = stateFixture();
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    for (const reference of ["x".repeat(257), "order\u0000id"]) {
+      const response = await fetch(`${base}/events/delivery`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-api-key": "local-test-token" },
+        body: JSON.stringify({ order_id: reference, current_status: "Delivered" }),
+      });
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), {
+        error: "The tracking reference is invalid.",
+        code: "invalid_order_id",
+      });
+    }
+    assert.deepEqual(state.shipments, []);
+  }));
+});

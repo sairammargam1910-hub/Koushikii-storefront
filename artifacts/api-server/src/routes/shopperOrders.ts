@@ -467,10 +467,14 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
   const shipmentId = webhook.shipmentId?.trim() ?? "";
   const orderId = webhook.orderId?.trim() ?? "";
   const validReference = (value: string): boolean => /^[A-Za-z0-9_-]{1,64}$/.test(value);
+  // Order references are opaque provider strings, not necessarily numeric IDs or slugs.
+  // Equality queries are parameterized; bound their size and reject control characters.
+  const validOrderReference = (value: string): boolean =>
+    value.length <= 256 && !/[\u0000-\u001f\u007f-\u009f]/u.test(value);
   const invalidReferenceFields = [
     ...(awbCode && !validTrackingAwb(awbCode) ? ["awb"] : []),
     ...(shipmentId && !validReference(shipmentId) ? ["shipment_id"] : []),
-    ...(orderId && !validReference(orderId) ? ["order_id"] : []),
+    ...(orderId && !validOrderReference(orderId) ? ["order_id"] : []),
   ];
   if (invalidReferenceFields.length) {
     const reasonCode = `invalid_${invalidReferenceFields[0]}`;
