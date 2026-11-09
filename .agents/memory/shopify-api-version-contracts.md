@@ -31,3 +31,9 @@ For Shopify Admin API 2026-04, `Order.fulfillments` is a plain list, not a conne
 **Why:** The connection-shaped query failed against Shopify and broke both shopper order details and tracking, while fixture tests alone could not validate the live GraphQL contract.
 
 **How to apply:** Map the field directly as an array and verify nested order queries against the connected store's pinned API version.
+
+Verify the store domain before using a Shopify connector for operational checks; the `shopify-store` and `shopify` connections can point to different stores.
+
+**Why:** The code's `shopify-store` connection pointed at a different shop during live checkout verification, while the separate `shopify` connection matched the checkout store.
+
+**How to apply:** Run a read-only `shop { myshopifyDomain }` query first, and use only the connection matching the checkout store before inspecting orders or inventory.
