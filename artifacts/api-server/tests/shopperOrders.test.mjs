@@ -143,7 +143,8 @@ const compiled = await build({
                   event["sr-status"] ?? event.status_id ?? null,
               }];
             });
-            const awbCode = data.awb ?? data.awb_code ?? data.shipment_track?.[0]?.awb_code ?? null;
+            const rawAwb = data.awb ?? data.awb_code ?? data.shipment_track?.[0]?.awb_code ?? null;
+            const awbCode = rawAwb == null ? null : String(rawAwb);
             const shipmentId = data.shipment_id ?? data.shipmentId ?? null;
             const orderId = data.order_id ?? data.orderId ?? null;
             const statusCode = data.current_status_id ?? data.shipment_status_id ?? data.status_id ?? data.status_code ?? null;

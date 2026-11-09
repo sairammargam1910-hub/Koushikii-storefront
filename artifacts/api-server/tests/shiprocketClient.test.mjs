@@ -398,7 +398,7 @@ test("tracking webhook parser captures shipment references, status code, courier
   assert.equal(result.tracking.status, "In Transit");
   assert.equal(result.tracking.statusCode, "5");
   assert.equal(result.tracking.events[0].description, "Arrived at the regional hub");
-  assert.equal(result.tracking.events[0].statusCode, "5");
+  assert.equal(result.tracking.events[0].statusCode, "IT");
 });
 
 test("tracking webhook parser accepts Shiprocket's downloaded scans payload", () => {
