@@ -14,3 +14,9 @@ Shiprocket's dashboard message “unable to send request” does not establish a
 **Why:** Production request logs showed dashboard tests reaching the service and failing reference validation while the downloaded sample was accepted.
 
 **How to apply:** Verify the HTTP status and sanitized validation reason before changing URLs, authentication, or parser rules. Do not assume the dashboard test request equals its downloadable sample.
+
+Treat Shiprocket callback order references as opaque strings rather than requiring slug-only formatting.
+
+**Why:** The dashboard test failed order-reference validation even though its AWB and authentication passed. The user confirmed the test succeeded after allowing bounded opaque order references.
+
+**How to apply:** Preserve exact order references for parameterized equality matching, keep length/control-character safeguards, and do not weaken AWB validation or shipment-conflict checks.
