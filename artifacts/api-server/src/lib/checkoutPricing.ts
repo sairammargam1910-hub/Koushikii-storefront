@@ -116,6 +116,12 @@ export function checkoutCartFingerprint(input: {
   return createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }
 
+export function getShopperQuoteHash(shopperUserId: string, cartFingerprint: string): string {
+  return createHash("sha256")
+    .update(`${shopperUserId}\0${cartFingerprint}`)
+    .digest("hex");
+}
+
 export function minimalCartSnapshot(cart: ShopifyCartNode): ShopifyCartNode {
   return {
     ...cart,

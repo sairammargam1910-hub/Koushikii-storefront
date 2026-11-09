@@ -146,6 +146,7 @@ const compiled = await build({
         pricing: `
           export const addMoney = (amounts) => amounts.reduce((sum, amount) => sum + Number(amount), 0).toFixed(2);
           export const checkoutCartFingerprint = () => "hash";
+          export const getShopperQuoteHash = (shopperUserId, fingerprint) => `${shopperUserId}:${fingerprint}`;
           export const getCartDiscountAmount = () => "0.00";
           export const getCheckoutItemTotal = () => "100.00";
           export const minimalCartSnapshot = (cart) => cart;
@@ -258,7 +259,7 @@ function makeOrder(overrides = {}) {
     cashfreeOrderId: "chenetha_test-order",
     status: "payment_pending",
     paymentStatus: "pending",
-    quoteHash: "hash",
+    quoteHash: "shopper-1:hash",
     cartId: "gid://shopify/Cart/1",
     purchasedCartLines: [],
     cartCleanupStatus: "not_started",
@@ -456,6 +457,12 @@ test("shipping quote performs rate lookup only and saves no carrier order IDs", 
     assert.ok(createdQuote.quoteExpiresAt.getTime() - Date.now() > 29 * 60_000);
     assert.equal(state.shipments.at(-1).shiprocketOrderId, undefined);
     assert.equal(state.shipments.at(-1).shiprocketShipmentId, undefined);
+    const session = await postSession(
+      { quoteId: result.body.quoteId },
+      { Origin: "https://preview.replit.dev" },
+    );
+    assert.equal(session.status, 200);
+    assert.equal(session.body.amount, "120.00");
   });
 });
 

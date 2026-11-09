@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, lt, or } from "drizzle-orm";
 import { clerkClient, getAuth } from "@clerk/express";
 import { Router, type Request, type Response } from "express";
@@ -28,6 +28,7 @@ import {
 import {
   addMoney,
   checkoutCartFingerprint,
+  getShopperQuoteHash,
   getCartDiscountAmount,
   getCheckoutItemTotal,
   minimalCartSnapshot,
@@ -802,9 +803,7 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       address,
       parcel,
     });
-    const quoteHash = createHash("sha256")
-      .update(`${shopperUserId}\0${quoteFingerprint}`)
-      .digest("hex");
+    const quoteHash = getShopperQuoteHash(shopperUserId, quoteFingerprint);
     const existing = await db.select()
       .from(cashfreeCheckoutOrdersTable)
       .where(and(
@@ -983,14 +982,15 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
       deliveryAddress: snapshot.address,
     });
     validateCartForCheckout(cart);
-    const currentHash = checkoutCartFingerprint({
+    const currentFingerprint = checkoutCartFingerprint({
       cart,
       email: snapshot.email,
       phone: snapshot.phone,
       address: snapshot.address,
       parcel: getConfiguredParcel(),
     });
-    if (currentHash !== row.quoteHash) {
+    const currentQuoteHash = getShopperQuoteHash(shopperUserId, currentFingerprint);
+    if (currentQuoteHash !== row.quoteHash) {
       res.status(409).json({
         error: "Your bag, delivery address, or parcel setup changed. Request a fresh shipping quote.",
       });
