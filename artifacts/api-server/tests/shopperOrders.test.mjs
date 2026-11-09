@@ -539,6 +539,7 @@ test("delivery callback rejects authenticated payloads without a valid shipment 
       body: JSON.stringify({ current_status: "Delivered" }),
     });
     assert.equal(response.status, 400);
+    assert.equal((await response.json()).code, "missing_reference");
   }));
 });
 

@@ -442,7 +442,11 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
     return;
   }
   if (!req.is("application/json")) {
-    res.status(415).json({ error: "A JSON tracking update is required." });
+    logger.warn({ reasonCode: "unsupported_content_type" }, "Rejected Shiprocket tracking callback");
+    res.status(415).json({
+      error: "A JSON tracking update is required.",
+      code: "unsupported_content_type",
+    });
     return;
   }
 
@@ -450,7 +454,11 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
     ? req.body as Record<string, unknown>
     : null;
   if (!body) {
-    res.status(400).json({ error: "A tracking event object is required." });
+    logger.warn({ reasonCode: "body_not_object" }, "Rejected Shiprocket tracking callback");
+    res.status(400).json({
+      error: "A tracking event object is required.",
+      code: "body_not_object",
+    });
     return;
   }
 
@@ -462,15 +470,27 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
   if ((awbCode && !validTrackingAwb(awbCode)) ||
       (shipmentId && !validReference(shipmentId)) ||
       (orderId && !validReference(orderId))) {
-    res.status(400).json({ error: "The tracking reference is invalid." });
+    logger.warn({ reasonCode: "invalid_reference" }, "Rejected Shiprocket tracking callback");
+    res.status(400).json({
+      error: "The tracking reference is invalid.",
+      code: "invalid_reference",
+    });
     return;
   }
   if (!awbCode && !shipmentId && !orderId) {
-    res.status(400).json({ error: "A valid AWB or shipment reference is required." });
+    logger.warn({ reasonCode: "missing_reference" }, "Rejected Shiprocket tracking callback");
+    res.status(400).json({
+      error: "A valid AWB or shipment reference is required.",
+      code: "missing_reference",
+    });
     return;
   }
   if (webhook.tracking.status === "Tracking update unavailable" && !webhook.tracking.events.length) {
-    res.status(400).json({ error: "The payload must include a tracking status or activity." });
+    logger.warn({ reasonCode: "missing_tracking_event" }, "Rejected Shiprocket tracking callback");
+    res.status(400).json({
+      error: "The payload must include a tracking status or activity.",
+      code: "missing_tracking_event",
+    });
     return;
   }
 
