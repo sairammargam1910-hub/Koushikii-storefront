@@ -87,8 +87,16 @@ the snapshot.
 
 ## Prepared migration context
 
-Production application is pending final approval. Use the migration SQL file
-verbatim when completing the prepared migration:
+The user approved production application. The prepared migration was applied
+successfully to production on 2026-11-09 and its temporary branch was deleted.
+All 18 order rows and 18 package rows retained the recorded fingerprints.
+All 12 enum labels are present. No order rows or references were changed.
+
+Railway's SHIPROCKET_LIVE_BOOKING_ENABLED was explicitly set to false with
+deployment skipped, so it takes effect with the upcoming application rollout.
+No payment settings were changed.
+
+Completed migration context:
 
 - migration_id: `3f300502-4fb4-4839-a36c-505f5b574ca8`
 - database_name: `neondb`
@@ -96,5 +104,5 @@ verbatim when completing the prepared migration:
 - temporary_branch_id: `br-small-forest-b3zc3wl9`
 - parent_branch_id: `br-broad-wind-b31nsq3s`
 
-If approval is declined, discard the prepared migration and its temporary branch.
-Retain the recovery snapshot until its documented expiration.
+Retain the recovery snapshot until its documented expiration. Do not attempt to
+complete or discard this migration again; its temporary branch no longer exists.
