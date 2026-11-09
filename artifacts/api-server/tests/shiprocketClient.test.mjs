@@ -95,6 +95,107 @@ const baseInput = {
   heightCm: 8,
 };
 
+async function withAwbResponse(payload, run) {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    const target = new URL(String(url));
+    if (target.pathname.endsWith("/auth/login")) {
+      return Response.json({ token: "test-token" });
+    }
+    calls.push({ path: target.pathname, method: init.method, body: JSON.parse(init.body) });
+    return Response.json(payload);
+  };
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+    }, () => run(loadModule(), calls));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+test("AWB assignment saves confirmed courier and tracking details using one request", async () => {
+  await withAwbResponse({
+    awb_assign_status: 1,
+    response: { data: {
+      awb_code: "AWB-12345",
+      courier_company_id: 44,
+      courier_name: "Delhivery Surface 2 Kgs",
+      tracking_url: "https://shiprocket.co/tracking/AWB-12345",
+    } },
+  }, async ({ bookShiprocketPackage }, calls) => {
+    const result = await bookShiprocketPackage({ shipmentId: "789", courierId: "44", international: false });
+    assert.deepEqual(result, {
+      awbCode: "AWB-12345",
+      courierId: "44",
+      courierName: "Delhivery Surface 2 Kgs",
+      trackingUrl: "https://shiprocket.co/tracking/AWB-12345",
+    });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].path, "/v1/external/courier/assign/awb");
+    assert.deepEqual(calls[0].body, { shipment_id: 789, courier_id: 44 });
+  });
+});
+
+test("HTTP 200 AWB rejection retains sanitized courier remarks and is never retried", async () => {
+  await withAwbResponse({
+    awb_assign_status: 0,
+    response: { data: {
+      error: true,
+      success: false,
+      rmk: "Courier rejected assignment",
+      packages: [{ remarks: ["Validation failed; email buyer@example.com; phone +91 98765 43210; address: 42 Test Street; token=test-private-token"] }],
+    } },
+  }, async ({ bookShiprocketPackage }, calls) => {
+    await assert.rejects(
+      bookShiprocketPackage({ shipmentId: "789", courierId: "44", international: false }),
+      (error) => {
+        assert.equal(error.diagnostics.httpStatus, 200);
+        assert.equal(error.diagnostics.errorCode, "AWB_ASSIGNMENT_REJECTED");
+        assert.equal(error.diagnostics.bookingRejected, true);
+        assert.match(error.diagnostics.message, /Courier rejected assignment/);
+        assert.match(error.diagnostics.message, /Validation failed/);
+        assert.doesNotMatch(error.diagnostics.message, /buyer@example|98765|Test Street|test-private-token/);
+        return true;
+      },
+    );
+    assert.equal(calls.length, 1);
+  });
+});
+
+test("a missing AWB without explicit rejection remains ambiguous", async () => {
+  await withAwbResponse({ response: { data: {} } }, async ({ bookShiprocketPackage }, calls) => {
+    await assert.rejects(
+      bookShiprocketPackage({ shipmentId: "789", courierId: "44", international: false }),
+      (error) => {
+        assert.equal(error.diagnostics.errorCode, "AWB_CONFIRMATION_MISSING");
+        assert.notEqual(error.diagnostics.bookingRejected, true);
+        return true;
+      },
+    );
+    assert.equal(calls.length, 1);
+  });
+});
+
+test("an AWB accompanied by conflicting failure flags requires reconciliation", async () => {
+  await withAwbResponse({
+    awb_assign_status: 0,
+    response: { data: { error: true, awb_code: "AWB-12345" } },
+  }, async ({ bookShiprocketPackage }, calls) => {
+    await assert.rejects(
+      bookShiprocketPackage({ shipmentId: "789", courierId: "44", international: false }),
+      (error) => {
+        assert.equal(error.diagnostics.errorCode, "AWB_CONFIRMATION_MISSING");
+        assert.notEqual(error.diagnostics.bookingRejected, true);
+        return true;
+      },
+    );
+    assert.equal(calls.length, 1);
+  });
+});
+
 test("domestic rate lookup never creates a provider order or AWB", async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];

@@ -83,6 +83,7 @@ export class ShiprocketError extends Error {
     endpoint?: string;
     httpStatus?: number;
     errorCode?: string;
+    bookingRejected?: boolean;
     message: string;
   };
 
@@ -93,6 +94,7 @@ export class ShiprocketError extends Error {
       httpStatus?: number;
       errorCode?: unknown;
       providerMessage?: unknown;
+      bookingRejected?: boolean;
     } = {},
   ) {
     super(message);
@@ -114,6 +116,7 @@ export class ShiprocketError extends Error {
       ...(endpoint ? { endpoint } : {}),
       ...(httpStatus !== undefined ? { httpStatus } : {}),
       ...(errorCode ? { errorCode } : {}),
+      ...(details.bookingRejected === true ? { bookingRejected: true } : {}),
       message: diagnosticMessage,
     };
   }
@@ -200,6 +203,7 @@ async function readPayload(response: Response): Promise<Record<string, any>> {
 async function request<T>(
   path: string,
   init: RequestInit = {},
+  metadata?: { httpStatus?: number },
 ): Promise<T> {
   const token = await authenticate();
   const response = await fetch(`${API_BASE}${path}`, {
@@ -211,6 +215,7 @@ async function request<T>(
     },
     signal: init.signal ?? AbortSignal.timeout(20_000),
   });
+  if (metadata) metadata.httpStatus = response.status;
   const payload = await readPayload(response);
   if (!response.ok || payload.status_code && Number(payload.status_code) >= 400) {
     const providerMessage = payload.message ?? payload.error;
@@ -462,41 +467,67 @@ export async function bookShiprocketPackage(input: {
   courierName?: string;
   trackingUrl?: string;
 }> {
+  if (!/^\d{1,24}$/.test(input.shipmentId) || !/^\d{1,12}$/.test(input.courierId)) {
+    throw new ShiprocketError("Shiprocket booking references are invalid.", {
+      errorCode: "INVALID_BOOKING_REFERENCE",
+      bookingRejected: true,
+    });
+  }
   const path = input.international
     ? "/international/courier/assign/awb"
     : "/courier/assign/awb";
-  const payload = await request<{
-    response?: {
-      data?: {
-        awb_code?: string;
-        tracking_url?: string;
-        courier_company_id?: number | string;
-        courier_id?: number | string;
-        courier_name?: string;
-        courier_company_name?: string;
-      };
-    };
-    awb_code?: string;
-    tracking_url?: string;
-    courier_company_id?: number | string;
-    courier_id?: number | string;
-    courier_name?: string;
-    courier_company_name?: string;
-  }>(path, {
+  const metadata: { httpStatus?: number } = {};
+  const payload = await request<Record<string, unknown>>(path, {
     method: "POST",
     body: JSON.stringify({
       shipment_id: Number(input.shipmentId),
       courier_id: Number(input.courierId),
     }),
-  });
-  const awbCode = payload.response?.data?.awb_code ?? payload.awb_code;
-  if (!awbCode) throw new ShiprocketError("Shiprocket did not confirm an AWB booking.");
-  const data = payload.response?.data;
-  const courierId = text(data?.courier_company_id ?? data?.courier_id ??
+  }, metadata);
+  const response = record(payload.response);
+  const data = record(response.data);
+  const awbCode = text(data.awb_code) ?? text(payload.awb_code);
+  const falseFlag = (value: unknown) => value === false || value === 0 || value === "0";
+  const trueFlag = (value: unknown) => value === true || value === 1 || value === "1";
+  const rejected = falseFlag(payload.awb_assign_status) ||
+    trueFlag(data.error) || trueFlag(payload.error) || falseFlag(data.success);
+  if (!awbCode || rejected) {
+    const messages: string[] = [];
+    const addMessage = (value: unknown) => {
+      for (const part of Array.isArray(value) ? value.slice(0, 3) : [value]) {
+        const message = sanitizeShiprocketDiagnosticMessage(part);
+        if (message) messages.push(message);
+      }
+    };
+    addMessage(data.rmk);
+    addMessage(data.message);
+    addMessage(response.message);
+    addMessage(payload.message);
+    if (Array.isArray(data.packages)) {
+      for (const item of data.packages.slice(0, 3)) {
+        addMessage(record(item).remarks);
+      }
+    }
+    // Conflicting flags plus an AWB are ambiguous: reconcile, never retry.
+    const definiteRejection = rejected && !awbCode;
+    throw new ShiprocketError(
+      definiteRejection
+        ? "Shiprocket rejected AWB assignment."
+        : "Shiprocket did not unambiguously confirm an AWB booking.",
+      {
+        endpoint: path,
+        httpStatus: metadata.httpStatus,
+        errorCode: definiteRejection ? "AWB_ASSIGNMENT_REJECTED" : "AWB_CONFIRMATION_MISSING",
+        bookingRejected: definiteRejection,
+        providerMessage: messages.join("; ") || undefined,
+      },
+    );
+  }
+  const courierId = text(data.courier_company_id ?? data.courier_id ??
     payload.courier_company_id ?? payload.courier_id);
-  const courierName = text(data?.courier_name ?? data?.courier_company_name ??
+  const courierName = text(data.courier_name ?? data.courier_company_name ??
     payload.courier_name ?? payload.courier_company_name);
-  const trackingUrl = safeTrackingUrl(data?.tracking_url ?? payload.tracking_url);
+  const trackingUrl = safeTrackingUrl(data.tracking_url ?? payload.tracking_url);
   return {
     awbCode,
     ...(courierId ? { courierId } : {}),

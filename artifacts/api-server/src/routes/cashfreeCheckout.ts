@@ -635,18 +635,22 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
       const httpStatus = error instanceof ShiprocketError
         ? error.diagnostics.httpStatus
         : undefined;
-      const definitelyRejected = httpStatus !== undefined &&
-        httpStatus >= 400 && httpStatus < 500 && httpStatus !== 409;
+      const diagnostics = error instanceof ShiprocketError ? error.diagnostics : undefined;
+      const definitelyRejected = diagnostics?.bookingRejected === true ||
+        (httpStatus !== undefined && httpStatus >= 400 && httpStatus < 500 &&
+          httpStatus !== 408 && httpStatus !== 409);
       logger.error({
         checkoutOrderId: row.cashfreeOrderId,
         shipmentPackageId: shipment.id,
         providerHttpStatus: httpStatus,
+        providerErrorCode: diagnostics?.errorCode,
+        providerMessage: diagnostics?.message,
       }, "Paid checkout carrier booking did not complete");
       await db.update(checkoutShipmentPackagesTable)
         .set({
           status: definitelyRejected ? "booking_failed" : "booking_pending",
           lastError: definitelyRejected
-            ? "Shiprocket rejected AWB assignment. Verify courier eligibility before retrying."
+            ? `Shiprocket rejected AWB assignment. ${diagnostics?.message ?? ""} Verify courier eligibility before retrying.`.trim()
             : "Shiprocket may have accepted the request. Reconcile shipment details before any retry.",
           updatedAt: new Date(),
         })

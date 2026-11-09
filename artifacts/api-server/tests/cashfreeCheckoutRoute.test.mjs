@@ -163,6 +163,10 @@ const compiled = await build({
           export const bookShiprocketPackage = async () => {
             state.awbCalls += 1;
             if (state.awbErrorStatus) throw new ShiprocketError("test booking rejected", { httpStatus: state.awbErrorStatus });
+            if (state.awbBodyRejected) throw new ShiprocketError("test booking rejected", {
+              httpStatus: 200, bookingRejected: true,
+              errorCode: "AWB_ASSIGNMENT_REJECTED", message: "Courier rejected assignment",
+            });
             if (state.awbError) throw new Error("test ambiguous network failure");
             return { awbCode: "awb-test" };
           };
@@ -327,6 +331,7 @@ async function harness(run, options = {}) {
     awbCalls: 0,
     awbError: false,
     awbErrorStatus: null,
+    awbBodyRejected: false,
     shipmentDetailsCalls: [],
     shipmentDetails: null,
     shipmentDetailsError: false,
@@ -769,6 +774,30 @@ test("a definite provider rejection records booking_failed and does not auto-ret
     assert.equal(state.shipments[0].status, "booking_failed");
     await getStatus();
     assert.equal(state.awbCalls, 1);
+  }));
+});
+
+test("an HTTP 200 courier rejection records booking_failed without losing paid order references", async () => {
+  await withLiveAwbBooking(() => harness(async ({ state, getStatus }) => {
+    state.environment = "production";
+    state.providerStatus = "PAID";
+    state.awbBodyRejected = true;
+    state.shipments = [{
+      id: "existing-package", checkoutOrderId: state.order.id, packageIndex: 0,
+      shiprocketOrderId: "1716900471", shiprocketShipmentId: "1712529624",
+      courierId: "44", courierName: "Delhivery Surface 2 Kgs", quotedAmount: "116.72",
+      status: "quoted", awbCode: null, updatedAt: new Date(),
+    }];
+    await getStatus();
+    assert.equal(state.shipments[0].status, "booking_failed");
+    assert.match(state.shipments[0].lastError, /Courier rejected assignment/);
+    assert.equal(state.order.paymentStatus, "paid");
+    assert.equal(state.order.status, "reconciliation_required");
+    assert.equal(state.shipments[0].shiprocketOrderId, "1716900471");
+    assert.equal(state.shipments[0].shiprocketShipmentId, "1712529624");
+    await getStatus();
+    assert.equal(state.awbCalls, 1);
+    assert.equal(state.carrierCreateCalls.length, 0);
   }));
 });
 

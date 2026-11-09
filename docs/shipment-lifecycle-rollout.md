@@ -130,3 +130,26 @@ unexercised during this no-shipment-action rollout.
 
 Product eligibility remains unresolved. The held order still has no AWB or
 tracking URL. Do not book it without eligibility confirmation and final approval.
+
+## Subsequent authorized AWB attempt — 2026-11-09
+
+The user subsequently explicitly requested AWB assignment for the existing
+shipment. Preflight confirmed no existing AWB, courier 44 offered at INR 116.72,
+blocked=0, and no hazard field returned by the inspected API records.
+No dangerous-goods flag was changed.
+
+Exactly one POST to `/courier/assign/awb` was made with shipment 1712529624 and
+courier 44. Shiprocket responded HTTP 200 with awb_assign_status=0, error=true
+and no AWB. No retry was made. A subsequent read-only shipment GET still
+reported no AWB.
+
+The one-off request captured rejection flags but did not retain the detailed
+rmk/package remarks. Its exact carrier rejection reason is not established.
+Do not invent a reason or retry merely to retrieve the missing remark.
+The API client is now being corrected to retain sanitized remarks and classify
+explicit HTTP-200 booking rejections separately from ambiguous responses.
+
+Chenetha now records the package as booking_failed and its paid checkout as
+reconciliation_required. Payment and all Shopify/Shiprocket references are
+unchanged. No new provider order or pickup was created. Automatic live booking
+remains disabled until carrier acceptance is resolved.
