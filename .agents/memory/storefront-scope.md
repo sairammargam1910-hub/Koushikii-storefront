@@ -26,6 +26,12 @@ The merchant selected address-based Shiprocket quotes for the custom storefront 
 
 **How to apply:** Send the actual weight and dimensions to Shiprocket and use returned serviceability and rates; do not hardcode prices. Use the confirmed export purpose and invoice terms in international quote requests. Volumetric weight is derived from the supplied dimensions by the provider.
 
+The client does not yet have all international-export documents and will enable international shipping in Shiprocket after receiving them. Defer the app's international configuration until the required documents and product classifications are available.
+
+**Why:** The user confirmed on 2026-11-09 that international setup should wait for the client's documents and Shiprocket activation.
+
+**How to apply:** Keep international checkout unavailable until the client enables it in Shiprocket and supplies verified export settings and the correct HSN for each product. Do not apply the confirmed HSN for one representative saree to the whole catalog.
+
 The user wants sign-in and sign-out for both shoppers and the merchant. Shopper site accounts use Replit-managed Clerk; Shopify checkout, payments, shipping and order identity remain separate. Phone sign-in is not supported by the managed Clerk integration.
 
 **Why:** The user explicitly chose “Shoppers and merchant” and asked for email or phone with password and password recovery.
