@@ -265,7 +265,7 @@ function parseTrackingDate(value: string | null): string | null {
 async function refreshStoredShipmentTracking(
   shipmentPackageId: string,
   expectedAwbCode: string,
-): Promise<ShiprocketTracking | null> {
+): Promise<(ShiprocketTracking & { shipmentStatus: ShipmentLifecycleStatus }) | null> {
   const incoming = await getShiprocketTracking(expectedAwbCode);
   return persistStoredShipmentTracking(shipmentPackageId, incoming, { awbCode: expectedAwbCode });
 }
@@ -299,7 +299,7 @@ async function persistStoredShipmentTracking(
       !checkout ||
       checkout.paymentStatus !== "paid" ||
       !checkout.shopifyOrderId ||
-      ["refund_pending", "refunded", "reconciliation_required"].includes(checkout.status)
+      ["refund_pending", "refunded"].includes(checkout.status)
     ) return null;
 
     const merged = mergeShiprocketTrackingSnapshot({
@@ -578,7 +578,7 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
       !checkout ||
       checkout.paymentStatus !== "paid" ||
       !checkout.shopifyOrderId ||
-      ["refund_pending", "refunded", "reconciliation_required"].includes(checkout.status)
+      ["refund_pending", "refunded"].includes(checkout.status)
     ) {
       res.status(200).json({ received: true, matched: false });
       return;
@@ -639,7 +639,7 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
     const shopifyPaid = order.displayFinancialStatus?.toUpperCase() === "PAID";
     const checkoutPaid = checkout?.paymentStatus === "paid" &&
       Boolean(checkout.shopifyOrderId) &&
-      !["refund_pending", "refunded", "reconciliation_required"].includes(checkout.status);
+      !["refund_pending", "refunded"].includes(checkout.status);
     const packages = checkoutPaid && shopifyPaid
       ? await db.select().from(checkoutShipmentPackagesTable)
           .where(eq(checkoutShipmentPackagesTable.checkoutOrderId, checkout.id))

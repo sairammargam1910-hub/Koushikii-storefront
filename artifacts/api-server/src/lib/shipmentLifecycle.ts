@@ -37,14 +37,6 @@ const shipmentProgressStatuses = new Set<ShipmentLifecycleStatus>([
   "delivered",
   "returned",
 ]);
-const activeTrackingStatuses = new Set<ShipmentLifecycleStatus>([
-  "booked",
-  "pickup_scheduled",
-  "picked_up",
-  "in_transit",
-  "out_for_delivery",
-]);
-
 export function normalizeShipmentLifecycleStatus(
   status: string | null | undefined,
 ): ShipmentLifecycleStatus | null {

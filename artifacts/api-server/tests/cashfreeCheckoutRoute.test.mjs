@@ -723,6 +723,11 @@ test("ambiguous AWB responses are reconciled but never blindly retried", async (
     assert.equal(state.shipments[0].shiprocketOrderId, "1716900471");
     assert.equal(state.shipments[0].shiprocketShipmentId, "1712529624");
 
+    const preflightReads = state.shipmentDetailsCalls.length;
+    await getStatus();
+    assert.equal(state.awbCalls, 1);
+    assert.equal(state.shipmentDetailsCalls.length, preflightReads);
+    state.shipments[0].updatedAt = new Date(Date.now() - 61_000);
     state.shipmentDetails = {
       orderId: "1716900471",
       shipmentId: "1712529624",

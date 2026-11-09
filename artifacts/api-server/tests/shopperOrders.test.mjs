@@ -666,6 +666,42 @@ test("tracking detail hides stored provider scans for a package that is not book
   });
 });
 
+test("paid orders needing booking review still show their shipment state and accept confirmed AWB callbacks", async () => {
+  const state = stateFixture();
+  state.checkouts[0].status = "reconciliation_required";
+  state.shipments = [shipment({
+    status: "booking_failed",
+    awbCode: null,
+    trackingUrl: null,
+    trackingStatus: null,
+    trackingEvents: [],
+  })];
+  const orderRef = Buffer.from("gid://shopify/Order/1001").toString("base64url");
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const before = await fetch(`${base}/shopify/orders/${orderRef}/tracking`, {
+      headers: { "x-test-user": "shopper-1" },
+    });
+    const initial = await before.json();
+    assert.equal(initial.shipments[0].shipmentStatus, "booking_failed");
+    assert.equal(initial.shipments[0].status, "Shipment booking needs attention");
+    assert.equal(initial.shipments[0].awbCode, null);
+    const callback = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": "local-test-token" },
+      body: JSON.stringify({
+        shipment_id: "shiprocket-shipment-1",
+        awb: "19041424751540",
+        current_status: "AWB Assigned",
+      }),
+    });
+    assert.equal(callback.status, 200);
+    assert.equal(state.shipments[0].status, "booked");
+    assert.equal(state.shipments[0].awbCode, "19041424751540");
+    assert.equal(state.shipments[0].shiprocketShipmentId, "shiprocket-shipment-1");
+    assert.equal(state.shipments[0].shiprocketOrderId, "shiprocket-order-1");
+  }));
+});
+
 test("unpaid Shopify orders never expose fulfillment tracking", async () => {
   const state = stateFixture();
   state.checkouts = [];
