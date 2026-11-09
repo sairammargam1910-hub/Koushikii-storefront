@@ -10,7 +10,7 @@ import "./_profile.css";
 import "./_storefront-pattern.css";
 import "./_mobile.css";
 import { useLocation } from "wouter";
-import { useShopifyCartMeta } from "./shopifyCartState";
+import { useShopifyCartMeta, useShopifyCart } from "./shopifyCartState";
 import { Show } from "@clerk/react";
 import { useShopperPreferences } from "./ShopperPreferences";
 
@@ -70,7 +70,10 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
   const [,setLocation]=useLocation();
  const cart=useStore("kq-cart"),wish=useStore("kq-wish");
   const shopifyCart=useShopifyCartMeta();
-  const cartCount=cart.reduce((sum,item)=>sum+item.qty,0)+(shopifyCart?.totalQuantity||0);
+  const currentCart=useShopifyCart(shopifyCart?.id);
+  const cartCount=shopifyCart
+    ? (currentCart.data?.totalQuantity ?? shopifyCart.totalQuantity)
+    : cart.reduce((sum,item)=>sum+item.qty,0);
  return <><div className="topline">The living art of handloom · Rooted in the South, woven across India</div>
  <header className="header"><div className="wrap headrow">
    <button className="iconbtn mobile-menu" data-testid="button-mobile-menu" onClick={()=>setMenu(!menu)} aria-expanded={menu} aria-controls="kq-main-menu" aria-label="Toggle main menu">{menu?<X size={20}/>:<Menu size={20}/>}</button>

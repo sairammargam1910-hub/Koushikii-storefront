@@ -1,23 +1,42 @@
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { useEffect } from "react";
+import { useUser } from "@clerk/react";
+import { useLocation } from "wouter";
 import { Shell, PageHero, base } from "./_shared";
-import { ShopifyOrderUpdatesLink } from "./ShopifyOrderUpdatesLink";
+import { PaymentReturnState } from "./ShopifyBuyerCheckout";
+import { clearActiveCheckout, orderIsRecorded, readActiveCheckout, useVerifiedPaymentStatus } from "./checkoutPaymentState";
 
 export function Confirmation() {
+  const { user } = useUser();
+  const [location, setLocation] = useLocation();
+  const orderId = new URLSearchParams(window.location.search).get("cashfree_order_id")?.trim() ||
+    readActiveCheckout(user?.id);
+  const status = useVerifiedPaymentStatus(orderId);
+  useEffect(() => {
+    if (orderId && location.toLowerCase().endsWith("/checkout")) {
+      setLocation(`${base}Confirmation?cashfree_order_id=${encodeURIComponent(orderId)}`, { replace: true });
+    }
+  }, [location, orderId, setLocation]);
+  useEffect(() => {
+    if (orderIsRecorded(status.data) || status.data?.paymentStatus === "FAILED") clearActiveCheckout(user?.id);
+  }, [status.data, user?.id]);
   return <Shell>
-    <PageHero eyebrow="Payment status" title="Check your payment status." subtitle="A return to this page alone does not confirm payment."/>
+    <PageHero eyebrow="Payment status" title="Your order updates." subtitle="Payment is confirmed securely by the server, never by a browser redirect." />
     <main className="wrap content">
-      <div className="panel" data-testid="panel-payment-status">
-        <span className="eyebrow">Order updates from Shopify</span>
-        <h2 style={{ margin: "14px 0" }}>Cashfree verifies payment; Shopify records the order.</h2>
-        <p className="muted">Only a server-verified Cashfree payment can create a paid Shopify order. Check the checkout status page while payment is being verified.</p>
-        <ShopifyOrderUpdatesLink />
-        <p className="muted" style={{ marginTop: 16 }}>If an order is not listed yet, check the email used at checkout. Do not pay again while a payment is still being verified.</p>
-        <div className="actions">
-          <a className="btn" href={base + "Checkout"}>Check checkout status <ArrowRight size={14}/></a>
-          <a className="btn outline" href={base + "Collections"}>Continue browsing</a>
-        </div>
-        <p className="muted" style={{ fontSize: 12, marginTop: 22 }}><ExternalLink size={13}/> Payment is hosted by Cashfree; confirmed order records are kept in Shopify.</p>
-      </div>
+      {orderId ? <PaymentReturnState
+        orderId={orderId}
+        status={status.data}
+        isLoading={status.isLoading}
+        isError={status.isError}
+        paymentWindowOpen={false}
+        paymentWindowNotice=""
+        pollingExpired={status.pollingExpired}
+        onRetry={status.retry}
+      /> : <div className="panel">
+        <h2>No active payment reference.</h2>
+        <p>View your orders to check an earlier purchase, or return to your bag to start checkout.</p>
+        <a className="btn" href={base + "Orders"}>View your orders</a>
+        <a className="btn outline" href={base + "Cart"}>Return to your bag</a>
+      </div>}
     </main>
   </Shell>;
 }

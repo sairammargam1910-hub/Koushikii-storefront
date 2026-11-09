@@ -95,7 +95,7 @@ const baseInput = {
   heightCm: 8,
 };
 
-test("creates one domestic quote order using the confirmed pickup and parcel values", async () => {
+test("domestic rate lookup never creates a provider order or AWB", async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];
   globalThis.fetch = mockShiprocketFetch(calls);
@@ -107,19 +107,18 @@ test("creates one domestic quote order using the confirmed pickup and parcel val
       SHIPROCKET_REASON_OF_EXPORT: null,
       SHIPROCKET_TERMS_OF_INVOICE: null,
     }, async () => {
-      const { createAndQuotePackage } = loadModule();
-      const result = await createAndQuotePackage(baseInput);
+      const { quoteShiprocketPackage } = loadModule();
+      const result = await quoteShiprocketPackage(baseInput);
       assert.equal(result.amount, "225.50");
       assert.equal(result.courierName, "Economy");
-      const create = calls.find((call) => call.url.pathname.endsWith("/orders/create/adhoc"));
-      assert.equal(create.body.order_id, "quote-package-1");
-      assert.equal(create.body.weight, 1);
-      assert.equal(create.body.length, 35);
-      assert.equal(create.body.breadth, 25);
-      assert.equal(create.body.height, 8);
+      assert.equal(calls.some((call) => call.url.pathname.includes("/orders/create/")), false);
+      assert.equal(result.orderId, undefined);
+      assert.equal(result.shipmentId, undefined);
       const quote = calls.find((call) => call.url.pathname.endsWith("/courier/serviceability/"));
       assert.equal(quote.url.searchParams.get("pickup_postcode"), "500007");
       assert.equal(quote.url.searchParams.get("delivery_postcode"), "500008");
+      assert.equal(quote.url.searchParams.has("order_id"), false);
+      assert.equal(quote.url.searchParams.get("weight"), "1");
       assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
     });
   } finally {
@@ -139,19 +138,17 @@ test("international quote uses export settings and the selected destination coun
       SHIPROCKET_REASON_OF_EXPORT: "3",
       SHIPROCKET_TERMS_OF_INVOICE: "FOB",
     }, async () => {
-      const { createAndQuotePackage } = loadModule();
-      const result = await createAndQuotePackage({
+      const { quoteShiprocketPackage } = loadModule();
+      const result = await quoteShiprocketPackage({
         ...baseInput,
         hsnCode: "5007",
         destination: { ...baseInput.destination, countryCode: "US", countryName: "United States" },
       });
       assert.equal(result.currencyCode, "INR");
-      const create = calls.find((call) => call.url.pathname.endsWith("/international/orders/create/adhoc"));
-      assert.equal(create.body.reasonOfExport, 3);
-      assert.equal(create.body.Terms_Of_Invoice, "FOB");
-      assert.equal(create.body.order_items[0].hsn, 5007);
+      assert.equal(calls.some((call) => call.url.pathname.includes("/orders/create/")), false);
       const quote = calls.find((call) => call.url.pathname.endsWith("/international/courier/serviceability"));
       assert.equal(quote.url.searchParams.get("delivery_country"), "US");
+      assert.equal(quote.url.searchParams.has("order_id"), false);
       assert.equal(calls.some((call) => call.url.pathname.includes("/international/courier/assign/awb")), false);
     });
   } finally {
@@ -171,9 +168,9 @@ test("international quote requires an HSN code before creating an order", async 
       SHIPROCKET_REASON_OF_EXPORT: "3",
       SHIPROCKET_TERMS_OF_INVOICE: "FOB",
     }, async () => {
-      const { createAndQuotePackage } = loadModule();
+      const { quoteShiprocketPackage } = loadModule();
       await assert.rejects(
-        createAndQuotePackage({
+        quoteShiprocketPackage({
           ...baseInput,
           destination: { ...baseInput.destination, countryCode: "US", countryName: "United States" },
         }),
@@ -197,9 +194,9 @@ test("international quotes fail closed when export terms are not configured", as
       SHIPROCKET_REASON_OF_EXPORT: null,
       SHIPROCKET_TERMS_OF_INVOICE: null,
     }, async () => {
-      const { createAndQuotePackage } = loadModule();
+      const { quoteShiprocketPackage } = loadModule();
       await assert.rejects(
-        createAndQuotePackage({
+        quoteShiprocketPackage({
           ...baseInput,
           hsnCode: "5007",
           destination: { ...baseInput.destination, countryCode: "US", countryName: "United States" },
@@ -236,8 +233,8 @@ test("captures sanitized provider diagnostics for quote failures", async () => {
       SHIPROCKET_REASON_OF_EXPORT: null,
       SHIPROCKET_TERMS_OF_INVOICE: null,
     }, async () => {
-      const { createAndQuotePackage, ShiprocketError } = loadModule();
-      await assert.rejects(createAndQuotePackage(baseInput), (error) => {
+      const { quoteShiprocketPackage, ShiprocketError } = loadModule();
+      await assert.rejects(quoteShiprocketPackage(baseInput), (error) => {
         assert.ok(error instanceof ShiprocketError);
         assert.equal(error.message, "Shiprocket request failed (400).");
         assert.equal(error.diagnostics.endpoint, "/courier/serviceability/");
@@ -276,8 +273,8 @@ test("an unsupported destination fails clearly without booking a shipment", asyn
       SHIPROCKET_REASON_OF_EXPORT: null,
       SHIPROCKET_TERMS_OF_INVOICE: null,
     }, async () => {
-      const { createAndQuotePackage } = loadModule();
-      await assert.rejects(createAndQuotePackage(baseInput), /no serviceable courier/i);
+      const { quoteShiprocketPackage } = loadModule();
+      await assert.rejects(quoteShiprocketPackage(baseInput), /no serviceable courier/i);
       assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
     });
   } finally {

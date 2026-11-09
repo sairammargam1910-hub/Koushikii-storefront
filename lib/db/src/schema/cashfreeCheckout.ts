@@ -93,7 +93,7 @@ export const checkoutShipmentPackagesTable = pgTable("cashfree_checkout_shipment
     .notNull()
     .references(() => cashfreeCheckoutOrdersTable.id, { onDelete: "cascade" }),
   packageIndex: integer("package_index").notNull(),
-  shiprocketOrderId: text("shiprocket_order_id").notNull().unique(),
+  shiprocketOrderId: text("shiprocket_order_id").unique(),
   shiprocketShipmentId: text("shiprocket_shipment_id"),
   courierId: text("courier_id").notNull(),
   courierName: text("courier_name").notNull(),

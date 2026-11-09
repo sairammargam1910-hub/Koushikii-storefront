@@ -286,6 +286,25 @@ export async function getCashfreeOrder(orderId: string): Promise<CashfreeOrder> 
 }
 
 export async function getCashfreePaymentReference(orderId: string): Promise<string | null> {
+  const payload = await getCashfreePayments(orderId);
+  const successful = payload.find((payment) =>
+    ["SUCCESS", "PAID", "COMPLETED"].includes((payment.payment_status ?? "").toUpperCase()),
+  );
+  const reference = successful?.cf_payment_id ?? successful?.payment_id;
+  return reference === undefined ? null : String(reference);
+}
+
+export async function getCashfreePaymentOutcome(orderId: string): Promise<string | null> {
+  const payments = await getCashfreePayments(orderId);
+  if (payments.some((payment) => payment.payment_status?.toUpperCase() === "SUCCESS")) return "SUCCESS";
+  const latest = [...payments].sort((a, b) =>
+    (Date.parse(b.payment_time ?? "") || Number(b.cf_payment_id) || 0) -
+    (Date.parse(a.payment_time ?? "") || Number(a.cf_payment_id) || 0),
+  )[0];
+  return latest?.payment_status?.toUpperCase() ?? null;
+}
+
+async function getCashfreePayments(orderId: string) {
   const response = await fetch(
     `${baseUrl()}/orders/${encodeURIComponent(orderId)}/payments`,
     {
@@ -298,12 +317,10 @@ export async function getCashfreePaymentReference(orderId: string): Promise<stri
     cf_payment_id?: string | number;
     payment_id?: string | number;
     payment_status?: string;
+    payment_time?: string;
   }>>(response);
-  const successful = payload.find((payment) =>
-    ["SUCCESS", "PAID", "COMPLETED"].includes((payment.payment_status ?? "").toUpperCase()),
-  );
-  const reference = successful?.cf_payment_id ?? successful?.payment_id;
-  return reference === undefined ? null : String(reference);
+  if (!Array.isArray(payload)) throw new CashfreeError("Cashfree payment details could not be verified.");
+  return payload;
 }
 
 export function verifyCashfreeWebhookSignature(input: {

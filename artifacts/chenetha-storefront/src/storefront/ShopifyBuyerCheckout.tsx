@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useUser } from "@clerk/react";
+import { useLocation } from "wouter";
 import {
-  getGetShopifyCheckoutPaymentStatusQueryKey,
   useCreateShopifyCheckoutPaymentSession,
   useCreateShopifyCheckoutQuote,
   useGetShopifyAvailableCountries,
-  useGetShopifyCheckoutPaymentStatus,
   type ShopifyCartBuyerIdentityInput,
   type ShopifyCartResponse,
   type ShopifyCheckoutPaymentStatusResponse,
@@ -16,6 +15,7 @@ import { base } from "./_shared";
 import { useShopperPreferences } from "./ShopperPreferences";
 import { formatShopifyMoney, isDefaultShopifyVariantTitle } from "./ShopifyCatalog";
 import "./Checkout.css";
+import { clearActiveCheckout, orderIsRecorded, saveActiveCheckout, useVerifiedPaymentStatus } from "./checkoutPaymentState";
 
 type CheckoutDetails = ShopifyCartBuyerIdentityInput["deliveryAddress"] & {
   email: string;
@@ -47,6 +47,8 @@ const phonePattern = /^\+[1-9]\d{7,14}$/;
 export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const shopper = useShopperPreferences();
   const { user } = useUser();
+  const [, setLocation] = useLocation();
+  const submitting = useRef(false);
   const detailsEdited = useRef(false);
   const [details, setDetails] = useState<CheckoutDetails>(emptyDetails);
   const [selectedAddressId, setSelectedAddressId] = useState("");
@@ -54,9 +56,6 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const [quote, setQuote] = useState<ShopifyCheckoutQuoteResponse | null>(null);
   const [returnOrderId] = useState(() => new URLSearchParams(window.location.search).get("cashfree_order_id")?.trim() ?? "");
   const [paymentOrderId, setPaymentOrderId] = useState(returnOrderId);
-  const [paymentPollingStartedAt, setPaymentPollingStartedAt] = useState<number | null>(
-    () => returnOrderId ? Date.now() : null,
-  );
   const [paymentWindowOpen, setPaymentWindowOpen] = useState(false);
   const [paymentWindowNotice, setPaymentWindowNotice] = useState("");
   const cartFingerprint = JSON.stringify([cart.id, cart.subtotalAmount, cart.discountAmount, cart.totalAmount, cart.currencyCode, cart.lines.map((line) => [line.id, line.quantity, line.unitPrice])]);
@@ -70,34 +69,12 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const countriesQuery = useGetShopifyAvailableCountries();
   const createQuote = useCreateShopifyCheckoutQuote();
   const createPaymentSession = useCreateShopifyCheckoutPaymentSession();
-  const paymentStatus = useGetShopifyCheckoutPaymentStatus(
-    { orderId: paymentOrderId },
-    {
-      query: {
-        enabled: Boolean(paymentOrderId),
-        queryKey: getGetShopifyCheckoutPaymentStatusQueryKey({ orderId: paymentOrderId }),
-        refetchInterval: (query) => {
-          const status = query.state.data;
-          const terminal =
-            status?.status === "payment_failed" ||
-            status?.status === "shopify_synced" ||
-            status?.status === "shipment_booking_pending" ||
-            status?.status === "completed" ||
-            status?.status === "refund_pending" ||
-            status?.status === "refunded" ||
-            status?.status === "reconciliation_required" ||
-            status?.paymentStatus === "FAILED" ||
-            status?.paymentStatus === "REFUNDED";
-          if (terminal) return false;
-          if (
-            !paymentPollingStartedAt ||
-            Date.now() - paymentPollingStartedAt >= 20 * 60 * 1000
-          ) return false;
-          return 3000;
-        },
-      },
-    },
-  );
+  const paymentStatus = useVerifiedPaymentStatus(paymentOrderId);
+  useEffect(() => {
+    if (!orderIsRecorded(paymentStatus.data)) return;
+    clearActiveCheckout(user?.id);
+    setLocation(`${base}Confirmation?cashfree_order_id=${encodeURIComponent(paymentOrderId)}`, { replace: true });
+  }, [paymentStatus.data, paymentOrderId, setLocation, user?.id]);
 
   const availableCountries = countriesQuery.data?.countries ?? [];
   const purchasable = cart.lines.length > 0 &&
@@ -218,6 +195,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting.current) return;
     setSubmitError("");
     if (!purchasable) {
       setSubmitError("This bag has an unavailable or demo product. Return to your bag and remove it before continuing.");
@@ -228,6 +206,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
       return;
     }
 
+    submitting.current = true;
     try {
       if (!quote || quoteExpired) {
         const input = buildQuoteInput();
@@ -280,7 +259,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
       }
       await loadCashfreeSdk();
       setPaymentOrderId(session.orderId);
-      setPaymentPollingStartedAt(Date.now());
+      if (user?.id) saveActiveCheckout(user.id, session.orderId);
       setPaymentWindowNotice("");
       setPaymentWindowOpen(true);
       const result = await window.Cashfree!({ mode: session.environment }).checkout({
@@ -293,17 +272,15 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
       }
     } catch (error) {
       setPaymentWindowOpen(false);
+      if (error && typeof error === "object" && "status" in error && error.status === 409) discardQuote();
       setSubmitError(getApiError(error) ?? (error instanceof Error ? error.message : null) ??
         "We couldn’t prepare secure payment. Your bag is unchanged; please try again.");
+    } finally {
+      submitting.current = false;
     }
   }
 
   if (paymentOrderId) {
-    const pollingExpired = Boolean(
-      paymentPollingStartedAt &&
-      Date.now() - paymentPollingStartedAt >= 20 * 60 * 1000 &&
-      paymentStatus.data?.paymentStatus === "PENDING",
-    );
     return (
       <PaymentReturnState
         orderId={paymentOrderId}
@@ -312,11 +289,8 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
         isError={paymentStatus.isError}
         paymentWindowOpen={paymentWindowOpen}
         paymentWindowNotice={paymentWindowNotice}
-        pollingExpired={pollingExpired}
-        onRetry={() => {
-          setPaymentPollingStartedAt(Date.now());
-          void paymentStatus.refetch();
-        }}
+        pollingExpired={paymentStatus.pollingExpired}
+        onRetry={paymentStatus.retry}
       />
     );
   }
@@ -448,7 +422,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   );
 }
 
-function PaymentReturnState({
+export function PaymentReturnState({
   orderId,
   status,
   isLoading,
@@ -468,7 +442,7 @@ function PaymentReturnState({
   onRetry: () => void;
 }) {
   const completed = status?.status === "completed";
-  const orderRecorded = status?.status === "shopify_synced";
+  const orderRecorded = orderIsRecorded(status);
   const paidSyncing = status?.paymentStatus === "PAID" && !completed && !orderRecorded;
   const failed = status?.paymentStatus === "FAILED" || status?.status === "payment_failed";
   const reconciliation = status?.status === "refund_pending" ||
@@ -522,6 +496,7 @@ function PaymentReturnState({
       ) : (
         <button className="btn" type="button" onClick={onRetry}>Check payment status <ArrowRight size={14} /></button>
       )}
+      {failed && <button className="btn outline" type="button" onClick={onRetry}>Recheck payment status</button>}
     </section>
   );
 }

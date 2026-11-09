@@ -192,7 +192,7 @@ function Router() {
         <Route path="/Cart" component={Cart}/>
         <Route path="/Wishlist" component={Wishlist}/>
         <Route path="/Checkout"><ProtectedShopperRoute><Checkout/></ProtectedShopperRoute></Route>
-        <Route path="/Confirmation" component={Confirmation}/>
+        <Route path="/Confirmation"><ProtectedShopperRoute><Confirmation/></ProtectedShopperRoute></Route>
         <Route path="/OurStory" component={OurStory}/>
         <Route path="/Contact" component={Contact}/>
         <Route path="/CustomerCare" component={CustomerCare}/>

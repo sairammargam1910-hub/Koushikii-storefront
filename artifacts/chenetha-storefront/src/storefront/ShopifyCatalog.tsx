@@ -34,20 +34,7 @@ export function useShopifyCatalog(enabled = true) {
   });
 }
 
-export function useShopifyCart(cartId?: string) {
-  return useQuery({
-    queryKey: cartId
-      ? getGetShopifyCartQueryKey({ cartId })
-      : ["/api/shopify/cart", "empty"],
-    queryFn: ({ signal }) => {
-      if (!cartId) throw new Error("No Shopify cart is selected.");
-      return getShopifyCart({ cartId }, { signal });
-    },
-    enabled: Boolean(cartId),
-    staleTime: 0,
-    refetchOnMount: "always",
-  });
-}
+export { useShopifyCart } from "./shopifyCartState";
 
 export function updateShopifyCartCache(
   queryClient: ReturnType<typeof useQueryClient>,

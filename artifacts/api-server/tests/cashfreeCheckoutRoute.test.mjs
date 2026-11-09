@@ -140,6 +140,7 @@ const compiled = await build({
             return state.remoteOrder ?? { order_id: orderId, order_amount: state.order.totalAmount, order_currency: state.order.currencyCode, order_status: state.providerStatus, cf_order_id: "cf-order-ref" };
           };
           export const getCashfreePaymentReference = async () => state.paymentReference;
+          export const getCashfreePaymentOutcome = async () => state.paymentOutcome ?? null;
           export const verifyCashfreeWebhookSignature = () => state.signatureValid;
         `,
         pricing: `
@@ -151,9 +152,21 @@ const compiled = await build({
           export const splitMoney = (amount, count) => Array(count).fill((Number(amount) / count).toFixed(2));
         `,
         shiprocket: `
+          const state = globalThis.__checkoutRouteTest;
           export class ShiprocketError extends Error {}
-          export const bookShiprocketPackage = async () => ({ awbCode: "awb-test" });
-          export const createAndQuotePackage = async () => ({});
+          export const bookShiprocketPackage = async () => {
+            state.awbCalls += 1;
+            return { awbCode: "awb-test" };
+          };
+          export const quoteShiprocketPackage = async () => {
+            state.rateCalls += 1;
+            return { courierId: "10", courierName: "Economy", amount: "20.00", currencyCode: "INR" };
+          };
+          export const createShiprocketPackage = async (input) => {
+            state.carrierCreateCalls.push(input);
+            if (state.carrierCreateFailure) throw new ShiprocketError("test unavailable");
+            return { orderId: "sr-paid-1", shipmentId: "sr-shipment-1" };
+          };
           export const getConfiguredParcel = () => ({ weightKg: 1, lengthCm: 35, breadthCm: 25, heightCm: 8 });
         `,
         shopifyOrder: `
@@ -174,7 +187,7 @@ const compiled = await build({
           export class ShopifyCheckoutInputError extends Error {
             constructor(message, statusCode) { super(message); this.statusCode = statusCode; }
           }
-          export const getAvailableCountries = async () => [];
+          export const getAvailableCountries = async () => [{ isoCode: "IN", name: "India" }, { isoCode: "US", name: "United States" }];
           export const removePurchasedCartQuantities = async (input) => {
             globalThis.__checkoutRouteTest.cartCleanupCalls.push(input);
           };
@@ -256,7 +269,7 @@ function makeOrder(overrides = {}) {
     shippingAmount: "20.00",
     taxAmount: "0.00",
     totalAmount: "120.00",
-    quoteExpiresAt: new Date(Date.now() + 600_000),
+    quoteExpiresAt: new Date(Date.now() + 30 * 60_000),
     checkoutSnapshot: {
       shopperUserId: "shopper-1",
       email: "buyer@example.com",
@@ -296,6 +309,9 @@ async function harness(run, options = {}) {
     shopifySyncInput: null,
     shopifyFailures: 0,
     cartCleanupCalls: [],
+    rateCalls: 0,
+    carrierCreateCalls: [],
+    awbCalls: 0,
     orders: [makeOrder(options.order)],
     shipments: [],
   };
@@ -577,10 +593,10 @@ test("payment sessions use the validated quote and return to the same Replit pre
     assert.equal(state.cashfreeCreateInput.isInternational, false);
     const cashfreeExpiryMs = Date.parse(state.cashfreeCreateInput.expiresAt) - Date.now();
     assert.ok(cashfreeExpiryMs > 19 * 60 * 1000 && cashfreeExpiryMs <= 20 * 60 * 1000);
-    assert.ok(state.order.quoteExpiresAt.getTime() - Date.now() < 15 * 60 * 1000);
+    assert.ok(Date.parse(state.cashfreeCreateInput.expiresAt) <= state.order.quoteExpiresAt.getTime());
     assert.equal(
       state.cashfreeCreateInput.returnUrl,
-      `${origin}/chenetha-storefront/Checkout?cashfree_order_id=${state.order.cashfreeOrderId}`,
+      `${origin}/chenetha-storefront/Confirmation?cashfree_order_id=${state.order.cashfreeOrderId}`,
     );
     assert.equal(state.order.status, "payment_pending");
   }, {

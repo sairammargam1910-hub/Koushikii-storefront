@@ -22,6 +22,7 @@ import {
   getCashfreeEnvironment,
   getCashfreeOrder,
   getCashfreePaymentReference,
+  getCashfreePaymentOutcome,
   verifyCashfreeWebhookSignature,
 } from "../lib/cashfreeClient";
 import {
@@ -35,7 +36,8 @@ import {
 } from "../lib/checkoutPricing";
 import {
   bookShiprocketPackage,
-  createAndQuotePackage,
+  quoteShiprocketPackage,
+  createShiprocketPackage,
   getConfiguredParcel,
   ShiprocketError,
   type ShiprocketQuote,
@@ -224,7 +226,7 @@ function cashfreeReturnUrl(orderId: string, req: Request): string {
       }
       basePath = refererUrl.pathname.replace(/\/Checkout\/?$/i, "").replace(/\/$/, "");
     }
-    url = new URL(`${basePath}/Checkout`, origin);
+    url = new URL(`${basePath}/Confirmation`, origin);
   } else {
     const appOrigin = process.env.APP_ORIGIN?.split(",")[0]?.trim();
     if (!appOrigin) throw new Error("APP_ORIGIN is not configured for the Cashfree return URL.");
@@ -232,7 +234,7 @@ function cashfreeReturnUrl(orderId: string, req: Request): string {
     if (origin.protocol !== "https:") {
       throw new Error("APP_ORIGIN must use HTTPS for Cashfree checkout.");
     }
-    url = new URL("/Checkout", origin);
+    url = new URL("/Confirmation", origin);
   }
   url.searchParams.set("cashfree_order_id", orderId);
   return url.toString();
@@ -290,7 +292,7 @@ function messageForOrder(row: CheckoutOrderRow): string {
     case "payment_pending":
       return "Payment is processing. The order will be confirmed only after Cashfree verifies it.";
     case "payment_failed":
-      return "Payment was not completed. No paid Shopify order was created.";
+      return row.lastError || "Payment was not completed. No paid Shopify order was created.";
     case "paid":
     case "shopify_sync_pending":
       return "Cashfree confirms payment. We are saving the Shopify order; do not pay again.";
@@ -437,7 +439,7 @@ async function syncShopifyOrder(orderId: string, paymentReference: string): Prom
         purchasedCartLines,
         paymentReference,
         paidAt: claimed.paidAt ?? new Date(),
-        checkoutSnapshot: ownershipSnapshot(claimed),
+        checkoutSnapshot: sandbox ? ownershipSnapshot(claimed) : claimed.checkoutSnapshot,
         lastError: null,
         updatedAt: new Date(),
       })
@@ -466,16 +468,19 @@ async function syncShopifyOrder(orderId: string, paymentReference: string): Prom
 async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrderRow> {
   if (
     getCashfreeEnvironment() !== "production" ||
-    process.env.SHIPROCKET_LIVE_BOOKING_ENABLED !== "true"
+    row.paymentStatus !== "paid" ||
+    !row.shopifyOrderId
   ) {
     return row;
   }
+  const allowAwb = process.env.SHIPROCKET_LIVE_BOOKING_ENABLED === "true";
   const packages = await db.select()
     .from(checkoutShipmentPackagesTable)
     .where(eq(checkoutShipmentPackagesTable.checkoutOrderId, row.id));
   const retryAfter = new Date(Date.now() - 60_000);
   for (const shipment of packages) {
     if (shipment.status === "booked") continue;
+    if (shipment.shiprocketOrderId && shipment.shiprocketShipmentId && !allowAwb) continue;
     if (
       shipment.status === "booking_pending" &&
       shipment.updatedAt.getTime() > retryAfter.getTime()
@@ -500,11 +505,37 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
       .returning();
     if (!claimed) continue;
     try {
-      if (!shipment.shiprocketShipmentId) {
-        throw new ShiprocketError("Shiprocket did not return a shipment ID for this quote.");
+      let shipmentId = shipment.shiprocketShipmentId;
+      if (!shipmentId || !shipment.shiprocketOrderId) {
+        const snapshot = snapshotFromRow(row);
+        const input = buildProviderPackageInputs({
+          quoteId: row.id,
+          cart: snapshot.cart,
+          address: snapshot.address,
+          email: snapshot.email,
+          phone: snapshot.phone,
+          countryName: new Intl.DisplayNames(["en"], { type: "region" })
+            .of(row.destinationCountryCode) ?? row.destinationCountryCode,
+        })[shipment.packageIndex];
+        if (!input) throw new ShiprocketError("Paid parcel details are unavailable.");
+        const created = await createShiprocketPackage(input);
+        shipmentId = created.shipmentId;
+        await db.update(checkoutShipmentPackagesTable)
+          .set({
+            shiprocketOrderId: created.orderId,
+            shiprocketShipmentId: created.shipmentId,
+            updatedAt: new Date(),
+          })
+          .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
+      }
+      if (!allowAwb) {
+        await db.update(checkoutShipmentPackagesTable)
+          .set({ status: "quoted", updatedAt: new Date() })
+          .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
+        continue;
       }
       const booked = await bookShiprocketPackage({
-        shipmentId: shipment.shiprocketShipmentId,
+        shipmentId,
         courierId: shipment.courierId,
         international: row.destinationCountryCode !== "IN",
       });
@@ -552,6 +583,10 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
         : needsReconciliation
           ? "Verify Shiprocket booking state before any manual retry."
           : "One or more carrier packages are still pending.",
+      ...(updatedPackages.length > 0 &&
+        updatedPackages.every((shipment) => shipment.shiprocketOrderId && shipment.shiprocketShipmentId)
+        ? { checkoutSnapshot: ownershipSnapshot(row) }
+        : {}),
       updatedAt: new Date(),
     })
     .where(eq(cashfreeCheckoutOrdersTable.id, row.id))
@@ -586,13 +621,18 @@ async function processConfirmedPayment(
       .where(eq(cashfreeCheckoutOrdersTable.id, row.id)).limit(1))[0] ?? null;
   }
   if (remoteOrder.order_status.toUpperCase() !== "PAID") {
-    if (["EXPIRED", "TERMINATED", "FAILED"].includes(remoteOrder.order_status.toUpperCase())) {
+    const outcome = ["ACTIVE", "PENDING"].includes(remoteOrder.order_status.toUpperCase())
+      ? await getCashfreePaymentOutcome(row.cashfreeOrderId)
+      : null;
+    if (["EXPIRED", "TERMINATED", "FAILED"].includes(remoteOrder.order_status.toUpperCase()) ||
+        outcome === "FAILED" || outcome === "USER_DROPPED") {
       await db.update(cashfreeCheckoutOrdersTable)
         .set({
           status: "payment_failed",
           paymentStatus: "failed",
-          checkoutSnapshot: ownershipSnapshot(row),
-          lastError: null,
+          lastError: outcome === "USER_DROPPED"
+            ? "The payment was closed before completion. No paid order was created; recheck the status before retrying."
+            : null,
           updatedAt: new Date(),
         })
         .where(and(
@@ -600,6 +640,7 @@ async function processConfirmedPayment(
           or(
             eq(cashfreeCheckoutOrdersTable.status, "payment_pending"),
             eq(cashfreeCheckoutOrdersTable.status, "quote_ready"),
+            eq(cashfreeCheckoutOrdersTable.status, "payment_failed"),
           ),
         ));
     }
@@ -768,7 +809,7 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       .from(cashfreeCheckoutOrdersTable)
       .where(and(
         eq(cashfreeCheckoutOrdersTable.quoteHash, quoteHash),
-        gt(cashfreeCheckoutOrdersTable.quoteExpiresAt, new Date()),
+        gt(cashfreeCheckoutOrdersTable.quoteExpiresAt, new Date(Date.now() + 20 * 60 * 1000)),
         or(
           eq(cashfreeCheckoutOrdersTable.status, "quote_ready"),
           eq(cashfreeCheckoutOrdersTable.status, "payment_pending"),
@@ -792,7 +833,7 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
     });
     const providerPackages: ShiprocketQuote[] = [];
     for (const packageInput of packages) {
-      providerPackages.push(await createAndQuotePackage(packageInput));
+      providerPackages.push(await quoteShiprocketPackage(packageInput));
     }
     const currencyCode = cart.cost.totalAmount.currencyCode;
     if (providerPackages.some((item) => item.currencyCode !== currencyCode)) {
@@ -805,7 +846,7 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
     const itemTotal = getCheckoutItemTotal(cart);
     const taxAmount = "0.00";
     const totalAmount = addMoney([itemTotal, shippingAmount]);
-    const quoteExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const quoteExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
     const courierNames = [...new Set(providerPackages.map(({ courierName }) => courierName))];
     const courierName = courierNames.join(", ");
     const snapshot: CheckoutSnapshot = {
@@ -958,6 +999,11 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
       return;
     }
     await assertShopifyCheckoutCapabilities();
+    // Cashfree's session must expire no later than the rate we are charging.
+    if (row.quoteExpiresAt.getTime() <= Date.now() + 20 * 60 * 1000) {
+      res.status(409).json({ error: "This shipping quote expires too soon. Request a fresh quote before payment." });
+      return;
+    }
     const cashfreeOrder = await createCashfreeOrder({
       orderId: row.cashfreeOrderId,
       amount: moneyForCashfree(row.totalAmount),
@@ -1042,6 +1088,7 @@ router.get("/shopify/checkout/payment-status", async (req, res): Promise<void> =
     if (
       row.status === "payment_pending" ||
       row.status === "quote_ready" ||
+      row.status === "payment_failed" ||
       row.status === "paid" ||
       row.status === "shopify_sync_pending" ||
       row.status === "shipment_booking_pending"

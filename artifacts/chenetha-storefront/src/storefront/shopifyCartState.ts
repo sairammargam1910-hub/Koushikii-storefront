@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getGetShopifyCartQueryKey, getShopifyCart } from "@workspace/api-client-react";
 
 const STORAGE_KEY = "kq-shopify-cart";
 const STORAGE_EVENT = "kq-storage";
@@ -46,15 +48,49 @@ export function clearShopifyCartMeta() {
 }
 
 export function useShopifyCartMeta() {
-  const [cart, setCart] = useState<ShopifyCartMeta | null>(readShopifyCartMeta);
-  useEffect(() => {
-    const sync = () => setCart(readShopifyCartMeta());
+  return useSyncExternalStore(subscribe, cartSnapshot, () => null);
+}
+
+let cachedRaw: string | null | undefined;
+let cachedMeta: ShopifyCartMeta | null = null;
+function cartSnapshot() {
+  let raw: string | null = null;
+  try { raw = localStorage.getItem(STORAGE_KEY); } catch { /* Storage can be disabled. */ }
+  if (raw !== cachedRaw) {
+    cachedRaw = raw;
+    cachedMeta = readShopifyCartMeta();
+  }
+  return cachedMeta;
+}
+
+function subscribe(sync: () => void) {
     window.addEventListener("storage", sync);
     window.addEventListener(STORAGE_EVENT, sync);
     return () => {
       window.removeEventListener("storage", sync);
       window.removeEventListener(STORAGE_EVENT, sync);
     };
-  }, []);
-  return cart;
+}
+
+export function useShopifyCart(cartId?: string) {
+  const query = useQuery({
+    queryKey: cartId ? getGetShopifyCartQueryKey({ cartId }) : ["/api/shopify/cart", "empty"],
+    queryFn: ({ signal }) => {
+      if (!cartId) throw new Error("No Shopify cart is selected.");
+      return getShopifyCart({ cartId }, { signal });
+    },
+    enabled: Boolean(cartId),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+  useEffect(() => {
+    if (!query.data) return;
+    const current = readShopifyCartMeta();
+    // Do not restore an old response after a clear or a switch to another cart.
+    if (current?.id === query.data.id && current.totalQuantity !== query.data.totalQuantity) {
+      saveShopifyCartMeta({ id: query.data.id, totalQuantity: query.data.totalQuantity });
+    }
+  }, [query.data]);
+  return query;
 }

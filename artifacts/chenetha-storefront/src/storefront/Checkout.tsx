@@ -13,8 +13,12 @@ import {
 import { useShopifyCart } from "./ShopifyCatalog";
 import { useShopifyCartMeta } from "./shopifyCartState";
 import { ShopifyBuyerCheckout } from "./ShopifyBuyerCheckout";
+import { useUser } from "@clerk/react";
+import { Confirmation } from "./Confirmation";
+import { readActiveCheckout } from "./checkoutPaymentState";
 
 export function Checkout() {
+  const { user } = useUser();
   const meta = useShopifyCartMeta();
   const shopifyCart = useShopifyCart(meta?.id);
   const sampleCart = useStore("kq-cart");
@@ -29,6 +33,9 @@ export function Checkout() {
     [sampleCart],
   );
   const total = moneySub(sampleCart);
+  // Payment recovery must not depend on an existing/non-empty Shopify cart.
+  const activeOrder = new URLSearchParams(window.location.search).get("cashfree_order_id") ||
+    readActiveCheckout(user?.id);
 
   const prepareEnquiry = () => {
     if (!selected.length) {
@@ -51,6 +58,8 @@ export function Checkout() {
       .join("\n");
     window.open(whatsappOrderUrl(text), "_blank", "noopener,noreferrer");
   };
+
+  if (activeOrder) return <Confirmation />;
 
   if (meta) {
     return (

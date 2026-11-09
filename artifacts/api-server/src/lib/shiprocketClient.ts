@@ -16,8 +16,8 @@ type ShiprocketCourier = {
 };
 
 export type ShiprocketQuote = {
-  orderId: string;
-  shipmentId: string;
+  orderId?: string;
+  shipmentId?: string;
   courierId: string;
   courierName: string;
   amount: string;
@@ -387,9 +387,9 @@ function getCreatedOrder(payload: {
   return { orderId: String(orderId), shipmentId: String(shipmentId) };
 }
 
-export async function createAndQuotePackage(
+export async function createShiprocketPackage(
   input: ShiprocketPackageInput,
-): Promise<ShiprocketQuote> {
+): Promise<{ orderId: string; shipmentId: string }> {
   const international = input.destination.countryCode !== "IN";
   const pickup = await getPickupLocation();
   const orderPath = international
@@ -403,15 +403,27 @@ export async function createAndQuotePackage(
     method: "POST",
     body: JSON.stringify(makeShiprocketOrderBody(input, pickup, international)),
   });
-  const created = getCreatedOrder(orderPayload);
+  return getCreatedOrder(orderPayload);
+}
+
+// Rate lookup must never create a prepaid provider order or reserve a shipment.
+export async function quoteShiprocketPackage(
+  input: ShiprocketPackageInput,
+): Promise<ShiprocketQuote> {
+  const international = input.destination.countryCode !== "IN";
+  // Validate export configuration without sending an order to Shiprocket.
+  if (international) makeShiprocketOrderBody(input, await getPickupLocation(), true);
   const quotePath = international
     ? "/international/courier/serviceability"
     : "/courier/serviceability/";
   const query = new URLSearchParams({
-    order_id: created.orderId,
     weight: String(input.weightKg),
     cod: "0",
     pickup_postcode: getConfiguredPickupPostcode(),
+    length: String(input.lengthCm),
+    breadth: String(input.breadthCm),
+    height: String(input.heightCm),
+    declared_value: input.sellingPrice,
     ...(international
       ? { delivery_country: input.destination.countryCode }
       : { delivery_postcode: input.destination.postalCode }),
@@ -420,13 +432,11 @@ export async function createAndQuotePackage(
     currency?: string;
     data?: { available_courier_companies?: ShiprocketCourier[] } | ShiprocketCourier[];
   }>(`${quotePath}?${query.toString()}`, { method: "GET" });
-  if (serviceability.currency?.toUpperCase() !== "INR") {
+  if ((serviceability.currency?.toUpperCase() ?? (international ? "" : "INR")) !== "INR") {
     throw new ShiprocketError("Shiprocket did not return a supported INR shipping quote.");
   }
   const selected = selectLowestCourier(parseCouriers(serviceability));
   return {
-    orderId: created.orderId,
-    shipmentId: created.shipmentId,
     ...selected,
     currencyCode: "INR",
   };
