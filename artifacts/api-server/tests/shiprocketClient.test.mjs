@@ -371,6 +371,36 @@ test("tracking normalization rejects a non-HTTPS provider URL", () => {
   assert.equal(result.trackingUrl, null);
 });
 
+test("tracking webhook parser captures shipment references, status code, courier, and activity", () => {
+  const { parseShiprocketTrackingWebhook } = loadModule();
+  const result = parseShiprocketTrackingWebhook({
+    tracking_data: {
+      awb: "19041424751540",
+      order_id: 456,
+      shipment_id: 789,
+      courier_name: "Delhivery Surface",
+      current_status: "In Transit",
+      status_id: 5,
+      shipment_track_activities: [{
+        activity: "Arrived at the regional hub",
+        date: "2026-11-09 10:00:00",
+        location: "Vijayawada",
+        "sr-status-label": "In Transit",
+        "sr-status": "IT",
+      }],
+    },
+  });
+
+  assert.equal(result.awbCode, "19041424751540");
+  assert.equal(result.shipmentId, "789");
+  assert.equal(result.orderId, "456");
+  assert.equal(result.tracking.courierName, "Delhivery Surface");
+  assert.equal(result.tracking.status, "In Transit");
+  assert.equal(result.tracking.statusCode, "5");
+  assert.equal(result.tracking.events[0].description, "Arrived at the regional hub");
+  assert.equal(result.tracking.events[0].statusCode, "5");
+});
+
 test("tracking snapshots retain distinct history and keep status from an older provider snapshot", () => {
   const { mergeShiprocketTrackingSnapshot } = loadModule();
   const newest = {

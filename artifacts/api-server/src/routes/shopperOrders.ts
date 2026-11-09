@@ -19,6 +19,7 @@ import { shopifyAdminRequest } from "../lib/shopifyAdminClient";
 import {
   getShiprocketTracking,
   mergeShiprocketTrackingSnapshot,
+  parseShiprocketTrackingWebhook,
   type ShiprocketTracking,
 } from "../lib/shiprocketClient";
 import { logger } from "../lib/logger";
@@ -253,13 +254,28 @@ async function refreshStoredShipmentTracking(
   expectedAwbCode: string,
 ): Promise<ShiprocketTracking | null> {
   const incoming = await getShiprocketTracking(expectedAwbCode);
+  return persistStoredShipmentTracking(shipmentPackageId, incoming, { awbCode: expectedAwbCode });
+}
+
+async function persistStoredShipmentTracking(
+  shipmentPackageId: string,
+  incoming: ShiprocketTracking,
+  expected: { awbCode?: string | null; shipmentId?: string | null; orderId?: string | null },
+): Promise<ShiprocketTracking | null> {
   return db.transaction(async (tx) => {
     const [current] = await tx.select()
       .from(checkoutShipmentPackagesTable)
       .where(eq(checkoutShipmentPackagesTable.id, shipmentPackageId))
       .limit(1)
       .for("update");
-    if (!current || current.awbCode !== expectedAwbCode) return null;
+    if (!current) return null;
+    if (expected.awbCode && current.awbCode && current.awbCode.toUpperCase() !== expected.awbCode.toUpperCase()) {
+      return null;
+    }
+    if (expected.shipmentId && current.shiprocketShipmentId &&
+        current.shiprocketShipmentId !== expected.shipmentId) return null;
+    if (expected.orderId && current.shiprocketOrderId &&
+        current.shiprocketOrderId !== expected.orderId) return null;
 
     const merged = mergeShiprocketTrackingSnapshot({
       status: current.trackingStatus,
@@ -272,6 +288,8 @@ async function refreshStoredShipmentTracking(
     const now = new Date();
     await tx.update(checkoutShipmentPackagesTable)
       .set({
+        awbCode: current.awbCode ?? (incoming.awbCode || null),
+        courierName: incoming.courierName ?? current.courierName,
         trackingStatus: merged.status,
         trackingEvents: merged.events,
         trackingUrl,
@@ -285,7 +303,7 @@ async function refreshStoredShipmentTracking(
     return {
       ...incoming,
       status: merged.status,
-      awbCode: expectedAwbCode,
+      awbCode: incoming.awbCode || current.awbCode || "",
       courierName: incoming.courierName ?? current.courierName,
       trackingUrl,
       estimatedDeliveryAt: estimatedDeliveryAt?.toISOString() ?? null,
@@ -430,35 +448,69 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
 
   const body = req.body && typeof req.body === "object" && !Array.isArray(req.body)
     ? req.body as Record<string, unknown>
-    : {};
-  const awbCode = typeof body.awb === "string" ? body.awb.trim() : "";
-  if (!validTrackingAwb(awbCode)) {
-    logger.warn({}, "Authenticated delivery callback had no valid AWB");
-    res.status(200).json({ received: true });
+    : null;
+  if (!body) {
+    res.status(400).json({ error: "A tracking event object is required." });
+    return;
+  }
+
+  const webhook = parseShiprocketTrackingWebhook(body);
+  const awbCode = webhook.awbCode?.trim() ?? "";
+  const shipmentId = webhook.shipmentId?.trim() ?? "";
+  const orderId = webhook.orderId?.trim() ?? "";
+  const validReference = (value: string): boolean => /^[A-Za-z0-9_-]{1,64}$/.test(value);
+  if ((awbCode && !validTrackingAwb(awbCode)) ||
+      (shipmentId && !validReference(shipmentId)) ||
+      (orderId && !validReference(orderId))) {
+    res.status(400).json({ error: "The tracking reference is invalid." });
+    return;
+  }
+  if (!awbCode && !shipmentId && !orderId) {
+    res.status(400).json({ error: "A valid AWB or shipment reference is required." });
+    return;
+  }
+  if (webhook.tracking.status === "Tracking update unavailable" && !webhook.tracking.events.length) {
+    res.status(400).json({ error: "The payload must include a tracking status or activity." });
     return;
   }
 
   try {
-    const matches = await db.select()
-      .from(checkoutShipmentPackagesTable)
-      .where(eq(checkoutShipmentPackagesTable.awbCode, awbCode))
-      .limit(2);
-    if (matches.length !== 1) {
-      logger.warn({ matchCount: matches.length }, "Delivery callback did not match exactly one shipment");
-      res.status(200).json({ received: true });
+    const found = await Promise.all([
+      awbCode
+        ? db.select().from(checkoutShipmentPackagesTable)
+            .where(eq(checkoutShipmentPackagesTable.awbCode, awbCode)).limit(2)
+        : Promise.resolve([]),
+      shipmentId
+        ? db.select().from(checkoutShipmentPackagesTable)
+            .where(eq(checkoutShipmentPackagesTable.shiprocketShipmentId, shipmentId)).limit(2)
+        : Promise.resolve([]),
+      orderId
+        ? db.select().from(checkoutShipmentPackagesTable)
+            .where(eq(checkoutShipmentPackagesTable.shiprocketOrderId, orderId)).limit(2)
+        : Promise.resolve([]),
+    ]);
+    const uniqueMatches = new Map(found.flat().map((row) => [row.id, row]));
+    if (uniqueMatches.size > 1) {
+      res.status(409).json({ error: "Tracking references point to different shipments." });
+      return;
+    }
+    const matched = [...uniqueMatches.values()][0];
+    if (!matched) {
+      // A valid event for a shipment outside this storefront is acknowledged to prevent retries.
+      res.status(200).json({ received: true, matched: false });
       return;
     }
 
-    try {
-      await refreshStoredShipmentTracking(matches[0].id, awbCode);
-      res.status(200).json({ received: true });
-    } catch (error) {
-      logger.warn({
-        shipmentPackageId: matches[0].id,
-        errorName: error instanceof Error ? error.name : "UnknownError",
-      }, "Delivery callback tracking refresh failed");
-      res.status(503).json({ error: "Tracking update will be retried." });
+    const updated = await persistStoredShipmentTracking(matched.id, webhook.tracking, {
+      awbCode: awbCode || null,
+      shipmentId: shipmentId || null,
+      orderId: orderId || null,
+    });
+    if (!updated) {
+      res.status(409).json({ error: "The tracking reference no longer matches this shipment." });
+      return;
     }
+    res.status(200).json({ received: true, matched: true });
   } catch (error) {
     logger.error({
       errorName: error instanceof Error ? error.name : "UnknownError",
@@ -521,14 +573,18 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
           }, "Shiprocket tracking refresh failed");
         }
       }
+      const storedTrackingEvents = shipment.trackingEvents as Array<
+        (typeof shipment.trackingEvents)[number] & { statusCode?: string | null }
+      >;
       shipments.push({
         status: shipment.trackingStatus ?? shipmentStatusLabel(shipment.status),
-        statusCode: null,
+        statusCode: [...storedTrackingEvents].reverse()
+          .find((event) => event.statusCode)?.statusCode ?? null,
         awbCode: shipment.awbCode,
         courierName: shipment.courierName,
         trackingUrl: shipment.trackingUrl,
         estimatedDeliveryAt: shipment.estimatedDeliveryAt?.toISOString() ?? null,
-        events: shipment.trackingEvents.map((event) => ({
+        events: storedTrackingEvents.map((event) => ({
           ...event,
           occurredAt: parseTrackingDate(event.occurredAt),
         })),

@@ -103,7 +103,13 @@ export const checkoutShipmentPackagesTable = pgTable("cashfree_checkout_shipment
   trackingUrl: text("tracking_url"),
   trackingStatus: text("tracking_status"),
   trackingEvents: jsonb("tracking_events")
-    .$type<Array<{ occurredAt: string | null; status: string; description: string; location: string | null }>>()
+    .$type<Array<{
+      occurredAt: string | null;
+      status: string;
+      description: string;
+      location: string | null;
+      statusCode?: string | null;
+    }>>()
     .notNull()
     .default([]),
   estimatedDeliveryAt: timestamp("estimated_delivery_at", { withTimezone: true }),

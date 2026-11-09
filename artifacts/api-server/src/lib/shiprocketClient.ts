@@ -29,6 +29,7 @@ export type ShiprocketTrackingEvent = {
   status: string;
   description: string;
   location: string | null;
+  statusCode?: string | null;
 };
 
 export type ShiprocketTracking = {
@@ -495,6 +496,109 @@ function safeTrackingUrl(value: unknown): string | null {
   }
 }
 
+export type ShiprocketTrackingWebhook = {
+  awbCode: string | null;
+  shipmentId: string | null;
+  orderId: string | null;
+  tracking: ShiprocketTracking;
+};
+
+export function parseShiprocketTrackingWebhook(
+  payload: Record<string, unknown>,
+): ShiprocketTrackingWebhook {
+  const root = record(payload);
+  const data = record(root.tracking_data ?? root.data ?? root);
+  const latestTrack = record(Array.isArray(data.shipment_track) ? data.shipment_track[0] : null);
+  const awbCode = text(data.awb) ??
+    text(data.awb_code) ??
+    text(latestTrack.awb_code) ??
+    text(root.awb) ??
+    text(root.awb_code);
+  const shipmentId = text(data.shipment_id) ?? text(data.shipmentId) ??
+    text(root.shipment_id) ?? text(root.shipmentId);
+  const orderId = text(data.order_id) ?? text(data.orderId) ??
+    text(root.order_id) ?? text(root.orderId);
+  const rawShipmentStatus = text(data.shipment_status);
+  const statusCode = text(data.shipment_status_id) ??
+    text(data.status_id) ??
+    text(data.status_code) ??
+    text(latestTrack.shipment_status_id) ??
+    text(latestTrack.status_id) ??
+    (rawShipmentStatus && /^\d+$/.test(rawShipmentStatus) ? rawShipmentStatus : null) ??
+    (text(latestTrack.shipment_status) && /^\d+$/.test(text(latestTrack.shipment_status)!)
+      ? text(latestTrack.shipment_status)
+      : null);
+  const activityValue = data.shipment_track_activities ??
+    data.tracking_activity ??
+    data.activities ??
+    data.activity;
+  const rawActivities = Array.isArray(activityValue)
+    ? activityValue
+    : activityValue && typeof activityValue === "object"
+      ? [activityValue]
+      : typeof activityValue === "string"
+        ? [{ activity: activityValue }]
+        : [];
+  const currentStatus = text(data.current_status) ??
+    text(data.currentStatus) ??
+    text(data.status_label) ??
+    text(data.status) ??
+    text(latestTrack.current_status) ??
+    text(latestTrack.status) ??
+    (text(latestTrack.shipment_status) && !/^\d+$/.test(text(latestTrack.shipment_status)!)
+      ? text(latestTrack.shipment_status)
+      : null);
+  const events = rawActivities.flatMap((rawEvent): ShiprocketTrackingEvent[] => {
+    const event = record(rawEvent);
+    const description = text(event.activity) ??
+      text(event.description) ??
+      text(event.remark) ??
+      text(event["sr-status-label"]) ??
+      text(event.status);
+    if (!description) return [];
+    return [{
+      occurredAt: toIsoDate(event.date ?? event.timestamp ?? event.occurred_at),
+      status: text(event["sr-status-label"]) ?? text(event.status) ?? currentStatus ?? description,
+      description,
+      location: text(event.location),
+      statusCode: statusCode ??
+        text(event["sr-status"]) ??
+        text(event.status_id) ??
+        text(event.status_code),
+    }];
+  }).sort((left, right) => (left.occurredAt ?? "").localeCompare(right.occurredAt ?? ""));
+  const status = currentStatus && !/^\d+$/.test(currentStatus)
+    ? currentStatus
+    : events.at(-1)?.status ??
+    (statusCode ? `Shipment status ${statusCode}` : null) ??
+    "Tracking update unavailable";
+
+  if (currentStatus && !events.some((event) => event.status.toLowerCase() === currentStatus.toLowerCase())) {
+    events.push({
+      occurredAt: toIsoDate(data.status_date ?? data.updated_at ?? root.timestamp),
+      status: currentStatus,
+      description: currentStatus,
+      location: text(data.location),
+      statusCode,
+    });
+  }
+
+  const tracking: ShiprocketTracking = {
+    status,
+    statusCode,
+    awbCode: awbCode ?? "",
+    courierName: text(data.courier_name) ??
+      text(data.courier_company_name) ??
+      text(latestTrack.courier_name) ??
+      text(latestTrack.courier_company_name),
+    trackingUrl: safeTrackingUrl(data.track_url ?? data.tracking_url ?? latestTrack.track_url ?? latestTrack.tracking_url),
+    estimatedDeliveryAt: toIsoDate(data.etd ?? latestTrack.etd),
+    events,
+  };
+
+  return { awbCode, shipmentId, orderId, tracking };
+}
+
 export function normalizeShiprocketTracking(
   payload: Record<string, unknown>,
   expectedAwbCode: string,
@@ -518,6 +622,7 @@ export function normalizeShiprocketTracking(
       status: text(event["sr-status-label"]) ?? text(event.status) ?? description,
       description,
       location: text(event.location),
+      statusCode: text(event["sr-status"]) ?? text(event.status_id) ?? text(event.status_code),
     }];
   }).sort((left, right) => (left.occurredAt ?? "").localeCompare(right.occurredAt ?? ""));
 
@@ -538,6 +643,7 @@ function normalizedEvent(event: ShiprocketTrackingEvent): ShiprocketTrackingEven
     status: event.status.trim(),
     description: event.description.trim(),
     location: event.location?.trim() || null,
+    ...(event.statusCode ? { statusCode: event.statusCode.trim() } : {}),
   };
 }
 
