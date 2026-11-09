@@ -543,6 +543,28 @@ test("delivery callback rejects authenticated payloads without a valid shipment 
   }));
 });
 
+test("delivery callback identifies the invalid reference field without echoing it", async () => {
+  const state = stateFixture();
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": "local-test-token",
+      },
+      body: JSON.stringify({
+        awb: "not a valid AWB",
+        current_status: "In Transit",
+      }),
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), {
+      error: "The tracking reference is invalid.",
+      code: "invalid_awb",
+    });
+  }));
+});
+
 test("delivery callback acknowledges Shiprocket's downloaded scans sample", async () => {
   const state = stateFixture();
   await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {

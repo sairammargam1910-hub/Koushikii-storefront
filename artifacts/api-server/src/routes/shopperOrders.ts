@@ -467,13 +467,17 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
   const shipmentId = webhook.shipmentId?.trim() ?? "";
   const orderId = webhook.orderId?.trim() ?? "";
   const validReference = (value: string): boolean => /^[A-Za-z0-9_-]{1,64}$/.test(value);
-  if ((awbCode && !validTrackingAwb(awbCode)) ||
-      (shipmentId && !validReference(shipmentId)) ||
-      (orderId && !validReference(orderId))) {
-    logger.warn({ reasonCode: "invalid_reference" }, "Rejected Shiprocket tracking callback");
+  const invalidReferenceFields = [
+    ...(awbCode && !validTrackingAwb(awbCode) ? ["awb"] : []),
+    ...(shipmentId && !validReference(shipmentId) ? ["shipment_id"] : []),
+    ...(orderId && !validReference(orderId) ? ["order_id"] : []),
+  ];
+  if (invalidReferenceFields.length) {
+    const reasonCode = `invalid_${invalidReferenceFields[0]}`;
+    logger.warn({ reasonCode, invalidFields: invalidReferenceFields }, "Rejected Shiprocket tracking callback");
     res.status(400).json({
       error: "The tracking reference is invalid.",
-      code: "invalid_reference",
+      code: reasonCode,
     });
     return;
   }
