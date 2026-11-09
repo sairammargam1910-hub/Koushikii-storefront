@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getGetShopifyCheckoutPaymentStatusQueryKey,
   getGetShopifyCartQueryKey,
   useGetShopifyCheckoutPaymentStatus,
   type ShopifyCheckoutPaymentStatusResponse,
@@ -34,6 +35,7 @@ export function useVerifiedPaymentStatus(orderId: string) {
   const query = useGetShopifyCheckoutPaymentStatus({ orderId }, {
     query: {
       enabled: Boolean(orderId),
+      queryKey: getGetShopifyCheckoutPaymentStatusQueryKey({ orderId }),
       refetchOnMount: "always",
       refetchOnWindowFocus: true,
       refetchInterval: (state) => {

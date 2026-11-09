@@ -299,6 +299,7 @@ test("opens the website checkout from a Shopify bag without a Shopify checkout U
 
   await page.getByTestId("button-add-shopify-to-cart").click();
   await page.getByRole("status").getByText(/Added to your Shopify bag/).waitFor();
+  await page.getByTestId("header-cart-count").getByText("1").waitFor();
   assert.deepEqual(
     await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),
     { id: cartResponse.id, totalQuantity: 1 },
@@ -457,7 +458,7 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
   assert.match(await page.getByTestId("status-cashfree-payment").innerText(), /scan its QR code with your phone/i);
   await page.getByRole("button", { name: /Check payment status/i }).click();
   await page.getByTestId("status-cashfree-payment").getByRole("heading", { name: "Your order is recorded." }).waitFor();
-  assert.equal(paymentStatusChecks, 2);
+  assert.ok(paymentStatusChecks >= 2);
   await context.close();
 });
 

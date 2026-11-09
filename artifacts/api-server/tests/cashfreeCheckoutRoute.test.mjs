@@ -432,6 +432,33 @@ test("legacy quotes cannot be claimed with another account's email", async () =>
   });
 });
 
+test("shipping quote performs rate lookup only and saves no carrier order IDs", async () => {
+  await harness(async ({ state, postQuote }) => {
+    state.order.quoteHash = "old-hash";
+    const result = await postQuote({
+      cartId: state.order.cartId,
+      email: "buyer@example.com",
+      phone: "+919876543210",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        pin: "500008",
+        countryCode: "IN",
+      },
+    });
+    assert.equal(result.status, 200);
+    assert.equal(state.rateCalls, 1);
+    assert.equal(state.carrierCreateCalls.length, 0);
+    assert.equal(state.awbCalls, 0);
+    const createdQuote = state.orders.find((order) => order.id === result.body.quoteId);
+    assert.ok(createdQuote.quoteExpiresAt.getTime() - Date.now() > 29 * 60_000);
+    assert.equal(state.shipments.at(-1).shiprocketOrderId, undefined);
+    assert.equal(state.shipments.at(-1).shiprocketShipmentId, undefined);
+  });
+});
+
 test("duplicate Cashfree success notifications create only one Shopify order", async () => {
   await harness(async ({ state, sendWebhook, getStatus }) => {
     const event = {
@@ -528,6 +555,69 @@ test("an expired or failed Cashfree payment never creates a paid Shopify order",
     assert.equal(result.body.status, "payment_failed");
     assert.equal(result.body.paymentStatus, "FAILED");
     assert.equal(state.shopifySyncAttempts, 0);
+    assert.equal(state.carrierCreateCalls.length, 0);
+    assert.equal(state.awbCalls, 0);
+  });
+});
+
+test("failed and pending payment attempts never create Shiprocket orders or AWBs", async () => {
+  for (const [orderStatus, paymentOutcome, expectedStatus] of [
+    ["ACTIVE", "USER_DROPPED", "payment_failed"],
+    ["ACTIVE", "PENDING", "payment_pending"],
+  ]) {
+    await harness(async ({ state, getStatus }) => {
+      state.environment = "production";
+      state.providerStatus = orderStatus;
+      state.paymentOutcome = paymentOutcome;
+      state.shipments = [{
+        id: "package-before-payment",
+        checkoutOrderId: state.order.id,
+        packageIndex: 0,
+        shiprocketOrderId: null,
+        shiprocketShipmentId: null,
+        courierId: "10",
+        courierName: "Economy",
+        quotedAmount: "20.00",
+        status: "quoted",
+        updatedAt: new Date(),
+      }];
+      const result = await getStatus();
+      assert.equal(result.body.status, expectedStatus);
+      assert.equal(state.shopifySyncAttempts, 0);
+      assert.equal(state.carrierCreateCalls.length, 0);
+      assert.equal(state.awbCalls, 0);
+    });
+  }
+});
+
+test("verified payment creates exactly one Shiprocket order; AWB stays gated", async () => {
+  await harness(async ({ state, getStatus }) => {
+    state.environment = "production";
+    state.providerStatus = "PAID";
+    state.shipments = [{
+      id: "paid-package",
+      checkoutOrderId: state.order.id,
+      packageIndex: 0,
+      shiprocketOrderId: null,
+      shiprocketShipmentId: null,
+      courierId: "10",
+      courierName: "Economy",
+      quotedAmount: "20.00",
+      status: "quoted",
+      updatedAt: new Date(),
+    }];
+    const result = await getStatus();
+    assert.equal(result.body.paymentStatus, "PAID");
+    assert.equal(state.shopifySyncAttempts, 1);
+    assert.equal(state.carrierCreateCalls.length, 1);
+    assert.equal(state.shipments[0].shiprocketOrderId, "sr-paid-1");
+    assert.equal(state.shipments[0].shiprocketShipmentId, "sr-shipment-1");
+    assert.equal(state.awbCalls, 0);
+    assert.equal(state.order.status, "shipment_booking_pending");
+    assert.deepEqual(state.order.checkoutSnapshot, { shopperUserId: "shopper-1" });
+    await getStatus();
+    assert.equal(state.carrierCreateCalls.length, 1);
+    assert.equal(state.awbCalls, 0);
   });
 });
 

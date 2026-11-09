@@ -1002,6 +1002,10 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
       res.status(409).json({ error: "This shipping quote expires too soon. Request a fresh quote before payment." });
       return;
     }
+    const cashfreeExpiryMs = Math.min(
+      Date.now() + 20 * 60 * 1000,
+      row.quoteExpiresAt.getTime(),
+    );
     const cashfreeOrder = await createCashfreeOrder({
       orderId: row.cashfreeOrderId,
       amount: moneyForCashfree(row.totalAmount),
@@ -1009,7 +1013,7 @@ router.post("/shopify/checkout/payment-session", async (req, res): Promise<void>
       email: snapshot.email,
       phone: snapshot.phone,
       returnUrl: cashfreeReturnUrl(row.cashfreeOrderId, req),
-      expiresAt: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+      expiresAt: new Date(cashfreeExpiryMs).toISOString(),
       idempotencyKey: row.id,
       isInternational: row.destinationCountryCode !== "IN",
     });

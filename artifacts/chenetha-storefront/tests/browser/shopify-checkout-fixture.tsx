@@ -8,6 +8,7 @@ import { Collections } from "../../src/storefront/Collections";
 import { ShopifyProductRoute } from "../../src/storefront/ShopifyCatalog";
 import { Cart } from "../../src/storefront/Cart";
 import { Checkout } from "../../src/storefront/Checkout";
+import { Confirmation } from "../../src/storefront/Confirmation";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const clerkPublishableKey = publishableKeyFromHost(
@@ -23,6 +24,7 @@ function Fixture() {
   if (screen === "product") return <ShopifyProductRoute handle="fixture-saree" />;
   if (screen === "cart") return <Cart />;
   if (screen === "checkout") return <Checkout />;
+  if (location.toLowerCase() === "/confirmation") return <Confirmation />;
   return null;
 }
 
