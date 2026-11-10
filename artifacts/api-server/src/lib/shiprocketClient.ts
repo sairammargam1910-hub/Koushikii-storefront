@@ -15,6 +15,19 @@ type ShiprocketCourier = {
   currency?: string;
 };
 
+export const SHIPROCKET_SURFACE_ONLY_TAG = "shiprocket-surface-only";
+export type ShiprocketMode = "Surface" | "Air";
+
+export function getShiprocketModeForProductTags(
+  tags: readonly string[] | null | undefined,
+): ShiprocketMode | undefined {
+  return tags?.some((tag) =>
+    tag.trim().toLowerCase() === SHIPROCKET_SURFACE_ONLY_TAG
+  )
+    ? "Surface"
+    : undefined;
+}
+
 export type ShiprocketQuote = {
   orderId?: string;
   shipmentId?: string;
@@ -72,6 +85,7 @@ export type ShiprocketPackageInput = {
   sellingPrice: string;
   currencyCode: string;
   hsnCode?: string;
+  mode?: ShiprocketMode;
   weightKg: number;
   lengthCm: number;
   breadthCm: number;
@@ -297,6 +311,7 @@ function parseCouriers(payload: {
 
 export function selectLowestCourier(
   couriers: ShiprocketCourier[],
+  mode?: ShiprocketMode,
 ): { courierId: string; courierName: string; amount: string } {
   const valid = couriers.flatMap((courier) => {
     const amount = toAmount(courier.rate ?? courier.freight_charge);
@@ -312,7 +327,13 @@ export function selectLowestCourier(
     }];
   });
   const lowest = valid.sort((left, right) => left.amount - right.amount)[0];
-  if (!lowest) throw new ShiprocketError("Shiprocket has no serviceable courier for this address.");
+  if (!lowest) {
+    throw new ShiprocketError(
+      mode === "Surface"
+        ? "Shiprocket has no serviceable Surface courier for this address. Verify Surface serviceability for the pickup and delivery postcodes; this product cannot fall back to Air."
+        : "Shiprocket has no serviceable courier for this address.",
+    );
+  }
   return {
     courierId: lowest.courierId,
     courierName: lowest.courierName,
@@ -442,15 +463,39 @@ export async function quoteShiprocketPackage(
     ...(international
       ? { delivery_country: input.destination.countryCode }
       : { delivery_postcode: input.destination.postalCode }),
+    ...(input.mode ? { mode: input.mode } : {}),
   });
-  const serviceability = await request<{
+  let serviceability: {
     currency?: string;
     data?: { available_courier_companies?: ShiprocketCourier[] } | ShiprocketCourier[];
-  }>(`${quotePath}?${query.toString()}`, { method: "GET" });
+  };
+  try {
+    serviceability = await request<{
+      currency?: string;
+      data?: { available_courier_companies?: ShiprocketCourier[] } | ShiprocketCourier[];
+    }>(`${quotePath}?${query.toString()}`, { method: "GET" });
+  } catch (error) {
+    if (
+      input.mode === "Surface" &&
+      error instanceof ShiprocketError &&
+      /no serviceable courier/i.test(error.message)
+    ) {
+      throw new ShiprocketError(
+        "Shiprocket has no serviceable Surface courier for this address. Verify Surface serviceability for the pickup and delivery postcodes; this product cannot fall back to Air.",
+        {
+          endpoint: error.diagnostics.endpoint,
+          httpStatus: error.diagnostics.httpStatus,
+          errorCode: error.diagnostics.errorCode,
+          providerMessage: error.diagnostics.message,
+        },
+      );
+    }
+    throw error;
+  }
   if ((serviceability.currency?.toUpperCase() ?? (international ? "" : "INR")) !== "INR") {
     throw new ShiprocketError("Shiprocket did not return a supported INR shipping quote.");
   }
-  const selected = selectLowestCourier(parseCouriers(serviceability));
+  const selected = selectLowestCourier(parseCouriers(serviceability), input.mode);
   return {
     ...selected,
     currencyCode: "INR",

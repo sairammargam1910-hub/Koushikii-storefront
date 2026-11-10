@@ -37,7 +37,9 @@ function withEnvironment(values, run) {
     });
 }
 
-function mockShiprocketFetch(calls) {
+function mockShiprocketFetch(calls, { surfaceCouriers = [
+  { courier_company_id: 44, courier_name: "Surface Economy", rate: 116.72 },
+] } = {}) {
   return async (url, init = {}) => {
     const target = new URL(String(url));
     const body = init.body ? JSON.parse(init.body) : undefined;
@@ -57,13 +59,16 @@ function mockShiprocketFetch(calls) {
       return new Response(JSON.stringify({ order_id: 456, shipment_id: 789 }), { status: 200 });
     }
     if (target.pathname.includes("/courier/serviceability")) {
+      const surfaceOnly = target.searchParams.get("mode") === "Surface";
       return new Response(JSON.stringify({
         currency: "INR",
         data: {
-          available_courier_companies: [
-            { courier_company_id: 20, courier_name: "Higher", rate: 325 },
-            { courier_company_id: 10, courier_name: "Economy", rate: 225.5 },
-          ],
+          available_courier_companies: surfaceOnly
+            ? surfaceCouriers
+            : [
+              { courier_company_id: 20, courier_name: "Higher", rate: 325 },
+              { courier_company_id: 10, courier_name: "Economy", rate: 225.5 },
+            ],
         },
       }), { status: 200 });
     }
@@ -220,6 +225,60 @@ test("domestic rate lookup never creates a provider order or AWB", async () => {
       assert.equal(quote.url.searchParams.get("delivery_postcode"), "500008");
       assert.equal(quote.url.searchParams.has("order_id"), false);
       assert.equal(quote.url.searchParams.get("weight"), "1");
+      assert.equal(quote.url.searchParams.has("mode"), false);
+      assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Surface-only quote requests Surface serviceability and selects only that response", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = mockShiprocketFetch(calls, {
+    surfaceCouriers: [
+      { courier_company_id: 44, courier_name: "Surface Economy", rate: 116.72 },
+    ],
+  });
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+      SHIPROCKET_PICKUP_POSTCODE: "500007",
+    }, async () => {
+      const { quoteShiprocketPackage } = loadModule();
+      const result = await quoteShiprocketPackage({ ...baseInput, mode: "Surface" });
+      const quote = calls.find((call) => call.url.pathname.endsWith("/courier/serviceability/"));
+
+      assert.equal(quote.url.searchParams.get("mode"), "Surface");
+      assert.equal(result.courierId, "44");
+      assert.equal(result.courierName, "Surface Economy");
+      assert.equal(result.amount, "116.72");
+      assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Surface-only quote fails clearly when Shiprocket returns no Surface courier", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = mockShiprocketFetch(calls, { surfaceCouriers: [] });
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+      SHIPROCKET_PICKUP_POSTCODE: "500007",
+    }, async () => {
+      const { quoteShiprocketPackage } = loadModule();
+      await assert.rejects(
+        quoteShiprocketPackage({ ...baseInput, mode: "Surface" }),
+        /no serviceable Surface courier.*cannot fall back to Air/i,
+      );
+      const quote = calls.find((call) => call.url.pathname.endsWith("/courier/serviceability/"));
+      assert.equal(quote.url.searchParams.get("mode"), "Surface");
       assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
     });
   } finally {

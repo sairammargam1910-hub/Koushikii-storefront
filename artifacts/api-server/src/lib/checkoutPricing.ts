@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ShopifyCartNode } from "../routes/shopify";
+import { getShiprocketModeForProductTags } from "./shiprocketClient";
 
 export type CheckoutAddress = {
   recipient: string;
@@ -99,6 +100,9 @@ export function checkoutCartFingerprint(input: {
       availableForSale: line.merchandise?.availableForSale ?? false,
       subtotal: line.cost.subtotalAmount.amount,
       total: line.cost.totalAmount.amount,
+      shiprocketMode: getShiprocketModeForProductTags(
+        line.merchandise?.product?.tags,
+      ) ?? null,
     })),
     email: input.email.trim().toLowerCase(),
     phone: input.phone.trim(),

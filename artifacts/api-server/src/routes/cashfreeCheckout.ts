@@ -39,6 +39,7 @@ import {
   bookShiprocketPackage,
   quoteShiprocketPackage,
   createShiprocketPackage,
+  getShiprocketModeForProductTags,
   getConfiguredParcel,
   getShiprocketShipmentDetails,
   ShiprocketError,
@@ -810,6 +811,7 @@ function buildProviderPackageInputs(input: {
   let packageIndex = 0;
   const packages = input.cart.lines.nodes.flatMap((line) => {
     const merchandise = line.merchandise!;
+    const mode = getShiprocketModeForProductTags(merchandise.product.tags);
     const unitPrices = splitMoney(line.cost.totalAmount.amount, line.quantity);
     return unitPrices.map((sellingPrice) => ({
       orderId: `${prefix}_p${packageIndex}`,
@@ -831,6 +833,7 @@ function buildProviderPackageInputs(input: {
       sellingPrice,
       currencyCode: input.cart.cost.totalAmount.currencyCode,
       hsnCode: process.env.SHIPROCKET_HSN_CODE?.trim(),
+      ...(mode ? { mode } : {}),
       ...parcel,
     }));
   });
@@ -1002,9 +1005,12 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       }, "Shiprocket checkout quote failed");
       const needsConfiguration = /not configured|no configured pickup|invoice terms|export purpose|HSN code/i.test(error.message);
       const noRoute = /no serviceable courier|not serviceable/i.test(error.message);
+      const noSurfaceRoute = /no serviceable Surface courier/i.test(error.message);
       res.status(needsConfiguration ? 422 : 409).json({
         error: needsConfiguration
           ? "The shipping account or product export settings are incomplete for this destination."
+          : noSurfaceRoute
+            ? error.message
           : noRoute
             ? "The carrier has no serviceable route for this delivery address."
             : "Shiprocket could not confirm a current quote. No payment was taken.",

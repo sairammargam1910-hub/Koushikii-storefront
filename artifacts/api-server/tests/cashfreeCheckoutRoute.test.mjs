@@ -154,14 +154,19 @@ const compiled = await build({
         `,
         shiprocket: `
           const state = globalThis.__checkoutRouteTest;
+          export const getShiprocketModeForProductTags = (tags) =>
+            tags?.some((tag) => tag.trim().toLowerCase() === "shiprocket-surface-only")
+              ? "Surface"
+              : undefined;
           export class ShiprocketError extends Error {
             constructor(message, diagnostics = {}) {
               super(message);
               this.diagnostics = diagnostics;
             }
           }
-          export const bookShiprocketPackage = async () => {
+          export const bookShiprocketPackage = async (input) => {
             state.awbCalls += 1;
+            state.awbInputs.push(input);
             if (state.awbErrorStatus) throw new ShiprocketError("test booking rejected", { httpStatus: state.awbErrorStatus });
             if (state.awbBodyRejected) throw new ShiprocketError("test booking rejected", {
               httpStatus: 200, bookingRejected: true,
@@ -175,9 +180,17 @@ const compiled = await build({
             if (state.shipmentDetailsError) throw new Error("test provider read failed");
             return state.shipmentDetails ?? { awbCode: null };
           };
-          export const quoteShiprocketPackage = async () => {
+          export const quoteShiprocketPackage = async (input) => {
             state.rateCalls += 1;
-            return { courierId: "10", courierName: "Economy", amount: "20.00", currencyCode: "INR" };
+            state.quoteInputs.push(input);
+            if (state.noSurfaceCourier && input.mode === "Surface") {
+              throw new ShiprocketError(
+                "Shiprocket has no serviceable Surface courier for this address. Verify Surface serviceability for the pickup and delivery postcodes; this product cannot fall back to Air.",
+              );
+            }
+            return input.mode === "Surface"
+              ? { courierId: "44", courierName: "Delhivery Surface 2 Kgs", amount: "20.00", currencyCode: "INR" }
+              : { courierId: "10", courierName: "Economy", amount: "20.00", currencyCode: "INR" };
           };
           export const createShiprocketPackage = async (input) => {
             state.carrierCreateCalls.push(input);
@@ -327,8 +340,11 @@ async function harness(run, options = {}) {
     shopifyFailures: 0,
     cartCleanupCalls: [],
     rateCalls: 0,
+    quoteInputs: [],
+    noSurfaceCourier: false,
     carrierCreateCalls: [],
     awbCalls: 0,
+    awbInputs: [],
     awbError: false,
     awbErrorStatus: null,
     awbBodyRejected: false,
@@ -484,6 +500,7 @@ test("shipping quote performs rate lookup only and saves no carrier order IDs", 
     });
     assert.equal(result.status, 200);
     assert.equal(state.rateCalls, 1);
+    assert.equal(state.quoteInputs[0].mode, undefined);
     assert.equal(state.carrierCreateCalls.length, 0);
     assert.equal(state.awbCalls, 0);
     const createdQuote = state.orders.find((order) => order.id === result.body.quoteId);
@@ -496,6 +513,81 @@ test("shipping quote performs rate lookup only and saves no carrier order IDs", 
     );
     assert.equal(session.status, 200);
     assert.equal(session.body.amount, "120.00");
+  });
+});
+
+test("Surface-only Shopify tag saves and books the courier selected by the Surface quote", async () => {
+  await withLiveAwbBooking(() => harness(async ({ state, postQuote, postSession, getStatus }) => {
+    state.cart.lines.nodes[0].merchandise.product.tags.push("shiprocket-surface-only");
+    state.order.quoteHash = "prior-untagged-quote";
+    const quote = await postQuote({
+      cartId: state.order.cartId,
+      email: "buyer@example.com",
+      phone: "+919876543210",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        pin: "500008",
+        countryCode: "IN",
+      },
+    });
+
+    assert.equal(quote.status, 200);
+    assert.equal(state.quoteInputs.at(-1).mode, "Surface");
+    const savedPackage = state.shipments.at(-1);
+    assert.equal(savedPackage.courierId, "44");
+    assert.equal(savedPackage.courierName, "Delhivery Surface 2 Kgs");
+    assert.equal(savedPackage.status, "quoted");
+
+    state.order = state.orders.find((order) => order.id === quote.body.quoteId);
+    state.environment = "production";
+    const session = await postSession(
+      { quoteId: quote.body.quoteId },
+      { Origin: "https://preview.replit.dev" },
+    );
+    assert.equal(session.status, 200);
+    const paidStatus = await getStatus();
+    assert.equal(paidStatus.status, 200);
+    assert.equal(state.carrierCreateCalls.length, 1);
+    assert.equal(state.awbCalls, 1);
+    assert.equal(state.awbInputs[0].courierId, "44");
+    assert.equal(state.awbInputs[0].shipmentId, "sr-shipment-1");
+    assert.equal(state.shipments.at(-1).courierId, "44");
+  }), {
+    order: {
+      quoteHash: "existing-quote-hash",
+    },
+  });
+});
+
+test("Surface-only quote failure stays actionable and does not fall back to Air", async () => {
+  await harness(async ({ state, postQuote }) => {
+    state.cart.lines.nodes[0].merchandise.product.tags.push("shiprocket-surface-only");
+    state.order.quoteHash = "prior-quote";
+    state.noSurfaceCourier = true;
+
+    const result = await postQuote({
+      cartId: state.order.cartId,
+      email: "buyer@example.com",
+      phone: "+919876543210",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        pin: "500008",
+        countryCode: "IN",
+      },
+    });
+
+    assert.equal(result.status, 409);
+    assert.match(result.body.error, /Surface serviceability.*cannot fall back to Air/i);
+    assert.equal(state.quoteInputs.at(-1).mode, "Surface");
+    assert.equal(state.shipments.length, 0);
+    assert.equal(state.carrierCreateCalls.length, 0);
+    assert.equal(state.awbCalls, 0);
   });
 });
 

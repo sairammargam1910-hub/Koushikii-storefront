@@ -106,4 +106,20 @@ test("quote fingerprint changes when destination, cart, or parcel changes", () =
     }),
     base,
   );
+  const surfaceOnlyCart = {
+    ...cart,
+    lines: {
+      nodes: cart.lines.nodes.map((line) => ({
+        ...line,
+        merchandise: {
+          ...line.merchandise,
+          product: { tags: ["shiprocket-surface-only"] },
+        },
+      })),
+    },
+  };
+  assert.notEqual(
+    checkoutCartFingerprint({ ...baseInput, cart: surfaceOnlyCart }),
+    base,
+  );
 });
