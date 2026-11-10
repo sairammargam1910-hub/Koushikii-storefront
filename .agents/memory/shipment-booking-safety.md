@@ -30,3 +30,13 @@ and courier serviceability returned a rate.
 not proof of a product restriction. Preserve existing orders and pickup
 references; do not change dangerous-goods classifications or create replacement
 orders to work around it.
+
+Different courier IDs can represent services from the same underlying carrier,
+not an independent fallback.
+
+**Why:** Delhivery courier 44 and 43 were separate Surface service IDs, but
+assigning the existing shipment with 43 returned the same ClientWarehouse error.
+
+**How to apply:** Compare the actual carrier names before treating another
+service ID as a fallback. Resolve the carrier-side mapping or confirm a different
+partner before another live attempt.
