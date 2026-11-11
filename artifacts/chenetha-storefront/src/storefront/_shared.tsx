@@ -13,6 +13,9 @@ import { useLocation } from "wouter";
 import { useShopifyCartMeta, useShopifyCart } from "./shopifyCartState";
 import { Show } from "@clerk/react";
 import { useShopperPreferences } from "./ShopperPreferences";
+import { getAvailableShopifyCollections, getShopifyAttribute } from "./shopifyCatalogData";
+import { useShopifyCatalog } from "./shopifyCatalogQuery";
+export { cottonWeaves } from "./shopifyCatalogData";
 
 export const base="/";
 export const products=[
@@ -53,7 +56,6 @@ function WhatsAppHeaderIcon({language}:{language:StoreLanguage}){
 }
 export function addItem(id:string){const list=getItems("kq-cart");const found=list.find(x=>x.id===id);if(found)found.qty++;else list.push({id,qty:1});saveItems("kq-cart",list)}
 export function useStore(key:string){const shopper=useShopperPreferences();const [items,set]=useState<Item[]>(()=>getItems(key));useEffect(()=>{const sync=()=>set(getItems(key));window.addEventListener("storage",sync);window.addEventListener("kq-storage",sync);return()=>{window.removeEventListener("storage",sync);window.removeEventListener("kq-storage",sync)}},[key]);return key==="kq-wish"?shopper.wishlist:items}
-export const cottonWeaves = ["Mangalagiri Cotton","Narayanpet","Venkatagiri","Gadwal","Kasaragod","Paithani","Kala Cotton","Patola","Ikat","Moirang Phee","Kanchi Cottons","Chettinad Cottons","Banaras Cottons","Kota Cottons"];
 export function TempleBorder(){return <div className="temple-border" aria-hidden="true"/>}
 function LanguageSelect({language,onChange}:{language:StoreLanguage;onChange:(language:StoreLanguage)=>void}){
  return <label className="language-switcher">
@@ -69,6 +71,10 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
  const [menu,setMenu]=useState(false),[search,setSearch]=useState(false);
   const [,setLocation]=useLocation();
  const cart=useStore("kq-cart"),wish=useStore("kq-wish");
+  const catalog=useShopifyCatalog();
+  const products=catalog.data?.products||[];
+  const fabrics=Array.from(new Set(products.map(product=>getShopifyAttribute(product,"fabric")).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+  const collections=getAvailableShopifyCollections(products);
   const shopifyCart=useShopifyCartMeta();
   const currentCart=useShopifyCart(shopifyCart?.id);
   const cartCount=shopifyCart
@@ -80,8 +86,11 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
    <a className="brand" href="/" onClick={()=>setMenu(false)}><img src="/images/koushikii/wordmark-red.png" alt="Chenetha by Koushikii"/></a>
   <nav id="kq-main-menu" aria-label="Main menu" className={`nav ${menu?"open":""}`} onClick={event=>{if(event.target instanceof Element&&event.target.closest("a")){setMenu(false);event.currentTarget.querySelector("details")?.removeAttribute("open")}}}>
      <details className="collection-nav"><summary>Collections <ChevronDown size={13}/></summary>
-        <div className="mega-menu"><div><strong>Shop by fabric</strong><a href={base+"Collections"}>Browse available fabric filters</a><a href={base+"Collections"} className="link" style={{marginTop:18}}>View all products →</a></div>
-      <div><strong>Shop by collection</strong><a href={base+"Collections"}>Browse current Shopify collections</a>
+         <div className="mega-menu"><div><strong>Shop by fabric</strong>
+        {fabrics.length?<div className="menu-dynamic-links" aria-label="Shop by fabric">{fabrics.map(fabric=><a key={fabric} href={`${base}Collections?fabric=${encodeURIComponent(fabric)}`}>{fabric}</a>)}</div>:<a href={base+"Collections"}>{catalog.isLoading&&!catalog.data?"Loading available fabrics…":"Browse available products"}</a>}
+        <a href={base+"Collections"} className="link" style={{marginTop:18}}>View all products →</a></div>
+       <div><strong>Shop by collection</strong>
+        {collections.length?<div className="menu-dynamic-links" aria-label="Shop by collection">{collections.map(collection=><a key={collection.handle} href={`${base}Collections?collection=${encodeURIComponent(collection.handle)}`}>{collection.title}</a>)}</div>:<a href={base+"Collections"}>{catalog.isLoading&&!catalog.data?"Loading collections…":"Browse all products"}</a>}
       <div className="menu-weaves"><strong>Product details</strong><a href={base+"Collections"}>Filter by craft technique, region and colour</a></div></div></div>
    </details>
      <a href={base+"OurStory"}>Our Story</a><a href={base+"Videos"}>Videos</a><a href={base+"Contact"}>Contact Us</a>

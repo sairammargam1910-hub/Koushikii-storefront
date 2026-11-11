@@ -36,6 +36,8 @@
 .kq .mega-menu{left:-36px;width:min(660px,calc(100vw - 48px));grid-template-columns:1.2fr 1fr;gap:28px;padding:26px;background:#fbf6ed}
 .kq .mega-menu strong{font-size:24px}
 .kq .mega-menu a{font-size:12px}
+.kq .menu-dynamic-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px}
+.kq .menu-dynamic-links a{min-width:0;overflow-wrap:anywhere}
 .kq .searchline input{width:100%;min-width:0}
 @media(max-width:1120px){
  .kq .headrow{position:relative;grid-template-columns:48px minmax(130px,1fr) auto;height:78px;gap:12px}

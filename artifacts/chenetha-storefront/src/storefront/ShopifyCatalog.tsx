@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Heart } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   addShopifyCartLine,
   getGetShopifyCartQueryKey,
-  getGetShopifyProductsQueryKey,
   getShopifyCart,
-  getShopifyProducts,
   type ShopifyCartAddInput,
   type ShopifyCartResponse,
   type ShopifyProduct,
@@ -18,22 +16,15 @@ import { useShopperPreferences } from "./ShopperPreferences";
 import { customerFacingMessage } from "./customerFacingMessage";
 import type { CatalogFilters } from "./_shared/catalog-filter";
 import { normalizeRegion, normalizeWeave } from "./_shared/catalog-filter";
+import { getAvailableShopifyCollections, getShopifyAttribute, getShopifyTagValue } from "./shopifyCatalogData";
+import { useShopifyCatalog } from "./shopifyCatalogQuery";
+export { getAvailableShopifyCollections, getShopifyAttribute, getShopifyTagValue } from "./shopifyCatalogData";
+export { useShopifyCatalog } from "./shopifyCatalogQuery";
 import {
   readShopifyCartMeta,
   saveShopifyCartMeta,
 } from "./shopifyCartState";
 import "./ShopifyCatalog.css";
-
-export function useShopifyCatalog(enabled = true) {
-  return useQuery({
-    queryKey: getGetShopifyProductsQueryKey(),
-    queryFn: ({ signal }) => getShopifyProducts({ signal }),
-    staleTime: 60_000,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    enabled,
-  });
-}
 
 export { useShopifyCart } from "./shopifyCartState";
 
@@ -45,99 +36,8 @@ export function updateShopifyCartCache(
   queryClient.setQueryData(getGetShopifyCartQueryKey({ cartId: cart.id }), cart);
 }
 
-export function getShopifyTagValue(product: ShopifyProduct, key: string) {
-  const normalizedKey = key.toLowerCase();
-  const prefix = `${normalizedKey}:`;
-  const tag = product.tags.find((value) => value.toLowerCase().startsWith(prefix));
-  if (tag) {
-    const value = tag.slice(prefix.length).trim();
-    return normalizedKey === "weave" ? normalizeWeave(value) : canonicalFabric(value) ?? value;
-  }
-
-  if (normalizedKey === "fabric") {
-    return product.tags
-      .map((value) => canonicalFabric(value))
-      .find((value): value is string => Boolean(value)) ?? "";
-  }
-  if (normalizedKey === "weave") {
-    return product.tags
-      .map((value) => canonicalWeave(value))
-      .find((value): value is string => Boolean(value)) ?? "";
-  }
-  return "";
-}
-
-export function getShopifyAttribute(product: ShopifyProduct, key: string) {
-  const normalizedKey = key.toLowerCase();
-  const structuredValue =
-    normalizedKey === "fabric" ? product.attributes?.fabric :
-      normalizedKey === "weave" || normalizedKey === "crafttechnique" || normalizedKey === "craft_technique"
-        ? product.attributes?.craftTechnique :
-          normalizedKey === "region" ? product.attributes?.region :
-            normalizedKey === "colour" || normalizedKey === "color"
-              ? product.attributes?.colour
-              : null;
-  if (structuredValue?.trim()) return structuredValue.trim();
-  if (normalizedKey === "colour" || normalizedKey === "color") {
-    return getShopifyTagValue(product, "colour") || getShopifyTagValue(product, "color");
-  }
-  if (normalizedKey === "weave" || normalizedKey === "crafttechnique" || normalizedKey === "craft_technique") {
-    return getShopifyTagValue(product, "weave");
-  }
-  return getShopifyTagValue(product, normalizedKey);
-}
-
-export function getAvailableShopifyCollections(products: ShopifyProduct[]) {
-  const collections = new Map<string, { id: string; handle: string; title: string }>();
-  for (const product of products) {
-    for (const collection of product.collections ?? []) {
-      if (!collection.handle || collection.handle === "frontpage") continue;
-      collections.set(collection.handle, collection);
-    }
-  }
-  return [...collections.values()].sort((a, b) => a.title.localeCompare(b.title));
-}
-
 function normalizedTag(value: string) {
   return value.trim().toLowerCase().replace(/[\s_]+/g, "-");
-}
-
-function canonicalFabric(value: string): string | undefined {
-  const fabrics: Record<string, string> = {
-    cotton: "Cotton",
-    silk: "Silk",
-    "cotton-silk": "Cotton-Silk",
-    "silk-cotton": "Cotton-Silk",
-    "other-blend": "Other blends",
-    "other-blends": "Other blends",
-  };
-  return fabrics[normalizedTag(value)];
-}
-
-const weaveTags = new Map(
-  [
-    ...cottonWeaves,
-    "Ikat",
-    "Jamdani",
-    "Kanchipuram",
-    "Kanchipooram",
-    "Banarasi",
-    "Banaras",
-    "Pashmina",
-    "Moirang Phee",
-    "Patola",
-    "Paithani",
-    "Gadwal",
-    "Venkatagiri",
-    "Narayanpet",
-    "Mangalagiri",
-    "Chettinad",
-    "Kota",
-  ].map((value) => [normalizedTag(value), normalizeWeave(value)] as const),
-);
-
-function canonicalWeave(value: string): string | undefined {
-  return weaveTags.get(normalizedTag(value));
 }
 
 function hasTag(product: ShopifyProduct, ...values: string[]) {

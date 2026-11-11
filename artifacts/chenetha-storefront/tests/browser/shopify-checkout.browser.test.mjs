@@ -658,6 +658,44 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   }
 });
 
+test("header links show live Shopify fabric and collection categories", async () => {
+  const headerProduct = {
+    ...productResponse.products[0],
+    attributes: {
+      ...productResponse.products[0].attributes,
+      fabric: "Cotton",
+      craftTechnique: "Narayanpet",
+    },
+    collections: [{
+      id: "gid://shopify/Collection/narayanpet",
+      handle: "narayanpet",
+      title: "Narayanpet",
+    }],
+  };
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await page.route("**/api/shopify/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ products: [headerProduct] }),
+  }));
+  await page.route("**/api/site-content", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ items: [] }),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=home`);
+  await page.locator(".collection-nav > summary").click();
+
+  const cotton = page.getByRole("link", { name: "Cotton", exact: true });
+  const narayanpet = page.getByRole("link", { name: "Narayanpet", exact: true });
+  await cotton.waitFor();
+  await narayanpet.waitFor();
+  assert.match(await cotton.getAttribute("href"), /Collections\?fabric=Cotton$/);
+  assert.match(await narayanpet.getAttribute("href"), /Collections\?collection=narayanpet$/);
+  await context.close();
+});
+
 test("applies shopper-entered discount codes to the Shopify bag", async () => {
   const savedCart = { id: "gid://shopify/Cart/browser-cart-123", totalQuantity: 1 };
   const { context, page } = await openCart({ savedCart });
