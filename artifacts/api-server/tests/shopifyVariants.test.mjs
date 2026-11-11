@@ -34,6 +34,8 @@ function fixture() {
   return {
     id: productId, title: "Saree", handle: "saree", description: "", productType: "Saree",
     status: "ACTIVE", tags: [], featuredMedia: null,
+    fabricMetafield: null, craftTechniqueMetafield: null, regionMetafield: null, colourMetafield: null,
+    collections: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } },
     options: [{ id: gid("ProductOption", 30), name: "Size", optionValues: [11, 12, 13].map((id) => ({ id: gid("ProductOptionValue", id), name: String(id) })) }],
     variants: { nodes: [11, 12, 13].map((id) => ({
       id: gid("ProductVariant", id), title: `Size ${id}`, price: "100.00",

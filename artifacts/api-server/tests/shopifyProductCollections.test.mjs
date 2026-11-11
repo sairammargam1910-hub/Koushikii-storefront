@@ -85,6 +85,79 @@ function createFixtureProduct() {
   };
 }
 
+function adminProductResponse(product) {
+  const { metafields, ...rest } = structuredClone(product);
+  return {
+    ...rest,
+    fabricMetafield: metafields.find(({ key }) => key === "fabric") ?? null,
+    craftTechniqueMetafield: metafields.find(({ key }) => key === "craft_technique") ?? null,
+    regionMetafield: metafields.find(({ key }) => key === "region") ?? null,
+    colourMetafield: metafields.find(({ key }) => key === "colour") ?? null,
+  };
+}
+
+function assertAdminProductMetafieldQuery(query) {
+  assert.doesNotMatch(query, /metafields\s*\(\s*identifiers\s*:/);
+  for (const [alias, key] of [
+    ["fabricMetafield", "fabric"],
+    ["craftTechniqueMetafield", "craft_technique"],
+    ["regionMetafield", "region"],
+    ["colourMetafield", "colour"],
+  ]) {
+    assert.match(query, new RegExp(`${alias}:\\s*metafield\\(namespace: "chenetha", key: "${key}"\\)\\s*\\{ key value \\}`));
+  }
+}
+
+test("admin product list and detail use supported nullable Admin API metafield selectors", async (t) => {
+  const product = createFixtureProduct();
+  product.metafields = [
+    { key: "fabric", value: "Cotton" },
+    { key: "craft_technique", value: "Handwoven" },
+    { key: "region", value: "Telangana" },
+  ];
+  let productQueries = 0;
+  const module = { exports: {} };
+  new Function("require", "module", "exports", "sdkProxy", "storefrontProxy", compiled.outputFiles[0].text)(
+    createRequire(import.meta.url),
+    module,
+    module.exports,
+    async (_connector, path, request) => {
+      assert.match(path, /\/admin\/api\/2026-04\/graphql.json/);
+      const { query } = JSON.parse(request.body);
+      assertAdminProductMetafieldQuery(query);
+      productQueries += 1;
+      if (query.includes("query MerchantProducts")) {
+        return Response.json({ data: { shop: { currencyCode: "INR" }, products: { nodes: [adminProductResponse(product)] } } });
+      }
+      assert.match(query, /query MerchantProduct\(/);
+      return Response.json({ data: { shop: { currencyCode: "INR" }, product: adminProductResponse(product) } });
+    },
+    async () => { throw new Error("This admin read must not call the Storefront API."); },
+  );
+
+  const app = express();
+  app.use(express.json());
+  app.use((req, _res, next) => { req.log = { error() {} }; next(); });
+  app.use("/api", module.exports.shopifyAdminRouter);
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}/api/shopify/admin/products`;
+  const headers = { "x-test-admin": "yes" };
+
+  for (const url of [base, `${base}/${encodeURIComponent(productId)}`]) {
+    const response = await fetch(url, { headers });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    const result = body.products?.[0] ?? body.product;
+    assert.equal(result.fabric, "Cotton");
+    assert.equal(result.craftTechnique, "Handwoven");
+    assert.equal(result.region, "Telangana");
+    assert.equal(result.colour, "", "missing metafields must remain an empty optional attribute");
+  }
+  assert.equal(productQueries, 2);
+});
+
 test("publishes an unassigned non-saree product, then adds it to a newly created collection", async (t) => {
   const state = { product: null, collections: [], productCreateCount: 0, published: new Set() };
   const module = { exports: {} };
@@ -107,7 +180,8 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
         return Response.json({ data: { productCreate: { product: { id: productId }, userErrors: [] } } });
       }
       if (query.includes("query MerchantProduct(")) {
-        return Response.json({ data: { shop: { currencyCode: "INR" }, product: structuredClone(state.product) } });
+        assertAdminProductMetafieldQuery(query);
+        return Response.json({ data: { shop: { currencyCode: "INR" }, product: adminProductResponse(state.product) } });
       }
       if (query.includes("mutation MerchantProductVariantUpdate")) {
         state.product.variants.nodes[0].price = variables.variants[0].price;

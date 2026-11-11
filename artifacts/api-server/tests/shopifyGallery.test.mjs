@@ -39,6 +39,9 @@ async function harness(run, options = {}) {
     product: {
       id: productId, title: "Saree", handle: "saree", description: "", productType: "Saree",
       status: "ACTIVE", tags: [], featuredMedia: null,
+      fabricMetafield: null, craftTechniqueMetafield: null, regionMetafield: null, colourMetafield: null,
+      collections: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } },
+      options: [],
       variants: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } },
     },
     media: options.media ?? [media(1), media(2), media(3)],

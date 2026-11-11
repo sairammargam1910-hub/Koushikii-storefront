@@ -58,7 +58,10 @@ function createProduct() {
     description: "Dedicated Shopify fixture for product deletion verification.",
     productType: "Home textile",
     tags: ["handmade", "deletion-test"],
-    metafields: [],
+    fabricMetafield: null,
+    craftTechniqueMetafield: null,
+    regionMetafield: null,
+    colourMetafield: null,
     collections: {
       nodes: [],
       pageInfo: { hasNextPage: false, endCursor: null },

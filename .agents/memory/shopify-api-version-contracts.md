@@ -37,3 +37,9 @@ Verify the store domain before using a Shopify connector for operational checks;
 **Why:** The code's `shopify-store` connection pointed at a different shop during live checkout verification, while the separate `shopify` connection matched the checkout store.
 
 **How to apply:** Run a read-only `shop { myshopifyDomain }` query first, and use only the connection matching the checkout store before inspecting orders or inventory.
+
+Do not copy Storefront metafield selection arguments into Shopify Admin queries. For a fixed set of product attributes, Admin API `metafield(namespace:, key:)` aliases avoid connection pagination and key-format differences.
+
+**Why:** Admin API 2026-04 rejected the Storefront-style `metafields(identifiers:)` argument, breaking the merchant catalog while the public catalog still worked. Mock response tests did not validate the GraphQL schema.
+
+**How to apply:** Validate the complete changed Admin query read-only against the pinned live API before release. Check GraphQL errors and requested query cost, not just HTTP success or fixture tests.

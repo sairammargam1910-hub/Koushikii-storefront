@@ -62,6 +62,8 @@ type AdminVariant = {
   } | null;
 };
 
+type AdminProductMetafield = { key: string; value: string | null };
+
 type AdminProduct = {
   id: string;
   title: string;
@@ -70,7 +72,10 @@ type AdminProduct = {
   productType: string;
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   tags: string[];
-  metafields: Array<{ key: string; value: string | null } | null>;
+  fabricMetafield: AdminProductMetafield | null;
+  craftTechniqueMetafield: AdminProductMetafield | null;
+  regionMetafield: AdminProductMetafield | null;
+  colourMetafield: AdminProductMetafield | null;
   collections: {
     nodes: Array<{
       id: string;
@@ -172,12 +177,10 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
   productType
   status
   tags
-  metafields(identifiers: [
-    { namespace: "chenetha", key: "fabric" }
-    { namespace: "chenetha", key: "craft_technique" }
-    { namespace: "chenetha", key: "region" }
-    { namespace: "chenetha", key: "colour" }
-  ]) { key value }
+  fabricMetafield: metafield(namespace: "chenetha", key: "fabric") { key value }
+  craftTechniqueMetafield: metafield(namespace: "chenetha", key: "craft_technique") { key value }
+  regionMetafield: metafield(namespace: "chenetha", key: "region") { key value }
+  colourMetafield: metafield(namespace: "chenetha", key: "colour") { key value }
   collections(first: 10) {
     nodes { id title handle ruleSet { appliedDisjunctively } }
     pageInfo { hasNextPage endCursor }
@@ -649,11 +652,21 @@ async function waitForShopifyJob(jobId: string) {
   throw new ShopifyAdminError("Shopify is still processing this gallery change. Refresh shortly.");
 }
 
+function productAttributeMetafields(product: AdminProduct): AdminProductMetafield[] {
+  return [
+    product.fabricMetafield,
+    product.craftTechniqueMetafield,
+    product.regionMetafield,
+    product.colourMetafield,
+  ].filter((entry): entry is AdminProductMetafield => entry != null);
+}
+
 function mapProduct(
   product: AdminProduct,
 ): ReturnType<typeof GetShopifyAdminProductsResponse.parse>["products"][number] {
+  const attributes = productAttributeMetafields(product);
   const metafield = (key: string) =>
-    product.metafields?.find((entry) => entry?.key === key)?.value ?? "";
+    attributes.find((entry) => entry.key === key)?.value ?? "";
   const manualCollections = product.collections?.nodes.filter((entry) => !entry.ruleSet) ?? [];
   return {
     id: product.id,
@@ -878,7 +891,7 @@ function ensureProductAttributeDefinitions(): Promise<void> {
 async function saveProductAttributes(
   productId: string,
   attributes: { fabric: string; craftTechnique: string; region: string; colour: string },
-  existing: AdminProduct["metafields"] = [],
+  existing: AdminProductMetafield[] = [],
 ): Promise<void> {
   const values = {
     fabric: attributes.fabric.trim(),
@@ -1737,7 +1750,7 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
       craftTechnique: input.craftTechnique ?? "",
       region: input.region ?? "",
       colour: input.colour ?? "",
-    }, initial.product.metafields);
+    }, productAttributeMetafields(initial.product));
 
     const collectionPlan =
       selectedCollectionIds.length || newCollectionTitle
@@ -1884,7 +1897,7 @@ router.patch(
           craftTechnique: input.craftTechnique ?? "",
           region: input.region ?? "",
           colour: input.colour ?? "",
-        }, existing.product.metafields);
+        }, productAttributeMetafields(existing.product));
       }
 
       if (input.publishToWebsite === true) {
