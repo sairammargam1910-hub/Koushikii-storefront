@@ -10,6 +10,8 @@ export interface ShopifyProductAttributes {
   /** @nullable */
   fabric: string | null;
   /** @nullable */
+  regionalHandloom: string | null;
+  /** @nullable */
   craftTechnique: string | null;
   /** @nullable */
   region: string | null;

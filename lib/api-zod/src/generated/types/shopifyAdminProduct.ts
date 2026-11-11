@@ -18,6 +18,7 @@ export interface ShopifyAdminProduct {
   status: ShopifyAdminProductStatus;
   tags: string[];
   fabric: string;
+  regionalHandloom: string;
   craftTechnique: string;
   region: string;
   colour: string;

@@ -21,13 +21,15 @@ export interface ShopifyAdminProductInput {
      * @items.maxLength 100
      */
   tags: string[];
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   fabric?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
+  regionalHandloom?: string;
+  /** @maxLength 255 */
   craftTechnique?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   region?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   colour?: string;
   /** @maxItems 100 */
   collectionIds?: string[];

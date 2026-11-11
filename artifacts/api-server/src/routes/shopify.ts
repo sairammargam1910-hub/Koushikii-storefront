@@ -29,12 +29,14 @@ type ShopifyVariant = {
 
 type ShopifyProduct = {
   id: string;
+  createdAt: string;
   handle: string;
   title: string;
   description: string;
   productType: string;
   tags: string[];
   fabric: { value: string } | null;
+  regionalHandloom: { value: string } | null;
   craftTechnique: { value: string } | null;
   region: { value: string } | null;
   colour: { value: string } | null;
@@ -162,12 +164,14 @@ const SHOPIFY_PRODUCTS_QUERY = `#graphql
     products(first: 50, after: $after) {
       nodes {
         id
+        createdAt
         handle
         title
         description
         productType
         tags
         fabric: metafield(namespace: "chenetha", key: "fabric") { value }
+        regionalHandloom: metafield(namespace: "chenetha", key: "regional_handloom") { value }
         craftTechnique: metafield(namespace: "chenetha", key: "craft_technique") { value }
         region: metafield(namespace: "chenetha", key: "region") { value }
         colour: metafield(namespace: "chenetha", key: "colour") { value }
@@ -841,6 +845,7 @@ router.get("/shopify/products", async (_req, res) => {
     res.json({
       products: catalog.products.map((product) => ({
         id: product.id,
+        createdAt: product.createdAt,
         handle: product.handle,
         title: product.title,
         description: product.description,
@@ -848,6 +853,7 @@ router.get("/shopify/products", async (_req, res) => {
         tags: product.tags,
         attributes: {
           fabric: product.fabric?.value ?? null,
+          regionalHandloom: product.regionalHandloom?.value ?? null,
           craftTechnique: product.craftTechnique?.value ?? null,
           region: product.region?.value ?? null,
           colour: product.colour?.value ?? null,

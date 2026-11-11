@@ -1931,18 +1931,23 @@ components:
       properties:
         fabric:
           type: ["string", "null"]
+        regionalHandloom:
+          type: ["string", "null"]
         craftTechnique:
           type: ["string", "null"]
         region:
           type: ["string", "null"]
         colour:
           type: ["string", "null"]
-      required: [fabric, craftTechnique, region, colour]
+      required: [fabric, regionalHandloom, craftTechnique, region, colour]
     ShopifyProduct:
       type: object
       properties:
         id:
           type: string
+        createdAt:
+          type: string
+          format: date-time
         handle:
           type: string
         title:
@@ -2456,6 +2461,8 @@ components:
             type: string
         fabric:
           type: string
+        regionalHandloom:
+          type: string
         craftTechnique:
           type: string
         region:
@@ -2477,7 +2484,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyAdminProductOption"
-      required: [id, title, handle, description, productType, status, tags, fabric, craftTechnique, region, colour, collectionIds, imageUrl, variants, options]
+      required: [id, title, handle, description, productType, status, tags, fabric, regionalHandloom, craftTechnique, region, colour, collectionIds, imageUrl, variants, options]
     ShopifyAdminCollection:
       type: object
       properties:
@@ -2624,16 +2631,19 @@ components:
             maxLength: 100
         fabric:
           type: string
-          maxLength: 100
+          maxLength: 255
+        regionalHandloom:
+          type: string
+          maxLength: 255
         craftTechnique:
           type: string
-          maxLength: 100
+          maxLength: 255
         region:
           type: string
-          maxLength: 100
+          maxLength: 255
         colour:
           type: string
-          maxLength: 100
+          maxLength: 255
         collectionIds:
           type: array
           maxItems: 100
@@ -2675,16 +2685,19 @@ components:
             maxLength: 100
         fabric:
           type: string
-          maxLength: 100
+          maxLength: 255
+        regionalHandloom:
+          type: string
+          maxLength: 255
         craftTechnique:
           type: string
-          maxLength: 100
+          maxLength: 255
         region:
           type: string
-          maxLength: 100
+          maxLength: 255
         colour:
           type: string
-          maxLength: 100
+          maxLength: 255
         collectionIds:
           type: array
           maxItems: 100

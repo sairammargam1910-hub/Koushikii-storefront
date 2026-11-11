@@ -33,16 +33,23 @@ import {
 import "./Admin.css";
 import { ProductPhotoPicker } from "./ProductPhotoPicker";
 import { VariantEditor } from "./VariantEditor";
+import {
+  parseClassificationValues,
+  serializeClassificationValues,
+  REGIONAL_HANDLOOMS,
+  WEAVE_PRINTS,
+} from "../storefront/shopifyCatalogData";
 
 type ProductDraft = {
   title: string;
   description: string;
   productType: string;
   tags: string;
-  fabric: string;
-  craftTechnique: string;
-  region: string;
-  colour: string;
+  fabric: string[];
+  regionalHandloom: string[];
+  craftTechnique: string[];
+  region: string[];
+  colour: string[];
   collectionIds: string[];
   newCollectionTitle: string;
   price: string;
@@ -52,8 +59,8 @@ type ProductDraft = {
 };
 
 const blankProduct: ProductDraft = {
-  title: "", description: "", productType: "", tags: "", fabric: "",
-  craftTechnique: "", region: "", colour: "", collectionIds: [], newCollectionTitle: "", price: "",
+  title: "", description: "", productType: "", tags: "", fabric: [],
+  regionalHandloom: [], craftTechnique: [], region: [], colour: [], collectionIds: [], newCollectionTitle: "", price: "",
   inventoryQuantity: "1", imageUrl: "", publishToWebsite: true,
 };
 
@@ -70,6 +77,10 @@ function formatDate(value: string | null) {
   if (!value) return "No end date";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "Not scheduled" : date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function uniqueValues(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 }
 
 function readableError(error: unknown, fallback: string) {
@@ -236,16 +247,68 @@ function StockWatch() {
   </section>;
 }
 
-function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode, existingImage, productId, collections, collectionsLoading, collectionsError }: {
+function ClassificationField({
+  label,
+  field,
+  values,
+  suggestions,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  field: string;
+  values: string[];
+  suggestions: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+}) {
+  const [input, setInput] = useState("");
+  const listId = `classification-options-${field}`;
+  const addValue = () => {
+    const value = input.trim();
+    if (!value) return;
+    onChange([...new Set([...values, value])]);
+    setInput("");
+  };
+  return <div className="classification-field">
+    <label htmlFor={`classification-input-${field}`}>{label}</label>
+    <div className="classification-entry">
+      <input
+        id={`classification-input-${field}`}
+        list={listId}
+        maxLength={100}
+        value={input}
+        onChange={(event) => setInput(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            addValue();
+          }
+        }}
+        placeholder={placeholder}
+        aria-label={`${label} value`}
+      />
+      <datalist id={listId}>{suggestions.map((value) => <option key={value} value={value}/>)}</datalist>
+      <button type="button" className="button button-quiet" onClick={addValue} disabled={!input.trim()} aria-label={`Add ${label} value`}><Plus size={15}/></button>
+    </div>
+    {values.length > 0 && <div className="classification-values" aria-label={`Selected ${label} values`}>
+      {values.map((value) => <span className="classification-chip" key={value}>{value}<button type="button" aria-label={`Remove ${value} from ${label}`} onClick={() => onChange(values.filter((item) => item !== value))}><X size={13}/></button></span>)}
+    </div>}
+  </div>;
+}
+
+function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode, existingImage, productId, collections, collectionsLoading, collectionsError, classificationSuggestions, productTypeSuggestions }: {
   initial: ProductDraft; onClose: () => void; onSave: (draft: ProductDraft) => void; busy: boolean; error?: string;
   allowVariantEdits: boolean; currencyCode?: string; existingImage?: string | null; productId?: string;
   collections: ShopifyAdminCollection[]; collectionsLoading: boolean; collectionsError?: string;
+  classificationSuggestions: Record<"fabric" | "regionalHandloom" | "craftTechnique" | "region" | "colour", string[]>;
+  productTypeSuggestions: string[];
 }) {
   const [draft, setDraft] = useState(initial);
   const [uploading, setUploading] = useState(false);
   const [photoPending, setPhotoPending] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
-  const change = (key: keyof ProductDraft, value: string | boolean) => setDraft((old) => ({ ...old, [key]: value }));
+  const change = (key: keyof ProductDraft, value: string | string[] | boolean) => setDraft((old) => ({ ...old, [key]: value }));
   const submit = (event: FormEvent) => { event.preventDefault(); if (!busy && !uploading && !photoPending) onSave({ ...draft, imageUrl: photoUrl || draft.imageUrl }); };
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy && !uploading) onClose(); }}>
     <section className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
@@ -258,20 +321,21 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
           <label>Available pieces<input type="number" min="0" step="1" required={allowVariantEdits} disabled={!allowVariantEdits} value={draft.inventoryQuantity} onChange={(e) => change("inventoryQuantity", e.target.value)} data-testid="input-product-inventory"/></label>
         </div>}
         {!allowVariantEdits && <p className="field-note">Edit prices, size/color values and stock per location using “Variants & stock” in the product list.</p>}
-         <label>Shopify product type<input maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Saree, dupatta, accessory…" data-testid="input-product-type"/></label>
+         <label>Product type<input list="shopify-product-type-options" maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Search or add a type…" data-testid="input-product-type"/><datalist id="shopify-product-type-options">{productTypeSuggestions.map((value)=><option key={value} value={value}/>)}</datalist></label>
         <label>Short description<textarea maxLength={10000} rows={3} value={draft.description} onChange={(e) => change("description", e.target.value)} placeholder="What makes this piece special?" data-testid="input-product-description"/></label>
         <label>Tags <span className="label-hint">Separate with commas</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="silk, festive, handwoven" data-testid="input-product-tags"/></label>
          <fieldset className="admin-product-attributes">
            <legend>Optional product attributes</legend>
            <p className="field-note">These are stored separately from collection assignments. Leave any field blank when it does not apply.</p>
            <div className="form-row">
-             <label>Fabric<input maxLength={100} value={draft.fabric} onChange={(e) => change("fabric", e.target.value)} placeholder="Cotton, silk…"/></label>
-             <label>Craft / technique<input maxLength={100} value={draft.craftTechnique} onChange={(e) => change("craftTechnique", e.target.value)} placeholder="Ikat, Jamdani…"/></label>
+             <ClassificationField label="Fabric" field="fabric" values={draft.fabric} suggestions={classificationSuggestions.fabric} onChange={(values) => change("fabric", values)} placeholder="Search or add a fabric"/>
+             <ClassificationField label="Regional Handloom / Tradition" field="regional-handloom" values={draft.regionalHandloom} suggestions={classificationSuggestions.regionalHandloom} onChange={(values) => change("regionalHandloom", values)} placeholder="Search or add a tradition"/>
            </div>
            <div className="form-row">
-             <label>Region<input maxLength={100} value={draft.region} onChange={(e) => change("region", e.target.value)} placeholder="Telangana…"/></label>
-             <label>Colour<input maxLength={100} value={draft.colour} onChange={(e) => change("colour", e.target.value)} placeholder="Indigo, maroon…"/></label>
+             <ClassificationField label="Weave / Print Technique" field="craft-technique" values={draft.craftTechnique} suggestions={classificationSuggestions.craftTechnique} onChange={(values) => change("craftTechnique", values)} placeholder="Search or add a technique"/>
+             <ClassificationField label="Region of Origin" field="region" values={draft.region} suggestions={classificationSuggestions.region} onChange={(values) => change("region", values)} placeholder="Search or add an origin"/>
            </div>
+           <ClassificationField label="Colour" field="colour" values={draft.colour} suggestions={classificationSuggestions.colour} onChange={(values) => change("colour", values)} placeholder="Search or add a colour"/>
          </fieldset>
          <fieldset className="admin-product-collections">
            <legend>Shopify collections</legend>
@@ -307,26 +371,47 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
   const create = useCreateShopifyAdminProduct();
   const update = useUpdateShopifyAdminProduct();
   const productDetails = useGetShopifyAdminProduct(product?.id ?? "", { query: { queryKey: getGetShopifyAdminProductQueryKey(product?.id ?? ""), enabled: Boolean(product) } });
+  const catalogProducts = useGetShopifyAdminProducts();
   const collectionsQuery = useGetShopifyAdminCollections();
   const detailedProduct = productDetails.data?.product ?? product;
   const [error, setError] = useState("");
   const draft: ProductDraft = detailedProduct ? {
     title: detailedProduct.title, description: detailedProduct.description || "", productType: detailedProduct.productType || "",
-    tags: detailedProduct.tags.join(", "), fabric: detailedProduct.fabric || "",
-    craftTechnique: detailedProduct.craftTechnique || "", region: detailedProduct.region || "",
-    colour: detailedProduct.colour || "", collectionIds: detailedProduct.collectionIds || [],
+    tags: detailedProduct.tags.join(", "), fabric: parseClassificationValues(detailedProduct.fabric),
+    regionalHandloom: parseClassificationValues(detailedProduct.regionalHandloom),
+    craftTechnique: parseClassificationValues(detailedProduct.craftTechnique), region: parseClassificationValues(detailedProduct.region),
+    colour: parseClassificationValues(detailedProduct.colour), collectionIds: detailedProduct.collectionIds || [],
     newCollectionTitle: "", price: detailedProduct.variants[0]?.price || "",
     inventoryQuantity: String(detailedProduct.variants[0]?.inventoryQuantity ?? 0),
     imageUrl: "", publishToWebsite: detailedProduct.status === "ACTIVE",
   } : blankProduct;
+  const productList = catalogProducts.data?.products ?? [];
+  const classificationSuggestions = {
+    fabric: uniqueValues([...productList.flatMap((item) => parseClassificationValues(item.fabric)), "Cotton", "Pure Cotton", "Silk", "Pure Silk", "Cotton-Silk"]),
+    regionalHandloom: uniqueValues([...REGIONAL_HANDLOOMS, ...productList.flatMap((item) => parseClassificationValues(item.regionalHandloom))]),
+    craftTechnique: uniqueValues([...WEAVE_PRINTS, ...productList.flatMap((item) => parseClassificationValues(item.craftTechnique))]),
+    region: uniqueValues(productList.flatMap((item) => parseClassificationValues(item.region))),
+    colour: uniqueValues(productList.flatMap((item) => parseClassificationValues(item.colour))),
+  };
+  const productTypeSuggestions = uniqueValues(productList.map((item) => item.productType));
   const busy = create.isPending || update.isPending;
   const save = (values: ProductDraft) => {
     setError("");
+    const attributes = {
+      fabric: serializeClassificationValues(values.fabric),
+      regionalHandloom: serializeClassificationValues(values.regionalHandloom),
+      craftTechnique: serializeClassificationValues(values.craftTechnique),
+      region: serializeClassificationValues(values.region),
+      colour: serializeClassificationValues(values.colour),
+    };
+    if (Object.values(attributes).some((value) => value.length > 255)) {
+      setError("Each classification can contain up to 255 characters. Remove a value or shorten its name.");
+      return;
+    }
     const input = {
       title: values.title.trim(), description: values.description, productType: values.productType.trim(),
       tags: values.tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
-      fabric: values.fabric.trim(), craftTechnique: values.craftTechnique.trim(),
-      region: values.region.trim(), colour: values.colour.trim(),
+      ...attributes,
       collectionIds: values.collectionIds, newCollectionTitle: values.newCollectionTitle.trim(),
       ...(!product ? { price: Number(values.price), inventoryQuantity: Number(values.inventoryQuantity) } : {}),
       ...(values.imageUrl.trim() ? { imageUrl: values.imageUrl.trim() } : {}),
@@ -347,7 +432,7 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
   };
   if (product && productDetails.isLoading) return <LoadingPanel/>;
   if (product && productDetails.isError) return <ErrorPanel message={readableError(productDetails.error,"This product could not be loaded.")} retry={()=>{void productDetails.refetch();}}/>;
-  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product} currencyCode={currencyCode} existingImage={detailedProduct?.imageUrl} productId={product?.id} collections={collectionsQuery.data?.collections||[]} collectionsLoading={collectionsQuery.isLoading} collectionsError={collectionsQuery.isError?readableError(collectionsQuery.error,""):undefined}/>;
+  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product} currencyCode={currencyCode} existingImage={detailedProduct?.imageUrl} productId={product?.id} collections={collectionsQuery.data?.collections||[]} collectionsLoading={collectionsQuery.isLoading} collectionsError={collectionsQuery.isError?readableError(collectionsQuery.error,""):undefined} classificationSuggestions={classificationSuggestions} productTypeSuggestions={productTypeSuggestions}/>;
 }
 
 export function AdminDashboard() {

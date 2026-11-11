@@ -24,6 +24,7 @@ export const HealthCheckResponse = zod.object({
 export const GetShopifyProductsResponse = zod.object({
   "products": zod.array(zod.object({
   "id": zod.string(),
+  "createdAt": zod.coerce.date().optional(),
   "handle": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
@@ -31,6 +32,7 @@ export const GetShopifyProductsResponse = zod.object({
   "tags": zod.array(zod.string()),
   "attributes": zod.object({
   "fabric": zod.string().nullable(),
+  "regionalHandloom": zod.string().nullable(),
   "craftTechnique": zod.string().nullable(),
   "region": zod.string().nullable(),
   "colour": zod.string().nullable()
@@ -911,6 +913,7 @@ export const GetShopifyAdminProductsResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
   "fabric": zod.string(),
+  "regionalHandloom": zod.string(),
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
@@ -960,13 +963,15 @@ export const createShopifyAdminProductBodyTagsItemMax = 100;
 
 export const createShopifyAdminProductBodyTagsMax = 20;
 
-export const createShopifyAdminProductBodyFabricMax = 100;
+export const createShopifyAdminProductBodyFabricMax = 255;
 
-export const createShopifyAdminProductBodyCraftTechniqueMax = 100;
+export const createShopifyAdminProductBodyRegionalHandloomMax = 255;
 
-export const createShopifyAdminProductBodyRegionMax = 100;
+export const createShopifyAdminProductBodyCraftTechniqueMax = 255;
 
-export const createShopifyAdminProductBodyColourMax = 100;
+export const createShopifyAdminProductBodyRegionMax = 255;
+
+export const createShopifyAdminProductBodyColourMax = 255;
 
 export const createShopifyAdminProductBodyCollectionIdsMax = 100;
 
@@ -984,6 +989,7 @@ export const CreateShopifyAdminProductBody = zod.object({
   "productType": zod.string().max(createShopifyAdminProductBodyProductTypeMax).optional(),
   "tags": zod.array(zod.string().max(createShopifyAdminProductBodyTagsItemMax)).max(createShopifyAdminProductBodyTagsMax),
   "fabric": zod.string().max(createShopifyAdminProductBodyFabricMax).optional(),
+  "regionalHandloom": zod.string().max(createShopifyAdminProductBodyRegionalHandloomMax).optional(),
   "craftTechnique": zod.string().max(createShopifyAdminProductBodyCraftTechniqueMax).optional(),
   "region": zod.string().max(createShopifyAdminProductBodyRegionMax).optional(),
   "colour": zod.string().max(createShopifyAdminProductBodyColourMax).optional(),
@@ -1006,6 +1012,7 @@ export const CreateShopifyAdminProductResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
   "fabric": zod.string(),
+  "regionalHandloom": zod.string(),
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
@@ -1101,6 +1108,7 @@ export const GetShopifyAdminProductResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
   "fabric": zod.string(),
+  "regionalHandloom": zod.string(),
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
@@ -1158,13 +1166,15 @@ export const updateShopifyAdminProductBodyTagsItemMax = 100;
 
 export const updateShopifyAdminProductBodyTagsMax = 20;
 
-export const updateShopifyAdminProductBodyFabricMax = 100;
+export const updateShopifyAdminProductBodyFabricMax = 255;
 
-export const updateShopifyAdminProductBodyCraftTechniqueMax = 100;
+export const updateShopifyAdminProductBodyRegionalHandloomMax = 255;
 
-export const updateShopifyAdminProductBodyRegionMax = 100;
+export const updateShopifyAdminProductBodyCraftTechniqueMax = 255;
 
-export const updateShopifyAdminProductBodyColourMax = 100;
+export const updateShopifyAdminProductBodyRegionMax = 255;
+
+export const updateShopifyAdminProductBodyColourMax = 255;
 
 export const updateShopifyAdminProductBodyCollectionIdsMax = 100;
 
@@ -1178,6 +1188,7 @@ export const UpdateShopifyAdminProductBody = zod.object({
   "productType": zod.string().max(updateShopifyAdminProductBodyProductTypeMax).optional(),
   "tags": zod.array(zod.string().max(updateShopifyAdminProductBodyTagsItemMax)).max(updateShopifyAdminProductBodyTagsMax).optional(),
   "fabric": zod.string().max(updateShopifyAdminProductBodyFabricMax).optional(),
+  "regionalHandloom": zod.string().max(updateShopifyAdminProductBodyRegionalHandloomMax).optional(),
   "craftTechnique": zod.string().max(updateShopifyAdminProductBodyCraftTechniqueMax).optional(),
   "region": zod.string().max(updateShopifyAdminProductBodyRegionMax).optional(),
   "colour": zod.string().max(updateShopifyAdminProductBodyColourMax).optional(),
@@ -1198,6 +1209,7 @@ export const UpdateShopifyAdminProductResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
   "fabric": zod.string(),
+  "regionalHandloom": zod.string(),
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
@@ -1309,6 +1321,7 @@ export const UpdateShopifyAdminVariantResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
   "fabric": zod.string(),
+  "regionalHandloom": zod.string(),
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
@@ -1364,6 +1377,7 @@ export const DeleteShopifyAdminVariantResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
   "fabric": zod.string(),
+  "regionalHandloom": zod.string(),
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
@@ -1436,6 +1450,7 @@ export const CreateShopifyAdminVariantResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
   "fabric": zod.string(),
+  "regionalHandloom": zod.string(),
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),

@@ -283,3 +283,10 @@ body:has(.merchant-app, .auth-gate, .clerk-screen) {
   .gallery-uploading { grid-template-columns: 1fr; gap: 4px; }
 }
 }
+.merchant-app .classification-field { display: grid; min-width: 0; gap: 7px; }
+.merchant-app .classification-entry { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.merchant-app .classification-entry input { flex: 1; min-width: 0; min-height: 42px; padding: 0 12px; border: 1px solid #e8dfd8; border-radius: 8px; background: #fffdfb; color: #382c27; }
+.merchant-app .classification-entry .button { width: 42px; min-width: 42px; min-height: 42px; padding: 0; justify-content: center; }
+.merchant-app .classification-values { display: flex; flex-wrap: wrap; gap: 6px; }
+.merchant-app .classification-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid #e8dfd8; border-radius: 6px; background: #faf4ef; color: #493831; font-size: 11px; }
+.merchant-app .classification-chip button { display: inline-flex; align-items: center; padding: 1px; border: 0; background: transparent; color: #a93329; cursor: pointer; }

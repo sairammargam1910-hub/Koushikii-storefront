@@ -12,3 +12,4 @@
 - [Cashfree account readiness](cashfree-account-readiness.md) — International Cards are merchant-confirmed; settlement is INR, while the current checkout only supports INR.
 - [Cashfree cross-device payment](cashfree-cross-device.md) — keep checkout open for QR payments and rely on server-verified status, not the browser redirect.
 - [Neon migration preparation](neon-migration-preparation.md) — prepared migrations reject dollar-quoted DO blocks; test equivalent plain SQL on the temporary branch first.
+- [Shopify classification storage](shopify-classification-storage.md) — preserve scalar metafields; store multiple classification values as JSON without changing Shopify definitions.

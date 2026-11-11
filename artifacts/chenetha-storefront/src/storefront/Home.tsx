@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, base } from "./_shared";
 import { getAvailableShopifyCollections, getShopifyAttribute, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
+import { FABRIC_CATEGORIES, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import { useGetSiteContent, getGetSiteContentQueryKey, type SiteContentItem } from "@workspace/api-client-react";
 import type { ShopifyProduct } from "@workspace/api-client-react";
@@ -283,22 +284,25 @@ export function Home(){
  const siteContent=useGetSiteContent({query:{queryKey:getGetSiteContentQueryKey(),staleTime:60_000}});
   const storefrontCatalog=useShopifyCatalog();
   const availableCollections=getAvailableShopifyCollections(storefrontCatalog.data?.products||[]);
-  const craftsCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="the crafts edit");
   const premiumCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="premium collection");
   const newArrivalsCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="new arrivals");
   const storefrontProducts=storefrontCatalog.data?.products||[];
   const published=siteContent.data?.items||[];
   const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];
-  const fabricNames=Array.from(new Set(storefrontProducts
-   .map(product=>getShopifyAttribute(product,"fabric").trim())
-   .filter(value=>value&&value.toLowerCase()!=="other blends"))).sort((a,b)=>a.localeCompare(b));
-  const fabricCards=fabricNames.map(name=>{
+  const fabricCards=FABRIC_CATEGORIES.map(name=>{
    const normalized=name.toLowerCase();
-   const pattern=normalized.includes("cotton")?"cotton":normalized.includes("silk")?"silk":"blends";
+   const pattern=name==="Cotton"?"cotton":name==="Silk"?"silk":name==="Cotton-Silk"?"cotton-silk":"blends";
     const tile=homeTiles.find(item=>item.placement==="fabric_tile"&&item.title.trim().toLowerCase()===normalized);
     return {name,pattern,tile};
   });
-  const craftsTile=homeTiles.find(item=>item.placement==="fabric_tile"&&["the crafts edit","other blends"].includes(item.title.trim().toLowerCase()));
+  const regionalHandlooms=Array.from(new Set([
+    ...REGIONAL_HANDLOOMS,
+    ...storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"regionalHandloom")),
+  ])).sort((a,b)=>a.localeCompare(b));
+  const weavePrints=Array.from(new Set([
+    ...WEAVE_PRINTS,
+    ...storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"weave")),
+  ])).sort((a,b)=>a.localeCompare(b));
   const collectionTile=(title:string)=>{
     const normalized=title.trim().toLowerCase();
     return homeTiles.find(item=>
@@ -311,17 +315,25 @@ export function Home(){
   <HomeHeroCarousel/>
 
    <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
-      {fabricCards.length||craftsCollection?<div className="fabric-grid">
+      {fabricCards.length?<div className="fabric-grid">
        {fabricCards.map(item=><a className="fabric-card" key={item.name} href={base+"Collections?fabric="+encodeURIComponent(item.name)}>
          {item.tile?.imageUrl?<img className="dynamic-home-tile-image" src={item.tile.imageUrl} alt={item.tile.altText||item.name} loading="lazy"/>:<Textile pattern={item.pattern} label={item.name}/>}
-        <h3>{item.name}</h3><p>Explore published pieces made with {item.name.toLowerCase()}.</p><span className="link">Shop {item.name} →</span>
+        <h3>{item.name}</h3><p>{item.name==="Others"?"Explore linen and other materials beyond the main fabric categories.":`Explore published pieces in the ${item.name.toLowerCase()} fabric group.`}</p><span className="link">Shop {item.name} →</span>
        </a>)}
-       {craftsCollection&&<a className="fabric-card" href={base+"Collections?collection="+encodeURIComponent(craftsCollection.handle)}>
-         {craftsTile?.imageUrl?<img className="dynamic-home-tile-image" src={craftsTile.imageUrl} alt={craftsTile.altText||"The Crafts Edit"} loading="lazy"/>:<Textile pattern="blends" label="The Crafts Edit"/>}
-        <h3>The Crafts Edit</h3><p>Explore pieces chosen for their distinctive craft and technique.</p><span className="link">Shop The Crafts Edit →</span>
-       </a>}
        </div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading available fabrics…":storefrontCatalog.isError?"The Shopify catalog could not be loaded. Try the collection page again shortly.":"Fabric categories appear when published products have a fabric value."}</p>}
   </div></section>
+   <section className="section home-regional-section" id="regional-handlooms"><div className="wrap">
+    <div className="section-head"><div><h2>Regional Handlooms</h2><p>Explore traditions and styles independently of fibre and technique.</p></div></div>
+    <div className="taxonomy-link-grid" aria-label="Regional Handlooms">
+     {regionalHandlooms.map((name,index)=><a key={name} href={base+"Collections?regionalHandloom="+encodeURIComponent(name)}><Textile pattern={"s"+(index%6+1)} label={name}/><span>{name}</span><small>Explore pieces →</small></a>)}
+    </div>
+   </div></section>
+   <section className="section home-technique-section" id="weave-print"><div className="wrap">
+    <div className="section-head"><div><h2>Weave / Print</h2><p>Find a technique across the regions and materials where it appears.</p></div></div>
+    <div className="taxonomy-link-grid technique-link-grid" aria-label="Weave / Print">
+     {weavePrints.map((name,index)=><a key={name} href={base+"Collections?weave="+encodeURIComponent(name)}><Textile pattern={"s"+((index+2)%6+1)} label={name}/><span>{name}</span><small>Explore pieces →</small></a>)}
+    </div>
+   </div></section>
      <PremiumFeature collection={premiumCollection} products={storefrontProducts}/>
      <ProductCarousel title="New Arrivals" copy="Discover the newest pieces in the collection." collection={newArrivalsCollection} products={storefrontProducts}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
@@ -336,6 +348,6 @@ export function Home(){
          </a>;
        })}</div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading published collections…":storefrontCatalog.isError?"The Shopify catalog could not be loaded. Try the collection page again shortly.":"Published Shopify collections appear here when products are assigned."}</p>}
    </div></section>
-      <section className="section" style={{paddingTop:12}}><div className="wrap home-guide-link"><a href={base+"Collections"}><span className="eyebrow">A companion for choosing</span><h3>Find your thread.</h3><p>Explore the current Shopify products and narrow the collection by fabric, craft technique, region or colour.</p><span className="link">Discover the collection →</span></a><a href={base+"SareeCare"}><span className="eyebrow">A companion for keeping</span><h3>Care for the cloth.</h3><p>Give an everyday cotton and a treasured silk the different kinds of attention they need.</p><span className="link">Read the care notes →</span></a></div></section>
+      <section className="section" style={{paddingTop:12}}><div className="wrap home-guide-link"><a href={base+"Collections"}><span className="eyebrow">A companion for choosing</span><h3>Find your thread.</h3><p>Explore the current Shopify products and narrow the collection by fabric, regional tradition, technique, origin or colour.</p><span className="link">Discover the collection →</span></a><a href={base+"SareeCare"}><span className="eyebrow">A companion for keeping</span><h3>Care for the cloth.</h3><p>Give an everyday cotton and a treasured silk the different kinds of attention they need.</p><span className="link">Read the care notes →</span></a></div></section>
  </Shell>
 }

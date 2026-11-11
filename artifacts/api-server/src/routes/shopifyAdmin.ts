@@ -73,6 +73,7 @@ type AdminProduct = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   tags: string[];
   fabricMetafield: AdminProductMetafield | null;
+  regionalHandloomMetafield: AdminProductMetafield | null;
   craftTechniqueMetafield: AdminProductMetafield | null;
   regionMetafield: AdminProductMetafield | null;
   colourMetafield: AdminProductMetafield | null;
@@ -178,6 +179,7 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
   status
   tags
   fabricMetafield: metafield(namespace: "chenetha", key: "fabric") { key value }
+  regionalHandloomMetafield: metafield(namespace: "chenetha", key: "regional_handloom") { key value }
   craftTechniqueMetafield: metafield(namespace: "chenetha", key: "craft_technique") { key value }
   regionMetafield: metafield(namespace: "chenetha", key: "region") { key value }
   colourMetafield: metafield(namespace: "chenetha", key: "colour") { key value }
@@ -317,6 +319,7 @@ const ADMIN_METAFIELDS_DELETE = `#graphql
 
 const CHENETHA_PRODUCT_ATTRIBUTES = [
   { key: "fabric", name: "Fabric" },
+  { key: "regional_handloom", name: "Regional Handloom / Tradition" },
   { key: "craft_technique", name: "Craft / Technique" },
   { key: "region", name: "Region" },
   { key: "colour", name: "Colour" },
@@ -655,6 +658,7 @@ async function waitForShopifyJob(jobId: string) {
 function productAttributeMetafields(product: AdminProduct): AdminProductMetafield[] {
   return [
     product.fabricMetafield,
+    product.regionalHandloomMetafield,
     product.craftTechniqueMetafield,
     product.regionMetafield,
     product.colourMetafield,
@@ -677,6 +681,7 @@ function mapProduct(
     status: product.status,
     tags: product.tags,
     fabric: metafield("fabric"),
+    regionalHandloom: metafield("regional_handloom"),
     craftTechnique: metafield("craft_technique"),
     region: metafield("region"),
     colour: metafield("colour"),
@@ -890,11 +895,12 @@ function ensureProductAttributeDefinitions(): Promise<void> {
 
 async function saveProductAttributes(
   productId: string,
-  attributes: { fabric: string; craftTechnique: string; region: string; colour: string },
+  attributes: { fabric: string; regionalHandloom: string; craftTechnique: string; region: string; colour: string },
   existing: AdminProductMetafield[] = [],
 ): Promise<void> {
   const values = {
     fabric: attributes.fabric.trim(),
+    regional_handloom: attributes.regionalHandloom.trim(),
     craft_technique: attributes.craftTechnique.trim(),
     region: attributes.region.trim(),
     colour: attributes.colour.trim(),
@@ -1747,6 +1753,7 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
 
     await saveProductAttributes(productId, {
       fabric: input.fabric ?? "",
+      regionalHandloom: input.regionalHandloom ?? "",
       craftTechnique: input.craftTechnique ?? "",
       region: input.region ?? "",
       colour: input.colour ?? "",
@@ -1888,12 +1895,14 @@ router.patch(
 
       if (
         input.fabric !== undefined ||
+        input.regionalHandloom !== undefined ||
         input.craftTechnique !== undefined ||
         input.region !== undefined ||
         input.colour !== undefined
       ) {
         await saveProductAttributes(productId, {
           fabric: input.fabric ?? "",
+          regionalHandloom: input.regionalHandloom ?? "",
           craftTechnique: input.craftTechnique ?? "",
           region: input.region ?? "",
           colour: input.colour ?? "",

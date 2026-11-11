@@ -15,8 +15,8 @@ import { base, Empty, Qty, Shell, useStore } from "./_shared";
 import { useShopperPreferences } from "./ShopperPreferences";
 import { customerFacingMessage } from "./customerFacingMessage";
 import type { CatalogFilters } from "./_shared/catalog-filter";
-import { normalizeRegion, normalizeWeave } from "./_shared/catalog-filter";
-import { getAvailableShopifyCollections, getShopifyAttribute, getShopifyTagValue } from "./shopifyCatalogData";
+import { normalizeRegion } from "./_shared/catalog-filter";
+import { fabricGroup, getAvailableShopifyCollections, getShopifyAttribute, getShopifyAttributeValues, getShopifyTagValue } from "./shopifyCatalogData";
 import { useShopifyCatalog } from "./shopifyCatalogQuery";
 export { getAvailableShopifyCollections, getShopifyAttribute, getShopifyTagValue } from "./shopifyCatalogData";
 export { useShopifyCatalog } from "./shopifyCatalogQuery";
@@ -70,50 +70,61 @@ export function filterShopifyProducts(
   filters: CatalogFilters,
 ) {
   const query = filters.query.trim().toLowerCase();
-  const wantedWeave = normalizeWeave(filters.weave).toLowerCase();
-  const wantedRegion = normalizeRegion(filters.region);
+  const selectedFabrics = filters.fabrics;
+  const selectedRegional = filters.regionalHandlooms.map((value) => value.trim().toLowerCase());
+  const selectedWeaves = filters.weaves.map((value) => value.trim().toLowerCase());
+  const selectedProductTypes = filters.productTypes.map((value) => value.trim().toLowerCase());
+  const selectedRegions = filters.regions.map(normalizeRegion);
+  const selectedColours = filters.colours.map((value) => value.trim().toLowerCase());
+  const minPrice = filters.minPrice ? Number(filters.minPrice) : null;
+  const maxPrice = filters.maxPrice ? Number(filters.maxPrice) : null;
 
   return products
     .filter((product) => {
-      const fabric = normalizedTag(getShopifyAttribute(product, "fabric"));
-      const weave = normalizeWeave(getShopifyAttribute(product, "weave")).toLowerCase();
-      const region = getShopifyAttribute(product, "region");
-      const colour = normalizedTag(getShopifyAttribute(product, "colour"));
+      const fabrics = getShopifyAttributeValues(product, "fabric");
+      const regionalHandlooms = getShopifyAttributeValues(product, "regionalHandloom");
+      const weaves = getShopifyAttributeValues(product, "weave");
+      const regions = getShopifyAttributeValues(product, "region");
+      const colours = getShopifyAttributeValues(product, "colour");
+      const variantPrices = product.variants
+        .map((variant) => Number(variant.price))
+        .filter((price) => Number.isFinite(price) && price >= 0);
+      const price = variantPrices.length ? Math.min(...variantPrices) : null;
       const searchable = [
         product.title,
         product.description,
         product.productType,
-        fabric,
-        weave,
-        region,
-        colour,
+        ...fabrics,
+        ...regionalHandlooms,
+        ...weaves,
+        ...regions,
+        ...colours,
         ...(product.collections ?? []).map((collection) => collection.title),
         ...product.tags,
       ].join(" ").toLowerCase();
 
       if (query && !searchable.includes(query)) return false;
-      if (filters.fabric !== "All fabrics" && normalizedTag(getShopifyAttribute(product, "fabric")) !== normalizedTag(filters.fabric)) return false;
-      if (filters.weave !== "All weaves" && weave !== wantedWeave) return false;
-      if (filters.region && normalizeRegion(region) !== wantedRegion) return false;
-      if (filters.colour && colour !== normalizedTag(filters.colour)) return false;
+      if (selectedFabrics.length && !selectedFabrics.some((selected) =>
+        selected === "Others"
+          ? fabrics.some((value) => fabricGroup(value) === "Others")
+          : selected === "Cotton" || selected === "Silk" || selected === "Cotton-Silk"
+            ? fabrics.some((value) => fabricGroup(value) === selected)
+            : fabrics.some((value) => normalizedTag(value) === normalizedTag(selected)),
+      )) return false;
+      if (selectedRegional.length && !regionalHandlooms.some((value) => selectedRegional.includes(value.toLowerCase()))) return false;
+      if (selectedWeaves.length && !weaves.some((value) => selectedWeaves.includes(value.toLowerCase()))) return false;
+      if (selectedProductTypes.length && !selectedProductTypes.includes(product.productType.trim().toLowerCase())) return false;
+      if (selectedRegions.length && !regions.some((value) => selectedRegions.includes(normalizeRegion(value)))) return false;
+      if (selectedColours.length && !colours.some((value) => selectedColours.includes(value.trim().toLowerCase()))) return false;
+      if (minPrice !== null && (!Number.isFinite(minPrice) || price === null || price < minPrice)) return false;
+      if (maxPrice !== null && (!Number.isFinite(maxPrice) || price === null || price > maxPrice)) return false;
       if (filters.collection && !(product.collections ?? []).some((collection) => collection.handle === filters.collection)) return false;
-      if (filters.productType && normalizedTag(product.productType) !== normalizedTag(filters.productType)) return false;
-      const type = normalizedTag(product.productType);
-      const category = filters.category.trim().toLowerCase();
-      if (category === "sarees" || category === "saree") {
-        if (!/\b(saree|sari)\b/.test(type)) return false;
-      } else if (category === "dupattas" || category === "dupatta") {
-        if (!/\bdupatta\b/.test(type)) return false;
-      } else if (category !== "all pieces" && category !== "all products" && category && type !== category) {
-        return false;
-      }
-      if (filters.edit === "premium" && !isPremiumProduct(product)) return false;
-      if (filters.edit === "new" && !isNewArrival(product)) return false;
       return true;
     })
     .sort((a, b) => {
-      if (filters.sort === "Price: low to high") return lowestPrice(a) - lowestPrice(b);
-      if (filters.sort === "Price: high to low") return lowestPrice(b) - lowestPrice(a);
+      if (filters.sort === "Price: Low to High") return lowestPrice(a) - lowestPrice(b);
+      if (filters.sort === "Price: High to Low") return lowestPrice(b) - lowestPrice(a);
+      if (filters.sort === "Newest") return Date.parse(b.createdAt ?? "") - Date.parse(a.createdAt ?? "");
       return 0;
     });
 }

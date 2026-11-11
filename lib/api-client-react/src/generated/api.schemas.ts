@@ -147,6 +147,8 @@ export interface ShopifyProductAttributes {
   /** @nullable */
   fabric: string | null;
   /** @nullable */
+  regionalHandloom: string | null;
+  /** @nullable */
   craftTechnique: string | null;
   /** @nullable */
   region: string | null;
@@ -156,6 +158,7 @@ export interface ShopifyProductAttributes {
 
 export interface ShopifyProduct {
   id: string;
+  createdAt?: string;
   handle: string;
   title: string;
   description: string;
@@ -565,6 +568,7 @@ export interface ShopifyAdminProduct {
   status: ShopifyAdminProductStatus;
   tags: string[];
   fabric: string;
+  regionalHandloom: string;
   craftTechnique: string;
   region: string;
   colour: string;
@@ -704,13 +708,15 @@ export interface ShopifyAdminProductInput {
      * @items.maxLength 100
      */
   tags: string[];
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   fabric?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
+  regionalHandloom?: string;
+  /** @maxLength 255 */
   craftTechnique?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   region?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   colour?: string;
   /** @maxItems 100 */
   collectionIds?: string[];
@@ -740,13 +746,15 @@ export interface ShopifyAdminProductUpdate {
      * @items.maxLength 100
      */
   tags?: string[];
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   fabric?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
+  regionalHandloom?: string;
+  /** @maxLength 255 */
   craftTechnique?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   region?: string;
-  /** @maxLength 100 */
+  /** @maxLength 255 */
   colour?: string;
   /** @maxItems 100 */
   collectionIds?: string[];

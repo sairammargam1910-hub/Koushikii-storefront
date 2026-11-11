@@ -96,6 +96,42 @@ const phrases: Record<string, [string, string]> = {
   "Shop Collections": ["సేకరణలను చూడండి", "संग्रह देखें"],
   "See the making process": ["తయారీ విధానాన్ని చూడండి", "बुनाई की प्रक्रिया देखें"],
   "Shop by Fabric": ["వస్త్ర రకాన్ని బట్టి చూడండి", "कपड़े के प्रकार से देखें"],
+  "Regional Handlooms": ["ప్రాంతీయ చేనేతలు", "क्षेत्रीय हथकरघे"],
+  "Regional Handloom": ["ప్రాంతీయ చేనేత", "क्षेत्रीय हथकरघा"],
+  "Weave / Print": ["నేత / ముద్రణ", "बुनाई / छपाई"],
+  "Others": ["ఇతరాలు", "अन्य"],
+  "Mangalagiri Cotton": ["మంగళగిరి కాటన్", "मंगलगिरि सूती"],
+  "Narayanpet": ["నారాయణపేట", "नारायणपेट"],
+  "Venkatagiri": ["వెంకటగిరి", "वेंकटगिरि"],
+  "Gadwal": ["గద్వాల్", "गडवाल"],
+  "Kasaragod": ["కాసరగోడ్", "कासरगोड"],
+  "Paithani": ["పైఠణి", "पैठणी"],
+  "Kala Cotton": ["కలా కాటన్", "काला सूती"],
+  "Patola": ["పటోలా", "पटोला"],
+  "Moirang Phee": ["మొయిరాంగ్ ఫీ", "मोइरांग फी"],
+  "Kanchi Cottons": ["కాంచి కాటన్లు", "कांची सूती"],
+  "Chettinad Cottons": ["చెట్టినాడ్ కాటన్లు", "चेट्टिनाड सूती"],
+  "Banaras Cottons": ["బనారస్ కాటన్లు", "बनारस सूती"],
+  "Kota Cottons": ["కోటా కాటన్లు", "कोटा सूती"],
+  "Jamdani": ["జమ్దాని", "जामदानी"],
+  "Ikkat": ["ఇకత్", "इकत"],
+  "Ikat": ["ఇకత్", "इकत"],
+  "Bandhani": ["బంధని", "बंधनी"],
+  "Bagru": ["బాగ్రూ", "बगरू"],
+  "Ajrakh": ["అజ్రఖ్", "अजरख"],
+  "Filter & Sort": ["వడపోత & క్రమీకరణ", "फ़िल्टर और क्रम"],
+  "Filter": ["వడపోత", "फ़िल्टर"],
+  "Sort by": ["క్రమీకరణ", "क्रम से"],
+  "Apply Filters": ["వడపోతను వర్తింపజేయండి", "फ़िल्टर लागू करें"],
+  "Clear All": ["అన్నీ తొలగించండి", "सब साफ़ करें"],
+  "Product Type": ["ఉత్పత్తి రకం", "उत्पाद प्रकार"],
+  "Region of Origin": ["మూల ప్రాంతం", "उत्पत्ति क्षेत्र"],
+  "Price Range": ["ధర పరిధి", "मूल्य सीमा"],
+  "Minimum price": ["కనిష్ఠ ధర", "न्यूनतम मूल्य"],
+  "Maximum price": ["గరిష్ఠ ధర", "अधिकतम मूल्य"],
+  "Price: Low to High": ["ధర: తక్కువ నుంచి ఎక్కువ", "मूल्य: कम से ज़्यादा"],
+  "Price: High to Low": ["ధర: ఎక్కువ నుంచి తక్కువ", "मूल्य: ज़्यादा से कम"],
+  "Newest": ["కొత్తవి", "नवीनतम"],
   "Find the cloth that feels like you.": ["మీకు నచ్చిన వస్త్రాన్ని కనుగొనండి.", "अपने मन का कपड़ा चुनें।"],
   "Breathable, everyday handlooms": ["రోజువారీకి అనువైన, గాలి ఆడే చేనేత", "रोज़मर्रा के लिए आरामदायक, हवादार हथकरघा"],
   "Rich weaves for celebrations": ["పండుగల కోసం ప్రత్యేకమైన నేతలు", "उत्सवों के लिए खास बुनाइयाँ"],
@@ -1020,6 +1056,20 @@ export function translatePhrase(language: StoreLanguage, source: string): string
     const key = activeFilter[1].toLowerCase();
     if (!labels[key]) return source;
     return `${labels[key][languageIndex]}: ${translated(activeFilter[2])}`;
+  }
+
+  const filterBy = normalized.match(/^Filter by (fabric|regional handloom|weave \/ print|product type|region of origin|colour):\s*(.+)$/i);
+  if (filterBy) {
+    const labels: Record<string, [string, string]> = {
+      fabric: ["వస్త్రం", "कपड़ा"],
+      "regional handloom": ["ప్రాంతీయ చేనేత", "क्षेत्रीय हथकरघा"],
+      "weave / print": ["నేత / ముద్రణ", "बुनाई / छपाई"],
+      "product type": ["ఉత్పత్తి రకం", "उत्पाद प्रकार"],
+      "region of origin": ["మూల ప్రాంతం", "उत्पत्ति क्षेत्र"],
+      colour: ["రంగు", "रंग"],
+    };
+    const key = filterBy[1].toLowerCase();
+    return `${language === "te" ? "వడపోత" : "फ़िल्टर"} ${labels[key][languageIndex]}: ${translated(filterBy[2])}`;
   }
 
   const noSamples = normalized.match(/^There are no sample (sarees|pieces) for (.+) with the selected filters\.$/);

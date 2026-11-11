@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 import { useShopifyCartMeta, useShopifyCart } from "./shopifyCartState";
 import { Show } from "@clerk/react";
 import { useShopperPreferences } from "./ShopperPreferences";
-import { getAvailableShopifyCollections, getShopifyAttribute } from "./shopifyCatalogData";
+import { FABRIC_CATEGORIES, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
 import { useShopifyCatalog } from "./shopifyCatalogQuery";
 export { cottonWeaves } from "./shopifyCatalogData";
 
@@ -73,8 +73,14 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
  const cart=useStore("kq-cart"),wish=useStore("kq-wish");
   const catalog=useShopifyCatalog();
   const products=catalog.data?.products||[];
-  const fabrics=Array.from(new Set(products.map(product=>getShopifyAttribute(product,"fabric")).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
-  const collections=getAvailableShopifyCollections(products);
+  const regionalHandlooms=Array.from(new Set([
+    ...REGIONAL_HANDLOOMS,
+    ...products.flatMap(product=>getShopifyAttributeValues(product,"regionalHandloom")),
+  ])).sort((a,b)=>a.localeCompare(b));
+  const weavePrints=Array.from(new Set([
+    ...WEAVE_PRINTS,
+    ...products.flatMap(product=>getShopifyAttributeValues(product,"weave")),
+  ])).sort((a,b)=>a.localeCompare(b));
   const shopifyCart=useShopifyCartMeta();
   const currentCart=useShopifyCart(shopifyCart?.id);
   const cartCount=shopifyCart
@@ -86,12 +92,15 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
    <a className="brand" href="/" onClick={()=>setMenu(false)}><img src="/images/koushikii/wordmark-red.png" alt="Chenetha by Koushikii"/></a>
   <nav id="kq-main-menu" aria-label="Main menu" className={`nav ${menu?"open":""}`} onClick={event=>{if(event.target instanceof Element&&event.target.closest("a")){setMenu(false);event.currentTarget.querySelector("details")?.removeAttribute("open")}}}>
      <details className="collection-nav"><summary>Collections <ChevronDown size={13}/></summary>
-         <div className="mega-menu"><div><strong>Shop by fabric</strong>
-        {fabrics.length?<div className="menu-dynamic-links" aria-label="Shop by fabric">{fabrics.map(fabric=><a key={fabric} href={`${base}Collections?fabric=${encodeURIComponent(fabric)}`}>{fabric}</a>)}</div>:<a href={base+"Collections"}>{catalog.isLoading&&!catalog.data?"Loading available fabrics…":"Browse available products"}</a>}
+         <div className="mega-menu"><div><strong>Regional Handlooms</strong>
+        <div className="menu-dynamic-links" aria-label="Regional Handlooms">{regionalHandlooms.map(value=><a key={value} href={`${base}Collections?regionalHandloom=${encodeURIComponent(value)}`}>{value}</a>)}</div>
         <a href={base+"Collections"} className="link" style={{marginTop:18}}>View all products →</a></div>
-       <div><strong>Shop by collection</strong>
-        {collections.length?<div className="menu-dynamic-links" aria-label="Shop by collection">{collections.map(collection=><a key={collection.handle} href={`${base}Collections?collection=${encodeURIComponent(collection.handle)}`}>{collection.title}</a>)}</div>:<a href={base+"Collections"}>{catalog.isLoading&&!catalog.data?"Loading collections…":"Browse all products"}</a>}
-      <div className="menu-weaves"><strong>Product details</strong><a href={base+"Collections"}>Filter by craft technique, region and colour</a></div></div></div>
+       <div><strong>Shop by Fabric</strong>
+        <div className="menu-dynamic-links" aria-label="Shop by Fabric">{FABRIC_CATEGORIES.map(value=><a key={value} href={`${base}Collections?fabric=${encodeURIComponent(value)}`}>{value}</a>)}</div>
+       </div><div><strong>Weave / Print</strong>
+        <div className="menu-dynamic-links" aria-label="Weave / Print">{weavePrints.map(value=><a key={value} href={`${base}Collections?weave=${encodeURIComponent(value)}`}>{value}</a>)}</div>
+        {catalog.isError&&!catalog.data&&<p role="status">Live product classifications could not be loaded. Starter traditions remain available.</p>}
+       </div></div>
    </details>
      <a href={base+"OurStory"}>Our Story</a><a href={base+"Videos"}>Videos</a><a href={base+"Contact"}>Contact Us</a>
   </nav>

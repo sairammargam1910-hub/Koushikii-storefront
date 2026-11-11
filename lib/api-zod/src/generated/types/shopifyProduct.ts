@@ -12,6 +12,7 @@ import type { ShopifyVariant } from './shopifyVariant';
 
 export interface ShopifyProduct {
   id: string;
+  createdAt?: Date;
   handle: string;
   title: string;
   description: string;

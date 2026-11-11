@@ -1,65 +1,291 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "wouter";
 import { Shell, PageHero } from "./_shared";
-import { defaultFilters, normalizeRegion, normalizeWeave, regions } from "./_shared/catalog-filter";
+import { defaultFilters, normalizeRegion, regions } from "./_shared/catalog-filter";
 import type { CatalogFilters } from "./_shared/catalog-filter";
-import { filterShopifyProducts, getAvailableShopifyCollections, getShopifyAttribute, ShopifyProductGrid, useShopifyCatalog } from "./ShopifyCatalog";
+import {
+  filterShopifyProducts,
+  getAvailableShopifyCollections,
+  ShopifyProductGrid,
+  useShopifyCatalog,
+} from "./ShopifyCatalog";
+import { FABRIC_CATEGORIES, fabricGroup, getShopifyAttributeValues } from "./shopifyCatalogData";
+import "./ShopifyCatalog.css";
 
-function readFilters():CatalogFilters {
- const params=new URLSearchParams(window.location.search);
- return {...defaultFilters,query:params.get("q")||"",fabric:params.get("fabric")||defaultFilters.fabric,
-  weave:params.has("weave")?normalizeWeave(params.get("weave")!):defaultFilters.weave,
-   category:params.get("category")||defaultFilters.category,productType:params.get("productType")||"",
-   region:normalizeRegion(params.get("region")||""),colour:params.get("colour")||"",
-   collection:params.get("collection")||"",
-  edit:params.get("edit")||"all",sort:params.get("sort")||"Featured"};
+type FilterKey = "fabrics" | "regionalHandlooms" | "weaves" | "productTypes" | "regions" | "colours";
+const FILTER_GROUPS: Array<{ key: FilterKey; title: string }> = [
+  { key: "fabrics", title: "Fabric" },
+  { key: "regionalHandlooms", title: "Regional Handloom" },
+  { key: "weaves", title: "Weave / Print" },
+  { key: "productTypes", title: "Product Type" },
+  { key: "regions", title: "Region of Origin" },
+  { key: "colours", title: "Colour" },
+];
+
+function unique(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 }
-export function Collections(){
- const [filters,setFilters]=useState<CatalogFilters>(readFilters);
-  const catalog=useShopifyCatalog();
- const [location]=useLocation();
-   const {query,fabric,weave,productType,region,colour,collection,edit,sort}=filters;
- const update=(values:Partial<CatalogFilters>)=>setFilters(f=>({...f,...values}));
- useEffect(()=>{setFilters(readFilters())},[location]);
- useEffect(()=>{
-  const params=new URLSearchParams();
-  Object.entries(filters).forEach(([key,value])=>{if(value!==defaultFilters[key as keyof CatalogFilters])params.set(key==="query"?"q":key,value)});
-  const search=params.toString();
-  window.history.replaceState(null,"",window.location.pathname+(search?"?"+search:"")+window.location.hash);
- },[filters]);
-  const liveProducts=catalog.data?.products||[];
-   const availableCollections=getAvailableShopifyCollections(liveProducts);
-   const availableCollectionHandles=new Set(availableCollections.map(({handle})=>handle));
-    const legacyEditTitle=edit==="premium"?"premium collection":edit==="new"?"new arrivals":null;
-    const legacyEditCollection=legacyEditTitle?availableCollections.find(item=>item.title.trim().toLowerCase()===legacyEditTitle):undefined;
-    const effectiveFilters=legacyEditTitle
-      ?{...filters,edit:"all",collection:legacyEditCollection?.handle||"__missing_collection__"}
-      :{...filters,edit:"all"};
-   const liveFiltered=useMemo(()=>filterShopifyProducts(liveProducts,effectiveFilters),[liveProducts,effectiveFilters]);
-    const weaves=Array.from(new Set(liveProducts.map(p=>getShopifyAttribute(p,"craftTechnique")).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
-   const productTypes=Array.from(new Set(liveProducts.map(p=>p.productType.trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
-   const colours=Array.from(new Set(liveProducts.map(p=>getShopifyAttribute(p,"colour")).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
-    const fabricOptions=Array.from(new Set(liveProducts.map(p=>getShopifyAttribute(p,"fabric")).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
-    const regionOptions=Array.from(new Set(liveProducts.map(p=>getShopifyAttribute(p,"region")).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
-  const active=Object.entries(filters).filter(([key,value])=>value!==defaultFilters[key as keyof CatalogFilters]&&(key!=="collection"||availableCollectionHandles.has(value)));
-     return <Shell><PageHero eyebrow="Shop the collection" title={legacyEditCollection?.title||(edit==="premium"?"Premium Collection":edit==="new"?"New Arrivals":"All published products")} subtitle="Explore the products published in Shopify. Filter by the details your team maintains there."/>
- <main className="content wrap">
-   <div className="toolbar collection-toolbar"><button className="btn small outline" aria-pressed={active.length===0} onClick={()=>setFilters({...defaultFilters})}>All products</button>
-    {availableCollections.length>0&&<label style={{marginLeft:"auto",fontSize:12}}>Shop by collection <select aria-label="Filter by Shopify collection" value={legacyEditCollection?.handle||(availableCollectionHandles.has(collection)?collection:"")} onChange={e=>update({edit:"all",collection:e.target.value})}><option value="">All collections</option>{availableCollections.map(({handle,title})=><option key={handle} value={handle}>{title}</option>)}</select></label>}</div>
-    <div className="filterbar"><input data-testid="input-collection-search" aria-label="Search products" type="search" placeholder="Search products…" value={query} onChange={e=>update({query:e.target.value})}/>
-      <select data-testid="select-region-filter" aria-label="Filter by region" value={region} onChange={e=>update({region:e.target.value})}><option value="">All regions</option>{region&&!regionOptions.some(value=>normalizeRegion(value)===normalizeRegion(region))&&<option value={region}>{regions[normalizeRegion(region)]||region}</option>}{regionOptions.map(value=><option key={value} value={value}>{regions[normalizeRegion(value)]||value}</option>)}</select>
-     <select data-testid="select-product-type-filter" aria-label="Filter by product type" value={productType} onChange={e=>update({productType:e.target.value})}><option value="">All product types</option>{productTypes.map(type=><option key={type}>{type}</option>)}</select>
-     <select data-testid="select-fabric-filter" aria-label="Filter by fabric" value={fabric} onChange={e=>update({fabric:e.target.value})}><option>All fabrics</option>{fabric&&!fabricOptions.some(value=>value.toLowerCase()===fabric.toLowerCase())&&<option value={fabric}>{fabric}</option>}{fabricOptions.map(value=><option key={value}>{value}</option>)}</select>
-      <select data-testid="select-weave-filter" aria-label="Filter by craft technique" value={weave} onChange={e=>update({weave:e.target.value})}><option value="All weaves">All craft techniques</option>{weaves.map(w=><option key={w}>{w}</option>)}</select>
-     {colours.length>0&&<select data-testid="select-colour-filter" aria-label="Filter by colour" value={colours.some(value=>value.toLowerCase()===colour.toLowerCase())?colour:""} onChange={e=>update({colour:e.target.value})}><option value="">All colours</option>{colours.map(value=><option key={value}>{value}</option>)}</select>}
-    <select data-testid="select-collection-sort" aria-label="Sort collection" value={sort} onChange={e=>update({sort:e.target.value})}><option>Featured</option><option>Price: low to high</option><option>Price: high to low</option></select>
-  </div>
-      <div className="active-filters" aria-live="polite"><strong>{catalog.isLoading&&!catalog.data?"Loading Shopify products…":`${liveFiltered.length} published ${liveFiltered.length===1?"product":"products"}`}</strong>{active.map(([key,value])=><span className="pill" key={key}>{key==="region"?"Region: "+(regions[normalizeRegion(value)]||value):key==="collection"?`Collection: ${availableCollections.find(({handle})=>handle===value)?.title||""}`:key==="edit"?`Collection: ${legacyEditCollection?.title||"Not available in Shopify"}`:key==="weave"?"Craft technique: "+value:key+": "+value}</span>)}{active.length>0&&<button className="btn small outline" onClick={()=>setFilters({...defaultFilters})}>Clear all filters</button>}</div>
-    {catalog.isLoading&&!catalog.data?<p role="status" className="shopify-catalog-status">Loading the collection…</p>
-      :catalog.isError&&!catalog.data?<div className="empty"><span className="eyebrow">Shopify catalog unavailable</span><h2 style={{marginTop:15}}>We couldn’t load the products just now.</h2><p>Your store data has not been replaced with sample products. Try again in a moment.</p><button className="btn" onClick={()=>void catalog.refetch()}>Try again</button></div>
-      :liveProducts.length?liveFiltered.length?<ShopifyProductGrid products={liveFiltered}/>:<div className="empty"><span className="eyebrow">No matching products</span><h2 style={{marginTop:15}}>No published products match these filters.</h2><p>Change or clear the filters to see other Shopify products.</p><button className="btn" onClick={()=>setFilters({...defaultFilters})}>Reset filters</button></div>
-      :<div className="empty"><span className="eyebrow">Shopify catalog</span><h2 style={{marginTop:15}}>No published products are available yet.</h2><p>Published products will appear here directly from Shopify.</p></div>}
-     {catalog.isError&&catalog.data&&<p role="status" className="shopify-catalog-status">Showing the last successfully loaded Shopify catalog; the latest refresh failed.</p>}
-     <p className="muted" style={{fontSize:11,marginTop:25}}>Product names, photos, options, prices and collection membership come from Shopify. Product attributes are maintained on each Shopify product; regional notes do not certify origin, fibre or handloom production.</p>
- </main></Shell>;
+
+function readFilters(): CatalogFilters {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    ...defaultFilters,
+    query: params.get("q") || "",
+    fabrics: params.getAll("fabric").length ? params.getAll("fabric") : params.get("fabric") ? [params.get("fabric")!] : [],
+    regionalHandlooms: params.getAll("regionalHandloom").length ? params.getAll("regionalHandloom") : params.get("handloom") ? [params.get("handloom")!] : [],
+    weaves: params.getAll("weave").length ? params.getAll("weave") : [],
+    productTypes: params.getAll("productType").length ? params.getAll("productType") : params.get("productType") ? [params.get("productType")!] : [],
+    regions: params.getAll("region").length ? params.getAll("region") : params.get("region") ? [params.get("region")!] : [],
+    colours: params.getAll("colour").length ? params.getAll("colour") : params.get("colour") ? [params.get("colour")!] : [],
+    minPrice: params.get("minPrice") || "",
+    maxPrice: params.get("maxPrice") || "",
+    collection: params.get("collection") || "",
+    sort: params.get("sort") || defaultFilters.sort,
+  };
+}
+
+function selectedCount(filters: CatalogFilters) {
+  return FILTER_GROUPS.reduce((count, group) => count + filters[group.key].length, 0) +
+    Number(Boolean(filters.minPrice || filters.maxPrice)) +
+    Number(Boolean(filters.collection));
+}
+
+function filterLabel(key: FilterKey, value: string) {
+  if (key === "regions") return regions[normalizeRegion(value)] || value;
+  return value;
+}
+
+export function Collections() {
+  const catalog = useShopifyCatalog();
+  const [applied, setApplied] = useState<CatalogFilters>(readFilters);
+  const [draft, setDraft] = useState<CatalogFilters>(readFilters);
+  const [locationKey, setLocationKey] = useState(window.location.pathname + window.location.search);
+  const liveProducts = catalog.data?.products || [];
+  const availableCollections = getAvailableShopifyCollections(liveProducts);
+  const availableCollectionHandles = new Set(availableCollections.map(({ handle }) => handle));
+
+  useEffect(() => {
+    const syncLocation = () => setLocationKey(window.location.pathname + window.location.search);
+    window.addEventListener("popstate", syncLocation);
+    return () => window.removeEventListener("popstate", syncLocation);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (applied.query) params.set("q", applied.query);
+    for (const [key, values] of [
+      ["fabric", applied.fabrics],
+      ["regionalHandloom", applied.regionalHandlooms],
+      ["weave", applied.weaves],
+      ["productType", applied.productTypes],
+      ["region", applied.regions],
+      ["colour", applied.colours],
+    ] as Array<[string, string[]]>) {
+      values.forEach((value) => params.append(key, value));
+    }
+    if (applied.minPrice) params.set("minPrice", applied.minPrice);
+    if (applied.maxPrice) params.set("maxPrice", applied.maxPrice);
+    if (applied.collection) params.set("collection", applied.collection);
+    if (applied.sort !== defaultFilters.sort) params.set("sort", applied.sort);
+    const search = params.toString();
+    const nextUrl = window.location.pathname + (search ? `?${search}` : "") + window.location.hash;
+    if (nextUrl !== window.location.pathname + window.location.search + window.location.hash) {
+      window.history.replaceState(null, "", nextUrl);
+      setLocationKey(nextUrl);
+    }
+  }, [applied]);
+
+  useEffect(() => {
+    if (locationKey === window.location.pathname + window.location.search) return;
+    const next = readFilters();
+    setApplied(next);
+    setDraft(next);
+  }, [locationKey]);
+
+  const productsByFabric = useMemo(() => liveProducts.flatMap((product) =>
+    getShopifyAttributeValues(product, "fabric").map((value) => ({ value, group: fabricGroup(value) })),
+  ), [liveProducts]);
+  const fabricOptions: string[] = FABRIC_CATEGORIES.filter((category) => productsByFabric.some((item) =>
+    category === "Others" ? item.group === "Others" : item.group === category,
+  ));
+  const options: Record<FilterKey, string[]> = {
+    fabrics: fabricOptions,
+    regionalHandlooms: unique(liveProducts.flatMap((product) => getShopifyAttributeValues(product, "regionalHandloom"))),
+    weaves: unique(liveProducts.flatMap((product) => getShopifyAttributeValues(product, "weave"))),
+    productTypes: unique(liveProducts.map((product) => product.productType)),
+    regions: unique(liveProducts.flatMap((product) => getShopifyAttributeValues(product, "region"))),
+    colours: unique(liveProducts.flatMap((product) => getShopifyAttributeValues(product, "colour"))),
+  };
+
+  const effectiveFilters = {
+    ...applied,
+    collection: availableCollectionHandles.has(applied.collection) ? applied.collection : "",
+  };
+  const filteredProducts = useMemo(
+    () => filterShopifyProducts(liveProducts, effectiveFilters),
+    [liveProducts, applied],
+  );
+  const activeCount = selectedCount(applied);
+
+  function toggleDraft(key: FilterKey, value: string) {
+    setDraft((current) => {
+      const selected = current[key];
+      return {
+        ...current,
+        [key]: selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value],
+      };
+    });
+  }
+
+  function applyFilters() {
+    setApplied({ ...draft });
+  }
+
+  function clearAll() {
+    setDraft({ ...defaultFilters });
+    setApplied({ ...defaultFilters });
+  }
+
+  function removeChip(key: FilterKey, value: string) {
+    const update = (current: CatalogFilters) => ({
+      ...current,
+      [key]: current[key].filter((item) => item !== value),
+    });
+    setApplied(update);
+    setDraft(update);
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const legacyEdit = searchParams.get("edit");
+
+  return <Shell>
+    <PageHero
+      eyebrow="Shop the collection"
+      title={legacyEdit === "premium" ? "Premium Collection" : legacyEdit === "new" ? "New Arrivals" : "All published products"}
+      subtitle="Explore the products published in Shopify. Refine by material, tradition, technique and more."
+    />
+    <main className="content wrap">
+      <div className="catalog-controls">
+        <label className="catalog-search">
+          <span className="sr-only">Search products</span>
+          <input
+            data-testid="input-collection-search"
+            aria-label="Search products"
+            type="search"
+            placeholder="Search products…"
+            value={applied.query}
+            onChange={(event) => {
+              const query = event.target.value;
+              setApplied((current) => ({ ...current, query }));
+              setDraft((current) => ({ ...current, query }));
+            }}
+          />
+        </label>
+        <details className="filter-sort-drawer">
+          <summary data-testid="button-filter-sort">
+            Filter &amp; Sort{activeCount > 0 && <span className="filter-count">{activeCount}</span>}
+          </summary>
+          <div className="filter-sort-panel">
+            <div className="filter-sort-heading">
+              <div><span className="eyebrow">Refine the collection</span><h2>Filter &amp; Sort</h2></div>
+              <label>Sort by
+                <select
+                  data-testid="select-collection-sort"
+                  value={draft.sort}
+                  onChange={(event) => setDraft((current) => ({ ...current, sort: event.target.value }))}
+                >
+                  <option>Featured</option>
+                  <option>Price: Low to High</option>
+                  <option>Price: High to Low</option>
+                  <option>Newest</option>
+                </select>
+              </label>
+            </div>
+            {FILTER_GROUPS.map(({ key, title }) => options[key].length > 0 && (
+              <details key={key} className={`filter-section${key === "fabrics" ? " is-primary" : ""}`} open={false}>
+                <summary>{title}<span>{draft[key].length > 0 ? `${draft[key].length} selected` : ""}</span></summary>
+                <div className="filter-options">
+                  {options[key].map((value) => (
+                    <label key={value} className="filter-option">
+                      <input
+                        type="checkbox"
+                        checked={draft[key].includes(value)}
+                        onChange={() => toggleDraft(key, value)}
+                        aria-label={`Filter by ${title.toLowerCase()}: ${value}`}
+                      />
+                      <span>{value}</span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+            ))}
+            <details className="filter-section" open={false}>
+              <summary>Price Range</summary>
+              <div className="filter-price-range">
+                <label>Minimum price<input type="number" min="0" value={draft.minPrice} onChange={(event) => setDraft((current) => ({ ...current, minPrice: event.target.value }))}/></label>
+                <label>Maximum price<input type="number" min="0" value={draft.maxPrice} onChange={(event) => setDraft((current) => ({ ...current, maxPrice: event.target.value }))}/></label>
+              </div>
+            </details>
+            {availableCollections.length > 0 && (
+              <details className="filter-section" open={false}>
+                <summary>Shopify Collection</summary>
+                <label className="filter-collection">Collection
+                  <select
+                    aria-label="Filter by Shopify collection"
+                    value={draft.collection}
+                    onChange={(event) => setDraft((current) => ({ ...current, collection: event.target.value }))}
+                  >
+                    <option value="">All collections</option>
+                    {availableCollections.map(({ handle, title }) => <option key={handle} value={handle}>{title}</option>)}
+                  </select>
+                </label>
+              </details>
+            )}
+            <div className="filter-actions">
+              <button type="button" className="btn outline" onClick={clearAll}>Clear All</button>
+              <button type="button" className="btn" onClick={applyFilters}>Apply Filters</button>
+            </div>
+          </div>
+        </details>
+      </div>
+      <div className="active-filters" aria-live="polite">
+        <strong>{catalog.isLoading && !catalog.data ? "Loading Shopify products…" : `${filteredProducts.length} published ${filteredProducts.length === 1 ? "product" : "products"}`}</strong>
+        {FILTER_GROUPS.flatMap(({ key, title }) => applied[key].map((value) => (
+          <button type="button" className="filter-chip" key={`${key}:${value}`} onClick={() => removeChip(key, value)} aria-label={`Remove ${title} filter ${value}`}>
+            {title}: {filterLabel(key, value)} <span aria-hidden="true">×</span>
+          </button>
+        )))}
+        {(applied.minPrice || applied.maxPrice) && (
+          <button type="button" className="filter-chip" onClick={() => {
+            setApplied((current) => ({ ...current, minPrice: "", maxPrice: "" }));
+            setDraft((current) => ({ ...current, minPrice: "", maxPrice: "" }));
+          }}>
+            Price: {applied.minPrice || "0"} – {applied.maxPrice || "Any"} <span aria-hidden="true">×</span>
+          </button>
+        )}
+        {applied.collection && availableCollectionHandles.has(applied.collection) && (
+          <button type="button" className="filter-chip" onClick={() => {
+            setApplied((current) => ({ ...current, collection: "" }));
+            setDraft((current) => ({ ...current, collection: "" }));
+          }}>
+            Collection: {availableCollections.find(({ handle }) => handle === applied.collection)?.title} <span aria-hidden="true">×</span>
+          </button>
+        )}
+        {applied.query && <button type="button" className="filter-chip" onClick={() => {
+          setApplied((current) => ({ ...current, query: "" }));
+          setDraft((current) => ({ ...current, query: "" }));
+        }}>Search: {applied.query} <span aria-hidden="true">×</span></button>}
+      </div>
+      {catalog.isLoading && !catalog.data
+        ? <p role="status" className="shopify-catalog-status">Loading the collection…</p>
+        : catalog.isError && !catalog.data
+          ? <div className="empty"><span className="eyebrow">Shopify catalog unavailable</span><h2 style={{ marginTop: 15 }}>We couldn’t load the products just now.</h2><p>Your store data has not been replaced with sample products. Try again in a moment.</p><button className="btn" onClick={() => void catalog.refetch()}>Try again</button></div>
+          : liveProducts.length
+            ? filteredProducts.length
+              ? <ShopifyProductGrid products={filteredProducts}/>
+              : <div className="empty"><span className="eyebrow">No matching products</span><h2 style={{ marginTop: 15 }}>No published products match these filters.</h2><p>Change or clear the filters to see other products.</p><button className="btn" onClick={clearAll}>Clear All</button></div>
+            : <div className="empty"><span className="eyebrow">Shopify catalog</span><h2 style={{ marginTop: 15 }}>No published products are available yet.</h2><p>Published products will appear here directly from Shopify.</p></div>}
+      {catalog.isError && catalog.data && <p role="status" className="shopify-catalog-status">Showing the last successfully loaded Shopify catalog; the latest refresh failed.</p>}
+      <p className="muted" style={{ fontSize: 11, marginTop: 25 }}>Product names, photos, prices and collection membership come from Shopify. Product classification is maintained separately for fabric, regional tradition, technique and region of origin.</p>
+    </main>
+  </Shell>;
 }

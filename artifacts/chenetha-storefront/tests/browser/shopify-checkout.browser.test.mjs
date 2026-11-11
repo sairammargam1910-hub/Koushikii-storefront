@@ -16,7 +16,7 @@ const productResponse = {
     description: "Handwoven silk",
     productType: "Saree",
     tags: ["kanchipooram", "new arrival", "Silk"],
-    attributes: { fabric: "Silk", craftTechnique: "Kanchipuram", region: "Tamil Nadu", colour: "Maroon" },
+    attributes: { fabric: "Silk", regionalHandloom: null, craftTechnique: "Kanchipuram", region: "Tamil Nadu", colour: "Maroon" },
     collections: [],
     images: [],
     variants: [{
@@ -531,7 +531,8 @@ test("all published products appear without collections and dynamic filters use 
     tags: [],
     attributes: {
       fabric: "Cotton",
-      craftTechnique: "Block printing",
+      regionalHandloom: '["Narayanpet"]',
+      craftTechnique: '["Block printing","Bagru"]',
       region: "Telangana",
       colour: "Indigo",
     },
@@ -564,25 +565,43 @@ test("all published products appear without collections and dynamic filters use 
   await page.goto(`${origin}${fixtureUrl}?screen=collections`);
   await page.getByText("Kanchipuram silk saree", { exact: true }).waitFor();
   await page.getByText("Hand-block cotton table runner", { exact: true }).waitFor();
-  assert.equal(await page.getByRole("button", { name: "All products" }).getAttribute("aria-pressed"), "true");
   assert.equal(await page.getByText("2 published products").count(), 1);
-  assert.equal(await page.getByRole("button", { name: "Sarees", exact: true }).count(), 0);
-  assert.equal(await page.getByRole("button", { name: "Dupattas", exact: true }).count(), 0);
   assert.equal(await page.getByText(/Cotton handlooms · Explore regional weaves/i).count(), 0);
   assert.equal(await page.getByText(/Uncategorised/i).count(), 0);
 
+  await page.locator(".filter-sort-drawer > summary").click();
+  await page.locator(".filter-section.is-primary > summary").click();
+  await page.getByLabel("Filter by fabric: Cotton").check();
+  await page.getByLabel("Filter by fabric: Silk").check();
+  await page.getByRole("button", { name: "Apply Filters" }).click();
+  assert.equal(await page.getByText("2 published products").count(), 1, "two fabric selections use OR logic");
+  await page.locator(".filter-section").filter({ has: page.getByText("Regional Handloom", { exact: true }) }).locator("summary").click();
+  await page.getByLabel("Filter by regional handloom: Narayanpet").check();
+  await page.locator(".filter-section").filter({ has: page.getByText("Weave / Print", { exact: true }) }).locator("summary").click();
+  await page.getByLabel("Filter by weave / print: Bagru").check();
+  await page.getByRole("button", { name: "Apply Filters" }).click();
+  assert.equal(await page.getByText("1 published product").count(), 1, "different classification groups use AND logic");
+  assert.equal(await page.getByText("Kanchipuram silk saree", { exact: true }).count(), 0);
+  await page.getByRole("button", { name: "Clear All" }).click();
+
+  await page.locator(".filter-section").filter({ has: page.getByText("Shopify Collection", { exact: true }) }).locator("summary").click();
   const collectionFilter = page.getByLabel("Filter by Shopify collection");
   assert.deepEqual(await collectionFilter.locator("option").allTextContents(), ["All collections", "The Crafts Edit"]);
   await collectionFilter.selectOption("the-crafts-edit");
+  await page.getByRole("button", { name: "Apply Filters" }).click();
   await page.getByText("Kanchipuram silk saree", { exact: true }).waitFor();
   assert.equal(await page.getByText("Hand-block cotton table runner", { exact: true }).count(), 0);
 
   await collectionFilter.selectOption("");
-  await page.getByLabel("Filter by product type").selectOption("Home textile");
+  await page.locator(".filter-section").filter({ has: page.getByText("Product Type", { exact: true }) }).locator("summary").click();
+  await page.getByLabel("Filter by product type: Home textile").check();
+  await page.getByRole("button", { name: "Apply Filters" }).click();
   await page.getByText("Hand-block cotton table runner", { exact: true }).waitFor();
   assert.equal(await page.getByText("Kanchipuram silk saree", { exact: true }).count(), 0);
 
-  await page.getByLabel("Filter by colour").selectOption("Indigo");
+  await page.locator(".filter-section").filter({ has: page.getByText("Colour", { exact: true }) }).locator("summary").click();
+  await page.getByLabel("Filter by colour: Indigo").check();
+  await page.getByRole("button", { name: "Apply Filters" }).click();
   await page.getByText("Hand-block cotton table runner", { exact: true }).waitFor();
   assert.equal(await page.getByText("Kanchipuram silk saree", { exact: true }).count(), 0);
   await context.close();
@@ -635,6 +654,9 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
 
   const withoutCollection = await openHome({ width: 1280, height: 900 }, [productResponse.products[0]]);
   await withoutCollection.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
+  assert.equal(await withoutCollection.page.locator(".home-fabric-section .fabric-card").count(), 4);
+  await withoutCollection.page.getByRole("heading", { name: "Regional Handlooms", exact: true }).waitFor();
+  await withoutCollection.page.getByRole("heading", { name: "Weave / Print", exact: true }).waitFor();
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "The Crafts Edit", exact: true }).count(), 0);
   assert.equal(await withoutCollection.page.locator(".home-weave-section").getByRole("link").count(), 0);
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "New Arrivals", exact: true }).count(), 0);
@@ -645,7 +667,7 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
     const { context, page } = await openHome(viewport, [tileProduct]);
     const tile = page.locator(".home-weave-section").getByRole("link", { name: /The Crafts Edit/ });
     await tile.waitFor();
-    assert.equal(await page.locator(".home-fabric-section").getByRole("link", { name: /The Crafts Edit/ }).count(), 1);
+    assert.equal(await page.locator(".home-fabric-section").getByRole("link", { name: /The Crafts Edit/ }).count(), 0);
     assert.match(await tile.getAttribute("href"), /Collections\?collection=the-crafts-edit/);
     const bounds = await tile.boundingBox();
     assert.ok(bounds && bounds.width > 0 && bounds.height > 0);
@@ -658,11 +680,11 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   }
 });
 
-test("header links show live Shopify fabric and collection categories", async () => {
+test("header groups starter and live product classifications into three taxonomies", async () => {
   const headerProduct = {
     ...productResponse.products[0],
     tags: ["fabric :Cotton", "weave :Narayanpet"],
-    attributes: { fabric: null, craftTechnique: null, region: null, colour: null },
+    attributes: { fabric: null, regionalHandloom: "Narayanpet", craftTechnique: "Ikkat", region: null, colour: null },
     collections: [{
       id: "gid://shopify/Collection/narayanpet",
       handle: "narayanpet",
@@ -690,14 +712,48 @@ test("header links show live Shopify fabric and collection categories", async ()
     if (viewport.width < 600) await page.getByTestId("button-mobile-menu").click();
     await page.locator(".collection-nav > summary").click();
 
-    const cotton = page.getByRole("link", { name: "Cotton", exact: true });
-    const narayanpet = page.getByRole("link", { name: "Narayanpet", exact: true });
+    const regionalSection = page.locator(".mega-menu > div").nth(0);
+    const fabricSection = page.locator(".mega-menu > div").nth(1);
+    const techniqueSection = page.locator(".mega-menu > div").nth(2);
+    assert.equal(await regionalSection.getByText("Regional Handlooms", { exact: true }).count(), 1);
+    assert.equal(await fabricSection.getByText("Shop by Fabric", { exact: true }).count(), 1);
+    assert.equal(await techniqueSection.getByText("Weave / Print", { exact: true }).count(), 1);
+    assert.equal(await regionalSection.locator(".menu-dynamic-links a").count(), 13);
+    assert.equal(await fabricSection.locator(".menu-dynamic-links a").count(), 4);
+    assert.equal(await techniqueSection.locator(".menu-dynamic-links a").count(), 5);
+    const cotton = fabricSection.getByRole("link", { name: "Cotton", exact: true });
+    const narayanpet = regionalSection.getByRole("link", { name: "Narayanpet", exact: true });
+    const ikkat = techniqueSection.getByRole("link", { name: "Ikkat", exact: true });
     await cotton.waitFor();
     await narayanpet.waitFor();
+    await ikkat.waitFor();
     assert.match(await cotton.getAttribute("href"), /Collections\?fabric=Cotton$/);
-    assert.match(await narayanpet.getAttribute("href"), /Collections\?collection=narayanpet$/);
+    assert.match(await narayanpet.getAttribute("href"), /Collections\?regionalHandloom=Narayanpet$/);
+    assert.match(await ikkat.getAttribute("href"), /Collections\?weave=Ikkat$/);
     await context.close();
   }
+});
+
+test("Filter & Sort drawer fits and remains usable on a phone", async () => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  await page.route("**/api/shopify/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(productResponse),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=collections`);
+  await page.getByTestId("button-filter-sort").click();
+  const panel = page.locator(".filter-sort-panel");
+  await panel.waitFor();
+  const bounds = await panel.boundingBox();
+  assert.ok(bounds && bounds.width > 0 && bounds.x >= 0 && bounds.x + bounds.width <= 391);
+  await panel.locator(".filter-section.is-primary > summary").click();
+  await panel.getByLabel("Filter by fabric: Silk").check();
+  await panel.getByRole("button", { name: "Apply Filters" }).click();
+  await page.getByText("1 published product", { exact: true }).waitFor();
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  await context.close();
 });
 
 test("applies shopper-entered discount codes to the Shopify bag", async () => {

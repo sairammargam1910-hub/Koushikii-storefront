@@ -85,6 +85,31 @@ async function openForm({ mobile = false, edit = false, setup } = {}) {
       collections: [{ id: "gid://shopify/Collection/fixture", title: "The Crafts Edit", handle: "the-crafts-edit", manual: true }],
     }),
   }));
+  await page.route("**/api/shopify/admin/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      currencyCode: "INR",
+      products: [{
+        id: "gid://shopify/Product/suggestion-fixture",
+        title: "Existing cotton runner",
+        handle: "existing-cotton-runner",
+        description: "",
+        productType: "Home textile",
+        status: "ACTIVE",
+        tags: [],
+        fabric: '["Cotton","Linen"]',
+        regionalHandloom: "Narayanpet",
+        craftTechnique: '["Bagru","Ikkat"]',
+        region: "Odisha",
+        colour: "Indigo",
+        collectionIds: [],
+        imageUrl: null,
+        options: [],
+        variants: [],
+      }],
+    }),
+  }));
   await page.route("**/api/shopify/admin/products/**", async (route) => {
     const request = route.request();
     if (request.method() === "GET" && !request.url().includes("/media")) {
@@ -325,6 +350,19 @@ test("merchant can publish without a collection and later assign a Shopify colle
   await created.page.getByTestId("input-product-type").fill("Home textile");
   await created.page.getByTestId("input-product-price").fill("1800");
   await created.page.getByTestId("input-product-inventory").fill("4");
+  await created.page.getByRole("combobox", { name: "Fabric value" }).fill("Cotton");
+  assert.equal(await created.page.locator("#classification-options-fabric option").count() > 0, true);
+  await created.page.getByRole("button", { name: "Add Fabric value" }).click();
+  await created.page.getByRole("combobox", { name: "Fabric value" }).fill("Linen");
+  await created.page.getByRole("button", { name: "Add Fabric value" }).click();
+  await created.page.getByRole("combobox", { name: "Regional Handloom / Tradition value" }).fill("Narayanpet");
+  await created.page.getByRole("button", { name: "Add Regional Handloom / Tradition value" }).click();
+  await created.page.getByRole("combobox", { name: "Weave / Print Technique value" }).fill("Ikkat");
+  await created.page.getByRole("button", { name: "Add Weave / Print Technique value" }).click();
+  await created.page.getByRole("combobox", { name: "Region of Origin value" }).fill("Odisha");
+  await created.page.getByRole("button", { name: "Add Region of Origin value" }).click();
+  await created.page.getByRole("combobox", { name: "Colour value" }).fill("Indigo");
+  await created.page.getByRole("button", { name: "Add Colour value" }).click();
   assert.equal(await created.page.getByTestId("input-product-publish").isChecked(), true);
   await created.page.getByTestId("button-save-product").click();
   await created.page.getByTestId("fixture-closed").waitFor();
@@ -332,7 +370,11 @@ test("merchant can publish without a collection and later assign a Shopify colle
   assert.equal(createMutations[0].body.productType, "Home textile");
   assert.deepEqual(createMutations[0].body.collectionIds, []);
   assert.equal(createMutations[0].body.publishToWebsite, true);
-  assert.equal(createMutations[0].body.fabric, "");
+  assert.equal(createMutations[0].body.fabric, '["Cotton","Linen"]');
+  assert.equal(createMutations[0].body.regionalHandloom, "Narayanpet");
+  assert.equal(createMutations[0].body.craftTechnique, "Ikkat");
+  assert.equal(createMutations[0].body.region, "Odisha");
+  assert.equal(createMutations[0].body.colour, "Indigo");
   await created.context.close();
 
   const edited = await openForm({ edit: true });
