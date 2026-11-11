@@ -442,7 +442,8 @@ body {
   }
 
   .kq .language-switcher select {
-    width: 66px;
+    width: 82px;
+    max-width: 82px;
     font-size: 10px;
   }
 

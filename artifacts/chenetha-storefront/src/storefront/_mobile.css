@@ -223,8 +223,8 @@
   }
 
   .kq .language-switcher select {
-    width: 66px;
-    max-width: 66px;
+    width: 82px;
+    max-width: 82px;
     font-size: 10px;
   }
 
@@ -295,6 +295,11 @@
 
   .kq .head-actions {
     gap: 4px;
+  }
+
+  .kq .language-switcher select {
+    width: 76px;
+    max-width: 76px;
   }
 
   .kq .head-actions .text-action,

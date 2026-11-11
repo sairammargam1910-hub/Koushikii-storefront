@@ -127,3 +127,9 @@ Draft content previews must stay inside the authorized merchant workspace, rende
 **Why:** The user’s preview task requires real storefront previews for every content type while ensuring drafts stay private and publication remains explicit.
 
 **How to apply:** Render the current editor state with shared storefront components, keep public content responses filtered to published/approved records, and gate media that has no published reference behind merchant authorization.
+
+Customer-facing content must not expose the internal platforms or implementation details used to operate Chenetha.
+
+**Why:** The user explicitly requested natural customer wording across the entire storefront while keeping the services operating internally.
+
+**How to apply:** Use terms such as “your bag,” “secure online payment,” and “shipping and delivery.” Keep technical names in internal logs and admin tools where needed, and never simplify away the actual payment or shipment status.

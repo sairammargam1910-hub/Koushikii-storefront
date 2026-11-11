@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "8LOcknq7SahxABpg6iZTB"
+uri = "file://generated-artifacts/chenetha-header-desktop.jpg"
+type = "image"
+title = "Updated desktop homepage"
+description = "Balanced Chenetha header with the existing brand palette and photography."
+logical_id = "33527999-6da7-4aef-8aab-50bab099c923"
+content_hash = "sha256:9490e7c4b34cc6f0ebc6ba4650aafd080a2d2b6bfdb3d7abd2daa8cdf2c587e8"
+size = 143541
+mtime_ms = 1794393726503
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/33527999-6da7-4aef-8aab-50bab099c923/7f8ed5ef-e29d-44a0-820b-3ebf03e8254d"
+storage_version_token = "1794393879560975"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "sNBQKSGqUnmiXnP3s3D7J"
+uri = "file://generated-artifacts/chenetha-header-mobile.jpg"
+type = "image"
+title = "Updated mobile homepage"
+description = "Responsive two-row header with a readable language selector and accessible shopping controls."
+logical_id = "f9a6097b-5d30-459d-b4fd-24d4fa3d5f19"
+content_hash = "sha256:ab05349c3e2c969d1c17ffd3ea7b1d0f179c24e731e408a2d66b633045ac5390"
+size = 48933
+mtime_ms = 1794393828244
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/f9a6097b-5d30-459d-b4fd-24d4fa3d5f19/6bfb8a3b-7468-4d35-bf0a-4a74d027ae84"
+storage_version_token = "1794393880862888"
+content_type = "image/jpeg"

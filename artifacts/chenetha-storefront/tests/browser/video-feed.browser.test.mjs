@@ -211,7 +211,7 @@ test("phone feed plays and seeks real MP4 and WebM clips and links the right pro
   assert.equal(await productLink.getAttribute("href"), "/Product?product=fixture-silk-saree");
   await productLink.click();
   await page.getByRole("heading", { name: "Fixture silk saree" }).waitFor();
-  assert.equal(new URL(page.url()).searchParams.get("shopify"), productHandle);
+  assert.equal(new URL(page.url()).searchParams.get("product"), productHandle);
   await context.close();
 });
 
