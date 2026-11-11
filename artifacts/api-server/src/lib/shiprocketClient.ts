@@ -49,6 +49,7 @@ export type ShiprocketTracking = {
   status: string;
   statusCode: string | null;
   awbCode: string;
+  courierId: string | null;
   courierName: string | null;
   trackingUrl: string | null;
   estimatedDeliveryAt: string | null;
@@ -63,6 +64,12 @@ export type ShiprocketShipmentDetails = {
   courierName: string | null;
   trackingUrl: string | null;
   status: string | null;
+};
+
+export type ShiprocketOrderReferenceMatch = {
+  shiprocketOrderId: string | null;
+  orderReference: string;
+  shipmentIds: string[];
 };
 
 export type ShiprocketPackageInput = {
@@ -637,6 +644,79 @@ export async function getShiprocketShipmentDetails(
   };
 }
 
+export async function findShiprocketOrdersByReference(
+  orderReference: string,
+): Promise<ShiprocketOrderReferenceMatch[]> {
+  const reference = orderReference.trim();
+  if (
+    !reference ||
+    reference.length > 256 ||
+    /[\u0000-\u001f\u007f-\u009f]/u.test(reference)
+  ) {
+    throw new ShiprocketError("Shiprocket order reference is invalid.");
+  }
+
+  const query = new URLSearchParams({
+    filter_by: "channel_order_id",
+    filter: reference,
+    page: "1",
+    per_page: "10",
+  });
+  const payload = await request<Record<string, unknown>>(
+    `/orders?${query.toString()}`,
+    { method: "GET" },
+  );
+  const data = record(payload.data);
+  const orders = Array.isArray(payload.data)
+    ? payload.data
+    : Array.isArray(data.data)
+      ? data.data
+      : Array.isArray(data.orders)
+        ? data.orders
+        : Array.isArray(payload.orders)
+          ? payload.orders
+          : [];
+
+  return orders.flatMap((value) => {
+    const order = record(value);
+    const matchesReference = [
+      order.channel_order_id,
+      order.channel_order_number,
+      order.reference_order_id,
+      order.order_id,
+    ].some((candidate) => text(candidate) === reference);
+    if (!matchesReference) return [];
+
+    const shipmentValues = Array.isArray(order.shipments)
+      ? order.shipments
+      : Array.isArray(order.shipment)
+        ? order.shipment
+        : order.shipment && typeof order.shipment === "object"
+          ? [order.shipment]
+          : [];
+    const shipmentIds = [
+      order.shipment_id,
+      ...shipmentValues.map((shipment) => {
+        const recordValue = record(shipment);
+        return recordValue.shipment_id ?? recordValue.id;
+      }),
+    ].flatMap((candidate) => {
+      const id = text(candidate);
+      return id && /^\d{1,24}$/.test(id) ? [id] : [];
+    });
+
+    return [{
+      shiprocketOrderId:
+        text(order.id) ??
+        text(order.shiprocket_order_id) ??
+        text(order.sr_order_id) ??
+        text(order.order_id),
+      orderReference: reference,
+      shipmentIds: [...new Set(shipmentIds)],
+    }];
+  });
+}
+
 export type ShiprocketTrackingWebhook = {
   awbCode: string | null;
   shipmentId: string | null;
@@ -730,6 +810,10 @@ export function parseShiprocketTrackingWebhook(
     status,
     statusCode,
     awbCode: awbCode ?? "",
+    courierId: text(data.courier_company_id) ??
+      text(data.courier_id) ??
+      text(latestTrack.courier_company_id) ??
+      text(latestTrack.courier_id),
     courierName: text(data.courier_name) ??
       text(data.courier_company_name) ??
       text(latestTrack.courier_name) ??
@@ -773,6 +857,10 @@ export function normalizeShiprocketTracking(
     status,
     statusCode: code,
     awbCode: text(latestTrack.awb_code) ?? expectedAwbCode,
+    courierId: text(latestTrack.courier_company_id) ??
+      text(latestTrack.courier_id) ??
+      text(tracking.courier_company_id) ??
+      text(tracking.courier_id),
     courierName: text(latestTrack.courier_name) ?? text(latestTrack.courier_company_name),
     trackingUrl: safeTrackingUrl(tracking.track_url ?? latestTrack.tracking_url),
     estimatedDeliveryAt: toIsoDate(tracking.etd ?? latestTrack.etd),

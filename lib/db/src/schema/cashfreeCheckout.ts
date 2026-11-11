@@ -1,5 +1,6 @@
 import {
   index,
+  boolean,
   integer,
   jsonb,
   numeric,
@@ -102,6 +103,7 @@ export const checkoutShipmentPackagesTable = pgTable("cashfree_checkout_shipment
     .notNull()
     .references(() => cashfreeCheckoutOrdersTable.id, { onDelete: "cascade" }),
   packageIndex: integer("package_index").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
   shiprocketOrderId: text("shiprocket_order_id").unique(),
   shiprocketShipmentId: text("shiprocket_shipment_id"),
   courierId: text("courier_id").notNull(),

@@ -282,6 +282,7 @@ async function persistStoredShipmentTracking(
       .limit(1)
       .for("update");
     if (!current) return null;
+    if (current.isActive === false) return null;
     if (expected.awbCode && current.awbCode && current.awbCode.toUpperCase() !== expected.awbCode.toUpperCase()) {
       return null;
     }
@@ -329,6 +330,7 @@ async function persistStoredShipmentTracking(
       .set({
         awbCode: current.awbCode ?? (incoming.awbCode || null),
         status: lifecycleStatus,
+        courierId: incoming.courierId ?? current.courierId,
         courierName: incoming.courierName ?? current.courierName,
         trackingStatus: merged.status,
         trackingEvents: merged.events,
@@ -564,7 +566,7 @@ router.post("/events/delivery", async (req, res): Promise<void> => {
       return;
     }
     const matched = [...uniqueMatches.values()][0];
-    if (!matched) {
+    if (!matched || matched.isActive === false) {
       // A valid event for a shipment outside this storefront is acknowledged to prevent retries.
       res.status(200).json({ received: true, matched: false });
       return;
@@ -640,10 +642,11 @@ router.get("/shopify/orders/:orderRef/tracking", async (req, res): Promise<void>
     const checkoutPaid = checkout?.paymentStatus === "paid" &&
       Boolean(checkout.shopifyOrderId) &&
       !["refund_pending", "refunded"].includes(checkout.status);
-    const packages = checkoutPaid && shopifyPaid
+    const allPackages = checkoutPaid && shopifyPaid
       ? await db.select().from(checkoutShipmentPackagesTable)
           .where(eq(checkoutShipmentPackagesTable.checkoutOrderId, checkout.id))
       : [];
+    const packages = allPackages.filter((shipment) => shipment.isActive !== false);
     const shipments = [];
     const packageTrackingNumbers = new Set<string>();
 

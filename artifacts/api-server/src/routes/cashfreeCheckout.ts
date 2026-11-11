@@ -487,7 +487,7 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
     .where(eq(checkoutShipmentPackagesTable.checkoutOrderId, row.id));
   const now = new Date();
   const retryAfter = new Date(Date.now() - 60_000);
-  for (const shipment of packages) {
+  for (const shipment of packages.filter((item) => item.isActive !== false)) {
     if (shipment.awbCode) {
       const status = advanceShipmentLifecycle(shipment.status, "booked", true);
       if (status !== shipment.status) {
@@ -658,9 +658,10 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
         .where(eq(checkoutShipmentPackagesTable.id, shipment.id));
     }
   }
-  const updatedPackages = await db.select()
+  const allPackages = await db.select()
     .from(checkoutShipmentPackagesTable)
     .where(eq(checkoutShipmentPackagesTable.checkoutOrderId, row.id));
+  const updatedPackages = allPackages.filter((shipment) => shipment.isActive !== false);
   const allBooked = updatedPackages.length > 0 &&
     updatedPackages.every((shipment) =>
       Boolean(shipment.awbCode) &&
@@ -685,8 +686,8 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
         : needsReconciliation
           ? "Verify Shiprocket booking state before any manual retry."
           : "One or more carrier packages are still pending.",
-      ...(updatedPackages.length > 0 &&
-        updatedPackages.every((shipment) => shipment.shiprocketOrderId && shipment.shiprocketShipmentId)
+      ...(allPackages.length > 0 &&
+        allPackages.every((shipment) => shipment.shiprocketOrderId && shipment.shiprocketShipmentId)
         ? { checkoutSnapshot: ownershipSnapshot(row) }
         : {}),
       updatedAt: new Date(),

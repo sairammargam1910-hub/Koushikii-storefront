@@ -144,6 +144,63 @@ test("AWB assignment saves confirmed courier and tracking details using one requ
   });
 });
 
+test("finds a cloned Shiprocket order by exact channel reference with a read-only request", async () => {
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init = {}) => {
+    const target = new URL(String(url));
+    calls.push({ path: target.pathname, method: init.method ?? "GET", query: target.searchParams });
+    if (target.pathname.endsWith("/auth/login")) {
+      return Response.json({ token: "test-token" });
+    }
+    return Response.json({
+      data: {
+        data: [
+          {
+            id: 1716900471,
+            channel_order_id: "cfq_55703e06d3ee4522b6fe93799f5d08d5_p0",
+            shipments: [{ id: 1712529624 }],
+            customer_name: "Do not return customer details",
+          },
+          {
+            id: 1717000001,
+            channel_order_id: "cfq_55703e06d3ee4522b6fe93799f5d08d5_p0-C",
+            shipments: [{ id: 1712629624 }],
+            customer_name: "Do not return customer details",
+          },
+        ],
+      },
+    });
+  };
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+    }, async () => {
+      const { findShiprocketOrdersByReference } = loadModule();
+      const result = await findShiprocketOrdersByReference(
+        "cfq_55703e06d3ee4522b6fe93799f5d08d5_p0-C",
+      );
+      assert.deepEqual(result, [{
+        shiprocketOrderId: "1717000001",
+        orderReference: "cfq_55703e06d3ee4522b6fe93799f5d08d5_p0-C",
+        shipmentIds: ["1712629624"],
+      }]);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  const ordersRequest = calls.find((call) => call.path.endsWith("/orders"));
+  assert.ok(ordersRequest);
+  assert.equal(ordersRequest.method, "GET");
+  assert.equal(ordersRequest.query.get("filter_by"), "channel_order_id");
+  assert.equal(
+    ordersRequest.query.get("filter"),
+    "cfq_55703e06d3ee4522b6fe93799f5d08d5_p0-C",
+  );
+  assert.equal(ordersRequest.query.get("per_page"), "10");
+});
+
 test("HTTP 200 AWB rejection retains sanitized courier remarks and is never retried", async () => {
   await withAwbResponse({
     awb_assign_status: 0,
@@ -457,7 +514,7 @@ test("fetches and normalizes Shiprocket tracking by AWB without booking another 
           shipment_status: 6,
           track_url: "https://shiprocket.co/tracking/9876543210",
           etd: "2026-11-12",
-          shipment_track: [{ awb_code: "9876543210", current_status: "In Transit", courier_name: "Test Courier" }],
+          shipment_track: [{ awb_code: "9876543210", current_status: "In Transit", courier_name: "Test Courier", courier_company_id: 33 }],
           shipment_track_activities: [
             { date: "2026-11-08 12:00:00", activity: "Departed facility", location: "Hyderabad" },
             { date: "2026-11-08 08:00:00", activity: "Picked up", location: "Hyderabad" },
@@ -477,6 +534,7 @@ test("fetches and normalizes Shiprocket tracking by AWB without booking another 
       assert.equal(result.status, "In Transit");
       assert.equal(result.statusCode, "6");
       assert.equal(result.awbCode, "9876543210");
+      assert.equal(result.courierId, "33");
       assert.equal(result.courierName, "Test Courier");
       assert.equal(result.trackingUrl, "https://shiprocket.co/tracking/9876543210");
       assert.equal(result.estimatedDeliveryAt, "2026-11-12T00:00:00.000Z");
@@ -583,6 +641,7 @@ test("tracking webhook parser captures shipment references, status code, courier
       order_id: 456,
       shipment_id: 789,
       courier_name: "Delhivery Surface",
+      courier_company_id: 44,
       current_status: "In Transit",
       status_id: 5,
       shipment_track_activities: [{
@@ -599,6 +658,7 @@ test("tracking webhook parser captures shipment references, status code, courier
   assert.equal(result.shipmentId, "789");
   assert.equal(result.orderId, "456");
   assert.equal(result.tracking.courierName, "Delhivery Surface");
+  assert.equal(result.tracking.courierId, "44");
   assert.equal(result.tracking.status, "In Transit");
   assert.equal(result.tracking.statusCode, "5");
   assert.equal(result.tracking.events[0].description, "Arrived at the regional hub");
@@ -619,6 +679,7 @@ test("tracking webhook parser accepts Shiprocket's downloaded scans payload", ()
     channel_order_id: "enter your channel order id",
     channel: "enter your channel name",
     courier_name: "Sample courier",
+    courier_company_id: 33,
     scans: [
       {
         date: "2019-06-25 12:08:00",
@@ -638,6 +699,7 @@ test("tracking webhook parser accepts Shiprocket's downloaded scans payload", ()
   assert.equal(result.tracking.status, "Delivered");
   assert.equal(result.tracking.statusCode, "7");
   assert.equal(result.tracking.courierName, "Sample courier");
+  assert.equal(result.tracking.courierId, "33");
   assert.deepEqual(result.tracking.events.map((event) => event.description), [
     "NECESSARY CHARGES PENDING FROM CONSIGNEE",
     "SHIPMENT DELIVERED",

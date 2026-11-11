@@ -26,7 +26,7 @@ const compiled = await build({
           const state = globalThis.__shopperOrdersTest;
           const columns = (names) => Object.fromEntries(names.map((name) => [name, { key: name }]));
           export const cashfreeCheckoutOrdersTable = columns(["id","shopifyOrderId","paymentStatus","status"]);
-          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","shiprocketOrderId","shiprocketShipmentId","courierId","courierName","status","awbCode","trackingStatus","trackingEvents","trackingUrl","estimatedDeliveryAt","trackingUpdatedAt","lastError","updatedAt"]);
+          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","shiprocketOrderId","shiprocketShipmentId","courierId","courierName","status","isActive","awbCode","trackingStatus","trackingEvents","trackingUrl","estimatedDeliveryAt","trackingUpdatedAt","lastError","updatedAt"]);
           const rowsFor = (table, condition) => {
             if (!condition) return [];
             if (table === cashfreeCheckoutOrdersTable) {
@@ -242,6 +242,7 @@ function shipment(overrides = {}) {
   return {
     id: "shipment-package-1",
     checkoutOrderId: "checkout-1",
+    isActive: true,
     shiprocketOrderId: "shiprocket-order-1",
     shiprocketShipmentId: "shiprocket-shipment-1",
     courierId: "44",
@@ -513,6 +514,83 @@ test("delivery callback parses and idempotently stores tracking details from Shi
   }));
 });
 
+test("Shiprocket callbacks update an active cloned shipment, not its preserved inactive original", async () => {
+  const state = stateFixture();
+  state.shipments = [
+    shipment({
+      isActive: false,
+      id: "original-package",
+      shiprocketOrderId: "original-shiprocket-order",
+      shiprocketShipmentId: "original-shipment",
+      awbCode: null,
+      status: "booking_failed",
+      trackingStatus: null,
+      trackingEvents: [],
+      lastError: "Original courier rejection retained for audit.",
+    }),
+    shipment({
+      id: "cloned-package",
+      shiprocketOrderId: "cloned-shiprocket-order",
+      shiprocketShipmentId: "cloned-shipment",
+      awbCode: "99887766554433",
+      trackingStatus: "Shipment booked",
+      trackingEvents: [],
+      trackingUpdatedAt: new Date(),
+    }),
+  ];
+  const payload = {
+    awb: "99887766554433",
+    order_id: "cloned-shiprocket-order",
+    shipment_id: "cloned-shipment",
+    courier_name: "Surface Courier",
+    current_status: "In Transit",
+    current_status_id: 18,
+    scans: [{
+      activity: "Shipment picked up",
+      date: "2026-11-11 10:00:00",
+      location: "Hyderabad",
+    }],
+  };
+
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": "local-test-token",
+      },
+      body: JSON.stringify(payload),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { received: true, matched: true });
+  }));
+
+  assert.equal(state.shipments[0].status, "booking_failed");
+  assert.equal(state.shipments[0].shiprocketOrderId, "original-shiprocket-order");
+  assert.equal(state.shipments[0].lastError, "Original courier rejection retained for audit.");
+  assert.equal(state.shipments[1].status, "in_transit");
+  assert.equal(state.shipments[1].trackingStatus, "In Transit");
+  assert.equal(state.shipments[1].trackingEvents[0].description, "Shipment picked up");
+
+  await withWebhookSecret("local-test-token", () => withServer(state, async (base) => {
+    const response = await fetch(`${base}/events/delivery`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": "local-test-token",
+      },
+      body: JSON.stringify({
+        order_id: "original-shiprocket-order",
+        shipment_id: "original-shipment",
+        current_status: "Delivered",
+      }),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { received: true, matched: false });
+  }));
+  assert.equal(state.shipments[0].status, "booking_failed");
+});
+
 test("an unpaid order cannot be advanced to a shipped state by a webhook", async () => {
   const state = stateFixture();
   state.checkouts[0].paymentStatus = "pending";
@@ -663,6 +741,51 @@ test("tracking detail hides stored provider scans for a package that is not book
     assert.equal(body.shipments[0].status, "Shipping quote ready");
     assert.equal(body.shipments[0].awbCode, null);
     assert.deepEqual(body.shipments[0].events, []);
+  });
+});
+
+test("My Orders shows active clone tracking and omits the preserved inactive package", async () => {
+  const state = stateFixture();
+  state.shipments = [
+    shipment({
+      isActive: false,
+      id: "original-package",
+      shiprocketOrderId: "original-shiprocket-order",
+      shiprocketShipmentId: "original-shipment",
+      awbCode: null,
+      status: "booking_failed",
+      trackingStatus: null,
+      trackingEvents: [],
+    }),
+    shipment({
+      id: "cloned-package",
+      shiprocketOrderId: "cloned-shiprocket-order",
+      shiprocketShipmentId: "cloned-shipment",
+      awbCode: "99887766554433",
+      status: "pickup_scheduled",
+      trackingStatus: "Pickup Scheduled",
+      trackingEvents: [{
+        occurredAt: "2026-11-11T10:00:00.000Z",
+        status: "Pickup Scheduled",
+        description: "Pickup has been scheduled",
+        location: "Hyderabad",
+      }],
+      trackingUpdatedAt: new Date(),
+    }),
+  ];
+  const orderRef = Buffer.from("gid://shopify/Order/1001").toString("base64url");
+  await withServer(state, async (base) => {
+    const response = await fetch(`${base}/shopify/orders/${orderRef}/tracking`, {
+      headers: { "x-test-user": "shopper-1" },
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.shipments.length, 1);
+    assert.equal(body.shipments[0].awbCode, "99887766554433");
+    assert.equal(body.shipments[0].courierName, "Delhivery Surface");
+    assert.equal(body.shipments[0].shipmentStatus, "pickup_scheduled");
+    assert.equal(body.shipments[0].events[0].description, "Pickup has been scheduled");
+    assert.doesNotMatch(JSON.stringify(body), /cloned-shiprocket-order|cloned-shipment|original-shiprocket-order/);
   });
 });
 

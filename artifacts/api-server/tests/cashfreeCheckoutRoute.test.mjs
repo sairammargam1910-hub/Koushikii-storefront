@@ -20,7 +20,7 @@ const compiled = await build({
           const state = globalThis.__checkoutRouteTest;
           const columns = (names) => Object.fromEntries(names.map((name) => [name, { key: name }]));
           export const cashfreeCheckoutOrdersTable = columns(["id","cashfreeOrderId","status","paymentStatus","quoteHash","cartId","purchasedCartLines","cartCleanupStatus","destinationCountryCode","currencyCode","itemSubtotal","discountAmount","shippingAmount","taxAmount","totalAmount","quoteExpiresAt","checkoutSnapshot","paymentSessionId","paymentReference","paidAt","shopifyOrderId","shopifyOrderName","lastError","createdAt","updatedAt"]);
-          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","packageIndex","shiprocketOrderId","shiprocketShipmentId","courierId","courierName","quotedAmount","status","awbCode","trackingUrl","trackingStatus","trackingEvents","estimatedDeliveryAt","trackingUpdatedAt","lastError","createdAt","updatedAt"]);
+          export const checkoutShipmentPackagesTable = columns(["id","checkoutOrderId","packageIndex","isActive","shiprocketOrderId","shiprocketShipmentId","courierId","courierName","quotedAmount","status","awbCode","trackingUrl","trackingStatus","trackingEvents","estimatedDeliveryAt","trackingUpdatedAt","lastError","createdAt","updatedAt"]);
           function tableRows(table) { return table === cashfreeCheckoutOrdersTable ? state.orders : state.shipments; }
           function matches(expression, row) {
             if (!expression) return true;
@@ -791,6 +791,58 @@ test("an existing AWB is reconciled instead of assigning or creating another Shi
     assert.equal(state.shipments[0].courierId, "44");
     assert.equal(state.shipments[0].courierName, "Delhivery Surface 2 Kgs");
     assert.equal(state.shipments[0].trackingUrl, "https://shiprocket.co/tracking/awb-existing");
+  }));
+});
+
+test("an inactive failed original is preserved but excluded from booking and completion checks", async () => {
+  await withLiveAwbBooking(() => harness(async ({ state, getStatus }) => {
+    state.environment = "production";
+    state.providerStatus = "PAID";
+    state.order.status = "shipment_booking_pending";
+    state.order.paymentStatus = "paid";
+    state.order.shopifyOrderId = "gid://shopify/Order/19012994302172";
+    state.shipments = [
+      {
+        id: "original-failed-package",
+        checkoutOrderId: state.order.id,
+        packageIndex: 0,
+        isActive: false,
+        shiprocketOrderId: "original-shiprocket-order",
+        shiprocketShipmentId: "original-shipment",
+        courierId: "43",
+        courierName: "Delhivery Surface",
+        quotedAmount: "116.72",
+        status: "booking_failed",
+        awbCode: null,
+        lastError: "Original rejection retained for audit.",
+        updatedAt: new Date(),
+      },
+      {
+        id: "active-clone-package",
+        checkoutOrderId: state.order.id,
+        packageIndex: 1,
+        isActive: true,
+        shiprocketOrderId: "cloned-shiprocket-order",
+        shiprocketShipmentId: "cloned-shipment",
+        courierId: "44",
+        courierName: "Surface Courier",
+        quotedAmount: "116.72",
+        status: "booked",
+        awbCode: "99887766554433",
+        trackingUrl: "https://shiprocket.co/tracking/99887766554433",
+        updatedAt: new Date(),
+      },
+    ];
+
+    const result = await getStatus();
+    assert.equal(result.status, 200);
+    assert.equal(state.awbCalls, 0);
+    assert.equal(state.carrierCreateCalls.length, 0);
+    assert.deepEqual(state.shipmentDetailsCalls, []);
+    assert.equal(state.shipments[0].status, "booking_failed");
+    assert.equal(state.shipments[0].lastError, "Original rejection retained for audit.");
+    assert.equal(state.shipments[1].status, "booked");
+    assert.equal(state.order.status, "completed");
   }));
 });
 
