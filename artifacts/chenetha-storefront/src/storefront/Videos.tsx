@@ -14,7 +14,7 @@ export function VideoPostCard({ post, product, disableProductLink = false }: {
     <div className="video-card-copy">{post.eyebrow && <span className="eyebrow">{post.eyebrow}</span>}<h3>{post.title}</h3>{post.body && <p>{post.body}</p>}
       {product && <div className="video-card-product">{disableProductLink
         ? <span aria-disabled="true">{product.title}</span>
-        : <a href={base + "Product?shopify=" + encodeURIComponent(product.handle)}>{product.title}</a>}<ArrowRight size={14}/></div>}
+        : <a href={base + "Product?product=" + encodeURIComponent(product.handle)}>{product.title}</a>}<ArrowRight size={14}/></div>}
     </div>
   </article>;
 }
@@ -30,13 +30,13 @@ export function Videos() {
       <section className="video-feed-section"><div className="wrap">
         <div className="video-feed-head"><div><span className="eyebrow">The video edit</span><h2>Look closer. Choose thoughtfully.</h2><p>Real clips and product links published by the store.</p></div></div>
         {content.isLoading ? <div className="video-empty" role="status"><span className="video-loading-lines"/><p>Loading published videos…</p></div> :
-          content.isError ? <div className="video-empty" role="alert"><CircleAlert size={22}/><h3>Videos could not load</h3><p>{content.error instanceof Error ? content.error.message : "Please try again."}</p><button className="video-retry" onClick={() => void content.refetch()}>Try again</button></div> :
+          content.isError ? <div className="video-empty" role="alert"><CircleAlert size={22}/><h3>Videos could not load</h3><p>We couldn’t load the videos just now. Please try again.</p><button className="video-retry" onClick={() => void content.refetch()}>Try again</button></div> :
           posts.length ? <div className="video-card-grid" role="list" aria-label="Published video posts">{posts.map(post => {
             const product = post.linkedProductId ? products.find(item => item.id === post.linkedProductId) : undefined;
              return <VideoPostCard key={post.id} post={post} product={product}/>;
           })}</div> :
           <div className="video-empty"><span className="video-empty-icon"><Film size={22}/></span><h3>No videos published yet</h3><p>New videos will appear here when the store publishes them.</p></div>}
-        {catalog.isError && posts.some(post => post.linkedProductId) && <p className="video-product-note">Product details could not be loaded. Linked items will appear when the live Shopify catalog is available.</p>}
+         {catalog.isError && posts.some(post => post.linkedProductId) && <p className="video-product-note">Product details could not be loaded. Please try again shortly.</p>}
       </div></section>
     </main>
   </Shell>;

@@ -260,7 +260,7 @@ export function Profile() {
               )}
               <p className="muted" style={{ fontSize: 11 }}>
                 {signedIn ? "Stored privately with your account." : "Stored locally in this browser."}
-                {" "}It is sent to Shopify only when you choose to continue with saved details at checkout. This does not update a Shopify customer record.
+                {" "}It is shared only when you choose saved details at checkout. It does not update a separate customer profile.
               </p>
             </section>
 
@@ -344,7 +344,7 @@ export function Profile() {
                   <h3>{address.id ? "Edit" : "Add"} a saved address</h3>
                   <p className="muted" style={{ fontSize: 11 }}>
                     {signedIn
-                      ? "Saved privately with your account. It is sent to Shopify only when you choose saved details at checkout."
+                      ? "Saved privately with your account. It is shared only when you choose saved details at checkout."
                       : "Saved locally in this browser. Sign in to save it to your account and prefill Chenetha checkout."}
                   </p>
                   {(

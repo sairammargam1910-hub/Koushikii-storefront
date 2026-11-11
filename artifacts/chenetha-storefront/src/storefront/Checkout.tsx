@@ -16,6 +16,7 @@ import { ShopifyBuyerCheckout } from "./ShopifyBuyerCheckout";
 import { useUser } from "@clerk/react";
 import { Confirmation } from "./Confirmation";
 import { readActiveCheckout } from "./checkoutPaymentState";
+import { customerFacingMessage } from "./customerFacingMessage";
 
 export function Checkout() {
   const { user } = useUser();
@@ -34,7 +35,8 @@ export function Checkout() {
   );
   const total = moneySub(sampleCart);
   // Payment recovery must not depend on an existing/non-empty Shopify cart.
-  const activeOrder = new URLSearchParams(window.location.search).get("cashfree_order_id") ||
+  const activeOrder = new URLSearchParams(window.location.search).get("payment_order_id") ||
+    new URLSearchParams(window.location.search).get("cashfree_order_id") ||
     readActiveCheckout(user?.id);
 
   const prepareEnquiry = () => {
@@ -67,16 +69,16 @@ export function Checkout() {
         <PageHero
           eyebrow="Your order"
           title="Delivery details."
-          subtitle="Enter your contact and delivery information here. Cashfree securely hosts payment."
+          subtitle="Enter your contact and delivery information here, then pay securely online."
         />
         <main className="wrap content">
           {shopifyCart.isLoading && !shopifyCart.data ? (
-            <div className="shopify-catalog-status" role="status">Loading your Shopify order…</div>
+            <div className="shopify-catalog-status" role="status">Loading your order…</div>
           ) : shopifyCart.isError || !shopifyCart.data ? (
             <div className="panel" role="alert">
               <span className="eyebrow">Bag unavailable</span>
               <p className="muted" data-testid="error-shopify-checkout-load">
-                {getCartErrorMessage(shopifyCart.error) || "We could not refresh this bag. Try again here, or return to your bag."}
+                {customerFacingMessage(getCartErrorMessage(shopifyCart.error), "We could not refresh this bag just now. Try again here, or return to your bag.")}
               </p>
               <button
                 className="btn outline"
@@ -103,7 +105,7 @@ export function Checkout() {
       <PageHero
         eyebrow="Sample selection · enquiry only"
         title="Review the pieces you found."
-        subtitle="Sample catalogue items are not sold online. For a real order, enter delivery details here before secure payment with Cashfree."
+        subtitle="Sample catalogue items are not sold online. For a real order, enter delivery details here before secure online payment."
       />
       <main className="wrap content">
         <div className="notice" role="note" data-testid="notice-catalogue-prices">
@@ -130,7 +132,7 @@ export function Checkout() {
             ) : (
               <div className="empty" data-testid="empty-enquiry-cart">
                 <h2>Your sample selection is empty.</h2>
-                <p>Shopify products appear in your bag after you add them from a product page.</p>
+                <p>Available products appear in your bag after you add them from a product page.</p>
                 <a className="btn" href={base + "Collections"}>Browse the collection <ArrowRight size={14} /></a>
               </div>
             )}
@@ -164,8 +166,8 @@ export function Checkout() {
           </section>
           <aside className="panel">
             <span className="eyebrow">For a real order</span>
-            <h3 style={{ margin: "14px 0" }}>Cashfree hosts payment.</h3>
-            <p className="muted">Add an available, non-demo product published to the Online Store sales channel. Enter delivery details here, review a current shipping quote, then pay securely on Cashfree.</p>
+            <h3 style={{ margin: "14px 0" }}>Pay securely online.</h3>
+            <p className="muted">Choose an available product from the collection. Enter delivery details here, review the current delivery charge, then complete payment securely online.</p>
             <a className="link" href={base + "Cart"}>Return to your bag →</a>
           </aside>
         </div>

@@ -7,7 +7,7 @@ export function ShopifyOrderUpdatesLink() {
   if (account.isLoading) {
     return (
       <p className="muted" role="status" data-testid="status-shopify-account-link">
-        Loading Shopify’s account page…
+        Loading your order page…
       </p>
     );
   }
@@ -15,7 +15,7 @@ export function ShopifyOrderUpdatesLink() {
   if (account.isError || !account.data) {
     return (
       <p className="muted" role="alert" data-testid="error-shopify-account-link">
-        The Shopify account page is temporarily unavailable. Check the email you used at checkout for Shopify order and delivery updates.
+        Order updates are temporarily unavailable. Check the email you used at checkout or try again shortly.
       </p>
     );
   }
@@ -28,7 +28,7 @@ export function ShopifyOrderUpdatesLink() {
       rel="noopener noreferrer"
       data-testid="link-shopify-customer-account"
     >
-      View Shopify order updates <ExternalLink size={14} aria-hidden="true" />
+      View order updates <ExternalLink size={14} aria-hidden="true" />
     </a>
   );
 }

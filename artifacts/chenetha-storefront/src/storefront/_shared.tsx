@@ -78,15 +78,15 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
  <header className="header"><div className="wrap headrow">
    <button className="iconbtn mobile-menu" data-testid="button-mobile-menu" onClick={()=>setMenu(!menu)} aria-expanded={menu} aria-controls="kq-main-menu" aria-label="Toggle main menu">{menu?<X size={20}/>:<Menu size={20}/>}</button>
    <a className="brand" href="/" onClick={()=>setMenu(false)}><img src="/images/koushikii/wordmark-red.png" alt="Chenetha by Koushikii"/></a>
-  <nav id="kq-main-menu" aria-label="Main menu" className={`nav ${menu?"open":""}`}>
+  <nav id="kq-main-menu" aria-label="Main menu" className={`nav ${menu?"open":""}`} onClick={event=>{if(event.target instanceof Element&&event.target.closest("a")){setMenu(false);event.currentTarget.querySelector("details")?.removeAttribute("open")}}}>
      <details className="collection-nav"><summary>Collections <ChevronDown size={13}/></summary>
-      <div className="mega-menu"><div><strong>Regional handlooms</strong><div className="cotton-links">{cottonWeaves.map(w=><a key={w} href={base+"Collections?category=Sarees&weave="+encodeURIComponent(w.replace(/ Cottons?$/,""))}>{w}</a>)}</div><a href={base+"Collections?category=Sarees"} className="link" style={{marginTop:18}}>Discover regional sarees →</a></div>
-    <div><strong>Shop by Fabric</strong>{["Cotton","Silk","Cotton-Silk","Other blends"].map(f=><a key={f} href={base+"Collections?fabric="+encodeURIComponent(f)}>{f}</a>)}
+       <div className="mega-menu"><div><strong>Fabric</strong><div className="cotton-links">{cottonWeaves.map(w=><a key={w} href={base+"Collections?category=Sarees&weave="+encodeURIComponent(w.replace(/ Cottons?$/,""))}>{w}</a>)}</div><a href={base+"Collections?category=Sarees"} className="link" style={{marginTop:18}}>Discover sarees →</a></div>
+     <div><strong>Browse by material</strong>{["Cotton","Silk","Cotton-Silk","Other blends"].map(f=><a key={f} href={base+"Collections?fabric="+encodeURIComponent(f)}>{f}</a>)}
      <div className="menu-weaves"><strong>Shop by Weave</strong>{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina"].map(w=><a key={w} href={base+"Collections?category="+(w==="Pashmina"?"Dupattas":"Sarees")+"&weave="+w}>{w}</a>)}<a href={base+"Collections"}>View all collections →</a></div></div></div>
    </details>
      <a href={base+"OurStory"}>Our Story</a><a href={base+"Videos"}>Videos</a><a href={base+"Contact"}>Contact Us</a>
   </nav>
-   <div className="head-actions"><LanguageSelect language={language} onChange={onLanguageChange}/><button className="text-action" data-testid="button-toggle-search" aria-label="Search" aria-expanded={search} onClick={()=>setSearch(!search)}><Search size={16}/>Search</button>
+  <div className="head-actions"><LanguageSelect language={language} onChange={onLanguageChange}/><button className="text-action" data-testid="button-toggle-search" aria-label="Search" aria-expanded={search} onClick={()=>{setMenu(false);setSearch(!search)}}><Search size={16}/>Search</button>
      <Show when="signed-in"><a href={base+"Account"} className="text-action" aria-label="My account" data-testid="link-customer-account"><UserRound size={16}/>My account</a></Show>
      <Show when="signed-out"><a href={base+"Account"} className="text-action" aria-label="Sign in to your account" data-testid="link-customer-sign-in"><UserRound size={16}/>Sign in</a></Show>
    <WhatsAppHeaderIcon language={language}/>
@@ -124,10 +124,10 @@ export function Footer(){
      <a href={base+"Contact"} aria-label="Email Chenetha by Koushikii through the contact page" title="Email"><Mail size={20} aria-hidden="true"/></a>
     </nav>
     <p className="home-footer-status">Newsletter sign-up is not available yet. Please use Contact Us for an enquiry.</p>
-    <small>No newsletter provider is connected.</small>
+    <small>We’ll share updates here when they are ready.</small>
    </section>
   </div>
-   <div className="home-footer-bottom"><span>© Chenetha by Koushikii · Shopify product listings with clearly marked sample placeholders.</span><a href={base+"Checkout"}>Payment & delivery details at checkout <ArrowRight size={12}/></a></div>
+   <div className="home-footer-bottom"><span>© Chenetha by Koushikii · The living art of handloom.</span><a href={base+"Checkout"}>Payment & delivery details at checkout <ArrowRight size={12}/></a></div>
  </div></div></footer>
 }
 export function Shell({children}:{children:React.ReactNode}){

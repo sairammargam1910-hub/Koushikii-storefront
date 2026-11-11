@@ -16,7 +16,7 @@ export function readActiveCheckout(userId?: string): string {
 export function saveActiveCheckout(userId: string, orderId: string) {
   try { sessionStorage.setItem(recoveryKey(userId), orderId); } catch { /* URL is the fallback. */ }
   const url = new URL(window.location.href);
-  url.searchParams.set("cashfree_order_id", orderId);
+  url.searchParams.set("payment_order_id", orderId);
   window.history.replaceState(window.history.state, "", url);
 }
 export function clearActiveCheckout(userId?: string) {

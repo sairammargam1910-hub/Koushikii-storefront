@@ -298,7 +298,7 @@ test("opens the website checkout from a Shopify bag without a Shopify checkout U
   });
 
   await page.getByTestId("button-add-shopify-to-cart").click();
-  await page.getByRole("status").getByText(/Added to your Shopify bag/).waitFor();
+  await page.getByRole("status").getByText(/Added to your bag/).waitFor();
   await page.getByTestId("header-cart-count").getByText("1").waitFor();
   assert.deepEqual(
     await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),
@@ -308,11 +308,11 @@ test("opens the website checkout from a Shopify bag without a Shopify checkout U
   const viewBagLink = page.getByRole("link", { name: "View bag →" });
   await viewBagLink.click();
   await page.waitForURL("**/Cart", { timeout: 5000 });
-  await page.getByTestId("text-cart-items-count").getByText(/Shopify products · 1 piece/).waitFor();
+  await page.getByTestId("text-cart-items-count").getByText(/Your pieces · 1 piece/).waitFor();
   const checkoutLink = page.getByTestId("link-site-checkout");
   assert.equal(await checkoutLink.getAttribute("href"), "/Checkout");
   assert.equal(await checkoutLink.getAttribute("target"), null);
-  assert.match(await page.locator(".secure-caption").last().innerText(), /Cashfree/);
+  assert.match(await page.locator(".secure-caption").last().innerText(), /pay securely online/i);
   await context.close();
 });
 
@@ -422,7 +422,8 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
   assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /100/);
   assert.equal(await page.getByTestId("text-checkout-tax").count(), 0);
   assert.match(await page.getByTestId("checkout-customs-note").innerText(), /duties and customs charges are excluded/i);
-  assert.match(await checkoutButton.innerText(), /Continue to Cashfree/i);
+  assert.match(await checkoutButton.innerText(), /Continue to secure payment/i);
+  assert.doesNotMatch(await page.locator("body").innerText(), /Shopify|Cashfree|Shiprocket/i);
   assert.deepEqual(quoteRequests[0], {
     cartId: savedCart.id,
     email: "buyer@example.com",
@@ -585,7 +586,10 @@ test("shows only server-verified Shopify order status after Cashfree returns", a
   });
 
   await page.getByTestId("status-cashfree-payment").getByRole("heading", { name: "Your order is recorded." }).waitFor();
-  assert.match(await page.getByTestId("status-cashfree-payment").innerText(), /Shopify test order recorded; no shipment was booked/i);
+  const paymentStateText = await page.getByTestId("status-cashfree-payment").innerText();
+  assert.match(paymentStateText, /Delivery updates will appear here when available/i);
+  assert.doesNotMatch(paymentStateText, /shipped/i);
+  assert.doesNotMatch(paymentStateText, /Shopify|Cashfree|Shiprocket/i);
   assert.equal(await page.getByRole("link", { name: /View your orders/ }).getAttribute("href"), "/Orders");
   await context.close();
 });
@@ -646,7 +650,8 @@ test("retries a failed checkout cart refresh with the same saved cart ID", async
     },
   });
 
-  await page.getByRole("alert").getByText(/Shopify is temporarily unavailable/).waitFor();
+  await page.getByRole("alert").getByText(/We could not refresh this bag just now/i).waitFor();
+  assert.doesNotMatch(await page.locator("body").innerText(), /Shopify|Cashfree|Shiprocket/i);
   assert.equal(await page.getByTestId("button-retry-shopify-cart-refresh").isVisible(), true);
   await page.getByTestId("button-retry-shopify-cart-refresh").click();
 

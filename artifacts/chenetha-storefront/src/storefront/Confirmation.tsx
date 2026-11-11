@@ -8,12 +8,14 @@ import { clearActiveCheckout, orderIsRecorded, readActiveCheckout, useVerifiedPa
 export function Confirmation() {
   const { user } = useUser();
   const [location, setLocation] = useLocation();
-  const orderId = new URLSearchParams(window.location.search).get("cashfree_order_id")?.trim() ||
+  const search = new URLSearchParams(window.location.search);
+  const orderId = search.get("payment_order_id")?.trim() ||
+    search.get("cashfree_order_id")?.trim() ||
     readActiveCheckout(user?.id);
   const status = useVerifiedPaymentStatus(orderId);
   useEffect(() => {
     if (orderId && location.toLowerCase().endsWith("/checkout")) {
-      setLocation(`${base}Confirmation?cashfree_order_id=${encodeURIComponent(orderId)}`, { replace: true });
+      setLocation(`${base}Confirmation?payment_order_id=${encodeURIComponent(orderId)}`, { replace: true });
     }
   }, [location, orderId, setLocation]);
   useEffect(() => {

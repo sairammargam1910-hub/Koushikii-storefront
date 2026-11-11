@@ -9,9 +9,9 @@ export function Product() {
  const [location] = useLocation();
  const search = location.includes("?") ? location.slice(location.indexOf("?") + 1) : window.location.search.slice(1);
  const params = new URLSearchParams(search);
- const shopifyHandle = params.get("shopify");
- return shopifyHandle
-   ? <ShopifyProductRoute key={shopifyHandle} handle={shopifyHandle}/>
+ const productHandle = params.get("product") || params.get("shopify");
+ return productHandle
+    ? <ShopifyProductRoute key={productHandle} handle={productHandle}/>
   : <SampleProductRoute id={params.get("id") || "nila"}/>;
 }
 

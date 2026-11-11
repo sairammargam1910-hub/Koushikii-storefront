@@ -21,6 +21,34 @@
 .kq .craft-scene .scene-dynamic{animation:none;transform:none}
 .kq .craft-steps .current{background:var(--red);color:var(--paper)}
 .kq .guide-intro{display:grid;grid-template-columns:1.2fr .8fr;gap:64px;align-items:start;padding-bottom:42px;border-bottom:1px solid var(--line);margin-bottom:42px}
+.kq .header{position:sticky;top:0;background:rgba(247,241,230,.98);backdrop-filter:blur(8px);box-shadow:0 5px 18px rgba(71,45,44,.035)}
+.kq .headrow{display:grid;grid-template-columns:minmax(170px,1fr) auto minmax(250px,1fr);align-items:center;gap:clamp(16px,2.3vw,34px);height:84px}
+.kq .brand{width:184px;height:auto;flex:none;overflow:visible;position:static}
+.kq .brand img{position:static;width:100%;height:auto;max-width:100%;object-fit:contain;mix-blend-mode:multiply}
+.kq .nav{justify-self:center;gap:clamp(18px,2.5vw,38px);white-space:nowrap}
+.kq .nav a,.kq .nav summary{font-size:11px;font-weight:500;text-transform:none;letter-spacing:.015em}
+.kq .nav a{padding:12px 0}
+.kq .head-actions{justify-self:end;gap:11px;white-space:nowrap}
+.kq .text-action{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:36px;gap:6px;padding:5px;font-size:11px}
+.kq .head-actions .optional{display:inline-flex}
+.kq .mobile-menu{display:none}
+.kq .collection-nav>summary{display:flex;align-items:center;gap:5px;padding:12px 0}
+.kq .mega-menu{left:-36px;width:min(660px,calc(100vw - 48px));grid-template-columns:1.2fr 1fr;gap:28px;padding:26px;background:#fbf6ed}
+.kq .mega-menu strong{font-size:24px}
+.kq .mega-menu a{font-size:12px}
+.kq .searchline input{width:100%;min-width:0}
+@media(max-width:1120px){
+ .kq .headrow{position:relative;grid-template-columns:48px minmax(130px,1fr) auto;height:78px;gap:12px}
+ .kq .mobile-menu{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px}
+ .kq .brand{width:164px;justify-self:center}
+ .kq .nav{display:none;position:absolute;top:100%;left:0;right:0;z-index:2;align-items:stretch;flex-direction:column;gap:0;padding:16px 22px 21px;border:1px solid var(--line);border-top:0;background:#fbf6ed;box-shadow:0 18px 32px rgba(71,45,44,.12);white-space:normal}
+ .kq .nav.open{display:flex}
+ .kq .nav>a,.kq .collection-nav>summary{padding:12px 2px;font-size:13px}
+ .kq .collection-nav{width:100%}
+ .kq .mega-menu{position:static;width:100%;margin:4px 0 12px;box-shadow:none}
+ .kq .head-actions{gap:7px}
+ .kq .head-actions .optional{display:none}
+}
 .kq .guide-intro h2{max-width:600px;margin:10px 0 18px}
 .kq .guide-intro p{max-width:650px}
 .kq .guide-note{padding:26px 28px;background:var(--cream);border-top:3px solid var(--gold)}

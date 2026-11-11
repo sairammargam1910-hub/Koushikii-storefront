@@ -176,8 +176,8 @@ export function Account() {
           <div className="account-boundary-detail">
             <span className="account-boundary-symbol" aria-hidden="true"><PackageCheck size={18} /></span>
             <div>
-              <h3>Shopify orders</h3>
-              <p>Shopify handles checkout, payments and shipping. Your orders appear here when the checkout email matches a verified email on your Chenetha account.</p>
+              <h3>Your orders</h3>
+              <p>Orders appear here when the email used at checkout matches a verified email on your Chenetha account.</p>
               <a href={base + "Orders"} data-testid="link-account-order-history">View your orders <ArrowRight size={13} aria-hidden="true" /></a>
             </div>
           </div>

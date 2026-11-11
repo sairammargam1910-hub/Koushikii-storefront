@@ -163,3 +163,144 @@
     font-size: 18px;
   }
 }
+
+@media (max-width: 767px) {
+  .kq .wrap {
+    width: calc(100% - 32px);
+  }
+
+  .kq .topline {
+    min-height: 27px;
+    padding: 6px 10px;
+    font-size: 8px;
+    letter-spacing: .1em;
+  }
+
+  .kq .headrow {
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    grid-template-rows: 52px 42px;
+    height: auto;
+    min-height: 94px;
+    gap: 0 7px;
+  }
+
+  .kq .mobile-menu {
+    grid-column: 1;
+    grid-row: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+  }
+
+  .kq .brand {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    width: 145px;
+    max-width: 100%;
+    height: 48px;
+  }
+
+  .kq .head-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    gap: clamp(5px, 2vw, 9px);
+  }
+
+  .kq .head-actions .language-switcher,
+  .kq .head-actions .text-action {
+    flex: none;
+  }
+
+  .kq .language-switcher {
+    min-height: 34px;
+    padding: 0 5px;
+  }
+
+  .kq .language-switcher select {
+    width: 66px;
+    max-width: 66px;
+    font-size: 10px;
+  }
+
+  .kq .head-actions .text-action {
+    width: 34px;
+    min-width: 34px;
+    height: 36px;
+    justify-content: center;
+    gap: 0;
+    padding: 4px;
+    font-size: 0;
+  }
+
+  .kq .head-actions .text-action svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .kq .head-actions .header-whatsapp,
+  .kq .head-actions > .iconbtn {
+    width: 34px;
+    height: 36px;
+    flex: 0 0 34px;
+    justify-content: center;
+  }
+
+  .kq .head-actions .optional {
+    display: inline-flex;
+  }
+
+  .kq .nav {
+    top: 100%;
+    max-height: min(72dvh, 620px);
+    overflow: auto;
+  }
+
+  .kq .mega-menu {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 17px;
+  }
+
+  .kq .cotton-links {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .kq .home-preview {
+    min-height: 132px;
+    padding: 20px 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .kq .headrow {
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+    gap: 0 4px;
+  }
+
+  .kq .mobile-menu {
+    width: 36px;
+    height: 36px;
+  }
+
+  .kq .brand {
+    width: 132px;
+    flex-basis: 132px;
+  }
+
+  .kq .head-actions {
+    gap: 4px;
+  }
+
+  .kq .head-actions .text-action,
+  .kq .head-actions > .iconbtn {
+    width: 32px;
+    min-width: 32px;
+    flex-basis: 32px;
+  }
+}

@@ -52,11 +52,11 @@ export function Wishlist() {
           <>
             {feedback && <p className="notice" role="alert">{feedback}</p>}
             {shopifyIds.length > 0 && catalog.isLoading && (
-              <p className="notice" role="status">Loading saved Shopify pieces…</p>
+               <p className="notice" role="status">Loading your saved pieces…</p>
             )}
             {shopifyIds.length > 0 && catalog.isError && (
               <div className="notice" role="alert">
-                <p>Saved Shopify pieces could not be loaded. Your wishlist is still saved.</p>
+                 <p>Your saved pieces could not be loaded just now. Your wishlist is still saved.</p>
                 <button className="btn small outline" onClick={() => void catalog.refetch()}>
                   Try again
                 </button>

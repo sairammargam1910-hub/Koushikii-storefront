@@ -15,6 +15,7 @@ import {
 } from "@workspace/api-client-react";
 import { base, cottonWeaves, Empty, Qty, Shell, useStore } from "./_shared";
 import { useShopperPreferences } from "./ShopperPreferences";
+import { customerFacingMessage } from "./customerFacingMessage";
 import type { CatalogFilters } from "./_shared/catalog-filter";
 import { normalizeRegion, normalizeWeave, regions } from "./_shared/catalog-filter";
 import {
@@ -215,7 +216,8 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
   const image = product.images[0];
   const price = productPrice(product);
   const demo = isDemoProduct(product);
-  const href = `${base}Product?shopify=${encodeURIComponent(product.handle)}`;
+  const available = product.variants.some(isShopifyVariantPurchasable);
+  const href = `${base}Product?product=${encodeURIComponent(product.handle)}`;
   const wishlist = useStore("kq-wish");
   const { toggleWishlist, loading, error } = useShopperPreferences();
   const [wishlistError, setWishlistError] = useState(false);
@@ -230,13 +232,13 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
         {image ? (
           <img src={image.url} alt={image.altText || product.title} loading="lazy" />
         ) : (
-          <span className="shopify-image-placeholder" role="img" aria-label="Product photo not added in Shopify">
+          <span className="shopify-image-placeholder" role="img" aria-label="Product photo not available">
             <span className="textile s1" />
-            <span>Add product photos in Shopify</span>
+            <span>Product photo not available</span>
           </span>
         )}
         <span className={`pill shopify-product-badge${demo ? " is-demo" : ""}`}>
-          {demo ? "Demo only" : "Shopify"}
+          {demo ? "Demo only" : available ? "Available" : "Currently unavailable"}
         </span>
       </a>
       <button
@@ -261,7 +263,7 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
         {demo ? "Demo price · " : ""}
         {price || "Price to be confirmed"}
       </span>
-      {demo && <small className="shopify-card-note">Not for sale · Replace demo details first</small>}
+      {demo && <small className="shopify-card-note">Not for sale · Sample details</small>}
       {wishlistError && <small role="alert">Wishlist could not be saved. Please try again.</small>}
     </article>
   );
@@ -283,7 +285,7 @@ export function ShopifyProductRoute({ handle }: { handle: string }) {
   if (catalog.isLoading && !catalog.data) {
     return (
       <Shell>
-        <main className="wrap content"><p role="status">Loading product from Shopify…</p></main>
+        <main className="wrap content"><p role="status">Loading product details…</p></main>
       </Shell>
     );
   }
@@ -292,7 +294,7 @@ export function ShopifyProductRoute({ handle }: { handle: string }) {
     return (
       <Shell>
         <main className="wrap content">
-          <Empty title="This Shopify product could not load." copy="Please try again shortly or return to the collection." />
+          <Empty title="Product details could not be loaded." copy="Please try again shortly or return to the collection." />
           <p style={{ textAlign: "center" }}>
             <button className="btn outline" type="button" onClick={() => catalog.refetch()}>Try again</button>
           </p>
@@ -306,7 +308,7 @@ export function ShopifyProductRoute({ handle }: { handle: string }) {
     return (
       <Shell>
         <main className="wrap content">
-          <Empty title="This Shopify product is not published to this website." copy="Publish it to the Replit sales channel in Shopify to show it here." />
+          <Empty title="This product is not available here." copy="It may have been removed or is not currently listed. Please return to the collection." />
         </main>
       </Shell>
     );
@@ -341,14 +343,14 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
     onSuccess: (cart, variables) => {
       updateShopifyCartCache(queryClient, cart);
       setCartError("");
-      setCartMessage("Added to your Shopify bag.");
+      setCartMessage("Added to your bag.");
       if (variables.intent === "buy_now") setLocation("/Checkout");
     },
     onError: (error) => {
       const data = error && typeof error === "object" && "data" in error
         ? (error as { data?: { error?: string } }).data
         : undefined;
-      setCartError(data?.error || "This product could not be added. Please try again.");
+      setCartError(customerFacingMessage(data?.error, "This product could not be added. Please try again."));
       setCartMessage("");
     },
   });
@@ -367,14 +369,14 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
           <span>/</span><span aria-current="page">{product.title}</span>
         </nav>
         <div className="splitdetail shopify-product-detail" style={{ paddingTop: 0 }}>
-          <section aria-label="Shopify product photos">
+          <section aria-label="Product photos">
             <div className="gallery-main shopify-gallery-main">
               {image ? (
                 <img src={image.url} alt={image.altText || product.title} />
               ) : (
                 <div className="shopify-detail-placeholder">
                   <span className="textile s1" />
-                  <span>Add product photos in Shopify to replace this placeholder.</span>
+                  <span>Product photos are not available yet.</span>
                 </div>
               )}
               {demo && <span className="shopify-demo-badge">Demo listing · not for sale</span>}
@@ -397,9 +399,9 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
           </section>
 
           <section className="detail">
-            <span className="eyebrow">{product.productType || "Saree"} · Shopify listing</span>
+            <span className="eyebrow">{product.productType || "Saree"}</span>
             <h1>{product.title}</h1>
-            <p>{product.description || "Product details will appear here after you add them in Shopify."}</p>
+            <p>{product.description || "More details about this piece will be added soon."}</p>
             {product.variants.length > 0 && hasVariantChoice && (
               <label className="shopify-variant-select">
                 {product.variants.length > 1 ? "Choose an option" : "Selected option"}
@@ -421,17 +423,17 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
                 <>
                   <strong>Demo only — not for sale</strong>
                   <br />
-                  This Shopify listing contains demo wording. Replace the description, photos, and price with verified product details before adding it to a cart.
+                  This sample listing contains illustrative details and cannot be purchased.
                 </>
               ) : (
                 <>
-                  <strong>{purchasable ? "Live product details from Shopify" : "This option is not available to purchase"}</strong>
+                  <strong>{purchasable ? "Current product details" : "This option is not available to purchase"}</strong>
                   <br />
                   {purchasable
-                    ? "Your selected Shopify variant and current price will be checked again before checkout."
-                    : "Choose an available option. Availability and price come from the current Shopify catalog."}
+                    ? "Your selected option and current price will be checked again before checkout."
+                    : "Choose an available option. Availability and price are checked again at checkout."}
                   <br />
-                  Shipping is quoted at checkout and payment is completed securely with Cashfree.
+                  Delivery charges are quoted at checkout. Payment is completed securely on a hosted payment page.
                 </>
               )}
             </div>
@@ -483,9 +485,9 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
                   {cartMessage} <a href={`${base}Cart`}>View bag →</a>
                 </p>
               )}
-              {cartError && <p className="shopify-cart-feedback is-error" role="alert">{cartError}</p>}
+              {cartError && <p className="shopify-cart-feedback is-error" role="alert">{customerFacingMessage(cartError, "This product could not be added. Please try again.")}</p>}
               {!variant?.availableForSale && !demo && (
-                <p className="muted">This option is currently out of stock in Shopify.</p>
+                <p className="muted">This option is currently out of stock.</p>
               )}
             </div>
           </section>

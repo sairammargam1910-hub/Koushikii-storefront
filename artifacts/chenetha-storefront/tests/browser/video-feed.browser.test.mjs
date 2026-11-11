@@ -208,7 +208,7 @@ test("phone feed plays and seeks real MP4 and WebM clips and links the right pro
   }
 
   const productLink = page.getByRole("link", { name: "Fixture silk saree" });
-  assert.equal(await productLink.getAttribute("href"), "/Product?shopify=fixture-silk-saree");
+  assert.equal(await productLink.getAttribute("href"), "/Product?product=fixture-silk-saree");
   await productLink.click();
   await page.getByRole("heading", { name: "Fixture silk saree" }).waitFor();
   assert.equal(new URL(page.url()).searchParams.get("shopify"), productHandle);

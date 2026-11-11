@@ -16,6 +16,7 @@ import { useShopperPreferences } from "./ShopperPreferences";
 import { formatShopifyMoney, isDefaultShopifyVariantTitle } from "./ShopifyCatalog";
 import "./Checkout.css";
 import { clearActiveCheckout, orderIsRecorded, saveActiveCheckout, useVerifiedPaymentStatus } from "./checkoutPaymentState";
+import { customerFacingMessage } from "./customerFacingMessage";
 
 type CheckoutDetails = ShopifyCartBuyerIdentityInput["deliveryAddress"] & {
   email: string;
@@ -54,7 +55,10 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [quote, setQuote] = useState<ShopifyCheckoutQuoteResponse | null>(null);
-  const [returnOrderId] = useState(() => new URLSearchParams(window.location.search).get("cashfree_order_id")?.trim() ?? "");
+  const [returnOrderId] = useState(() => {
+    const search = new URLSearchParams(window.location.search);
+    return search.get("payment_order_id")?.trim() || search.get("cashfree_order_id")?.trim() || "";
+  });
   const [paymentOrderId, setPaymentOrderId] = useState(returnOrderId);
   const [paymentWindowOpen, setPaymentWindowOpen] = useState(false);
   const [paymentWindowNotice, setPaymentWindowNotice] = useState("");
@@ -73,7 +77,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   useEffect(() => {
     if (!orderIsRecorded(paymentStatus.data)) return;
     clearActiveCheckout(user?.id);
-    setLocation(`${base}Confirmation?cashfree_order_id=${encodeURIComponent(paymentOrderId)}`, { replace: true });
+    setLocation(`${base}Confirmation?payment_order_id=${encodeURIComponent(paymentOrderId)}`, { replace: true });
   }, [paymentStatus.data, paymentOrderId, setLocation, user?.id]);
 
   const availableCountries = countriesQuery.data?.countries ?? [];
@@ -177,7 +181,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
     if (existing) {
       await new Promise<void>((resolve, reject) => {
         existing.addEventListener("load", () => resolve(), { once: true });
-        existing.addEventListener("error", () => reject(new Error("Cashfree checkout could not be loaded.")), { once: true });
+          existing.addEventListener("error", () => reject(new Error("Secure payment could not be loaded.")), { once: true });
       });
     } else {
       await new Promise<void>((resolve, reject) => {
@@ -186,11 +190,11 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
         script.async = true;
         script.dataset.cashfreeSdk = "true";
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Cashfree checkout could not be loaded."));
+        script.onerror = () => reject(new Error("Secure payment could not be loaded."));
         document.head.appendChild(script);
       });
     }
-    if (!window.Cashfree) throw new Error("Cashfree checkout is unavailable. Please try again.");
+    if (!window.Cashfree) throw new Error("Secure payment is unavailable. Please try again.");
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -268,13 +272,15 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
       });
       setPaymentWindowOpen(false);
       if (result && typeof result === "object" && "error" in result) {
-        setPaymentWindowNotice("The Cashfree window closed or stopped. We’re still checking whether payment completed.");
+        setPaymentWindowNotice("The payment window closed or stopped. We’re still checking whether payment completed.");
       }
     } catch (error) {
       setPaymentWindowOpen(false);
       if (error && typeof error === "object" && "status" in error && error.status === 409) discardQuote();
-      setSubmitError(getApiError(error) ?? (error instanceof Error ? error.message : null) ??
-        "We couldn’t prepare secure payment. Your bag is unchanged; please try again.");
+      setSubmitError(customerFacingMessage(
+        getApiError(error) ?? error,
+        "We couldn’t prepare secure payment. Your bag is unchanged; please try again.",
+      ));
     } finally {
       submitting.current = false;
     }
@@ -376,10 +382,10 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
         </div>
         {submitError && <p className="notice checkout-error" role="alert" data-testid="error-checkout-submit">{submitError}</p>}
         <button className="btn checkout-submit" type="submit" data-testid="button-submit-checkout-details" disabled={busy || countriesQuery.isLoading || countriesQuery.isError || !availableCountries.length}>
-          {createQuote.isPending ? "Getting delivery quote…" : createPaymentSession.isPending ? "Opening secure payment…" : quote && !quoteExpired ? "Continue to Cashfree" : "Get delivery quote"}
+          {createQuote.isPending ? "Getting delivery quote…" : createPaymentSession.isPending ? "Opening secure payment…" : quote && !quoteExpired ? "Continue to secure payment" : "Get delivery quote"}
           <ArrowRight size={15} />
         </button>
-        <p className="checkout-secure-note"><LockKeyhole size={13} /> Your payment details are entered only on Cashfree’s secure hosted page.</p>
+        <p className="checkout-secure-note"><LockKeyhole size={13} /> Your payment details are entered only on a secure hosted payment page.</p>
       </form>
 
       <aside className="panel checkout-summary">
@@ -397,10 +403,10 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
           <>
             <div className="checkout-total-row"><span>Items subtotal</span><strong data-testid="text-checkout-item-subtotal">{formatShopifyMoney(quote.itemSubtotal, quote.currencyCode)}</strong></div>
             <div className="checkout-total-row is-discount"><span>Discount</span><strong data-testid="text-checkout-discount">−{formatShopifyMoney(quote.discountAmount, quote.currencyCode)}</strong></div>
-            <div className="checkout-total-row"><span>Shipping · {quote.courierName || quote.carrier}</span><strong data-testid="text-checkout-shipping">{formatShopifyMoney(quote.shippingAmount, quote.currencyCode)}</strong></div>
+            <div className="checkout-total-row"><span>Shipping · {quote.courierName || "Delivery"}</span><strong data-testid="text-checkout-shipping">{formatShopifyMoney(quote.shippingAmount, quote.currencyCode)}</strong></div>
             <div className="checkout-total-row checkout-grand-total"><strong>Total to pay</strong><strong data-testid="text-checkout-total">{formatShopifyMoney(quote.totalAmount, quote.currencyCode)}</strong></div>
             <div className="checkout-quote-meta">
-              <span>{quote.carrier} · {quote.courierName} · {quote.parcelCount} {quote.parcelCount === 1 ? "parcel" : "parcels"}</span>
+              <span>{quote.courierName || "Delivery service"} · {quote.parcelCount} {quote.parcelCount === 1 ? "parcel" : "parcels"}</span>
               <span>{quoteExpired ? "Quote expired. Request a fresh quote." : `Quote valid until ${formatExpiry(quote.expiresAt)}`}</span>
             </div>
           </>
@@ -413,9 +419,9 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
         <p className="checkout-customs-note" role="note" data-testid="checkout-customs-note">
           Import duties and customs charges are excluded unless included in the carrier quote. These may be collected separately on delivery.
         </p>
-        <p className="checkout-summary-note">Your delivery address and parcel details are shared with Shiprocket to calculate the quote.</p>
+        <p className="checkout-summary-note">Your delivery address and parcel details are used to calculate available delivery options.</p>
         {quote?.excludedCharges.length ? <p className="checkout-summary-note">Not included: {quote.excludedCharges.join(", ")}.</p> : null}
-        <div className="checkout-payment-trust"><ShieldCheck size={17} /><span>Secure payment on Cashfree’s hosted checkout page</span></div>
+        <div className="checkout-payment-trust"><ShieldCheck size={17} /><span>Secure payment on a hosted checkout page</span></div>
         <a className="link checkout-return-link" href={base + "Cart"}>Return to your bag</a>
       </aside>
     </div>
@@ -462,30 +468,30 @@ export function PaymentReturnState({
           ? "Payment is pending."
           : "Checking your payment.";
   const description = completed
-    ? `Your payment is verified and order ${status?.shopifyOrderName || orderId} is complete.`
+    ? customerFacingMessage(status?.message, `Your payment is verified and order ${status?.shopifyOrderName || orderId} is complete.`)
     : orderRecorded
-      ? status?.message || `Your verified payment is recorded as order ${status?.shopifyOrderName || orderId}.`
+      ? customerFacingMessage(status?.message, `Your verified payment is recorded as order ${status?.shopifyOrderName || orderId}. Delivery updates will appear here when available.`)
     : failed
-      ? status?.message || "The payment could not be confirmed. You can return to your bag and try again."
+      ? customerFacingMessage(status?.message, "The payment could not be confirmed. You can return to your bag and try again.")
       : reconciliation
-        ? status?.message || "The payment or refund needs merchant review. Do not pay again."
+        ? customerFacingMessage(status?.message, "The payment or refund needs merchant review. Do not pay again.")
       : paidSyncing
-        ? status?.message || "Your payment is verified. We’re finishing the handloom order record with the store."
+        ? customerFacingMessage(status?.message, "Your payment is verified. We’re finishing the handloom order record with the store.")
         : pending
-          ? status?.message || "Cashfree is still processing this payment. We’ll keep checking with the payment service."
-        : status?.message || "Cashfree has returned you to Chenetha. We’re verifying the payment securely with the server.";
+          ? customerFacingMessage(status?.message, "Your payment is still processing. We’ll keep checking for confirmation.")
+        : customerFacingMessage(status?.message, "We’re verifying your payment securely.");
   return (
-    <section className={`panel checkout-return-state ${failed ? "is-failed" : completed ? "is-complete" : ""}`} aria-live="polite" data-testid="status-cashfree-payment">
+      <section className={`panel checkout-return-state ${failed ? "is-failed" : completed ? "is-complete" : ""}`} aria-live="polite" data-testid="status-cashfree-payment">
       <div className="checkout-return-mark">{failed || reconciliation ? <CircleAlert size={25} /> : completed || orderRecorded ? <Check size={25} /> : <LockKeyhole size={24} />}</div>
       <span className="eyebrow">{failed || reconciliation ? "Payment status" : completed ? "Order complete" : orderRecorded ? "Order recorded" : "Secure payment verification"}</span>
       <h2>{title}</h2>
       <p>{description}</p>
-      {paymentWindowOpen && status?.paymentStatus !== "PAID" && <p className="checkout-summary-note">Complete payment in the Cashfree window, or scan its QR code with your phone. This page will keep checking for confirmation.</p>}
+      {paymentWindowOpen && status?.paymentStatus !== "PAID" && <p className="checkout-summary-note">Complete payment in the payment window, or scan its QR code with your phone. This page will keep checking for confirmation.</p>}
       {paymentWindowNotice && <p className="checkout-summary-note" role="status">{paymentWindowNotice}</p>}
-      {isLoading && <div className="checkout-status-skeleton" role="status">Contacting the payment service…</div>}
+      {isLoading && <div className="checkout-status-skeleton" role="status">Checking payment status…</div>}
       {isError && <div className="checkout-status-retry" role="alert">We can’t confirm the payment status yet. <button className="checkout-retry" type="button" onClick={onRetry}>Check again</button></div>}
       {pollingExpired && <div className="checkout-status-retry" role="status">Automatic checks paused after 20 minutes. If you completed payment, check again before trying another payment. <button className="checkout-retry" type="button" onClick={onRetry}>Resume checks</button></div>}
-      {!completed && !orderRecorded && !failed && !reconciliation && <p className="checkout-summary-note">Please keep this page open while we verify the result. The return from Cashfree alone does not confirm payment.</p>}
+      {!completed && !orderRecorded && !failed && !reconciliation && <p className="checkout-summary-note">Please keep this page open while we verify the result. Returning from the payment page alone does not confirm payment.</p>}
       {(completed || orderRecorded) && status?.shopifyOrderName && <p className="checkout-order-number">Order reference <strong>{status.shopifyOrderName}</strong></p>}
       {completed || orderRecorded ? (
         <a className="btn" href={base + "Orders"}>View your orders <ArrowRight size={14} /></a>

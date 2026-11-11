@@ -196,13 +196,13 @@ function ProductCarousel({title,copy,offset=0}:{title:string;copy:string;offset?
     <button aria-label={"Previous "+title} disabled={pageCount<=1} onClick={()=>setSlide((activeSlide+pageCount-1)%pageCount)}><ArrowLeft size={15}/></button><span>{activeSlide+1} / {pageCount}</span><button aria-label={"Next "+title} disabled={pageCount<=1} onClick={()=>setSlide((activeSlide+1)%pageCount)}><ArrowRight size={15}/></button>
   </div></div>
    <div role="region" aria-roledescription="carousel" aria-label={title}>
-    {catalog.isLoading&&!catalog.data?<p className="shopify-catalog-status" role="status">Loading published sarees from Shopify…</p>
+     {catalog.isLoading&&!catalog.data?<p className="shopify-catalog-status" role="status">Loading the collection…</p>
      :useSamples?<ProductGrid items={order.slice(activeSlide*4,activeSlide*4+4)}/>
      :visibleLive.length?<div className="products">{visibleLive.slice(activeSlide*4,activeSlide*4+4).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
-     :<div className="shopify-catalog-status"><strong>No new-arrival sarees are tagged yet.</strong><br/>Add the Shopify tag <code>new-arrival</code> to feature a product here.</div>}
+      :<div className="shopify-catalog-status"><strong>New arrival sarees are coming soon.</strong></div>}
    </div>
    <p className="muted" style={{fontSize:10,marginBottom:0}}>
-    {catalog.isError&&catalog.data?"Showing the most recently loaded Shopify products.":catalog.isError?"Shopify could not load; showing clearly marked sample placeholders.":useSamples?"Sample catalog · Pattern swatches are illustrative placeholders.":isNewArrivals?"Shopify products tagged new-arrival appear in this section.":"Published Shopify products · Updates appear after publishing to the Replit sales channel."}
+     {catalog.isError&&catalog.data?"Showing the most recently available pieces.":catalog.isError?"The collection could not load just now; showing clearly marked sample pieces.":useSamples?"Sample collection · Pattern swatches are illustrative placeholders.":isNewArrivals?"New arrival pieces will appear here when available.":"Current product details appear here as the collection is updated."}
    </p>
  </div></section>
 }
@@ -211,7 +211,7 @@ function PremiumFeature(){
  const premiumProducts=(catalog.data?.products||[]).filter(isPremiumProduct);
  return <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Premium Collection</span><h2>For the days<br/>you will remember.</h2><p>Celebratory silks, intricate borders and cloth to keep close. Discover the premium edit.</p><a className="btn gold" href={base+"Collections?edit=premium"}>Explore Premium <ArrowRight size={14}/></a></div>
   {premiumProducts.length?<div className="shopify-premium-products">{premiumProducts.slice(0,2).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
-  :<div><div className="mini-swatches">{["s3","s1","s1"].map((s,i)=><a key={i} href={base+"Product?id="+["surya","ambar","nila"][i]}><Textile pattern={s} label={["Kanchipuram silk","Banarasi silk","Ikat cotton-silk"][i]}/><span style={{display:"block",marginTop:9,fontSize:11}}>{["Kanchipuram","Banarasi","Ikat"][i]}</span></a>)}</div><p className="shopify-placement-note">Sample placeholders · Add the Shopify tag <code>premium</code> to feature products here.</p></div>}
+   :<div><div className="mini-swatches">{["s3","s1","s1"].map((s,i)=><a key={i} href={base+"Product?id="+["surya","ambar","nila"][i]}><Textile pattern={s} label={["Kanchipuram silk","Banarasi silk","Ikat cotton-silk"][i]}/><span style={{display:"block",marginTop:9,fontSize:11}}>{["Kanchipuram","Banarasi","Ikat"][i]}</span></a>)}</div><p className="shopify-placement-note">Sample swatches are illustrative placeholders.</p></div>}
  </div></div></section>
 }
 function IndiaWeaves(){
@@ -311,7 +311,7 @@ export function Home(){
     {fabricTiles.length?<DynamicHomeTiles items={fabricTiles} placement="fabric_tile"/>:<div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>}
   </div></section>
     <PremiumFeature/>
-   <ProductCarousel title="New Arrivals" copy="Tag a Shopify product new-arrival to feature it here." offset={4}/>
+    <ProductCarousel title="New Arrivals" copy="Discover the newest pieces in the collection." offset={4}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
   <IndiaWeaves/>
    <Reviews items={voices}/>

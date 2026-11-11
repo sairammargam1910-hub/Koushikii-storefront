@@ -34,6 +34,7 @@ import {
   clearShopifyCartMeta,
   useShopifyCartMeta,
 } from "./shopifyCartState";
+import { customerFacingMessage } from "./customerFacingMessage";
 import "./Cart.css";
 
 export function Cart() {
@@ -73,7 +74,7 @@ export function Cart() {
             <p>
               {meta
                 ? "Review your handloom pieces, then enter delivery details on this website."
-                : "Review your saved pieces. Published Shopify sarees can be purchased with a current delivery quote and secure Cashfree payment."}
+                : "Review your saved pieces. Available sarees can be purchased with a current delivery quote and secure online payment."}
             </p>
           </div>
         </header>
@@ -159,20 +160,20 @@ export function Cart() {
                 <div className="row"><span>Illustrative subtotal</span><b>{format(moneySub(sampleCart))}</b></div>
                 <div className="row summary-total"><strong>Payable total</strong><strong>Not available</strong></div>
               </div>
-              <p className="muted">Sample items cannot be purchased. Add a verified, published Shopify saree to use secure checkout.</p>
+               <p className="muted">Sample items cannot be purchased. Choose an available saree from the collection to continue to secure checkout.</p>
               <a className="btn outline cart-checkout" href={base + "Collections"}>Browse available sarees <ArrowRight size={14} /></a>
-              <p className="secure-caption">A verified Shopify product and a current delivery quote are required for Cashfree checkout.</p>
+               <p className="secure-caption">An available product and a current delivery quote are required to continue to secure payment.</p>
             </aside>
           </div>
         ) : (
           <div data-testid="empty-cart">
-            <Empty title="Your bag is taking a quiet moment." copy="Explore the collection and add an available Shopify saree to your bag." />
+            <Empty title="Your bag is taking a quiet moment." copy="Explore the collection and add an available saree to your bag." />
           </div>
         )}
 
         {meta && sampleCart.length > 0 && (
           <section className="panel shopify-sample-selections cart-sample-note">
-            <span className="eyebrow">Separate sample selections · not in your Shopify bag</span>
+            <span className="eyebrow">Separate sample selections · not in your bag</span>
             <p className="muted">These illustrative items are not included in checkout. Remove them here to clear your sample list.</p>
             {sampleProducts.map((product) => {
               const row = sampleCart.find((item) => item.id === product.id)!;
@@ -224,7 +225,7 @@ function ShopifyBag({
     return <div className="cart-state cart-loading" role="status">
       <span className="eyebrow">Refreshing your bag</span>
       <h2>Gathering your pieces.</h2>
-      <p>We’re checking your latest bag details with Shopify.</p>
+      <p>We’re checking the latest details for your bag.</p>
       <div className="cart-loading-row" aria-hidden="true"><span /><div><i /><i /><i /></div></div>
     </div>;
   }
@@ -233,10 +234,10 @@ function ShopifyBag({
     return (
       <div className="cart-state" role="alert">
         <span className="state-symbol"><RefreshCw size={20} /></span>
-        <span className="eyebrow">Shopify bag unavailable</span>
+        <span className="eyebrow">Bag unavailable</span>
         <h2>Your saved bag could not be refreshed.</h2>
         <p className="muted" data-testid="error-shopify-cart-load">
-          {getCartUpdateErrorMessage(loadError) || "Your saved Shopify cart may have expired, or Shopify could not be reached."}
+          {customerFacingMessage(getCartUpdateErrorMessage(loadError), "Your saved bag could not be refreshed just now. Please try again.")}
         </p>
         <div className="actions">
           <button className="btn outline" type="button" onClick={onRetry}><RefreshCw size={14} /> Try again</button>
@@ -250,7 +251,7 @@ function ShopifyBag({
     return (
       <div className="empty cart-empty">
         <span className="state-symbol"><ShoppingBag size={20} /></span>
-        <span className="eyebrow">Shopify bag</span>
+        <span className="eyebrow">Your bag</span>
         <h2>Your bag is taking a quiet moment.</h2>
         <p>Explore the collection and add an available handloom saree to continue.</p>
         <button className="link" type="button" onClick={onClear}>Clear this saved bag</button>
@@ -271,18 +272,18 @@ function ShopifyBag({
       <section className="cart-items">
         <div className="cart-list-head">
           <span className="eyebrow" data-testid="text-cart-items-count">
-            Shopify products · {cart.totalQuantity} {cart.totalQuantity === 1 ? "piece" : "pieces"}
+            Your pieces · {cart.totalQuantity} {cart.totalQuantity === 1 ? "piece" : "pieces"}
           </span>
           <a className="link" href={base + "Collections"}>Continue exploring</a>
         </div>
         {updateErrorMessage && (
           <p className="notice cart-action-notice" role="alert">
-            Shopify couldn’t update your bag: {updateErrorMessage} Your saved bag is unchanged. Please try again.
+            {customerFacingMessage(updateErrorMessage, "Your bag could not be updated.")} Your saved bag is unchanged. Please try again.
           </p>
         )}
         {cart.lines.map((line) => (
           <article className="cart-product shopify-cart-row" key={line.id}>
-            <a className="cart-product-image" href={`${base}Product?shopify=${encodeURIComponent(line.productHandle)}`} aria-label={`View ${line.productTitle}`}>
+            <a className="cart-product-image" href={`${base}Product?product=${encodeURIComponent(line.productHandle)}`} aria-label={`View ${line.productTitle}`}>
               {line.image ? (
                 <img src={line.image.url} alt={line.image.altText || line.productTitle} />
               ) : (
@@ -291,7 +292,7 @@ function ShopifyBag({
             </a>
             <div className="cart-product-copy">
               <span className="eyebrow">Handloom saree</span>
-              <a href={`${base}Product?shopify=${encodeURIComponent(line.productHandle)}`}><h2>{line.productTitle}</h2></a>
+              <a href={`${base}Product?product=${encodeURIComponent(line.productHandle)}`}><h2>{line.productTitle}</h2></a>
               {!isDefaultShopifyVariantTitle(line.variantTitle) && (
                 <p className="cart-variant">{line.variantTitle}</p>
               )}
@@ -309,10 +310,10 @@ function ShopifyBag({
             </div>
           </article>
         ))}
-        {isUpdating && <p role="status" className="muted">Updating your Shopify bag…</p>}
+        {isUpdating && <p role="status" className="muted">Updating your bag…</p>}
         <div className="cart-note">
           <Check size={16} aria-hidden="true" />
-          <p>Your chosen pieces and current prices are synced from Shopify. Delivery and taxes are confirmed at checkout.</p>
+          <p>Your chosen pieces and current prices are checked again at checkout. Delivery charges are confirmed before you pay.</p>
         </div>
       </section>
 
@@ -372,7 +373,7 @@ function ShopifyBag({
         </form>
         {discountErrorMessage && (
           <p className="notice cart-action-notice" role="alert" data-testid="notice-shopify-discount-error">
-            Shopify couldn’t update this code: {discountErrorMessage}
+            {customerFacingMessage(discountErrorMessage, "This discount code could not be applied. Please check it and try again.")}
           </p>
         )}
         {cart.discountCodes.map((discount) => (
@@ -383,8 +384,8 @@ function ShopifyBag({
             key={discount.code}
           >
             {discount.applicable
-              ? `Code ${discount.code} is applied to this Shopify bag.`
-              : `Shopify says code ${discount.code} does not apply to this bag.`}
+              ? `Code ${discount.code} is applied to your bag.`
+              : `Code ${discount.code} does not apply to this bag.`}
           </p>
         ))}
         {cart.discountCodes.length > 0 && (
@@ -399,7 +400,7 @@ function ShopifyBag({
           </button>
         )}
         {hasUnavailableLine ? (
-          <p className="notice cart-action-notice" role="alert">A demo or unavailable listing is in this bag. Remove it or update its Shopify details before checkout.</p>
+          <p className="notice cart-action-notice" role="alert">A sample or unavailable item is in this bag. Remove it or choose an available item before checkout.</p>
         ) : !canCheckout ? (
           <p className="notice cart-action-notice" role="alert">This bag could not be verified for secure checkout. Refresh your bag and try again.</p>
         ) : (
@@ -407,7 +408,7 @@ function ShopifyBag({
             <a className="btn cart-checkout" href={base + "Checkout"} data-testid="link-site-checkout">
               Continue to checkout <ArrowRight size={14} />
             </a>
-            <p className="secure-caption">Get a current delivery quote here · pay securely on Cashfree</p>
+            <p className="secure-caption">Get a current delivery quote here · pay securely online</p>
           </div>
         )}
         <p className="address-footnote cart-summary-footnote">Your delivery details and current shipping quote are confirmed on the next page. Import duties or customs charges may be separate.</p>
