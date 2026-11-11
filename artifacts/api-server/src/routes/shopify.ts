@@ -3,6 +3,7 @@ import {
   AddShopifyCartLineBody,
   GetShopifyCartQueryParams,
   GetShopifyCustomerAccountResponse,
+  RemoveShopifyCartLinesBody,
   UpdateShopifyCartBuyerIdentityBody,
   UpdateShopifyCartDiscountCodesBody,
   UpdateShopifyCartLinesBody,
@@ -287,6 +288,17 @@ const SHOPIFY_CART_ADD_LINES = `#graphql
 const SHOPIFY_CART_UPDATE_LINES = `#graphql
   mutation UpdateShopifyCartLines($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
     cartLinesUpdate(cartId: $cartId, lines: $lines) {
+      cart {
+        ${CART_FIELDS}
+      }
+      userErrors { message }
+    }
+  }
+`;
+
+const SHOPIFY_CART_REMOVE_LINES = `#graphql
+  mutation RemoveShopifyCartLines($cartId: ID!, $lineIds: [ID!]!) {
+    cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
       cart {
         ${CART_FIELDS}
       }
@@ -973,6 +985,37 @@ router.patch("/shopify/cart", async (req, res): Promise<void> => {
   } catch (error) {
     if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart quantities could not be updated");
+    res.status(502).json({ error: "Your Shopify bag could not be updated. Please try again." });
+  }
+});
+
+router.post("/shopify/cart/remove-lines", async (req, res): Promise<void> => {
+  const body = RemoveShopifyCartLinesBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: "Choose a valid Shopify bag and product line." });
+    return;
+  }
+  try {
+    await assertIndiaMarketAvailable();
+    const result = await shopifyStorefrontRequest<{
+      cartLinesRemove: ShopifyCartMutationResult;
+    }>(SHOPIFY_CART_REMOVE_LINES, {
+      cartId: body.data.cartId,
+      lineIds: [...new Set(body.data.lineIds)],
+    });
+    if (result.cartLinesRemove.userErrors.length) {
+      res.status(400).json({ error: result.cartLinesRemove.userErrors[0].message });
+      return;
+    }
+    if (!result.cartLinesRemove.cart) {
+      res.status(404).json({ error: "This Shopify cart has expired or could not be found." });
+      return;
+    }
+    res.setHeader("Cache-Control", "no-store");
+    res.json(mapShopifyCart(result.cartLinesRemove.cart));
+  } catch (error) {
+    if (respondToCartError(res, error)) return;
+    logger.error({ err: error }, "Shopify cart lines could not be removed");
     res.status(502).json({ error: "Your Shopify bag could not be updated. Please try again." });
   }
 });

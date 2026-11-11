@@ -163,7 +163,31 @@ export function PageHero({eyebrow,title,subtitle}:{eyebrow:string;title:string;s
 export function ProductCard({product:p}:{product:typeof products[number]}){const wish=useStore("kq-wish");const {toggleWishlist,loading,error}=useShopperPreferences();const [wishError,setWishError]=useState(false);const active=wish.some(x=>x.id===p.id);return <article className="product-card" data-testid={`card-product-${p.id}`}><a href={base+"Product?id="+p.id} className="product-img"><span className={`textile s${products.indexOf(p)%6+1}`} role="img" aria-label={p.name+" — illustrative textile swatch"}/><span className="pill" style={{position:"absolute",left:12,top:12}}>{p.tag}</span></a><button className="heart" disabled={loading||Boolean(error)} data-testid={`button-wishlist-${p.id}`} aria-label={active?"Remove from wishlist":"Add to wishlist"} aria-pressed={active} onClick={()=>{setWishError(false);void toggleWishlist(p.id).catch(()=>setWishError(true))}}><Heart size={16} fill={active?"var(--red)":"none"}/></button>{wishError&&<p role="alert" className="muted">Wishlist could not be saved. Please try again.</p>}<a href={base+"Product?id="+p.id}><h3>{p.name}</h3></a><p>{p.type} · {p.weave}</p><span className="price" data-testid={`text-price-${p.id}`}>{format(p.price)}</span></article>}
 export function ProductGrid({items=products}:{items?:typeof products}){return <div className="products">{items.map(p=><ProductCard key={p.id} product={p}/>)}</div>}
 export function Toast({text}:{text:string}){return <div className="toast"><Check size={15} style={{display:"inline",marginRight:8}}/>{text}</div>}
-export function Qty({value,onChange}:{value:number;onChange:(n:number)=>void}){return <div className="qty" aria-label={`Quantity ${value}`}><button type="button" data-testid="button-decrease-quantity" aria-label="Decrease quantity" onClick={()=>onChange(Math.max(1,value-1))}><Minus size={14}/></button><span data-testid="text-quantity">{value}</span><button type="button" data-testid="button-increase-quantity" aria-label="Increase quantity" onClick={()=>onChange(value+1)}><Plus size={14}/></button></div>}
+export function Qty({
+ value,
+ onChange,
+ onRemove,
+ disabled = false,
+}: {
+ value: number;
+ onChange: (n: number) => void;
+ onRemove?: () => void;
+ disabled?: boolean;
+}) {
+ const decrease = () => {
+  if (disabled) return;
+  if (value <= 1 && onRemove) {
+   onRemove();
+   return;
+  }
+  onChange(Math.max(1, value - 1));
+ };
+ return <div className="qty" aria-label={`Quantity ${value}`}>
+  <button type="button" data-testid="button-decrease-quantity" aria-label={value <= 1 && onRemove ? "Remove item" : "Decrease quantity"} disabled={disabled} onClick={decrease}><Minus size={14}/></button>
+  <span data-testid="text-quantity">{value}</span>
+  <button type="button" data-testid="button-increase-quantity" aria-label="Increase quantity" disabled={disabled} onClick={()=>{if(!disabled)onChange(value+1)}}><Plus size={14}/></button>
+ </div>
+}
 export function Empty({title,copy,cta="Browse the collection",href=base+"Collections"}:{title:string;copy:string;cta?:string;href?:string}){return <div className="empty"><span className="eyebrow">A fresh beginning</span><h2 style={{fontSize:42,margin:"14px 0"}}>{title}</h2><p>{copy}</p><a className="btn" href={href}>{cta}<ArrowRight size={15}/></a></div>}
 export function moneySub(items:Item[]){return items.reduce((sum,x)=>sum+(products.find(p=>p.id===x.id)?.price||0)*x.qty,0)}
 export function PageLink({to,children}:{to:string;children:React.ReactNode}){return <a className="link" href={base+to}>{children} <ChevronRight size={12}/></a>}

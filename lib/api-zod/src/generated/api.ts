@@ -514,14 +514,13 @@ export const AddShopifyCartLineResponse = zod.object({
 
 
 /**
- * Updates or removes lines in a Shopify cart.
+ * Updates the quantities of existing lines in a Shopify cart.
  * @summary Update Shopify cart quantities
  */
 export const updateShopifyCartLinesBodyCartIdMax = 1000;
 
 export const updateShopifyCartLinesBodyLinesItemIdMax = 1000;
 
-export const updateShopifyCartLinesBodyLinesItemQuantityMin = 0;
 export const updateShopifyCartLinesBodyLinesItemQuantityMax = 99;
 
 export const updateShopifyCartLinesBodyLinesMax = 50;
@@ -532,11 +531,66 @@ export const UpdateShopifyCartLinesBody = zod.object({
   "cartId": zod.string().min(1).max(updateShopifyCartLinesBodyCartIdMax),
   "lines": zod.array(zod.object({
   "id": zod.string().min(1).max(updateShopifyCartLinesBodyLinesItemIdMax),
-  "quantity": zod.int().min(updateShopifyCartLinesBodyLinesItemQuantityMin).max(updateShopifyCartLinesBodyLinesItemQuantityMax)
+  "quantity": zod.int().min(1).max(updateShopifyCartLinesBodyLinesItemQuantityMax)
 })).min(1).max(updateShopifyCartLinesBodyLinesMax)
 })
 
 export const UpdateShopifyCartLinesResponse = zod.object({
+  "id": zod.string(),
+  "checkoutUrl": zod.url().nullable(),
+  "totalQuantity": zod.int(),
+  "subtotalAmount": zod.string(),
+  "discountAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "currencyCode": zod.string(),
+  "shippingEstimate": zod.union([zod.object({
+  "amount": zod.string(),
+  "currencyCode": zod.string(),
+  "method": zod.string(),
+  "basis": zod.enum(['selected', 'lowest_available'])
+}),zod.null()]),
+  "estimatedTotalAmount": zod.string().nullable(),
+  "discountCodes": zod.array(zod.object({
+  "code": zod.string(),
+  "applicable": zod.boolean()
+})),
+  "lines": zod.array(zod.object({
+  "id": zod.string(),
+  "merchandiseId": zod.string(),
+  "productHandle": zod.string(),
+  "productTitle": zod.string(),
+  "variantTitle": zod.string(),
+  "quantity": zod.int(),
+  "unitPrice": zod.string(),
+  "currencyCode": zod.string(),
+  "availableForSale": zod.boolean(),
+  "isDemo": zod.boolean(),
+  "image": zod.union([zod.object({
+  "url": zod.url(),
+  "altText": zod.string().nullable()
+}),zod.null()])
+}))
+})
+
+
+/**
+ * Removes the specified merchandise lines and returns the updated cart.
+ * @summary Remove lines from a Shopify cart
+ */
+export const removeShopifyCartLinesBodyCartIdMax = 1000;
+
+export const removeShopifyCartLinesBodyLineIdsItemMax = 1000;
+
+export const removeShopifyCartLinesBodyLineIdsMax = 50;
+
+
+
+export const RemoveShopifyCartLinesBody = zod.object({
+  "cartId": zod.string().min(1).max(removeShopifyCartLinesBodyCartIdMax),
+  "lineIds": zod.array(zod.string().min(1).max(removeShopifyCartLinesBodyLineIdsItemMax)).min(1).max(removeShopifyCartLinesBodyLineIdsMax)
+})
+
+export const RemoveShopifyCartLinesResponse = zod.object({
   "id": zod.string(),
   "checkoutUrl": zod.url().nullable(),
   "totalQuantity": zod.int(),

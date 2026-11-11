@@ -8,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import {
+  removeShopifyCartLines,
   updateShopifyCartDiscountCodes,
   updateShopifyCartLines,
   type ShopifyCartResponse,
@@ -46,10 +47,12 @@ export function Cart() {
   const shopifyCart = useShopifyCart(meta?.id);
   const queryClient = useQueryClient();
   const updateLine = useMutation({
-    mutationFn: (data: {
-      cartId: string;
-      lines: Array<{ id: string; quantity: number }>;
-    }) => updateShopifyCartLines(data),
+    mutationFn: (data:
+      | { kind: "update"; cartId: string; lines: Array<{ id: string; quantity: number }> }
+      | { kind: "remove"; cartId: string; lineIds: string[] }
+    ) => data.kind === "remove"
+      ? removeShopifyCartLines({ cartId: data.cartId, lineIds: data.lineIds })
+      : updateShopifyCartLines({ cartId: data.cartId, lines: data.lines }),
     onSuccess: (updatedCart) => updateShopifyCartCache(queryClient, updatedCart),
   });
   const updateDiscountCodes = useMutation({
@@ -86,7 +89,7 @@ export function Cart() {
             isLoading={shopifyCart.isLoading}
             isError={shopifyCart.isError}
             loadError={shopifyCart.error}
-            isUpdating={updateLine.isPending}
+            isUpdating={updateLine.isPending || updateDiscountCodes.isPending}
             updateError={updateLine.error}
             isApplyingDiscount={updateDiscountCodes.isPending}
             discountError={updateDiscountCodes.error}
@@ -97,9 +100,26 @@ export function Cart() {
             }
             onQuantityChange={(lineId, quantity) => {
               if (!shopifyCart.data) return;
+              if (quantity <= 0) {
+                updateLine.mutate({
+                  kind: "remove",
+                  cartId: shopifyCart.data.id,
+                  lineIds: [lineId],
+                });
+              } else {
+                updateLine.mutate({
+                  kind: "update",
+                  cartId: shopifyCart.data.id,
+                  lines: [{ id: lineId, quantity }],
+                });
+              }
+            }}
+            onRemoveLine={(lineId) => {
+              if (!shopifyCart.data) return;
               updateLine.mutate({
+                kind: "remove",
                 cartId: shopifyCart.data.id,
-                lines: [{ id: lineId, quantity }],
+                lineIds: [lineId],
               });
             }}
           />
@@ -204,6 +224,7 @@ function ShopifyBag({
   onRetry,
   onClear,
   onQuantityChange,
+  onRemoveLine,
   onDiscountCodesChange,
 }: {
   cart: ReturnType<typeof useShopifyCart>["data"];
@@ -217,6 +238,7 @@ function ShopifyBag({
   onRetry: () => void;
   onClear: () => void;
   onQuantityChange: (lineId: string, quantity: number) => void;
+  onRemoveLine: (lineId: string) => void;
   onDiscountCodesChange: (cartId: string, discountCodes: string[]) => void;
 }) {
   const [discountCode, setDiscountCode] = useState("");
@@ -299,12 +321,17 @@ function ShopifyBag({
               {line.isDemo && <span className="pill shopify-demo-badge-inline">Demo only · not for sale</span>}
               {!line.availableForSale && <span className="pill cart-unavailable-badge">Currently unavailable</span>}
               <div className="cart-quantity">
-                <Qty value={line.quantity} onChange={(quantity) => onQuantityChange(line.id, quantity)} />
+                <Qty
+                  value={line.quantity}
+                  disabled={isUpdating}
+                  onChange={(quantity) => onQuantityChange(line.id, quantity)}
+                  onRemove={() => onRemoveLine(line.id)}
+                />
               </div>
             </div>
             <div className="cart-product-price shopify-cart-line-total">
               <strong>{formatShopifyMoney(String(Number(line.unitPrice) * line.quantity), line.currencyCode)}</strong>
-              <button className="cart-remove" type="button" disabled={isUpdating} onClick={() => onQuantityChange(line.id, 0)}>
+              <button className="cart-remove" type="button" disabled={isUpdating} onClick={() => onRemoveLine(line.id)}>
                 <Trash2 size={13} /> Remove
               </button>
             </div>
@@ -344,6 +371,7 @@ function ShopifyBag({
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            if (isUpdating) return;
             const code = discountCode.trim();
             if (code) onDiscountCodesChange(cart.id, [code]);
           }}
@@ -356,6 +384,7 @@ function ShopifyBag({
               id="shopify-discount-code"
               data-testid="input-shopify-discount-code"
               value={discountCode}
+              disabled={isUpdating}
               onChange={(event) => setDiscountCode(event.currentTarget.value)}
               autoComplete="off"
               maxLength={128}
@@ -365,7 +394,7 @@ function ShopifyBag({
               className="btn small outline"
               data-testid="button-apply-shopify-discount"
               type="submit"
-              disabled={!discountCode.trim() || isApplyingDiscount}
+              disabled={!discountCode.trim() || isApplyingDiscount || isUpdating}
             >
               {isApplyingDiscount ? "Applying…" : "Apply"}
             </button>

@@ -183,7 +183,7 @@ export interface ShopifyCartLineUpdate {
      */
   id: string;
   /**
-     * @minimum 0
+     * @minimum 1
      * @maximum 99
      */
   quantity: number;
@@ -200,6 +200,21 @@ export interface ShopifyCartUpdateInput {
      * @maxItems 50
      */
   lines: ShopifyCartLineUpdate[];
+}
+
+export interface ShopifyCartLinesRemoveInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  cartId: string;
+  /**
+     * @minItems 1
+     * @maxItems 50
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  lineIds: string[];
 }
 
 export interface ShopifyCartDiscountCodesInput {

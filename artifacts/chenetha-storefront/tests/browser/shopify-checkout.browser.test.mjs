@@ -124,25 +124,66 @@ async function openProduct({ savedCart } = {}) {
   return { context, page };
 }
 
-async function openCart({ savedCart }) {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+async function openCart({
+  savedCart,
+  viewport = { width: 1280, height: 900 },
+  mutationDelay = 0,
+}) {
+  const context = await browser.newContext({ viewport });
   await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
   const page = await context.newPage();
   page.on("pageerror", (error) => console.error("[shopify-browser-page-error]", error.message));
+  const requests = [];
+  let currentCart = {
+    ...cartResponse,
+    id: savedCart.id,
+    lines: savedCart.lines ?? [{
+      ...cartResponse.lines[0],
+      quantity: savedCart.totalQuantity ?? cartResponse.totalQuantity,
+    }],
+  };
+  const refreshTotals = () => {
+    currentCart.totalQuantity = currentCart.lines.reduce((sum, line) => sum + line.quantity, 0);
+    const subtotal = currentCart.lines.reduce(
+      (sum, line) => sum + Number(line.unitPrice) * line.quantity,
+      0,
+    );
+    currentCart.subtotalAmount = subtotal.toFixed(2);
+    currentCart.totalAmount = subtotal.toFixed(2);
+  };
+  refreshTotals();
   await page.route("**/api/shopify/cart**", async (route) => {
-    if (route.request().method() === "GET") {
+    const request = route.request();
+    const method = request.method();
+    if (method === "GET") {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
+        body: JSON.stringify(currentCart),
       });
       return;
     }
-    await route.continue();
+    const body = request.postDataJSON();
+    requests.push({ method, url: new URL(request.url()).pathname, body });
+    if (mutationDelay > 0) await new Promise((resolve) => setTimeout(resolve, mutationDelay));
+    if (method === "PATCH") {
+      for (const update of body.lines) {
+        const line = currentCart.lines.find((item) => item.id === update.id);
+        if (line) line.quantity = update.quantity;
+      }
+    } else if (method === "POST" && request.url().includes("/remove-lines")) {
+      currentCart.lines = currentCart.lines.filter((line) => !body.lineIds.includes(line.id));
+    }
+    refreshTotals();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(currentCart),
+    });
   });
   await page.goto(`${origin}${fixtureUrl}?screen=cart`);
   await page.getByRole("heading", { name: "Kanchipuram silk saree" }).waitFor({ timeout: 5000 });
-  return { context, page };
+  return { context, page, requests };
 }
 
 async function openCheckout({
@@ -503,6 +544,137 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
   assert.match(await page.getByTestId("status-shopify-discount").innerText(), /SILK10.*applied/i);
   assert.match(await page.getByTestId("text-shopify-cart-discount").innerText(), /125/);
   assert.match(await page.getByTestId("text-shopify-cart-total").innerText(), /1,125/);
+  await context.close();
+});
+
+test("decreases three units to one, then removes the line on desktop and mobile", async () => {
+  for (const viewport of [
+    { width: 1280, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    const savedCart = {
+      id: `gid://shopify/Cart/decrement-${viewport.width}`,
+      totalQuantity: 3,
+      lines: [{ ...cartResponse.lines[0], quantity: 3 }],
+    };
+    const { context, page, requests } = await openCart({ savedCart, viewport });
+    const decrement = page.getByTestId("button-decrease-quantity");
+
+    for (const expected of [2, 1]) {
+      await decrement.click();
+      await page.waitForFunction(
+        (quantity) => document.querySelector('[data-testid="text-quantity"]')?.textContent === String(quantity),
+        expected,
+      );
+      assert.match(
+        (await page.getByTestId("text-cart-items-count").innerText()).toLowerCase(),
+        new RegExp(`· ${expected} piece`),
+      );
+      assert.match(
+        (await page.getByTestId("text-cart-quantity").innerText()).toLowerCase(),
+        new RegExp(`${expected} ${expected === 1 ? "piece" : "pieces"}`),
+      );
+      assert.match(
+        await page.getByTestId("text-shopify-cart-subtotal").innerText(),
+        new RegExp(expected === 2 ? "2,500" : "1,250"),
+      );
+      assert.match(
+        await page.getByTestId("text-shopify-cart-total").innerText(),
+        new RegExp(expected === 2 ? "2,500" : "1,250"),
+      );
+    }
+
+    await decrement.click();
+    await page.getByRole("heading", { name: "Your bag is taking a quiet moment." }).waitFor();
+    assert.match(
+      (await page.getByTestId("text-cart-quantity").innerText()).toLowerCase(),
+      /0 pieces/,
+    );
+    assert.equal(await page.getByTestId("link-site-checkout").count(), 0);
+    assert.equal(await page.getByRole("link", { name: "Browse sarees" }).count(), 1);
+    assert.deepEqual(requests.map((request) => [request.method, request.body.lines?.[0]?.quantity ?? request.body.lineIds?.length]), [
+      ["PATCH", 2],
+      ["PATCH", 1],
+      ["POST", 1],
+    ]);
+    assert.deepEqual(requests[2].body.lineIds, ["gid://shopify/CartLine/browser-line-123"]);
+
+    await page.reload();
+    await page.getByRole("heading", { name: "Your bag is taking a quiet moment." }).waitFor();
+    assert.equal(await page.getByTestId("text-cart-items-count").count(), 0);
+    await context.close();
+  }
+});
+
+test("removes one product without affecting others and preserves removal after refresh", async () => {
+  const secondLine = {
+    ...cartResponse.lines[0],
+    id: "gid://shopify/CartLine/browser-line-456",
+    productTitle: "Narayanpet cotton saree",
+    productHandle: "narayanpet-cotton-saree",
+    unitPrice: "850.00",
+    quantity: 1,
+  };
+  const savedCart = {
+    id: "gid://shopify/Cart/multi-line-cart",
+    totalQuantity: 2,
+    lines: [{ ...cartResponse.lines[0], quantity: 1 }, secondLine],
+  };
+  const { context, page, requests } = await openCart({ savedCart });
+
+  await page.getByRole("button", { name: "Remove", exact: true }).first().click();
+  await page.getByRole("heading", { name: "Narayanpet cotton saree" }).waitFor();
+  assert.equal(await page.getByRole("heading", { name: "Kanchipuram silk saree" }).count(), 0);
+  assert.equal(
+    (await page.getByTestId("text-cart-items-count").innerText()).toLowerCase(),
+    "your pieces · 1 piece",
+  );
+  assert.match(await page.getByTestId("text-shopify-cart-subtotal").innerText(), /850/);
+
+  await page.reload();
+  await page.getByRole("heading", { name: "Narayanpet cotton saree" }).waitFor();
+  assert.equal(await page.getByRole("heading", { name: "Kanchipuram silk saree" }).count(), 0);
+  assert.equal(requests.length, 1);
+  assert.deepEqual(requests[0].body.lineIds, ["gid://shopify/CartLine/browser-line-123"]);
+
+  await page.getByRole("button", { name: "Remove item" }).click();
+  await page.getByRole("heading", { name: "Your bag is taking a quiet moment." }).waitFor();
+  assert.equal(await page.getByTestId("link-site-checkout").count(), 0);
+  await context.close();
+});
+
+test("removes a single-unit line immediately", async () => {
+  const savedCart = { id: "gid://shopify/Cart/single-unit-cart", totalQuantity: 1 };
+  const { context, page, requests } = await openCart({ savedCart });
+
+  await page.getByTestId("button-decrease-quantity").click();
+  await page.getByRole("heading", { name: "Your bag is taking a quiet moment." }).waitFor();
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].method, "POST");
+  assert.deepEqual(requests[0].body.lineIds, ["gid://shopify/CartLine/browser-line-123"]);
+  await context.close();
+});
+
+test("locks cart controls while a server update is pending", async () => {
+  const savedCart = {
+    id: "gid://shopify/Cart/serialized-update-cart",
+    totalQuantity: 3,
+    lines: [{ ...cartResponse.lines[0], quantity: 3 }],
+  };
+  const { context, page, requests } = await openCart({ savedCart, mutationDelay: 200 });
+  const decrement = page.getByTestId("button-decrease-quantity");
+
+  await decrement.click();
+  await page.waitForFunction(() => document.querySelector('[data-testid="button-decrease-quantity"]')?.disabled);
+  assert.equal(await page.getByTestId("button-increase-quantity").isDisabled(), true);
+  assert.equal(await page.getByRole("button", { name: "Remove", exact: true }).isDisabled(), true);
+  assert.equal(await page.getByTestId("button-apply-shopify-discount").isDisabled(), true);
+  assert.equal(requests.length, 1);
+
+  await page.waitForFunction(
+    () => document.querySelector('[data-testid="text-quantity"]')?.textContent === "2",
+  );
+  assert.equal(requests.length, 1);
   await context.close();
 });
 

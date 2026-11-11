@@ -13,7 +13,7 @@ export interface ShopifyCartLineUpdate {
      */
   id: string;
   /**
-     * @minimum 0
+     * @minimum 1
      * @maximum 99
      */
   quantity: number;

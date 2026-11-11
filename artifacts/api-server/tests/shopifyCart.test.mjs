@@ -143,6 +143,9 @@ async function harness(run, { useDevStorePreview = false } = {}) {
       if (query.includes("mutation UpdateShopifyCartLines")) {
         return { cartLinesUpdate: state.cartMutationResult };
       }
+      if (query.includes("mutation RemoveShopifyCartLines")) {
+        return { cartLinesRemove: state.cartMutationResult };
+      }
       if (query.includes("mutation ReplaceShopifyCartDeliveryAddress")) {
         return { cartDeliveryAddressesReplace: state.cartMutationResult };
       }
@@ -174,6 +177,22 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     });
     return { status: response.status, data: await response.json() };
   };
+  const postRemoveLines = async (body) => {
+    const response = await fetch(`${endpoint}/remove-lines`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, data: await response.json() };
+  };
+  const patchLines = async (body) => {
+    const response = await fetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, data: await response.json() };
+  };
   const postBuyerIdentity = async (body) => {
     const response = await fetch(`${endpoint}/buyer-identity`, {
       method: "POST",
@@ -191,7 +210,7 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     return { status: response.status, data: await response.json() };
   };
   try {
-    await run({ state, post, postDiscount, postBuyerIdentity, getCart, getCountries, removePurchasedCartQuantities: module.exports.removePurchasedCartQuantities });
+    await run({ state, post, postDiscount, postRemoveLines, patchLines, postBuyerIdentity, getCart, getCountries, removePurchasedCartQuantities: module.exports.removePurchasedCartQuantities });
   } finally {
     await new Promise((resolve) => server.close(resolve));
     if (previousDevStorePreview === undefined) {
@@ -292,6 +311,58 @@ test("forwards Shopify cart user errors and returns Shopify's checkout URL on su
     assert.equal(successful.data.checkoutUrl, checkoutUrl);
     assert.equal(successful.data.id, "gid://shopify/Cart/cart-123");
     assert.equal(successful.data.totalAmount, "1250.00");
+  });
+});
+
+test("removes cart lines with Shopify's explicit remove mutation and returns the refreshed cart", async () => {
+  await harness(async ({ state, postRemoveLines }) => {
+    const emptyCart = cart({
+      totalQuantity: 0,
+      cost: {
+        subtotalAmount: { amount: "0.00", currencyCode: "INR" },
+        totalAmount: { amount: "0.00", currencyCode: "INR" },
+      },
+      lines: { nodes: [] },
+    });
+    state.cartMutationResult = { cart: emptyCart, userErrors: [] };
+
+    const result = await postRemoveLines({
+      cartId: "gid://shopify/Cart/cart-123",
+      lineIds: ["gid://shopify/CartLine/line-123"],
+    });
+
+    assert.equal(result.status, 200);
+    assert.equal(result.data.totalQuantity, 0);
+    assert.equal(result.data.lines.length, 0);
+    assert.equal(result.data.subtotalAmount, "0.00");
+    const call = state.calls.find(({ query }) => query.includes("mutation RemoveShopifyCartLines"));
+    assert.ok(call, "the backend must use cartLinesRemove rather than update with quantity zero");
+    assert.deepEqual(call.variables, {
+      cartId: "gid://shopify/Cart/cart-123",
+      lineIds: ["gid://shopify/CartLine/line-123"],
+    });
+  });
+});
+
+test("rejects an empty remove request before contacting Shopify", async () => {
+  await harness(async ({ state, postRemoveLines }) => {
+    const result = await postRemoveLines({
+      cartId: "gid://shopify/Cart/cart-123",
+      lineIds: [],
+    });
+    assert.equal(result.status, 400);
+    assert.equal(state.calls.length, 0);
+  });
+});
+
+test("quantity updates reject zero so removals must use the dedicated remove operation", async () => {
+  await harness(async ({ state, patchLines }) => {
+    const result = await patchLines({
+      cartId: "gid://shopify/Cart/cart-123",
+      lines: [{ id: "gid://shopify/CartLine/line-123", quantity: 0 }],
+    });
+    assert.equal(result.status, 400);
+    assert.equal(state.calls.length, 0);
   });
 });
 

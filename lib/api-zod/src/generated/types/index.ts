@@ -60,6 +60,7 @@ export * from './shopifyCartBuyerIdentityInputDeliveryAddress';
 export * from './shopifyCartDiscountCode';
 export * from './shopifyCartDiscountCodesInput';
 export * from './shopifyCartLine';
+export * from './shopifyCartLinesRemoveInput';
 export * from './shopifyCartLineUpdate';
 export * from './shopifyCartResponse';
 export * from './shopifyCartShippingEstimate';
