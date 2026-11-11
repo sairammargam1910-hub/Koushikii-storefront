@@ -40,3 +40,17 @@ assigning the existing shipment with 43 returned the same ClientWarehouse error.
 **How to apply:** Compare the actual carrier names before treating another
 service ID as a fallback. Resolve the carrier-side mapping or confirm a different
 partner before another live attempt.
+
+A merchant-created clone following Shiprocket support's instructions can replace
+a failed shipment on the same paid customer order, after its exact reference,
+AWB and courier eligibility are independently verified. Preserve the original
+shipment and rejection history; do not repeat payment or inventory actions.
+
+**Why:** The merchant obtained an AWB through a support-directed manual clone
+after the original carrier's warehouse-mapping failure. The user confirmed the
+replacement Air courier's eligibility; that confirmation was shipment-specific,
+not permission to remove Surface-only tags or dangerous-goods classifications.
+
+**How to apply:** Reconcile an already-existing clone without creating another
+provider order or assigning another AWB. Do not generalize a replacement
+courier's eligibility to future shipments.
