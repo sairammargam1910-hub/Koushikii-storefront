@@ -62,10 +62,12 @@ function canonicalWeave(value: string): string | undefined {
 
 export function getShopifyTagValue(product: ShopifyProduct, key: string) {
   const normalizedKey = key.toLowerCase();
-  const prefix = `${normalizedKey}:`;
-  const tag = product.tags.find((value) => value.toLowerCase().startsWith(prefix));
+  const tag = product.tags.find((value) => {
+    const separator = value.indexOf(":");
+    return separator >= 0 && value.slice(0, separator).trim().toLowerCase() === normalizedKey;
+  });
   if (tag) {
-    const value = tag.slice(prefix.length).trim();
+    const value = tag.slice(tag.indexOf(":") + 1).trim();
     return normalizedKey === "weave" ? normalizeWeave(value) : canonicalFabric(value) ?? value;
   }
 

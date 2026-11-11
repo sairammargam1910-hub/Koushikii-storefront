@@ -661,39 +661,43 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
 test("header links show live Shopify fabric and collection categories", async () => {
   const headerProduct = {
     ...productResponse.products[0],
-    attributes: {
-      ...productResponse.products[0].attributes,
-      fabric: "Cotton",
-      craftTechnique: "Narayanpet",
-    },
+    tags: ["fabric :Cotton", "weave :Narayanpet"],
+    attributes: { fabric: null, craftTechnique: null, region: null, colour: null },
     collections: [{
       id: "gid://shopify/Collection/narayanpet",
       handle: "narayanpet",
       title: "Narayanpet",
     }],
   };
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  const page = await context.newPage();
-  await page.route("**/api/shopify/products", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({ products: [headerProduct] }),
-  }));
-  await page.route("**/api/site-content", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({ items: [] }),
-  }));
-  await page.goto(`${origin}${fixtureUrl}?screen=home`);
-  await page.locator(".collection-nav > summary").click();
+  for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+    const context = await browser.newContext({
+      viewport,
+      isMobile: viewport.width < 600,
+      hasTouch: viewport.width < 600,
+    });
+    const page = await context.newPage();
+    await page.route("**/api/shopify/products", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ products: [headerProduct] }),
+    }));
+    await page.route("**/api/site-content", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ items: [] }),
+    }));
+    await page.goto(`${origin}${fixtureUrl}?screen=home`);
+    if (viewport.width < 600) await page.getByTestId("button-mobile-menu").click();
+    await page.locator(".collection-nav > summary").click();
 
-  const cotton = page.getByRole("link", { name: "Cotton", exact: true });
-  const narayanpet = page.getByRole("link", { name: "Narayanpet", exact: true });
-  await cotton.waitFor();
-  await narayanpet.waitFor();
-  assert.match(await cotton.getAttribute("href"), /Collections\?fabric=Cotton$/);
-  assert.match(await narayanpet.getAttribute("href"), /Collections\?collection=narayanpet$/);
-  await context.close();
+    const cotton = page.getByRole("link", { name: "Cotton", exact: true });
+    const narayanpet = page.getByRole("link", { name: "Narayanpet", exact: true });
+    await cotton.waitFor();
+    await narayanpet.waitFor();
+    assert.match(await cotton.getAttribute("href"), /Collections\?fabric=Cotton$/);
+    assert.match(await narayanpet.getAttribute("href"), /Collections\?collection=narayanpet$/);
+    await context.close();
+  }
 });
 
 test("applies shopper-entered discount codes to the Shopify bag", async () => {

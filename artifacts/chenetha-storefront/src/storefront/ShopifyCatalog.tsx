@@ -11,7 +11,7 @@ import {
   type ShopifyProduct,
   updateShopifyCartLines,
 } from "@workspace/api-client-react";
-import { base, cottonWeaves, Empty, Qty, Shell, useStore } from "./_shared";
+import { base, Empty, Qty, Shell, useStore } from "./_shared";
 import { useShopperPreferences } from "./ShopperPreferences";
 import { customerFacingMessage } from "./customerFacingMessage";
 import type { CatalogFilters } from "./_shared/catalog-filter";
