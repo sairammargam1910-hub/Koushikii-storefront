@@ -43,7 +43,7 @@ export function OurStory() {
   return (
     <Shell>
       <PageHero
-        eyebrow="About Us · Chenetha by Koushikii"
+        eyebrow="Our Story · Chenetha by Koushikii"
         title="A story held in every thread"
         subtitle="Rooted in South Indian handloom traditions, Chenetha by Koushikii invites you to explore each textile with curiosity, respect and care."
       />
