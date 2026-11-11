@@ -78,6 +78,53 @@ async function openForm({ mobile = false, edit = false, setup } = {}) {
   });
   const page = await context.newPage();
   const setupResult = await setup?.(page);
+  await page.route("**/api/shopify/admin/collections", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      collections: [{ id: "gid://shopify/Collection/fixture", title: "The Crafts Edit", handle: "the-crafts-edit", manual: true }],
+    }),
+  }));
+  await page.route("**/api/shopify/admin/products/**", async (route) => {
+    const request = route.request();
+    if (request.method() === "GET" && !request.url().includes("/media")) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          currencyCode: "INR",
+          product: {
+            id: "gid://shopify/Product/browser-fixture",
+            title: "Fixture silk saree",
+            handle: "fixture-silk-saree",
+            description: "Existing details",
+            productType: "Saree",
+            status: "ACTIVE",
+            tags: ["silk"],
+            fabric: "Silk",
+            craftTechnique: "",
+            region: "",
+            colour: "",
+            collectionIds: [],
+            imageUrl: "https://cdn.example.test/existing-cover.jpg",
+            options: [],
+            variants: [{
+              id: "gid://shopify/ProductVariant/browser-fixture",
+              title: "Default",
+              price: "1250.00",
+              inventoryQuantity: 3,
+              inventoryTracked: true,
+              inventoryPolicy: "DENY",
+              selectedOptions: [{ name: "Title", value: "Default" }],
+              inventoryLevels: [],
+            }],
+          },
+        }),
+      });
+      return;
+    }
+    await route.fallback();
+  });
   await page.goto(`${origin}/tests/browser/fixture.html${edit ? "?edit=1" : ""}`);
   await page.getByRole("dialog").waitFor();
   return { context, page, setupResult };
@@ -269,6 +316,34 @@ test("mobile file selection previews the photo and rejects unsupported or oversi
   await page.getByTestId("text-photo-upload-error").getByText(/no larger than 10 MB/).waitFor();
   assert.equal(uploadRequests.length, 1, "oversized files must not be uploaded");
   await context.close();
+});
+
+test("merchant can publish without a collection and later assign a Shopify collection", async () => {
+  const created = await openForm();
+  const createMutations = await mockCreateOrUpdate(created.page);
+  await created.page.getByTestId("input-product-title").fill("Hand-block print cotton runner");
+  await created.page.getByTestId("input-product-type").fill("Home textile");
+  await created.page.getByTestId("input-product-price").fill("1800");
+  await created.page.getByTestId("input-product-inventory").fill("4");
+  assert.equal(await created.page.getByTestId("input-product-publish").isChecked(), true);
+  await created.page.getByTestId("button-save-product").click();
+  await created.page.getByTestId("fixture-closed").waitFor();
+  assert.equal(createMutations.length, 1);
+  assert.equal(createMutations[0].body.productType, "Home textile");
+  assert.deepEqual(createMutations[0].body.collectionIds, []);
+  assert.equal(createMutations[0].body.publishToWebsite, true);
+  assert.equal(createMutations[0].body.fabric, "");
+  await created.context.close();
+
+  const edited = await openForm({ edit: true });
+  const updateMutations = await mockCreateOrUpdate(edited.page, { method: "PATCH" });
+  await edited.page.getByLabel("Create or assign a collection").fill("New Craft Collection");
+  await edited.page.getByTestId("button-save-product").click();
+  await edited.page.getByTestId("fixture-closed").waitFor();
+  assert.equal(updateMutations.length, 1);
+  assert.deepEqual(updateMutations[0].body.collectionIds, []);
+  assert.equal(updateMutations[0].body.newCollectionTitle, "New Craft Collection");
+  await edited.context.close();
 });
 
 test("slow uploads disable Save until the staged photo reaches product creation", async () => {

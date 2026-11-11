@@ -17,7 +17,7 @@ import { base, cottonWeaves, Empty, Qty, Shell, useStore } from "./_shared";
 import { useShopperPreferences } from "./ShopperPreferences";
 import { customerFacingMessage } from "./customerFacingMessage";
 import type { CatalogFilters } from "./_shared/catalog-filter";
-import { normalizeRegion, normalizeWeave, regions } from "./_shared/catalog-filter";
+import { normalizeRegion, normalizeWeave } from "./_shared/catalog-filter";
 import {
   readShopifyCartMeta,
   saveShopifyCartMeta,
@@ -65,6 +65,37 @@ export function getShopifyTagValue(product: ShopifyProduct, key: string) {
       .find((value): value is string => Boolean(value)) ?? "";
   }
   return "";
+}
+
+export function getShopifyAttribute(product: ShopifyProduct, key: string) {
+  const normalizedKey = key.toLowerCase();
+  const structuredValue =
+    normalizedKey === "fabric" ? product.attributes?.fabric :
+      normalizedKey === "weave" || normalizedKey === "crafttechnique" || normalizedKey === "craft_technique"
+        ? product.attributes?.craftTechnique :
+          normalizedKey === "region" ? product.attributes?.region :
+            normalizedKey === "colour" || normalizedKey === "color"
+              ? product.attributes?.colour
+              : null;
+  if (structuredValue?.trim()) return structuredValue.trim();
+  if (normalizedKey === "colour" || normalizedKey === "color") {
+    return getShopifyTagValue(product, "colour") || getShopifyTagValue(product, "color");
+  }
+  if (normalizedKey === "weave" || normalizedKey === "crafttechnique" || normalizedKey === "craft_technique") {
+    return getShopifyTagValue(product, "weave");
+  }
+  return getShopifyTagValue(product, normalizedKey);
+}
+
+export function getAvailableShopifyCollections(products: ShopifyProduct[]) {
+  const collections = new Map<string, { id: string; handle: string; title: string }>();
+  for (const product of products) {
+    for (const collection of product.collections ?? []) {
+      if (!collection.handle || collection.handle === "frontpage") continue;
+      collections.set(collection.handle, collection);
+    }
+  }
+  return [...collections.values()].sort((a, b) => a.title.localeCompare(b.title));
 }
 
 function normalizedTag(value: string) {
@@ -144,23 +175,38 @@ export function filterShopifyProducts(
 
   return products
     .filter((product) => {
-      const fabric = normalizedTag(getShopifyTagValue(product, "fabric"));
-      const weave = normalizeWeave(getShopifyTagValue(product, "weave")).toLowerCase();
-      const region = getShopifyTagValue(product, "region");
+      const fabric = normalizedTag(getShopifyAttribute(product, "fabric"));
+      const weave = normalizeWeave(getShopifyAttribute(product, "weave")).toLowerCase();
+      const region = getShopifyAttribute(product, "region");
+      const colour = normalizedTag(getShopifyAttribute(product, "colour"));
       const searchable = [
         product.title,
         product.description,
         product.productType,
         fabric,
         weave,
+        region,
+        colour,
+        ...(product.collections ?? []).map((collection) => collection.title),
         ...product.tags,
       ].join(" ").toLowerCase();
 
       if (query && !searchable.includes(query)) return false;
-      if (filters.fabric !== "All fabrics" && fabric !== normalizedTag(filters.fabric)) return false;
+      if (filters.fabric !== "All fabrics" && normalizedTag(getShopifyAttribute(product, "fabric")) !== normalizedTag(filters.fabric)) return false;
       if (filters.weave !== "All weaves" && weave !== wantedWeave) return false;
-      if (filters.region && (!regions[wantedRegion] || normalizeRegion(region) !== wantedRegion)) return false;
-      if (filters.category === "Dupattas") return false;
+      if (filters.region && normalizeRegion(region) !== wantedRegion) return false;
+      if (filters.colour && colour !== normalizedTag(filters.colour)) return false;
+      if (filters.collection && !(product.collections ?? []).some((collection) => collection.handle === filters.collection)) return false;
+      if (filters.productType && normalizedTag(product.productType) !== normalizedTag(filters.productType)) return false;
+      const type = normalizedTag(product.productType);
+      const category = filters.category.trim().toLowerCase();
+      if (category === "sarees" || category === "saree") {
+        if (!/\b(saree|sari)\b/.test(type)) return false;
+      } else if (category === "dupattas" || category === "dupatta") {
+        if (!/\bdupatta\b/.test(type)) return false;
+      } else if (category !== "all pieces" && category !== "all products" && category && type !== category) {
+        return false;
+      }
       if (filters.edit === "premium" && !isPremiumProduct(product)) return false;
       if (filters.edit === "new" && !isNewArrival(product)) return false;
       return true;

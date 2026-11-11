@@ -16,6 +16,8 @@ const productResponse = {
     description: "Handwoven silk",
     productType: "Saree",
     tags: ["kanchipooram", "new arrival", "Silk"],
+    attributes: { fabric: "Silk", craftTechnique: "Kanchipuram", region: "Tamil Nadu", colour: "Maroon" },
+    collections: [],
     images: [],
     variants: [{
       id: variantId,
@@ -517,6 +519,143 @@ test("shows a bare Silk catalog tag under the Silk and Kanchipuram filters", asy
   await productTitle.waitFor();
   assert.equal(await productTitle.isVisible(), true);
   await context.close();
+});
+
+test("all published products appear without collections and dynamic filters use Shopify data", async () => {
+  const unassignedProduct = {
+    id: "gid://shopify/Product/unassigned-runner",
+    handle: "hand-block-cotton-runner",
+    title: "Hand-block cotton table runner",
+    description: "A newly published home textile",
+    productType: "Home textile",
+    tags: [],
+    attributes: {
+      fabric: "Cotton",
+      craftTechnique: "Block printing",
+      region: "Telangana",
+      colour: "Indigo",
+    },
+    collections: [],
+    images: [],
+    variants: [{
+      id: "gid://shopify/ProductVariant/unassigned-runner",
+      title: "Default Title",
+      availableForSale: true,
+      price: "1800.00",
+      currencyCode: "INR",
+      selectedOptions: [{ name: "Title", value: "Default Title" }],
+    }],
+  };
+  const assignedProduct = {
+    ...productResponse.products[0],
+    collections: [{
+      id: "gid://shopify/Collection/crafts",
+      handle: "the-crafts-edit",
+      title: "The Crafts Edit",
+    }],
+  };
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await page.route("**/api/shopify/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ products: [assignedProduct, unassignedProduct] }),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=collections`);
+  await page.getByText("Kanchipuram silk saree", { exact: true }).waitFor();
+  await page.getByText("Hand-block cotton table runner", { exact: true }).waitFor();
+  assert.equal(await page.getByRole("button", { name: "All products" }).getAttribute("aria-pressed"), "true");
+  assert.equal(await page.getByText("2 published products").count(), 1);
+  assert.equal(await page.getByRole("button", { name: "Sarees", exact: true }).count(), 0);
+  assert.equal(await page.getByRole("button", { name: "Dupattas", exact: true }).count(), 0);
+  assert.equal(await page.getByText(/Cotton handlooms · Explore regional weaves/i).count(), 0);
+  assert.equal(await page.getByText(/Uncategorised/i).count(), 0);
+
+  const collectionFilter = page.getByLabel("Filter by Shopify collection");
+  assert.deepEqual(await collectionFilter.locator("option").allTextContents(), ["All collections", "The Crafts Edit"]);
+  await collectionFilter.selectOption("the-crafts-edit");
+  await page.getByText("Kanchipuram silk saree", { exact: true }).waitFor();
+  assert.equal(await page.getByText("Hand-block cotton table runner", { exact: true }).count(), 0);
+
+  await collectionFilter.selectOption("");
+  await page.getByLabel("Filter by product type").selectOption("Home textile");
+  await page.getByText("Hand-block cotton table runner", { exact: true }).waitFor();
+  assert.equal(await page.getByText("Kanchipuram silk saree", { exact: true }).count(), 0);
+
+  await page.getByLabel("Filter by colour").selectOption("Indigo");
+  await page.getByText("Hand-block cotton table runner", { exact: true }).waitFor();
+  assert.equal(await page.getByText("Kanchipuram silk saree", { exact: true }).count(), 0);
+  await context.close();
+});
+
+test("a Shopify catalog failure never substitutes the sample catalog", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await page.route("**/api/shopify/products", (route) => route.fulfill({
+    status: 503,
+    contentType: "application/json",
+    body: JSON.stringify({ error: "Shopify temporarily unavailable" }),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=collections`);
+  await page.getByRole("heading", { name: "We couldn’t load the products just now." }).waitFor({ timeout: 15000 });
+  assert.equal(await page.getByText("Nila Ikat", { exact: true }).count(), 0);
+  assert.equal(await page.getByRole("button", { name: "Sarees", exact: true }).count(), 0);
+  await context.close();
+});
+
+test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mobile", async () => {
+  const tileProduct = {
+    ...productResponse.products[0],
+    images: [{
+      url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%23b22222'/%3E%3C/svg%3E",
+      altText: "Crafted silk detail",
+    }],
+    collections: [{
+      id: "gid://shopify/Collection/crafts",
+      handle: "the-crafts-edit",
+      title: "The Crafts Edit",
+    }],
+  };
+  const openHome = async (viewport, products) => {
+    const context = await browser.newContext({ viewport, isMobile: viewport.width < 600, hasTouch: viewport.width < 600 });
+    const page = await context.newPage();
+    await page.route("**/api/shopify/products", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ products }),
+    }));
+    await page.route("**/api/site-content", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ items: [] }),
+    }));
+    await page.goto(`${origin}${fixtureUrl}?screen=home`);
+    return { context, page };
+  };
+
+  const withoutCollection = await openHome({ width: 1280, height: 900 }, [productResponse.products[0]]);
+  await withoutCollection.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
+  assert.equal(await withoutCollection.page.getByRole("heading", { name: "The Crafts Edit", exact: true }).count(), 0);
+  assert.equal(await withoutCollection.page.locator(".home-weave-section").getByRole("link").count(), 0);
+  assert.equal(await withoutCollection.page.getByRole("heading", { name: "New Arrivals", exact: true }).count(), 0);
+  assert.equal(await withoutCollection.page.getByRole("heading", { name: "Premium Collection", exact: true }).count(), 0);
+  await withoutCollection.context.close();
+
+  for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+    const { context, page } = await openHome(viewport, [tileProduct]);
+    const tile = page.locator(".home-weave-section").getByRole("link", { name: /The Crafts Edit/ });
+    await tile.waitFor();
+    assert.equal(await page.locator(".home-fabric-section").getByRole("link", { name: /The Crafts Edit/ }).count(), 1);
+    assert.match(await tile.getAttribute("href"), /Collections\?collection=the-crafts-edit/);
+    const bounds = await tile.boundingBox();
+    assert.ok(bounds && bounds.width > 0 && bounds.height > 0);
+    if (viewport.width < 600) {
+      assert.ok(bounds.width > 120, "mobile collection tile should remain readable");
+      assert.ok(bounds.x + bounds.width <= viewport.width + 1, "mobile collection tile should not overflow the viewport");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "mobile home should not scroll horizontally");
+    }
+    await context.close();
+  }
 });
 
 test("applies shopper-entered discount codes to the Shopify bag", async () => {

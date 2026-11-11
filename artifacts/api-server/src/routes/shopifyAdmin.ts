@@ -7,6 +7,7 @@ import {
   CreateShopifyAdminDiscountResponse,
   CreateShopifyAdminProductBody,
   CreateShopifyAdminProductResponse,
+  GetShopifyAdminCollectionsResponse,
   DeactivateShopifyAdminDiscountResponse,
   GetShopifyAdminDiscountsResponse,
   GetShopifyAdminInventoryResponse,
@@ -69,9 +70,33 @@ type AdminProduct = {
   productType: string;
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   tags: string[];
+  metafields: Array<{ key: string; value: string | null } | null>;
+  collections: {
+    nodes: Array<{
+      id: string;
+      title: string;
+      handle: string;
+      ruleSet: { appliedDisjunctively: boolean } | null;
+    }>;
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+  };
   featuredMedia: { image: { url: string; altText: string | null } | null } | null;
   options: Array<{ id: string; name: string; optionValues: Array<{ id: string; name: string }> }>;
   variants: { nodes: AdminVariant[]; pageInfo: { hasNextPage: boolean; endCursor: string } };
+};
+
+type AdminCollection = {
+  id: string;
+  title: string;
+  handle: string;
+  ruleSet: { appliedDisjunctively: boolean } | null;
+};
+
+type AdminCollectionsPage = {
+  collections: {
+    nodes: AdminCollection[];
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+  };
 };
 
 type ProductQueryResult = {
@@ -147,6 +172,16 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
   productType
   status
   tags
+  metafields(identifiers: [
+    { namespace: "chenetha", key: "fabric" }
+    { namespace: "chenetha", key: "craft_technique" }
+    { namespace: "chenetha", key: "region" }
+    { namespace: "chenetha", key: "colour" }
+  ]) { key value }
+  collections(first: 10) {
+    nodes { id title handle ruleSet { appliedDisjunctively } }
+    pageInfo { hasNextPage endCursor }
+  }
   featuredMedia {
     ... on MediaImage {
       image { url altText }
@@ -178,6 +213,11 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
   }
 `;
 
+const ADMIN_PRODUCT_DETAIL_FIELDS = ADMIN_PRODUCT_FIELDS.replace(
+  "collections(first: 10)",
+  "collections(first: 100)",
+);
+
 const ADMIN_PRODUCTS_QUERY = `#graphql
   query MerchantProducts {
     shop { currencyCode }
@@ -195,9 +235,91 @@ const ADMIN_PRODUCTS_QUERY = `#graphql
 const ADMIN_PRODUCT_QUERY = `#graphql
   query MerchantProduct($id: ID!) {
     shop { currencyCode }
-    product(id: $id) { ${ADMIN_PRODUCT_FIELDS} }
+    product(id: $id) { ${ADMIN_PRODUCT_DETAIL_FIELDS} }
   }
 `;
+
+const ADMIN_PRODUCT_COLLECTION_PAGE_QUERY = `#graphql
+  query MerchantProductCollections($id: ID!, $after: String!) {
+    product(id: $id) {
+      collections(first: 100, after: $after) {
+        nodes { id title handle ruleSet { appliedDisjunctively } }
+        pageInfo { hasNextPage endCursor }
+      }
+    }
+  }
+`;
+
+const ADMIN_COLLECTIONS_QUERY = `#graphql
+  query MerchantCollections($after: String) {
+    collections(first: 100, after: $after, sortKey: TITLE) {
+      nodes { id title handle ruleSet { appliedDisjunctively } }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+`;
+
+const ADMIN_COLLECTION_CREATE = `#graphql
+  mutation MerchantCollectionCreate($input: CollectionInput!) {
+    collectionCreate(input: $input) {
+      collection { id title handle ruleSet { appliedDisjunctively } }
+      userErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_PRODUCT_ATTRIBUTE_DEFINITIONS_QUERY = `#graphql
+  query ChenethaProductAttributeDefinitions {
+    metafieldDefinitions(ownerType: PRODUCT, namespace: "chenetha", first: 20) {
+      nodes { id namespace key type { name } access { storefront } }
+    }
+  }
+`;
+
+const ADMIN_METAFIELD_DEFINITION_CREATE = `#graphql
+  mutation ChenethaMetafieldDefinitionCreate($definition: MetafieldDefinitionInput!) {
+    metafieldDefinitionCreate(definition: $definition) {
+      createdDefinition { id namespace key type { name } access { storefront } }
+      userErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_METAFIELD_DEFINITION_UPDATE = `#graphql
+  mutation ChenethaMetafieldDefinitionUpdate($definition: MetafieldDefinitionUpdateInput!) {
+    metafieldDefinitionUpdate(definition: $definition) {
+      updatedDefinition { id namespace key type { name } access { storefront } }
+      userErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_METAFIELDS_SET = `#graphql
+  mutation ChenethaProductMetafieldsSet($metafields: [MetafieldsSetInput!]!) {
+    metafieldsSet(metafields: $metafields) {
+      metafields { namespace key value }
+      userErrors { field message }
+    }
+  }
+`;
+
+const ADMIN_METAFIELDS_DELETE = `#graphql
+  mutation ChenethaProductMetafieldsDelete($metafields: [MetafieldIdentifierInput!]!) {
+    metafieldsDelete(metafields: $metafields) {
+      deletedMetafields { ownerId namespace key }
+      userErrors { field message }
+    }
+  }
+`;
+
+const CHENETHA_PRODUCT_ATTRIBUTES = [
+  { key: "fabric", name: "Fabric" },
+  { key: "craft_technique", name: "Craft / Technique" },
+  { key: "region", name: "Region" },
+  { key: "colour", name: "Colour" },
+] as const;
+
+let productAttributeDefinitionsReady: Promise<void> | undefined;
 
 const ADMIN_PRODUCT_MEDIA_QUERY = `#graphql
   query MerchantProductMedia($id: ID!, $after: String) {
@@ -382,9 +504,9 @@ const ADMIN_PUBLICATIONS_QUERY = `#graphql
 `;
 
 const ADMIN_PUBLISH_PRODUCT = `#graphql
-  mutation MerchantPublishProduct($productId: ID!, $publicationId: ID!) {
+  mutation MerchantPublishable($publishableId: ID!, $publicationId: ID!) {
     publishablePublish(
-      id: $productId
+      id: $publishableId
       input: [{ publicationId: $publicationId }]
     ) {
       userErrors { field message }
@@ -530,6 +652,9 @@ async function waitForShopifyJob(jobId: string) {
 function mapProduct(
   product: AdminProduct,
 ): ReturnType<typeof GetShopifyAdminProductsResponse.parse>["products"][number] {
+  const metafield = (key: string) =>
+    product.metafields?.find((entry) => entry?.key === key)?.value ?? "";
+  const manualCollections = product.collections?.nodes.filter((entry) => !entry.ruleSet) ?? [];
   return {
     id: product.id,
     title: product.title,
@@ -538,6 +663,11 @@ function mapProduct(
     productType: product.productType ?? "",
     status: product.status,
     tags: product.tags,
+    fabric: metafield("fabric"),
+    craftTechnique: metafield("craft_technique"),
+    region: metafield("region"),
+    colour: metafield("colour"),
+    collectionIds: manualCollections.map((collection) => collection.id),
     imageUrl: product.featuredMedia?.image?.url ?? null,
     options: product.options.map((option) => ({
       id: option.id,
@@ -603,6 +733,20 @@ async function fetchProduct(id: string): Promise<{
     { id },
   );
   if (!result.product) throw new ShopifyNotFoundError("Product not found.");
+  const collectionCursors = new Set<string>();
+  while (result.product.collections.pageInfo.hasNextPage) {
+    const after = result.product.collections.pageInfo.endCursor;
+    if (!after || collectionCursors.has(after)) {
+      throw new ShopifyAdminError("Shopify returned an invalid product collection cursor.");
+    }
+    collectionCursors.add(after);
+    const page = await shopifyAdminRequest<{
+      product: { collections: AdminProduct["collections"] } | null;
+    }>(ADMIN_PRODUCT_COLLECTION_PAGE_QUERY, { id, after });
+    if (!page.product) throw new ShopifyNotFoundError("Product not found.");
+    result.product.collections.nodes.push(...page.product.collections.nodes);
+    result.product.collections.pageInfo = page.product.collections.pageInfo;
+  }
   // Never mistake the catalog's two-variant preview for a complete product.
   const variants = result.product.variants;
   while (variants.pageInfo.hasNextPage) {
@@ -633,6 +777,232 @@ async function fetchProduct(id: string): Promise<{
     }
   }
   return { product: result.product, currencyCode: result.shop.currencyCode };
+}
+
+async function fetchShopifyCollections(): Promise<AdminCollection[]> {
+  const collections: AdminCollection[] = [];
+  const seenCursors = new Set<string>();
+  let after: string | null = null;
+  let hasNextPage = true;
+  while (hasNextPage) {
+    const page: AdminCollectionsPage = await shopifyAdminRequest<AdminCollectionsPage>(
+      ADMIN_COLLECTIONS_QUERY,
+      after ? { after } : {},
+    );
+    collections.push(...page.collections.nodes);
+    hasNextPage = page.collections.pageInfo.hasNextPage;
+    after = page.collections.pageInfo.endCursor;
+    if (hasNextPage && (!after || seenCursors.has(after))) {
+      throw new ShopifyAdminError("Shopify returned an invalid collection cursor.");
+    }
+    if (after) seenCursors.add(after);
+  }
+  return collections;
+}
+
+async function createProductAttributeDefinitions(): Promise<void> {
+  const existing = await shopifyAdminRequest<{
+    metafieldDefinitions: {
+      nodes: Array<{
+        id: string;
+        namespace: string;
+        key: string;
+        type: { name: string };
+        access: { storefront: string | null };
+      }>;
+    };
+  }>(ADMIN_PRODUCT_ATTRIBUTE_DEFINITIONS_QUERY);
+
+  for (const attribute of CHENETHA_PRODUCT_ATTRIBUTES) {
+    let definition = existing.metafieldDefinitions.nodes.find(
+      (entry) => entry.namespace === "chenetha" && entry.key === attribute.key,
+    );
+    if (definition && definition.type.name !== "single_line_text_field") {
+      throw new ShopifyInputError(
+        `Shopify metafield chenetha.${attribute.key} must use single-line text. Update its Shopify definition before saving product attributes.`,
+      );
+    }
+    if (!definition) {
+      const created = await shopifyAdminRequest<{
+        metafieldDefinitionCreate: {
+          createdDefinition: typeof definition;
+          userErrors: ShopifyUserErrors;
+        };
+      }>(ADMIN_METAFIELD_DEFINITION_CREATE, {
+        definition: {
+          namespace: "chenetha",
+          key: attribute.key,
+          name: attribute.name,
+          description: `Structured ${attribute.name.toLowerCase()} attribute used by the Chenetha storefront.`,
+          ownerType: "PRODUCT",
+          type: "single_line_text_field",
+          access: { storefront: "PUBLIC_READ" },
+        },
+      });
+      assertNoUserErrors(created.metafieldDefinitionCreate.userErrors);
+      definition = created.metafieldDefinitionCreate.createdDefinition ?? undefined;
+      if (!definition) {
+        throw new ShopifyAdminError(
+          `Shopify did not create the ${attribute.name.toLowerCase()} product attribute.`,
+        );
+      }
+      existing.metafieldDefinitions.nodes.push(definition);
+    } else if (definition.access.storefront !== "PUBLIC_READ") {
+      const updated = await shopifyAdminRequest<{
+        metafieldDefinitionUpdate: {
+          updatedDefinition: typeof definition;
+          userErrors: ShopifyUserErrors;
+        };
+      }>(ADMIN_METAFIELD_DEFINITION_UPDATE, {
+        definition: {
+          id: definition.id,
+          access: { storefront: "PUBLIC_READ" },
+        },
+      });
+      assertNoUserErrors(updated.metafieldDefinitionUpdate.userErrors);
+      definition = updated.metafieldDefinitionUpdate.updatedDefinition ?? definition;
+    }
+  }
+}
+
+function ensureProductAttributeDefinitions(): Promise<void> {
+  if (!productAttributeDefinitionsReady) {
+    productAttributeDefinitionsReady = createProductAttributeDefinitions().catch((error: unknown) => {
+      productAttributeDefinitionsReady = undefined;
+      throw error;
+    });
+  }
+  return productAttributeDefinitionsReady;
+}
+
+async function saveProductAttributes(
+  productId: string,
+  attributes: { fabric: string; craftTechnique: string; region: string; colour: string },
+  existing: AdminProduct["metafields"] = [],
+): Promise<void> {
+  const values = {
+    fabric: attributes.fabric.trim(),
+    craft_technique: attributes.craftTechnique.trim(),
+    region: attributes.region.trim(),
+    colour: attributes.colour.trim(),
+  };
+  const current = new Set(
+    (existing ?? []).filter((entry) => entry?.value).map((entry) => entry!.key),
+  );
+  const hasValues = Object.values(values).some(Boolean);
+  if (!hasValues && current.size === 0) return;
+
+  await ensureProductAttributeDefinitions();
+  const toSet = Object.entries(values)
+    .filter(([, value]) => value)
+    .map(([key, value]) => ({
+      ownerId: productId,
+      namespace: "chenetha",
+      key,
+      type: "single_line_text_field",
+      value,
+    }));
+  const toDelete = Object.entries(values)
+    .filter(([key, value]) => !value && current.has(key))
+    .map(([key]) => ({ ownerId: productId, namespace: "chenetha", key }));
+
+  if (toSet.length) {
+    const result = await shopifyAdminRequest<{
+      metafieldsSet: { userErrors: ShopifyUserErrors };
+    }>(ADMIN_METAFIELDS_SET, { metafields: toSet });
+    assertNoUserErrors(result.metafieldsSet.userErrors);
+  }
+  if (toDelete.length) {
+    const result = await shopifyAdminRequest<{
+      metafieldsDelete: { userErrors: ShopifyUserErrors };
+    }>(ADMIN_METAFIELDS_DELETE, { metafields: toDelete });
+    assertNoUserErrors(result.metafieldsDelete.userErrors);
+  }
+}
+
+function uniqueCollectionIds(ids: string[]): string[] {
+  if (ids.some((id) => !/^gid:\/\/shopify\/Collection\/\d+$/.test(id))) {
+    throw new ShopifyInputError("Choose valid Shopify collections.");
+  }
+  return [...new Set(ids)];
+}
+
+function validateCollectionSelection(
+  ids: string[],
+  title: string,
+  collections: AdminCollection[],
+): string[] {
+  const manualIds = new Set(
+    collections.filter((collection) => !collection.ruleSet).map((collection) => collection.id),
+  );
+  const selected = uniqueCollectionIds(ids);
+  for (const id of selected) {
+    if (!manualIds.has(id)) {
+      const collection = collections.find((entry) => entry.id === id);
+      throw new ShopifyInputError(
+        collection
+          ? `“${collection.title}” is automatically managed by Shopify. Assign its matching rules in Shopify instead.`
+          : "A selected Shopify collection no longer exists. Refresh and try again.",
+      );
+    }
+  }
+  const trimmedTitle = title.trim();
+  if (trimmedTitle) {
+    const match = collections.find(
+      (collection) => collection.title.trim().toLowerCase() === trimmedTitle.toLowerCase(),
+    );
+    if (match?.ruleSet) {
+      throw new ShopifyInputError(
+        `“${trimmedTitle}” is an automatically managed Shopify collection and cannot be created as a manual collection with the same name.`,
+      );
+    }
+  }
+  return selected;
+}
+
+async function prepareProductCollections(
+  productId: string,
+  current: AdminProduct["collections"]["nodes"],
+  selectedIds: string[],
+  newCollectionTitle: string,
+  availableCollections?: AdminCollection[],
+): Promise<{ join: string[]; leave: string[]; publish: string[] }> {
+  const collections = availableCollections ?? await fetchShopifyCollections();
+  const title = newCollectionTitle.trim();
+  const selected = validateCollectionSelection(selectedIds, title, collections);
+  let existingTitleCollection: AdminCollection | undefined;
+  if (title) {
+    existingTitleCollection = collections.find(
+      (collection) => collection.title.trim().toLowerCase() === title.toLowerCase(),
+    );
+    let collectionId = existingTitleCollection?.id;
+    if (!collectionId) {
+      const created = await shopifyAdminRequest<{
+        collectionCreate: {
+          collection: { id: string; title: string; handle: string; ruleSet: null } | null;
+          userErrors: ShopifyUserErrors;
+        };
+      }>(ADMIN_COLLECTION_CREATE, {
+        input: { title, products: [productId] },
+      });
+      assertNoUserErrors(created.collectionCreate.userErrors);
+      collectionId = created.collectionCreate.collection?.id;
+      if (!collectionId) {
+        throw new ShopifyAdminError("Shopify did not return the new collection.");
+      }
+    }
+    selected.push(collectionId);
+  }
+
+  const desired = uniqueCollectionIds(selected);
+  const currentManualIds = current.filter((collection) => !collection.ruleSet).map((collection) => collection.id);
+  const newlyCreatedId = title && !existingTitleCollection ? desired.at(-1) : undefined;
+  const currentIds = new Set(currentManualIds);
+  return {
+    join: desired.filter((id) => !currentIds.has(id) && id !== newlyCreatedId),
+    leave: currentManualIds.filter((id) => !desired.includes(id)),
+    publish: desired,
+  };
 }
 
 async function fetchShopifyInventoryWatch() {
@@ -790,7 +1160,7 @@ async function setVariantInventory(
   assertNoUserErrors(quantityResult.inventorySetQuantities.userErrors);
 }
 
-async function publishToWebsite(productId: string): Promise<void> {
+async function publishToWebsite(publishableIds: string | string[]): Promise<void> {
   const publications = await shopifyAdminRequest<{
     publications: { nodes: Array<{ id: string; name: string }> };
   }>(ADMIN_PUBLICATIONS_QUERY);
@@ -806,13 +1176,15 @@ async function publishToWebsite(productId: string): Promise<void> {
         : "The Replit storefront channel is not available in this Shopify store.",
     );
   }
-  const result = await shopifyAdminRequest<{
-    publishablePublish: { userErrors: ShopifyUserErrors };
-  }>(ADMIN_PUBLISH_PRODUCT, {
-    productId,
-    publicationId: publication.id,
-  });
-  assertNoUserErrors(result.publishablePublish.userErrors);
+  for (const publishableId of [...new Set(Array.isArray(publishableIds) ? publishableIds : [publishableIds])]) {
+    const result = await shopifyAdminRequest<{
+      publishablePublish: { userErrors: ShopifyUserErrors };
+    }>(ADMIN_PUBLISH_PRODUCT, {
+      publishableId,
+      publicationId: publication.id,
+    });
+    assertNoUserErrors(result.publishablePublish.userErrors);
+  }
 }
 
 router.use("/shopify/admin", requireMerchantAdmin);
@@ -875,6 +1247,31 @@ router.get("/shopify/admin/products", async (req, res): Promise<void> => {
       res,
       error,
       "Shopify products could not be loaded. Check the store connection and try again.",
+    );
+  }
+});
+
+router.get("/shopify/admin/collections", async (req, res): Promise<void> => {
+  try {
+    const collections = await fetchShopifyCollections();
+    res.json(
+      GetShopifyAdminCollectionsResponse.parse({
+        collections: collections
+          .filter((collection) => !collection.ruleSet)
+          .map((collection) => ({
+            id: collection.id,
+            title: collection.title,
+            handle: collection.handle,
+            manual: true,
+          })),
+      }),
+    );
+  } catch (error) {
+    respondShopifyError(
+      req,
+      res,
+      error,
+      "Shopify collections could not be loaded. Refresh and try again.",
     );
   }
 });
@@ -1289,6 +1686,13 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
   const input = parsed.data;
   try {
     validatePublicImageUrl(input.imageUrl);
+    const selectedCollectionIds = uniqueCollectionIds(input.collectionIds ?? []);
+    const newCollectionTitle = input.newCollectionTitle?.trim() ?? "";
+    const availableCollections =
+      selectedCollectionIds.length || newCollectionTitle
+        ? await fetchShopifyCollections()
+        : [];
+    validateCollectionSelection(selectedCollectionIds, newCollectionTitle, availableCollections);
     const createResult = await shopifyAdminRequest<{
       productCreate: {
         product: { id: string } | null;
@@ -1298,7 +1702,7 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
       product: {
         title: input.title.trim(),
         descriptionHtml: escapeProductDescription(input.description),
-        productType: input.productType.trim(),
+        ...(input.productType?.trim() ? { productType: input.productType.trim() } : {}),
         tags: input.tags.map((tag) => tag.trim()).filter(Boolean),
         status: "DRAFT",
       },
@@ -1328,15 +1732,40 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
     await setVariantPrice(productId, variant.id, input.price);
     await setVariantInventory(variant, input.inventoryQuantity);
 
-    if (input.publishToWebsite) {
+    await saveProductAttributes(productId, {
+      fabric: input.fabric ?? "",
+      craftTechnique: input.craftTechnique ?? "",
+      region: input.region ?? "",
+      colour: input.colour ?? "",
+    }, initial.product.metafields);
+
+    const collectionPlan =
+      selectedCollectionIds.length || newCollectionTitle
+        ? await prepareProductCollections(
+            productId,
+            [],
+            selectedCollectionIds,
+            newCollectionTitle,
+            availableCollections,
+          )
+        : undefined;
+    const productInput: Record<string, unknown> = { id: productId };
+    if (collectionPlan?.join.length) productInput.collectionsToJoin = collectionPlan.join;
+    if (collectionPlan?.leave.length) productInput.collectionsToLeave = collectionPlan.leave;
+    if (input.publishToWebsite) productInput.status = "ACTIVE";
+
+    if (Object.keys(productInput).length > 1) {
       const updateResult = await shopifyAdminRequest<{
         productUpdate: { userErrors: ShopifyUserErrors };
       }>(ADMIN_PRODUCT_UPDATE, {
-        product: { id: productId, status: "ACTIVE" },
+        product: productInput,
         media: [],
       });
       assertNoUserErrors(updateResult.productUpdate.userErrors);
-      await publishToWebsite(productId);
+    }
+
+    if (input.publishToWebsite) {
+      await publishToWebsite([productId, ...(collectionPlan?.publish ?? [])]);
     }
 
     const created = await fetchProduct(productId);
@@ -1388,6 +1817,27 @@ router.patch(
     try {
       validatePublicImageUrl(input.imageUrl);
       const existing = await fetchProduct(productId);
+      const selectedCollectionIds =
+        input.collectionIds === undefined
+          ? undefined
+          : uniqueCollectionIds(input.collectionIds);
+      const newCollectionTitle = input.newCollectionTitle?.trim() ?? "";
+      const availableCollections =
+        selectedCollectionIds?.length || newCollectionTitle
+          ? await fetchShopifyCollections()
+          : [];
+      const collectionPlan =
+        selectedCollectionIds !== undefined || newCollectionTitle
+          ? await prepareProductCollections(
+              productId,
+              existing.product.collections.nodes,
+              selectedCollectionIds ?? existing.product.collections.nodes
+                .filter((collection) => !collection.ruleSet)
+                .map((collection) => collection.id),
+              newCollectionTitle,
+              availableCollections,
+            )
+          : undefined;
       const productInput: Record<string, unknown> = { id: productId };
       if (input.title !== undefined) productInput.title = input.title.trim();
       if (input.description !== undefined) {
@@ -1401,6 +1851,8 @@ router.patch(
       if (input.tags !== undefined) {
         productInput.tags = input.tags.map((tag) => tag.trim()).filter(Boolean);
       }
+      if (collectionPlan?.join.length) productInput.collectionsToJoin = collectionPlan.join;
+      if (collectionPlan?.leave.length) productInput.collectionsToLeave = collectionPlan.leave;
       if (input.publishToWebsite !== undefined) {
         productInput.status = input.publishToWebsite ? "ACTIVE" : "DRAFT";
       }
@@ -1414,13 +1866,35 @@ router.patch(
             },
           ]
         : [];
-      const updateResult = await shopifyAdminRequest<{
-        productUpdate: { userErrors: ShopifyUserErrors };
-      }>(ADMIN_PRODUCT_UPDATE, { product: productInput, media });
-      assertNoUserErrors(updateResult.productUpdate.userErrors);
+      if (Object.keys(productInput).length > 1 || media.length) {
+        const updateResult = await shopifyAdminRequest<{
+          productUpdate: { userErrors: ShopifyUserErrors };
+        }>(ADMIN_PRODUCT_UPDATE, { product: productInput, media });
+        assertNoUserErrors(updateResult.productUpdate.userErrors);
+      }
+
+      if (
+        input.fabric !== undefined ||
+        input.craftTechnique !== undefined ||
+        input.region !== undefined ||
+        input.colour !== undefined
+      ) {
+        await saveProductAttributes(productId, {
+          fabric: input.fabric ?? "",
+          craftTechnique: input.craftTechnique ?? "",
+          region: input.region ?? "",
+          colour: input.colour ?? "",
+        }, existing.product.metafields);
+      }
 
       if (input.publishToWebsite === true) {
-        await publishToWebsite(productId);
+        await publishToWebsite([
+          productId,
+          ...(collectionPlan?.publish ??
+            existing.product.collections.nodes
+              .filter((collection) => !collection.ruleSet)
+              .map((collection) => collection.id)),
+        ]);
       }
 
       const updated = await fetchProduct(productId);

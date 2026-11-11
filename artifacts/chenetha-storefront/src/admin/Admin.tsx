@@ -3,11 +3,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import {
   getGetShopifyAdminProductsQueryKey,
+  getGetShopifyAdminCollectionsQueryKey,
+  getGetShopifyAdminProductQueryKey,
   getGetShopifyAdminInventoryQueryKey,
   getGetShopifyProductsQueryKey,
   getGetShopifyAdminDiscountsQueryKey,
   useGetShopifyAdminInventory,
   useGetShopifyAdminProducts,
+  useGetShopifyAdminCollections,
+  useGetShopifyAdminProduct,
   useCreateShopifyAdminProduct,
   useUpdateShopifyAdminProduct,
   useArchiveShopifyAdminProduct,
@@ -16,6 +20,7 @@ import {
   useCreateShopifyAdminDiscount,
   useDeactivateShopifyAdminDiscount,
   type ShopifyAdminProduct,
+  type ShopifyAdminCollection,
   type ShopifyAdminInventoryVariant,
   type ShopifyAdminDiscount,
 } from "@workspace/api-client-react";
@@ -34,6 +39,12 @@ type ProductDraft = {
   description: string;
   productType: string;
   tags: string;
+  fabric: string;
+  craftTechnique: string;
+  region: string;
+  colour: string;
+  collectionIds: string[];
+  newCollectionTitle: string;
   price: string;
   inventoryQuantity: string;
   imageUrl: string;
@@ -41,7 +52,8 @@ type ProductDraft = {
 };
 
 const blankProduct: ProductDraft = {
-  title: "", description: "", productType: "Saree", tags: "", price: "",
+  title: "", description: "", productType: "", tags: "", fabric: "",
+  craftTechnique: "", region: "", colour: "", collectionIds: [], newCollectionTitle: "", price: "",
   inventoryQuantity: "1", imageUrl: "", publishToWebsite: true,
 };
 
@@ -224,9 +236,10 @@ function StockWatch() {
   </section>;
 }
 
-function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode, existingImage, productId }: {
+function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits, currencyCode, existingImage, productId, collections, collectionsLoading, collectionsError }: {
   initial: ProductDraft; onClose: () => void; onSave: (draft: ProductDraft) => void; busy: boolean; error?: string;
   allowVariantEdits: boolean; currencyCode?: string; existingImage?: string | null; productId?: string;
+  collections: ShopifyAdminCollection[]; collectionsLoading: boolean; collectionsError?: string;
 }) {
   const [draft, setDraft] = useState(initial);
   const [uploading, setUploading] = useState(false);
@@ -245,12 +258,42 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
           <label>Available pieces<input type="number" min="0" step="1" required={allowVariantEdits} disabled={!allowVariantEdits} value={draft.inventoryQuantity} onChange={(e) => change("inventoryQuantity", e.target.value)} data-testid="input-product-inventory"/></label>
         </div>}
         {!allowVariantEdits && <p className="field-note">Edit prices, size/color values and stock per location using “Variants & stock” in the product list.</p>}
-        <label>Weave / product type<input maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Saree" data-testid="input-product-type"/></label>
+         <label>Shopify product type<input maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Saree, dupatta, accessory…" data-testid="input-product-type"/></label>
         <label>Short description<textarea maxLength={10000} rows={3} value={draft.description} onChange={(e) => change("description", e.target.value)} placeholder="What makes this piece special?" data-testid="input-product-description"/></label>
         <label>Tags <span className="label-hint">Separate with commas</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="silk, festive, handwoven" data-testid="input-product-tags"/></label>
+         <fieldset className="admin-product-attributes">
+           <legend>Optional product attributes</legend>
+           <p className="field-note">These are stored separately from collection assignments. Leave any field blank when it does not apply.</p>
+           <div className="form-row">
+             <label>Fabric<input maxLength={100} value={draft.fabric} onChange={(e) => change("fabric", e.target.value)} placeholder="Cotton, silk…"/></label>
+             <label>Craft / technique<input maxLength={100} value={draft.craftTechnique} onChange={(e) => change("craftTechnique", e.target.value)} placeholder="Ikat, Jamdani…"/></label>
+           </div>
+           <div className="form-row">
+             <label>Region<input maxLength={100} value={draft.region} onChange={(e) => change("region", e.target.value)} placeholder="Telangana…"/></label>
+             <label>Colour<input maxLength={100} value={draft.colour} onChange={(e) => change("colour", e.target.value)} placeholder="Indigo, maroon…"/></label>
+           </div>
+         </fieldset>
+         <fieldset className="admin-product-collections">
+           <legend>Shopify collections</legend>
+           {collectionsLoading&&<p className="field-note" role="status">Loading collections…</p>}
+           {collectionsError&&<p className="field-note" role="status">Collections could not be loaded. You can still save this product without assigning one.</p>}
+           {!collectionsLoading&&!collections.length&&!collectionsError&&<p className="field-note">No manual collections yet. This product can still be published and will appear in All Products.</p>}
+           {collections.length>0&&<div className="admin-collection-options">
+             {collections.map((collection)=><label key={collection.id} className="check-line">
+               <input type="checkbox" checked={draft.collectionIds.includes(collection.id)} onChange={(event)=>{
+                 setDraft((old)=>({...old,collectionIds:event.target.checked
+                   ?[...new Set([...old.collectionIds,collection.id])]
+                   :old.collectionIds.filter((id)=>id!==collection.id)}));
+               }}/>
+               <span><b>{collection.title}</b><small>Shopify collection</small></span>
+             </label>)}
+           </div>}
+           <label>Create or assign a collection<input maxLength={120} value={draft.newCollectionTitle} onChange={(e)=>change("newCollectionTitle",e.target.value)} placeholder="The Crafts Edit"/></label>
+           <p className="field-note">If the name already exists, this product will be added to that collection. Otherwise Shopify will create it and assign this product.</p>
+         </fieldset>
         <ProductPhotoPicker productId={productId} existingImage={existingImage} disabled={busy} onUploading={setUploading} onPending={setPhotoPending} onImage={(url) => { setPhotoUrl(url); change("imageUrl", ""); }}/>
         <label>Or add a public image URL <span className="label-hint">Optional; existing images stay</span><input type="url" disabled={busy || uploading || photoPending || !!photoUrl} value={draft.imageUrl} onChange={(e) => change("imageUrl", e.target.value)} placeholder="https://…" data-testid="input-product-image-url"/></label>
-        <label className="check-line"><input type="checkbox" checked={draft.publishToWebsite} onChange={(e) => change("publishToWebsite", e.target.checked)} data-testid="input-product-publish"/><span><b>Publish to website</b><small>Publishes this item to the Replit sales channel.</small></span></label>
+         <label className="check-line"><input type="checkbox" checked={draft.publishToWebsite} onChange={(e) => change("publishToWebsite", e.target.checked)} data-testid="input-product-publish"/><span><b>Publish to website</b><small>Publishes to the connected storefront channel. A collection is optional; published products also appear in All Products.</small></span></label>
         {error && <p className="form-error" role="alert" data-testid="text-product-form-error">{error}</p>}
         <div className="modal-actions"><button type="button" className="button button-quiet" disabled={busy || uploading} onClick={onClose} data-testid="button-cancel-product">Cancel</button>
           <button type="submit" className="button button-primary" disabled={busy || uploading || photoPending} data-testid="button-save-product">{busy || uploading ? <LoaderCircle className="spin" size={16}/> : <Check size={16}/>} {uploading ? "Uploading photo…" : busy ? "Saving…" : "Save product"}</button></div>
@@ -263,11 +306,18 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
   const queryClient = useQueryClient();
   const create = useCreateShopifyAdminProduct();
   const update = useUpdateShopifyAdminProduct();
+  const productDetails = useGetShopifyAdminProduct(product?.id ?? "", { query: { queryKey: getGetShopifyAdminProductQueryKey(product?.id ?? ""), enabled: Boolean(product) } });
+  const collectionsQuery = useGetShopifyAdminCollections();
+  const detailedProduct = productDetails.data?.product ?? product;
   const [error, setError] = useState("");
-  const draft: ProductDraft = product ? {
-    title: product.title, description: product.description || "", productType: product.productType || "",
-    tags: product.tags.join(", "), price: product.variants[0]?.price || "", inventoryQuantity: String(product.variants[0]?.inventoryQuantity ?? 0),
-    imageUrl: "", publishToWebsite: product.status === "ACTIVE",
+  const draft: ProductDraft = detailedProduct ? {
+    title: detailedProduct.title, description: detailedProduct.description || "", productType: detailedProduct.productType || "",
+    tags: detailedProduct.tags.join(", "), fabric: detailedProduct.fabric || "",
+    craftTechnique: detailedProduct.craftTechnique || "", region: detailedProduct.region || "",
+    colour: detailedProduct.colour || "", collectionIds: detailedProduct.collectionIds || [],
+    newCollectionTitle: "", price: detailedProduct.variants[0]?.price || "",
+    inventoryQuantity: String(detailedProduct.variants[0]?.inventoryQuantity ?? 0),
+    imageUrl: "", publishToWebsite: detailedProduct.status === "ACTIVE",
   } : blankProduct;
   const busy = create.isPending || update.isPending;
   const save = (values: ProductDraft) => {
@@ -275,12 +325,15 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
     const input = {
       title: values.title.trim(), description: values.description, productType: values.productType.trim(),
       tags: values.tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
+      fabric: values.fabric.trim(), craftTechnique: values.craftTechnique.trim(),
+      region: values.region.trim(), colour: values.colour.trim(),
+      collectionIds: values.collectionIds, newCollectionTitle: values.newCollectionTitle.trim(),
       ...(!product ? { price: Number(values.price), inventoryQuantity: Number(values.inventoryQuantity) } : {}),
       ...(values.imageUrl.trim() ? { imageUrl: values.imageUrl.trim() } : {}),
       publishToWebsite: values.publishToWebsite,
     };
     const options = {
-      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetShopifyProductsQueryKey() }); onClose(); },
+      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminCollectionsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetShopifyProductsQueryKey() }); onClose(); },
       onError: (reason: Error) => setError(reason.message || "Please check your details and try again."),
     };
     if (product) update.mutate({ productId: product.id, data: input }, options);
@@ -292,7 +345,9 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
       },
     }, options);
   };
-  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product} currencyCode={currencyCode} existingImage={product?.imageUrl} productId={product?.id}/>;
+  if (product && productDetails.isLoading) return <LoadingPanel/>;
+  if (product && productDetails.isError) return <ErrorPanel message={readableError(productDetails.error,"This product could not be loaded.")} retry={()=>{void productDetails.refetch();}}/>;
+  return <ProductModal initial={draft} onClose={onClose} onSave={save} busy={busy} error={error} allowVariantEdits={!product} currencyCode={currencyCode} existingImage={detailedProduct?.imageUrl} productId={product?.id} collections={collectionsQuery.data?.collections||[]} collectionsLoading={collectionsQuery.isLoading} collectionsError={collectionsQuery.isError?readableError(collectionsQuery.error,""):undefined}/>;
 }
 
 export function AdminDashboard() {

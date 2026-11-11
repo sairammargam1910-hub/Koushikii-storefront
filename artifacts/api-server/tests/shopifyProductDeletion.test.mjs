@@ -42,7 +42,7 @@ const compiled = await build({
 });
 
 const productId = "gid://shopify/Product/880068";
-const productHandle = "deletion-test-saree-880068";
+const productHandle = "deletion-test-table-runner-880068";
 const variantId = "gid://shopify/ProductVariant/880068";
 const locationId = "gid://shopify/Location/1";
 
@@ -53,11 +53,16 @@ function createProduct() {
   };
   return {
     id: productId,
-    title: "Deletion test saree 880068",
+    title: "Crafted cotton table runner 880068",
     handle: productHandle,
     description: "Dedicated Shopify fixture for product deletion verification.",
-    productType: "Saree",
-    tags: ["saree", "deletion-test"],
+    productType: "Home textile",
+    tags: ["handmade", "deletion-test"],
+    metafields: [],
+    collections: {
+      nodes: [],
+      pageInfo: { hasNextPage: false, endCursor: null },
+    },
     status: "ACTIVE",
     featuredMedia: { image: { url: "https://cdn.example.test/deletion-test.jpg", altText: "Test saree" } },
     images: { nodes: [{ url: "https://cdn.example.test/deletion-test.jpg", altText: "Test saree" }] },
@@ -84,6 +89,14 @@ function createProduct() {
 
 test("permanent deletion refreshes shopper catalog, product detail lookup, merchant list, and inventory", async (t) => {
   const product = createProduct();
+  const storefrontProduct = {
+    ...structuredClone(product),
+    fabric: { value: "Cotton" },
+    craftTechnique: { value: "Block print" },
+    region: null,
+    colour: { value: "Indigo" },
+    collections: { nodes: [] },
+  };
   const state = { deleted: false, storefrontReads: 0 };
   const module = { exports: {} };
 
@@ -100,6 +113,19 @@ test("permanent deletion refreshes shopper catalog, product detail lookup, merch
         assert.equal(variables.synchronous, true);
         state.deleted = true;
         return Response.json({ data: { productDelete: { deletedProductId: productId, userErrors: [] } } });
+      }
+      if (query.includes("query MerchantCollections")) {
+        return Response.json({
+          data: {
+            collections: {
+              nodes: [
+                { id: "gid://shopify/Collection/1", title: "Home page", handle: "frontpage", ruleSet: { appliedDisjunctively: true } },
+                { id: "gid://shopify/Collection/2", title: "The Crafts Edit", handle: "the-crafts-edit", ruleSet: null },
+              ],
+              pageInfo: { hasNextPage: false, endCursor: null },
+            },
+          },
+        });
       }
       if (query.includes("query MerchantProducts")) {
         const adminProduct = structuredClone(product);
@@ -130,11 +156,11 @@ test("permanent deletion refreshes shopper catalog, product detail lookup, merch
       throw new Error(`Unexpected Shopify Admin query: ${query}`);
     },
     async (query) => {
-      assert.match(query, /query SareeProducts/);
+      assert.match(query, /query ChenethaProducts/);
       state.storefrontReads += 1;
       return {
         products: {
-          nodes: state.deleted ? [] : [product],
+        nodes: state.deleted ? [] : [storefrontProduct],
           pageInfo: { hasNextPage: false, endCursor: null },
         },
       };
@@ -154,7 +180,10 @@ test("permanent deletion refreshes shopper catalog, product detail lookup, merch
   const catalogBefore = await fetch(`${base}/shopify/products`);
   assert.equal(catalogBefore.status, 200);
   assert.equal(catalogBefore.headers.get("cache-control"), "no-store");
-  assert.deepEqual((await catalogBefore.json()).products.map(({ id }) => id), [productId]);
+  const uncategorizedCatalog = await catalogBefore.json();
+  assert.deepEqual(uncategorizedCatalog.products.map(({ id }) => id), [productId]);
+  assert.equal(uncategorizedCatalog.products[0].productType, "Home textile");
+  assert.deepEqual(uncategorizedCatalog.products[0].collections, []);
   const cachedCatalog = await fetch(`${base}/shopify/products`);
   assert.deepEqual((await cachedCatalog.json()).products.map(({ id }) => id), [productId]);
   assert.equal(state.storefrontReads, 1, "the shopper catalog is initially served from its server cache");
@@ -164,6 +193,11 @@ test("permanent deletion refreshes shopper catalog, product detail lookup, merch
   });
   assert.equal(adminProductsBeforeResponse.status, 200);
   assert.deepEqual((await adminProductsBeforeResponse.json()).products.map(({ id }) => id), [productId]);
+  const collectionsResponse = await fetch(`${base}/shopify/admin/collections`, {
+    headers: { "x-test-admin": "yes" },
+  });
+  assert.equal(collectionsResponse.status, 200);
+  assert.deepEqual((await collectionsResponse.json()).collections.map(({ title }) => title), ["The Crafts Edit"]);
 
   const inventoryBeforeResponse = await fetch(`${base}/shopify/admin/inventory`, {
     headers: { "x-test-admin": "yes" },

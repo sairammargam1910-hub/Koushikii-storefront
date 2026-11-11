@@ -1,25 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
-import { Shell, products, ProductGrid, base } from "./_shared";
-import { isNewArrival, isPremiumProduct, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
+import { Shell, base } from "./_shared";
+import { getAvailableShopifyCollections, getShopifyAttribute, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import { useGetSiteContent, getGetSiteContentQueryKey, type SiteContentItem } from "@workspace/api-client-react";
+import type { ShopifyProduct } from "@workspace/api-client-react";
+import { normalizeRegion } from "./_shared/catalog-filter";
 import "./HomeMakingJourney.css";
 import "./Home.css";
 
-const fabrics = [
- {name:"Cotton",className:"cotton",copy:"Breathable, everyday handlooms",query:"Cotton"},
- {name:"Silk",className:"silk",copy:"Rich weaves for celebrations",query:"Silk"},
- {name:"Cotton-Silk",className:"cotton-silk",copy:"A light drape with a silk sheen",query:"Cotton-Silk"},
- {name:"Other Blends",className:"blends",copy:"Discover the character of blended yarns",query:"Other blends"},
-];
 function Textile({pattern,label}:{pattern:string;label:string}){
  return <span className={"textile "+pattern} role="img" aria-label={label+" — illustrative textile pattern"}/>;
 }
 const homeHeroSlides = [
   {image:"/images/chenetha-home-hero-courtyard.png", alt:"Rose and vermilion Kanjeevaram silk saree in a sunlit South Indian courtyard", eyebrow:"THE LIVING ART OF HANDLOOM", title:<>Chronicles<br/>of weaves.</>, copy:"Discover the quiet beauty of South Indian handlooms.", cta:"Shop the collection", href:base+"Collections"},
   {image:"/images/chenetha-home-hero-weaving.png", alt:"Midnight-indigo handloom with a fine gold border in a weaving atelier", eyebrow:"A THREAD WORTH FOLLOWING", title:<>Woven by hand.<br/>Kept for years.</>, copy:"Find a weave with colour, character and a story of its own.", cta:"Explore the weaves", href:base+"Collections"},
-  {image:"/images/chenetha-home-hero-garden.png", alt:"Bottle-green silk saree with an antique-gold border in a heritage garden", eyebrow:"COLOUR FROM THE LOOM", title:<>A little gold.<br/>A lot of soul.</>, copy:"Meet considered handlooms for days both special and everyday.", cta:"Discover the edit", href:base+"Collections?edit=premium"}
+  {image:"/images/chenetha-home-hero-garden.png", alt:"Bottle-green silk saree with an antique-gold border in a heritage garden", eyebrow:"COLOUR FROM THE LOOM", title:<>A little gold.<br/>A lot of soul.</>, copy:"Meet considered handlooms for days both special and everyday.", cta:"Discover the collection", href:base+"Collections"}
 ];
 function StaticHomeHeroCarousel(){
  const [active,setActive]=useState(0);
@@ -181,42 +177,28 @@ function MakingJourney(){
   </div>
  </div>;
 }
-function ProductCarousel({title,copy,offset=0}:{title:string;copy:string;offset?:number}){
- const [slide,setSlide]=useState(0);
-  const catalog=useShopifyCatalog();
- const order=[...products.slice(offset),...products.slice(0,offset)];
-  const liveProducts=catalog.data?.products||[];
-  const isNewArrivals=offset>0;
-  const visibleLive=isNewArrivals?liveProducts.filter(isNewArrival):liveProducts;
-  const useSamples=!catalog.isLoading&&liveProducts.length===0;
-  const pageCount=useSamples?2:Math.max(1,Math.ceil(visibleLive.length/4));
-  const activeSlide=Math.min(slide,pageCount-1);
- return <section className="section home-product-section"><div className="wrap">
-  <div className="section-head"><div><h2>{title}</h2><p>{copy}</p></div><div className="carousel-controls">
-    <button aria-label={"Previous "+title} disabled={pageCount<=1} onClick={()=>setSlide((activeSlide+pageCount-1)%pageCount)}><ArrowLeft size={15}/></button><span>{activeSlide+1} / {pageCount}</span><button aria-label={"Next "+title} disabled={pageCount<=1} onClick={()=>setSlide((activeSlide+1)%pageCount)}><ArrowRight size={15}/></button>
-  </div></div>
-   <div role="region" aria-roledescription="carousel" aria-label={title}>
-     {catalog.isLoading&&!catalog.data?<p className="shopify-catalog-status" role="status">Loading the collection…</p>
-     :useSamples?<ProductGrid items={order.slice(activeSlide*4,activeSlide*4+4)}/>
-     :visibleLive.length?<div className="products">{visibleLive.slice(activeSlide*4,activeSlide*4+4).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
-      :<div className="shopify-catalog-status"><strong>New arrival sarees are coming soon.</strong></div>}
-   </div>
-   <p className="muted" style={{fontSize:10,marginBottom:0}}>
-     {catalog.isError&&catalog.data?"Showing the most recently available pieces.":catalog.isError?"The collection could not load just now; showing clearly marked sample pieces.":useSamples?"Sample collection · Pattern swatches are illustrative placeholders.":isNewArrivals?"New arrival pieces will appear here when available.":"Current product details appear here as the collection is updated."}
-   </p>
- </div></section>
+function ProductCarousel({title,copy,collection,products}:{title:string;copy:string;collection?:ShopifyProduct["collections"][number];products:ShopifyProduct[]}){
+  if(!collection)return null;
+  const collectionProducts=products.filter(product=>product.collections.some(item=>item.handle===collection.handle));
+  if(!collectionProducts.length)return null;
+  return <section className="section home-product-section"><div className="wrap">
+   <div className="section-head"><div><h2>{collection.title||title}</h2><p>{copy}</p></div><a className="link" href={base+"Collections?collection="+encodeURIComponent(collection.handle)}>View collection →</a></div>
+   <div className="products" role="region" aria-label={collection.title||title}>{collectionProducts.slice(0,4).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
+  </div></section>;
 }
-function PremiumFeature(){
- const catalog=useShopifyCatalog();
- const premiumProducts=(catalog.data?.products||[]).filter(isPremiumProduct);
- return <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Premium Collection</span><h2>For the days<br/>you will remember.</h2><p>Celebratory silks, intricate borders and cloth to keep close. Discover the premium edit.</p><a className="btn gold" href={base+"Collections?edit=premium"}>Explore Premium <ArrowRight size={14}/></a></div>
-  {premiumProducts.length?<div className="shopify-premium-products">{premiumProducts.slice(0,2).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
-   :<div><div className="mini-swatches">{["s3","s1","s1"].map((s,i)=><a key={i} href={base+"Product?id="+["surya","ambar","nila"][i]}><Textile pattern={s} label={["Kanchipuram silk","Banarasi silk","Ikat cotton-silk"][i]}/><span style={{display:"block",marginTop:9,fontSize:11}}>{["Kanchipuram","Banarasi","Ikat"][i]}</span></a>)}</div><p className="shopify-placement-note">Sample swatches are illustrative placeholders.</p></div>}
- </div></div></section>
+function PremiumFeature({collection,products}:{collection?:ShopifyProduct["collections"][number];products:ShopifyProduct[]}){
+  if(!collection)return null;
+  const premiumProducts=products.filter(product=>product.collections.some(item=>item.handle===collection.handle));
+  if(!premiumProducts.length)return null;
+  return <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Featured collection</span><h2>{collection.title}</h2><p>Explore the pieces in this Shopify collection, with product details kept up to date.</p><a className="btn gold" href={base+"Collections?collection="+encodeURIComponent(collection.handle)}>Explore collection <ArrowRight size={14}/></a></div>
+   <div className="shopify-premium-products">{premiumProducts.slice(0,2).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
+  </div></div></section>
 }
-function IndiaWeaves(){
+function IndiaWeaves({products}:{products:ShopifyProduct[]}){
  const [selected,setSelected]=useState("tn");
  const info=stateWeaves[selected];
+  const selectedRegion=stateNames[selected]||"";
+  const hasRegionProducts=products.some(product=>normalizeRegion(getShopifyAttribute(product,"region"))===normalizeRegion(selectedRegion));
  return <section className="section"><div className="wrap">
   <div className="section-head"><div><span className="eyebrow">Many places. Many ways of weaving.</span><h2>Weaves of India</h2><p>Begin in the South. Follow the threads across the country.</p></div></div>
   <div className="map-layout"><div>
@@ -228,18 +210,18 @@ function IndiaWeaves(){
    <label htmlFor="weave-state" className="eyebrow">Choose a region</label>
    <select id="weave-state" className="state-select" value={selected} onChange={e=>setSelected(e.target.value)}>{Object.entries(stateNames).map(([code,name])=><option key={code} value={code}>{name}</option>)}</select>
    <h3>{stateNames[selected]||"Tamil Nadu"}</h3>
-    {info?<ul>{info[1].map(([name,description])=><li key={name}><strong>{name}</strong><br/><span style={{fontSize:12,color:"#eddbc0"}}>{description}</span></li>)}</ul>:<p>Explore the regional selection. Not every region has a sample piece in this preview.</p>}
-      <a className="btn gold" href={base+"Collections?region="+selected+"&category=Sarees"}>{`Shop ${stateNames[selected]} sarees`} <ArrowRight size={14}/></a>
-     <p style={{fontSize:10}}>Illustrative collection assignments, not certification of origin.</p>
+    {info?<ul>{info[1].map(([name,description])=><li key={name}><strong>{name}</strong><br/><span style={{fontSize:12,color:"#eddbc0"}}>{description}</span></li>)}</ul>:<p>Explore regional textile traditions and maker stories.</p>}
+       {hasRegionProducts&&<a className="btn gold" href={base+"Collections?region="+encodeURIComponent(selectedRegion)}>{`Shop ${selectedRegion} pieces`} <ArrowRight size={14}/></a>}
+      <p style={{fontSize:10}}>Regional notes are illustrative and do not certify product origin.</p>
   </div></div>
  </div></section>
 }
 export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];placement:"fabric_tile"|"weave_tile"}){
- const fallback=placement==="fabric_tile"?base+"Collections?category=Sarees":base+"Collections";
- return <div className={placement==="fabric_tile"?"fabric-grid":"weave-grid"}>{items.map((item,index)=><a key={item.id} className={placement==="fabric_tile"?"fabric-card":""} href={item.ctaUrl||fallback}>
-  <img className="dynamic-home-tile-image" src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
-  <h3>{item.title}</h3>{item.body&&<p>{item.body}</p>}{item.ctaLabel&&<span className="link">{item.ctaLabel} →</span>}
- </a>)}</div>;
+  const fallback=base+"Collections";
+  return <div className={placement==="fabric_tile"?"fabric-grid":"weave-grid"}>{items.map(item=><a key={item.id} className={placement==="fabric_tile"?"fabric-card":""} href={item.ctaUrl||fallback}>
+   <img className="dynamic-home-tile-image" src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
+   <h3>{item.title}</h3>{item.body&&<p>{item.body}</p>}{item.ctaLabel&&<span className="link">{item.ctaLabel} →</span>}
+  </a>)}</div>;
 }
 export function Reviews({items}:{items:SiteContentItem[]}){
   const customerVoices=items;
@@ -299,25 +281,61 @@ export function Reviews({items}:{items:SiteContentItem[]}){
  }
 export function Home(){
  const siteContent=useGetSiteContent({query:{queryKey:getGetSiteContentQueryKey(),staleTime:60_000}});
- const published=siteContent.data?.items||[];
- const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];
- const fabricTiles=homeTiles.filter(item=>item.placement==="fabric_tile").sort((a,b)=>a.sortOrder-b.sortOrder);
- const weaveTiles=homeTiles.filter(item=>item.placement==="weave_tile").sort((a,b)=>a.sortOrder-b.sortOrder);
+  const storefrontCatalog=useShopifyCatalog();
+  const availableCollections=getAvailableShopifyCollections(storefrontCatalog.data?.products||[]);
+  const craftsCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="the crafts edit");
+  const premiumCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="premium collection");
+  const newArrivalsCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="new arrivals");
+  const storefrontProducts=storefrontCatalog.data?.products||[];
+  const published=siteContent.data?.items||[];
+  const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];
+  const fabricNames=Array.from(new Set(storefrontProducts
+   .map(product=>getShopifyAttribute(product,"fabric").trim())
+   .filter(value=>value&&value.toLowerCase()!=="other blends"))).sort((a,b)=>a.localeCompare(b));
+  const fabricCards=fabricNames.map(name=>{
+   const normalized=name.toLowerCase();
+   const pattern=normalized.includes("cotton")?"cotton":normalized.includes("silk")?"silk":"blends";
+    const tile=homeTiles.find(item=>item.placement==="fabric_tile"&&item.title.trim().toLowerCase()===normalized);
+    return {name,pattern,tile};
+  });
+  const craftsTile=homeTiles.find(item=>item.placement==="fabric_tile"&&["the crafts edit","other blends"].includes(item.title.trim().toLowerCase()));
+  const collectionTile=(title:string)=>{
+    const normalized=title.trim().toLowerCase();
+    return homeTiles.find(item=>
+      item.title.trim().toLowerCase()===normalized||
+      (normalized==="the crafts edit"&&item.title.trim().toLowerCase()==="other blends"),
+    );
+  };
  const voices=published.filter(item=>item.kind==="customer_voice"&&item.published&&item.approved&&Boolean(item.body?.trim())).sort((a,b)=>a.sortOrder-b.sortOrder);
  return <Shell>
   <HomeHeroCarousel/>
 
    <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
-    {fabricTiles.length?<DynamicHomeTiles items={fabricTiles} placement="fabric_tile"/>:<div className="fabric-grid">{fabrics.map(f=><a className="fabric-card" key={f.name} href={base+"Collections?fabric="+encodeURIComponent(f.query)}><Textile pattern={f.className} label={f.name}/><h3>{f.name}</h3><p>{f.copy}</p><span className="link">Shop {f.name} →</span></a>)}</div>}
+      {fabricCards.length||craftsCollection?<div className="fabric-grid">
+       {fabricCards.map(item=><a className="fabric-card" key={item.name} href={base+"Collections?fabric="+encodeURIComponent(item.name)}>
+         {item.tile?.imageUrl?<img className="dynamic-home-tile-image" src={item.tile.imageUrl} alt={item.tile.altText||item.name} loading="lazy"/>:<Textile pattern={item.pattern} label={item.name}/>}
+        <h3>{item.name}</h3><p>Explore published pieces made with {item.name.toLowerCase()}.</p><span className="link">Shop {item.name} →</span>
+       </a>)}
+       {craftsCollection&&<a className="fabric-card" href={base+"Collections?collection="+encodeURIComponent(craftsCollection.handle)}>
+         {craftsTile?.imageUrl?<img className="dynamic-home-tile-image" src={craftsTile.imageUrl} alt={craftsTile.altText||"The Crafts Edit"} loading="lazy"/>:<Textile pattern="blends" label="The Crafts Edit"/>}
+        <h3>The Crafts Edit</h3><p>Explore pieces chosen for their distinctive craft and technique.</p><span className="link">Shop The Crafts Edit →</span>
+       </a>}
+       </div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading available fabrics…":storefrontCatalog.isError?"The Shopify catalog could not be loaded. Try the collection page again shortly.":"Fabric categories appear when published products have a fabric value."}</p>}
   </div></section>
-    <PremiumFeature/>
-    <ProductCarousel title="New Arrivals" copy="Discover the newest pieces in the collection." offset={4}/>
+     <PremiumFeature collection={premiumCollection} products={storefrontProducts}/>
+     <ProductCarousel title="New Arrivals" copy="Discover the newest pieces in the collection." collection={newArrivalsCollection} products={storefrontProducts}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
-  <IndiaWeaves/>
+   <IndiaWeaves products={storefrontProducts}/>
    <Reviews items={voices}/>
-  <section className="section home-weave-section"><div className="wrap"><div className="section-head"><div><h2>Shop by Weave</h2><p>Different regions. Distinct hands. A shared love of cloth.</p></div><a href={base+"Collections"} className="link">All weaves →</a></div>
-     {weaveTiles.length?<DynamicHomeTiles items={weaveTiles} placement="weave_tile"/>:<div className="weave-grid">{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina","Narayanpet"].map((w,i)=><a key={w} href={base+"Collections?category="+(w==="Pashmina"?"Dupattas":"Sarees")+"&weave="+w}><Textile pattern={"s"+(i+1)} label={w}/><h3>{w}</h3><span className="eyebrow" style={{fontSize:9}}>Explore →</span></a>)}</div>}
-  </div></section>
-     <section className="section" style={{paddingTop:12}}><div className="wrap home-guide-link"><a href={base+"Collections?category=Sarees"}><span className="eyebrow">A companion for choosing</span><h3>Find your thread.</h3><p>Begin with Kanchipuram, Mangalagiri and Narayanpet. Compare fabrics and borders, then narrow the collection by region or weave.</p><span className="link">Discover saree collections →</span></a><a href={base+"SareeCare"}><span className="eyebrow">A companion for keeping</span><h3>Care for the cloth.</h3><p>Give an everyday cotton and a treasured silk the different kinds of attention they need.</p><span className="link">Read the saree care notes →</span></a></div></section>
+   <section className="section home-weave-section"><div className="wrap"><div className="section-head"><div><h2>Shop by Collection</h2><p>Browse the collections currently published in Shopify.</p></div>{availableCollections.length>0&&<a href={base+"Collections"} className="link">All collections →</a>}</div>
+       {availableCollections.length?<div className="weave-grid">{availableCollections.map((collection,index)=>{
+         const tile=collectionTile(collection.title);
+         return <a key={collection.handle} href={base+"Collections?collection="+encodeURIComponent(collection.handle)}>
+          {tile?.imageUrl?<img className="dynamic-home-tile-image" src={tile.imageUrl} alt={tile.altText||collection.title} loading="lazy"/>:<Textile pattern={"s"+(index%6+1)} label={collection.title}/>}
+          <h3>{collection.title}</h3><span className="eyebrow" style={{fontSize:9}}>Explore →</span>
+         </a>;
+       })}</div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading published collections…":storefrontCatalog.isError?"The Shopify catalog could not be loaded. Try the collection page again shortly.":"Published Shopify collections appear here when products are assigned."}</p>}
+   </div></section>
+      <section className="section" style={{paddingTop:12}}><div className="wrap home-guide-link"><a href={base+"Collections"}><span className="eyebrow">A companion for choosing</span><h3>Find your thread.</h3><p>Explore the current Shopify products and narrow the collection by fabric, craft technique, region or colour.</p><span className="link">Discover the collection →</span></a><a href={base+"SareeCare"}><span className="eyebrow">A companion for keeping</span><h3>Care for the cloth.</h3><p>Give an everyday cotton and a treasured silk the different kinds of attention they need.</p><span className="link">Read the care notes →</span></a></div></section>
  </Shell>
 }

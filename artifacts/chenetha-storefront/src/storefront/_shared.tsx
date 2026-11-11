@@ -80,9 +80,9 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
    <a className="brand" href="/" onClick={()=>setMenu(false)}><img src="/images/koushikii/wordmark-red.png" alt="Chenetha by Koushikii"/></a>
   <nav id="kq-main-menu" aria-label="Main menu" className={`nav ${menu?"open":""}`} onClick={event=>{if(event.target instanceof Element&&event.target.closest("a")){setMenu(false);event.currentTarget.querySelector("details")?.removeAttribute("open")}}}>
      <details className="collection-nav"><summary>Collections <ChevronDown size={13}/></summary>
-       <div className="mega-menu"><div><strong>Fabric</strong><div className="cotton-links">{cottonWeaves.map(w=><a key={w} href={base+"Collections?category=Sarees&weave="+encodeURIComponent(w.replace(/ Cottons?$/,""))}>{w}</a>)}</div><a href={base+"Collections?category=Sarees"} className="link" style={{marginTop:18}}>Discover sarees →</a></div>
-     <div><strong>Browse by material</strong>{["Cotton","Silk","Cotton-Silk","Other blends"].map(f=><a key={f} href={base+"Collections?fabric="+encodeURIComponent(f)}>{f}</a>)}
-     <div className="menu-weaves"><strong>Shop by Weave</strong>{["Ikat","Jamdani","Kanchipuram","Banarasi","Pashmina"].map(w=><a key={w} href={base+"Collections?category="+(w==="Pashmina"?"Dupattas":"Sarees")+"&weave="+w}>{w}</a>)}<a href={base+"Collections"}>View all collections →</a></div></div></div>
+        <div className="mega-menu"><div><strong>Shop by fabric</strong><a href={base+"Collections"}>Browse available fabric filters</a><a href={base+"Collections"} className="link" style={{marginTop:18}}>View all products →</a></div>
+      <div><strong>Shop by collection</strong><a href={base+"Collections"}>Browse current Shopify collections</a>
+      <div className="menu-weaves"><strong>Product details</strong><a href={base+"Collections"}>Filter by craft technique, region and colour</a></div></div></div>
    </details>
      <a href={base+"OurStory"}>Our Story</a><a href={base+"Videos"}>Videos</a><a href={base+"Contact"}>Contact Us</a>
   </nav>
@@ -110,8 +110,8 @@ export function Footer(){
    </nav>
    <nav className="home-footer-links" aria-label="Quick links">
     <h4>Quick Links</h4>
-    <a href={base+"Collections"}>Collections</a><a href={base+"Collections?edit=new"}>New Arrivals</a>
-    <a href={base+"Collections?edit=premium"}>Premium Collection</a><a href={base+"Videos"}>Videos</a>
+     <a href={base+"Collections"}>All products & collections</a>
+     <a href={base+"Videos"}>Videos</a>
     <a href={base+"Orders"}>Orders & tracking</a>
    </nav>
    <section className="home-footer-newsletter" aria-labelledby="home-footer-news-title">

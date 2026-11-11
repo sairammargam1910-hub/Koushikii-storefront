@@ -38,7 +38,7 @@ paths:
       description: Returns published Shopify products classified as sarees.
       responses:
         "200":
-          description: Connected Shopify saree catalog
+          description: Connected Shopify storefront catalog
           content:
             application/json:
               schema:
@@ -849,7 +849,7 @@ paths:
       operationId: createShopifyAdminProduct
       tags: [shopify]
       summary: Create a Shopify product
-      description: Creates a single-variant saree product and optionally publishes it to the storefront.
+      description: Creates a Shopify product with optional structured attributes and collection assignments, then optionally publishes it to the storefront.
       requestBody:
         required: true
         content:
@@ -883,6 +883,37 @@ paths:
                 $ref: "#/components/schemas/ApiError"
         "502":
           description: Shopify product could not be created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /shopify/admin/collections:
+    get:
+      operationId: getShopifyAdminCollections
+      tags: [shopify]
+      summary: List Shopify collections for product assignment
+      description: Lists manually-managed Shopify collections available to the merchant product editor.
+      responses:
+        "200":
+          description: Shopify collections
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminCollectionsResponse"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Shopify collections could not be loaded
           content:
             application/json:
               schema:
@@ -1885,6 +1916,28 @@ components:
           items:
             $ref: "#/components/schemas/ShopifyOption"
       required: [id, title, availableForSale, price, currencyCode, selectedOptions]
+    ShopifyProductCollection:
+      type: object
+      properties:
+        id:
+          type: string
+        handle:
+          type: string
+        title:
+          type: string
+      required: [id, handle, title]
+    ShopifyProductAttributes:
+      type: object
+      properties:
+        fabric:
+          type: ["string", "null"]
+        craftTechnique:
+          type: ["string", "null"]
+        region:
+          type: ["string", "null"]
+        colour:
+          type: ["string", "null"]
+      required: [fabric, craftTechnique, region, colour]
     ShopifyProduct:
       type: object
       properties:
@@ -1902,6 +1955,12 @@ components:
           type: array
           items:
             type: string
+        attributes:
+          $ref: "#/components/schemas/ShopifyProductAttributes"
+        collections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyProductCollection"
         images:
           type: array
           items:
@@ -1910,7 +1969,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyVariant"
-      required: [id, handle, title, description, productType, tags, images, variants]
+      required: [id, handle, title, description, productType, tags, attributes, collections, images, variants]
     ShopifyProductsResponse:
       type: object
       properties:
@@ -2395,6 +2454,18 @@ components:
           type: array
           items:
             type: string
+        fabric:
+          type: string
+        craftTechnique:
+          type: string
+        region:
+          type: string
+        colour:
+          type: string
+        collectionIds:
+          type: array
+          items:
+            type: string
         imageUrl:
           type: ["string", "null"]
           format: uri
@@ -2406,7 +2477,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyAdminProductOption"
-      required: [id, title, handle, description, productType, status, tags, imageUrl, variants, options]
+      required: [id, title, handle, description, productType, status, tags, fabric, craftTechnique, region, colour, collectionIds, imageUrl, variants, options]
+    ShopifyAdminCollection:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        handle:
+          type: string
+        manual:
+          type: boolean
+      required: [id, title, handle, manual]
     ShopifyAdminProductsResponse:
       type: object
       properties:
@@ -2417,6 +2500,14 @@ components:
           items:
             $ref: "#/components/schemas/ShopifyAdminProduct"
       required: [currencyCode, products]
+    ShopifyAdminCollectionsResponse:
+      type: object
+      properties:
+        collections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyAdminCollection"
+      required: [collections]
     ShopifyAdminProductMediaError:
       type: object
       properties:
@@ -2531,6 +2622,26 @@ components:
           items:
             type: string
             maxLength: 100
+        fabric:
+          type: string
+          maxLength: 100
+        craftTechnique:
+          type: string
+          maxLength: 100
+        region:
+          type: string
+          maxLength: 100
+        colour:
+          type: string
+          maxLength: 100
+        collectionIds:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+        newCollectionTitle:
+          type: string
+          maxLength: 120
         price:
           type: number
           exclusiveMinimum: 0
@@ -2542,7 +2653,7 @@ components:
           format: uri
         publishToWebsite:
           type: boolean
-      required: [title, description, productType, tags, price, inventoryQuantity, publishToWebsite]
+      required: [title, description, tags, price, inventoryQuantity, publishToWebsite]
     ShopifyAdminProductUpdate:
       type: object
       properties:
@@ -2562,6 +2673,26 @@ components:
           items:
             type: string
             maxLength: 100
+        fabric:
+          type: string
+          maxLength: 100
+        craftTechnique:
+          type: string
+          maxLength: 100
+        region:
+          type: string
+          maxLength: 100
+        colour:
+          type: string
+          maxLength: 100
+        collectionIds:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+        newCollectionTitle:
+          type: string
+          maxLength: 120
         imageUrl:
           type: ["string", "null"]
           format: uri

@@ -5,6 +5,7 @@ import { publishableKeyFromHost } from "@clerk/react/internal";
 import { Router as WouterRouter, useLocation } from "wouter";
 import { ShopperPreferencesProvider } from "../../src/storefront/ShopperPreferences";
 import { Collections } from "../../src/storefront/Collections";
+import { Home } from "../../src/storefront/Home";
 import { ShopifyProductRoute } from "../../src/storefront/ShopifyCatalog";
 import { Cart } from "../../src/storefront/Cart";
 import { Checkout } from "../../src/storefront/Checkout";
@@ -20,6 +21,7 @@ function Fixture() {
   const [location] = useLocation();
   const screen = new URLSearchParams(window.location.search).get("screen")
     ?? (location.toLowerCase() === "/cart" ? "cart" : null);
+  if (screen === "home") return <Home />;
   if (screen === "collections") return <Collections />;
   if (screen === "product") return <ShopifyProductRoute handle="fixture-saree" />;
   if (screen === "cart") return <Cart />;

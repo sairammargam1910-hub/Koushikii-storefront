@@ -29,6 +29,17 @@ export const GetShopifyProductsResponse = zod.object({
   "description": zod.string(),
   "productType": zod.string(),
   "tags": zod.array(zod.string()),
+  "attributes": zod.object({
+  "fabric": zod.string().nullable(),
+  "craftTechnique": zod.string().nullable(),
+  "region": zod.string().nullable(),
+  "colour": zod.string().nullable()
+}),
+  "collections": zod.array(zod.object({
+  "id": zod.string(),
+  "handle": zod.string(),
+  "title": zod.string()
+})),
   "images": zod.array(zod.object({
   "url": zod.url(),
   "altText": zod.string().nullable()
@@ -899,6 +910,11 @@ export const GetShopifyAdminProductsResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
+  "fabric": zod.string(),
+  "craftTechnique": zod.string(),
+  "region": zod.string(),
+  "colour": zod.string(),
+  "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
@@ -931,7 +947,7 @@ export const GetShopifyAdminProductsResponse = zod.object({
 
 
 /**
- * Creates a single-variant saree product and optionally publishes it to the storefront.
+ * Creates a Shopify product with optional structured attributes and collection assignments, then optionally publishes it to the storefront.
  * @summary Create a Shopify product
  */
 export const createShopifyAdminProductBodyTitleMax = 255;
@@ -944,6 +960,18 @@ export const createShopifyAdminProductBodyTagsItemMax = 100;
 
 export const createShopifyAdminProductBodyTagsMax = 20;
 
+export const createShopifyAdminProductBodyFabricMax = 100;
+
+export const createShopifyAdminProductBodyCraftTechniqueMax = 100;
+
+export const createShopifyAdminProductBodyRegionMax = 100;
+
+export const createShopifyAdminProductBodyColourMax = 100;
+
+export const createShopifyAdminProductBodyCollectionIdsMax = 100;
+
+export const createShopifyAdminProductBodyNewCollectionTitleMax = 120;
+
 export const createShopifyAdminProductBodyPriceExclusiveMin = 0;
 
 export const createShopifyAdminProductBodyInventoryQuantityMin = 0;
@@ -953,8 +981,14 @@ export const createShopifyAdminProductBodyInventoryQuantityMin = 0;
 export const CreateShopifyAdminProductBody = zod.object({
   "title": zod.string().min(1).max(createShopifyAdminProductBodyTitleMax),
   "description": zod.string().max(createShopifyAdminProductBodyDescriptionMax),
-  "productType": zod.string().max(createShopifyAdminProductBodyProductTypeMax),
+  "productType": zod.string().max(createShopifyAdminProductBodyProductTypeMax).optional(),
   "tags": zod.array(zod.string().max(createShopifyAdminProductBodyTagsItemMax)).max(createShopifyAdminProductBodyTagsMax),
+  "fabric": zod.string().max(createShopifyAdminProductBodyFabricMax).optional(),
+  "craftTechnique": zod.string().max(createShopifyAdminProductBodyCraftTechniqueMax).optional(),
+  "region": zod.string().max(createShopifyAdminProductBodyRegionMax).optional(),
+  "colour": zod.string().max(createShopifyAdminProductBodyColourMax).optional(),
+  "collectionIds": zod.array(zod.string()).max(createShopifyAdminProductBodyCollectionIdsMax).optional(),
+  "newCollectionTitle": zod.string().max(createShopifyAdminProductBodyNewCollectionTitleMax).optional(),
   "price": zod.number().gt(createShopifyAdminProductBodyPriceExclusiveMin),
   "inventoryQuantity": zod.int().min(createShopifyAdminProductBodyInventoryQuantityMin),
   "imageUrl": zod.url().nullish(),
@@ -971,6 +1005,11 @@ export const CreateShopifyAdminProductResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
+  "fabric": zod.string(),
+  "craftTechnique": zod.string(),
+  "region": zod.string(),
+  "colour": zod.string(),
+  "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
@@ -999,6 +1038,20 @@ export const CreateShopifyAdminProductResponse = zod.object({
 }))
 }))
 })
+})
+
+
+/**
+ * Lists manually-managed Shopify collections available to the merchant product editor.
+ * @summary List Shopify collections for product assignment
+ */
+export const GetShopifyAdminCollectionsResponse = zod.object({
+  "collections": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "handle": zod.string(),
+  "manual": zod.boolean()
+}))
 })
 
 
@@ -1047,6 +1100,11 @@ export const GetShopifyAdminProductResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
+  "fabric": zod.string(),
+  "craftTechnique": zod.string(),
+  "region": zod.string(),
+  "colour": zod.string(),
+  "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
@@ -1100,6 +1158,18 @@ export const updateShopifyAdminProductBodyTagsItemMax = 100;
 
 export const updateShopifyAdminProductBodyTagsMax = 20;
 
+export const updateShopifyAdminProductBodyFabricMax = 100;
+
+export const updateShopifyAdminProductBodyCraftTechniqueMax = 100;
+
+export const updateShopifyAdminProductBodyRegionMax = 100;
+
+export const updateShopifyAdminProductBodyColourMax = 100;
+
+export const updateShopifyAdminProductBodyCollectionIdsMax = 100;
+
+export const updateShopifyAdminProductBodyNewCollectionTitleMax = 120;
+
 
 
 export const UpdateShopifyAdminProductBody = zod.object({
@@ -1107,6 +1177,12 @@ export const UpdateShopifyAdminProductBody = zod.object({
   "description": zod.string().max(updateShopifyAdminProductBodyDescriptionMax).optional(),
   "productType": zod.string().max(updateShopifyAdminProductBodyProductTypeMax).optional(),
   "tags": zod.array(zod.string().max(updateShopifyAdminProductBodyTagsItemMax)).max(updateShopifyAdminProductBodyTagsMax).optional(),
+  "fabric": zod.string().max(updateShopifyAdminProductBodyFabricMax).optional(),
+  "craftTechnique": zod.string().max(updateShopifyAdminProductBodyCraftTechniqueMax).optional(),
+  "region": zod.string().max(updateShopifyAdminProductBodyRegionMax).optional(),
+  "colour": zod.string().max(updateShopifyAdminProductBodyColourMax).optional(),
+  "collectionIds": zod.array(zod.string()).max(updateShopifyAdminProductBodyCollectionIdsMax).optional(),
+  "newCollectionTitle": zod.string().max(updateShopifyAdminProductBodyNewCollectionTitleMax).optional(),
   "imageUrl": zod.url().nullish(),
   "publishToWebsite": zod.boolean().optional()
 })
@@ -1121,6 +1197,11 @@ export const UpdateShopifyAdminProductResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
+  "fabric": zod.string(),
+  "craftTechnique": zod.string(),
+  "region": zod.string(),
+  "colour": zod.string(),
+  "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
@@ -1227,6 +1308,11 @@ export const UpdateShopifyAdminVariantResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
+  "fabric": zod.string(),
+  "craftTechnique": zod.string(),
+  "region": zod.string(),
+  "colour": zod.string(),
+  "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
@@ -1277,6 +1363,11 @@ export const DeleteShopifyAdminVariantResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
+  "fabric": zod.string(),
+  "craftTechnique": zod.string(),
+  "region": zod.string(),
+  "colour": zod.string(),
+  "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),
@@ -1344,6 +1435,11 @@ export const CreateShopifyAdminVariantResponse = zod.object({
   "productType": zod.string(),
   "status": zod.enum(['ACTIVE', 'DRAFT', 'ARCHIVED']),
   "tags": zod.array(zod.string()),
+  "fabric": zod.string(),
+  "craftTechnique": zod.string(),
+  "region": zod.string(),
+  "colour": zod.string(),
+  "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
   "id": zod.string(),

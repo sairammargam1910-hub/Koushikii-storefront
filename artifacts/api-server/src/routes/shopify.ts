@@ -34,6 +34,11 @@ type ShopifyProduct = {
   description: string;
   productType: string;
   tags: string[];
+  fabric: { value: string } | null;
+  craftTechnique: { value: string } | null;
+  region: { value: string } | null;
+  colour: { value: string } | null;
+  collections: { nodes: Array<{ id: string; handle: string; title: string }> };
   images: { nodes: ShopifyImage[] };
   variants: { nodes: ShopifyVariant[] };
 };
@@ -152,8 +157,8 @@ type ShopifyCartApiResponse = {
   }>;
 };
 
-const SAREE_PRODUCTS_QUERY = `#graphql
-  query SareeProducts($after: String) @inContext(country: IN) {
+const SHOPIFY_PRODUCTS_QUERY = `#graphql
+  query ChenethaProducts($after: String) @inContext(country: IN) {
     products(first: 50, after: $after) {
       nodes {
         id
@@ -162,6 +167,13 @@ const SAREE_PRODUCTS_QUERY = `#graphql
         description
         productType
         tags
+        fabric: metafield(namespace: "chenetha", key: "fabric") { value }
+        craftTechnique: metafield(namespace: "chenetha", key: "craft_technique") { value }
+        region: metafield(namespace: "chenetha", key: "region") { value }
+        colour: metafield(namespace: "chenetha", key: "colour") { value }
+        collections(first: 50) {
+          nodes { id handle title }
+        }
         images(first: 6) {
           nodes { url altText }
         }
@@ -357,7 +369,6 @@ let cachedCatalog:
   | {
       products: ShopifyProduct[];
       totalProducts: number;
-      truncated: boolean;
       expiresAt: number;
     }
   | undefined;
@@ -365,15 +376,6 @@ let cachedCatalog:
 export function invalidateShopifyCatalog(): void {
   cachedCatalog = undefined;
 }
-
-const isSaree = (product: Pick<ShopifyProduct, "title" | "productType" | "tags">) => {
-  const searchable = [
-    product.title,
-    product.productType,
-    ...product.tags,
-  ].join(" ");
-  return /\b(saree|sarees|sari|saris)\b/i.test(searchable);
-};
 
 const isDemoListing = (product: {
   title: string;
@@ -798,7 +800,7 @@ async function validatePurchasableVariant(variantId: string) {
   return { variant };
 }
 
-async function getSareeCatalog() {
+async function getStorefrontCatalog() {
   if (cachedCatalog && Date.now() < cachedCatalog.expiresAt) {
     return cachedCatalog;
   }
@@ -806,22 +808,24 @@ async function getSareeCatalog() {
   const allProducts: ShopifyProduct[] = [];
   let after: string | null = null;
   let hasNextPage = true;
-  const maxPages = 10;
-
-  for (let page = 0; page < maxPages && hasNextPage; page += 1) {
+  const seenCursors = new Set<string>();
+  while (hasNextPage) {
     const result: ShopifyProductsPage = await shopifyStorefrontRequest<ShopifyProductsPage>(
-      SAREE_PRODUCTS_QUERY,
+      SHOPIFY_PRODUCTS_QUERY,
       { after },
     );
     allProducts.push(...result.products.nodes);
     hasNextPage = result.products.pageInfo.hasNextPage;
     after = result.products.pageInfo.endCursor;
+    if (hasNextPage && (!after || seenCursors.has(after))) {
+      throw new Error("Shopify returned an invalid product catalog cursor.");
+    }
+    if (after) seenCursors.add(after);
   }
 
   const catalog = {
-    products: allProducts.filter(isSaree),
+    products: allProducts,
     totalProducts: allProducts.length,
-    truncated: hasNextPage,
     expiresAt: Date.now() + CATALOG_CACHE_TTL_MS,
   };
   cachedCatalog = catalog;
@@ -832,7 +836,7 @@ const router: IRouter = Router();
 
 router.get("/shopify/products", async (_req, res) => {
   try {
-    const catalog = await getSareeCatalog();
+    const catalog = await getStorefrontCatalog();
     res.setHeader("Cache-Control", "no-store");
     res.json({
       products: catalog.products.map((product) => ({
@@ -842,6 +846,13 @@ router.get("/shopify/products", async (_req, res) => {
         description: product.description,
         productType: product.productType,
         tags: product.tags,
+        attributes: {
+          fabric: product.fabric?.value ?? null,
+          craftTechnique: product.craftTechnique?.value ?? null,
+          region: product.region?.value ?? null,
+          colour: product.colour?.value ?? null,
+        },
+        collections: product.collections.nodes,
         images: product.images.nodes,
         variants: product.variants.nodes.map((variant) => ({
           id: variant.id,
@@ -853,10 +864,10 @@ router.get("/shopify/products", async (_req, res) => {
         })),
       })),
       totalPublishedProducts: catalog.totalProducts,
-      truncated: catalog.truncated,
+      truncated: false,
     });
   } catch (error) {
-    logger.error({ err: error }, "Shopify saree catalog could not be loaded");
+    logger.error({ err: error }, "Shopify catalog could not be loaded");
     res.status(502).json({ error: "Shopify products are temporarily unavailable." });
   }
 });

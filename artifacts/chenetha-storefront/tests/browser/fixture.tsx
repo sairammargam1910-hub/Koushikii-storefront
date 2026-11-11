@@ -15,6 +15,11 @@ const product: ShopifyAdminProduct = {
   productType: "Saree",
   status: "ACTIVE",
   tags: ["silk"],
+  fabric: "Silk",
+  craftTechnique: "",
+  region: "",
+  colour: "",
+  collectionIds: [],
   imageUrl: "https://cdn.example.test/existing-cover.jpg",
   variants: [{
     id: "gid://shopify/ProductVariant/browser-fixture",

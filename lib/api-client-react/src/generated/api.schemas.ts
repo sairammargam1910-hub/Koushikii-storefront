@@ -137,6 +137,23 @@ export interface ShopifyVariant {
   selectedOptions: ShopifyOption[];
 }
 
+export interface ShopifyProductCollection {
+  id: string;
+  handle: string;
+  title: string;
+}
+
+export interface ShopifyProductAttributes {
+  /** @nullable */
+  fabric: string | null;
+  /** @nullable */
+  craftTechnique: string | null;
+  /** @nullable */
+  region: string | null;
+  /** @nullable */
+  colour: string | null;
+}
+
 export interface ShopifyProduct {
   id: string;
   handle: string;
@@ -144,6 +161,8 @@ export interface ShopifyProduct {
   description: string;
   productType: string;
   tags: string[];
+  attributes: ShopifyProductAttributes;
+  collections: ShopifyProductCollection[];
   images: ShopifyImage[];
   variants: ShopifyVariant[];
 }
@@ -545,15 +564,31 @@ export interface ShopifyAdminProduct {
   productType: string;
   status: ShopifyAdminProductStatus;
   tags: string[];
+  fabric: string;
+  craftTechnique: string;
+  region: string;
+  colour: string;
+  collectionIds: string[];
   /** @nullable */
   imageUrl: string | null;
   variants: ShopifyAdminProductVariant[];
   options: ShopifyAdminProductOption[];
 }
 
+export interface ShopifyAdminCollection {
+  id: string;
+  title: string;
+  handle: string;
+  manual: boolean;
+}
+
 export interface ShopifyAdminProductsResponse {
   currencyCode: string;
   products: ShopifyAdminProduct[];
+}
+
+export interface ShopifyAdminCollectionsResponse {
+  collections: ShopifyAdminCollection[];
 }
 
 export interface ShopifyAdminProductMediaError {
@@ -663,12 +698,24 @@ export interface ShopifyAdminProductInput {
   /** @maxLength 10000 */
   description: string;
   /** @maxLength 100 */
-  productType: string;
+  productType?: string;
   /**
      * @maxItems 20
      * @items.maxLength 100
      */
   tags: string[];
+  /** @maxLength 100 */
+  fabric?: string;
+  /** @maxLength 100 */
+  craftTechnique?: string;
+  /** @maxLength 100 */
+  region?: string;
+  /** @maxLength 100 */
+  colour?: string;
+  /** @maxItems 100 */
+  collectionIds?: string[];
+  /** @maxLength 120 */
+  newCollectionTitle?: string;
   /** @exclusiveMinimum 0 */
   price: number;
   /** @minimum 0 */
@@ -693,6 +740,18 @@ export interface ShopifyAdminProductUpdate {
      * @items.maxLength 100
      */
   tags?: string[];
+  /** @maxLength 100 */
+  fabric?: string;
+  /** @maxLength 100 */
+  craftTechnique?: string;
+  /** @maxLength 100 */
+  region?: string;
+  /** @maxLength 100 */
+  colour?: string;
+  /** @maxItems 100 */
+  collectionIds?: string[];
+  /** @maxLength 120 */
+  newCollectionTitle?: string;
   /** @nullable */
   imageUrl?: string | null;
   publishToWebsite?: boolean;

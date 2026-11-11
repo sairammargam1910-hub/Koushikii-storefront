@@ -15,12 +15,24 @@ export interface ShopifyAdminProductInput {
   /** @maxLength 10000 */
   description: string;
   /** @maxLength 100 */
-  productType: string;
+  productType?: string;
   /**
      * @maxItems 20
      * @items.maxLength 100
      */
   tags: string[];
+  /** @maxLength 100 */
+  fabric?: string;
+  /** @maxLength 100 */
+  craftTechnique?: string;
+  /** @maxLength 100 */
+  region?: string;
+  /** @maxLength 100 */
+  colour?: string;
+  /** @maxItems 100 */
+  collectionIds?: string[];
+  /** @maxLength 120 */
+  newCollectionTitle?: string;
   /** @exclusiveMinimum 0 */
   price: number;
   /** @minimum 0 */

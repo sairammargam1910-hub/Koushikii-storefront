@@ -17,6 +17,11 @@ export interface ShopifyAdminProduct {
   productType: string;
   status: ShopifyAdminProductStatus;
   tags: string[];
+  fabric: string;
+  craftTechnique: string;
+  region: string;
+  colour: string;
+  collectionIds: string[];
   /** @nullable */
   imageUrl: string | null;
   variants: ShopifyAdminProductVariant[];

@@ -21,6 +21,18 @@ export interface ShopifyAdminProductUpdate {
      * @items.maxLength 100
      */
   tags?: string[];
+  /** @maxLength 100 */
+  fabric?: string;
+  /** @maxLength 100 */
+  craftTechnique?: string;
+  /** @maxLength 100 */
+  region?: string;
+  /** @maxLength 100 */
+  colour?: string;
+  /** @maxItems 100 */
+  collectionIds?: string[];
+  /** @maxLength 120 */
+  newCollectionTitle?: string;
   /** @nullable */
   imageUrl?: string | null;
   publishToWebsite?: boolean;

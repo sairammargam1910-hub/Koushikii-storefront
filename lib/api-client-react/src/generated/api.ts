@@ -28,6 +28,7 @@ import type {
   GetShopifyOrdersParams,
   HealthStatus,
   ShopifyAdminArchiveResponse,
+  ShopifyAdminCollectionsResponse,
   ShopifyAdminDiscountInput,
   ShopifyAdminDiscountResponse,
   ShopifyAdminDiscountsResponse,
@@ -2040,7 +2041,7 @@ export const getCreateShopifyAdminProductUrl = () => {
 }
 
 /**
- * Creates a single-variant saree product and optionally publishes it to the storefront.
+ * Creates a Shopify product with optional structured attributes and collection assignments, then optionally publishes it to the storefront.
  * @summary Create a Shopify product
  */
 export const createShopifyAdminProduct = async (shopifyAdminProductInput: ShopifyAdminProductInput, options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminProductResponse> => {
@@ -2119,6 +2120,84 @@ export const useCreateShopifyAdminProduct = <TError = ErrorType<ApiError>,
       > => {
       return useMutation(getCreateShopifyAdminProductMutationOptions(options));
     }
+
+export const getGetShopifyAdminCollectionsUrl = () => {
+
+
+
+
+  return `/api/shopify/admin/collections`
+}
+
+/**
+ * Lists manually-managed Shopify collections available to the merchant product editor.
+ * @summary List Shopify collections for product assignment
+ */
+export const getShopifyAdminCollections = async ( options?: Parameters<typeof customFetch>[1]): Promise<ShopifyAdminCollectionsResponse> => {
+
+  return customFetch<ShopifyAdminCollectionsResponse>(getGetShopifyAdminCollectionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShopifyAdminCollectionsQueryKey = () => {
+    return [
+    `/api/shopify/admin/collections`
+    ] as const;
+    }
+
+
+export const getGetShopifyAdminCollectionsQueryOptions = <TData = Awaited<ReturnType<typeof getShopifyAdminCollections>>, TError = ErrorType<ApiError>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminCollections>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShopifyAdminCollectionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShopifyAdminCollections>>> = ({ signal }) => getShopifyAdminCollections({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminCollections>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetShopifyAdminCollectionsQueryResult = NonNullable<Awaited<ReturnType<typeof getShopifyAdminCollections>>>
+export type GetShopifyAdminCollectionsQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary List Shopify collections for product assignment
+ */
+
+export function useGetShopifyAdminCollections<TData = Awaited<ReturnType<typeof getShopifyAdminCollections>>, TError = ErrorType<ApiError>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getShopifyAdminCollections>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetShopifyAdminCollectionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetShopifyAdminInventoryUrl = () => {
 

@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ShopifyImage } from './shopifyImage';
+import type { ShopifyProductAttributes } from './shopifyProductAttributes';
+import type { ShopifyProductCollection } from './shopifyProductCollection';
 import type { ShopifyVariant } from './shopifyVariant';
 
 export interface ShopifyProduct {
@@ -15,6 +17,8 @@ export interface ShopifyProduct {
   description: string;
   productType: string;
   tags: string[];
+  attributes: ShopifyProductAttributes;
+  collections: ShopifyProductCollection[];
   images: ShopifyImage[];
   variants: ShopifyVariant[];
 }
