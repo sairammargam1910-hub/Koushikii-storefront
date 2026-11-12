@@ -13,6 +13,9 @@ import "./Home.css";
 function Textile({pattern,label}:{pattern:string;label:string}){
  return <span className={"textile "+pattern} role="img" aria-label={label+" — illustrative textile pattern"}/>;
 }
+function homeCollectionKey(title:string){
+ return title.trim().toLowerCase().replace(/[^a-z0-9]+/g,"");
+}
 const homeHeroSlides = [
   {image:"/images/chenetha-home-hero-courtyard.png", alt:"Rose and vermilion Kanjeevaram silk saree in a sunlit South Indian courtyard", eyebrow:"THE LIVING ART OF HANDLOOM", title:<>Chronicles<br/>of weaves.</>, copy:"Discover the quiet beauty of South Indian handlooms.", cta:"Shop the collection", href:base+"Collections"},
   {image:"/images/chenetha-home-hero-weaving.png", alt:"Midnight-indigo handloom with a fine gold border in a weaving atelier", eyebrow:"A THREAD WORTH FOLLOWING", title:<>Woven by hand.<br/>Kept for years.</>, copy:"Find a weave with colour, character and a story of its own.", cta:"Explore the weaves", href:base+"Collections"},
@@ -299,6 +302,13 @@ export function Home(){
     ...REGIONAL_HANDLOOMS,
     ...storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"regionalHandloom")),
   ])).sort((a,b)=>a.localeCompare(b));
+  const collectionTitles=new Set(availableCollections.map(collection=>homeCollectionKey(collection.title)));
+  const homeCollectionLinks=[
+    ...availableCollections.map(collection=>({key:`collection:${collection.handle}`,title:collection.title,kind:"collection" as const,handle:collection.handle})),
+    ...regionalHandlooms
+      .filter(name=>!collectionTitles.has(homeCollectionKey(name)))
+      .map(name=>({key:`regional:${name}`,title:name,kind:"regional" as const})),
+  ];
   const weavePrints=Array.from(new Set([
     ...WEAVE_PRINTS,
     ...storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"weave")),
@@ -322,12 +332,6 @@ export function Home(){
        </a>)}
        </div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading available fabrics…":storefrontCatalog.isError?"The Shopify catalog could not be loaded. Try the collection page again shortly.":"Fabric categories appear when published products have a fabric value."}</p>}
   </div></section>
-   <section className="section home-regional-section" id="regional-handlooms"><div className="wrap">
-    <div className="section-head"><div><h2>Regional Handlooms</h2><p>Explore traditions and styles independently of fibre and technique.</p></div></div>
-    <div className="taxonomy-link-grid" aria-label="Regional Handlooms">
-     {regionalHandlooms.map((name,index)=><a key={name} href={base+"Collections?regionalHandloom="+encodeURIComponent(name)}><Textile pattern={"s"+(index%6+1)} label={name}/><span>{name}</span><small>Explore pieces →</small></a>)}
-    </div>
-   </div></section>
    <section className="section home-technique-section" id="weave-print"><div className="wrap">
     <div className="section-head"><div><h2>Weave / Print</h2><p>Find a technique across the regions and materials where it appears.</p></div></div>
     <div className="taxonomy-link-grid technique-link-grid" aria-label="Weave / Print">
@@ -339,14 +343,17 @@ export function Home(){
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
    <IndiaWeaves products={storefrontProducts}/>
    <Reviews items={voices}/>
-   <section className="section home-weave-section"><div className="wrap"><div className="section-head"><div><h2>Shop by Collection</h2><p>Browse the collections currently published in Shopify.</p></div>{availableCollections.length>0&&<a href={base+"Collections"} className="link">All collections →</a>}</div>
-       {availableCollections.length?<div className="weave-grid">{availableCollections.map((collection,index)=>{
-         const tile=collectionTile(collection.title);
-         return <a key={collection.handle} href={base+"Collections?collection="+encodeURIComponent(collection.handle)}>
-          {tile?.imageUrl?<img className="dynamic-home-tile-image" src={tile.imageUrl} alt={tile.altText||collection.title} loading="lazy"/>:<Textile pattern={"s"+(index%6+1)} label={collection.title}/>}
-          <h3>{collection.title}</h3><span className="eyebrow" style={{fontSize:9}}>Explore →</span>
+   <section className="section home-weave-section" id="shop-by-collection"><div className="wrap"><div className="section-head"><div><h2>Shop by Collection</h2><p>Browse Shopify collections and regional handlooms in one place.</p></div>{homeCollectionLinks.length>0&&<a href={base+"Collections"} className="link">All collections →</a>}</div>
+       {homeCollectionLinks.length?<div className="weave-grid">{homeCollectionLinks.map((item,index)=>{
+         const tile=item.kind==="collection"?collectionTile(item.title):undefined;
+         const href=item.kind==="collection"
+           ?base+"Collections?collection="+encodeURIComponent(item.handle)
+           :base+"Collections?regionalHandloom="+encodeURIComponent(item.title);
+         return <a key={item.key} href={href}>
+          {tile?.imageUrl?<img className="dynamic-home-tile-image" src={tile.imageUrl} alt={tile.altText||item.title} loading="lazy"/>:<Textile pattern={"s"+(index%6+1)} label={item.title}/>}
+          <h3>{item.title}</h3><span className="eyebrow" style={{fontSize:9}}>{item.kind==="regional"?"Regional handloom · ":""}Explore →</span>
          </a>;
-       })}</div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading published collections…":storefrontCatalog.isError?"The Shopify catalog could not be loaded. Try the collection page again shortly.":"Published Shopify collections appear here when products are assigned."}</p>}
+       })}</div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading published collections…":storefrontCatalog.isError?"The Shopify catalog could not be loaded. Try the collection page again shortly.":"Published collections and regional handlooms appear here when products are assigned."}</p>}
    </div></section>
       <section className="section" style={{paddingTop:12}}><div className="wrap home-guide-link"><a href={base+"Collections"}><span className="eyebrow">A companion for choosing</span><h3>Find your thread.</h3><p>Explore the current Shopify products and narrow the collection by fabric, regional tradition, technique, origin or colour.</p><span className="link">Discover the collection →</span></a><a href={base+"SareeCare"}><span className="eyebrow">A companion for keeping</span><h3>Care for the cloth.</h3><p>Give an everyday cotton and a treasured silk the different kinds of attention they need.</p><span className="link">Read the care notes →</span></a></div></section>
  </Shell>

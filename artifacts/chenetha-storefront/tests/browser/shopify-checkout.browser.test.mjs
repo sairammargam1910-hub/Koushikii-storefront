@@ -655,10 +655,11 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   const withoutCollection = await openHome({ width: 1280, height: 900 }, [productResponse.products[0]]);
   await withoutCollection.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
   assert.equal(await withoutCollection.page.locator(".home-fabric-section .fabric-card").count(), 4);
-  await withoutCollection.page.getByRole("heading", { name: "Regional Handlooms", exact: true }).waitFor();
+  await withoutCollection.page.getByRole("heading", { name: "Shop by Collection", exact: true }).waitFor();
+  assert.equal(await withoutCollection.page.locator(".home-regional-section").count(), 0);
+  assert.equal(await withoutCollection.page.locator(".home-weave-section .weave-grid > a").count(), 13);
   await withoutCollection.page.getByRole("heading", { name: "Weave / Print", exact: true }).waitFor();
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "The Crafts Edit", exact: true }).count(), 0);
-  assert.equal(await withoutCollection.page.locator(".home-weave-section").getByRole("link").count(), 0);
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "New Arrivals", exact: true }).count(), 0);
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "Premium Collection", exact: true }).count(), 0);
   await withoutCollection.context.close();
@@ -676,6 +677,25 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
       assert.ok(bounds.x + bounds.width <= viewport.width + 1, "mobile collection tile should not overflow the viewport");
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "mobile home should not scroll horizontally");
     }
+    await context.close();
+  }
+
+  const narayanpetProduct = {
+    ...productResponse.products[0],
+    attributes: { ...productResponse.products[0].attributes, regionalHandloom: "Narayanpet" },
+    collections: [{
+      id: "gid://shopify/Collection/narayanpet",
+      handle: "narayanpet",
+      title: "Narayanpet",
+    }],
+  };
+  for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+    const { context, page } = await openHome(viewport, [narayanpetProduct]);
+    const collectionGrid = page.locator(".home-weave-section .weave-grid");
+    const narayanpet = collectionGrid.getByRole("link", { name: /Narayanpet/ });
+    assert.equal(await narayanpet.count(), 1, "Narayanpet should appear only once when both a collection and regional value exist");
+    assert.match(await narayanpet.getAttribute("href"), /Collections\?collection=narayanpet$/);
+    assert.equal(await page.locator(".home-regional-section").count(), 0);
     await context.close();
   }
 });
