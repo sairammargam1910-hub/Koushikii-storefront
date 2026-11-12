@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "@clerk/react";
-import { ArrowLeft, ArrowUpRight, Check, Clock3, ExternalLink, MapPin, PackageCheck, RefreshCw, ShieldCheck, Truck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Clock3, ExternalLink, PackageCheck, RefreshCw, ShieldCheck, Truck } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import {
   getGetShopifyOrderDetailsQueryKey,
@@ -9,7 +9,7 @@ import {
   useGetShopifyOrderTracking,
 } from "@workspace/api-client-react";
 import { Shell, PageHero, base } from "./_shared";
-import { customerFacingMessage } from "./customerFacingMessage";
+import { ShipmentTrackingProgress } from "./ShipmentTrackingProgress";
 import "./_orders.css";
 
 function formatDate(value: string | null | undefined, includeTime = false) {
@@ -116,34 +116,15 @@ export function OrderDetail() {
               {trackingQuery.isError ? <div className="tracking-unavailable" role="status" data-testid="error-tracking">
                 <p>We can’t reach the courier updates just now. Your order details are still here.</p>
                 <button type="button" className="orders-inline-button" onClick={() => void trackingQuery.refetch()} data-testid="button-retry-tracking">Try tracking again</button>
-              </div> : trackingQuery.isLoading ? <div className="tracking-placeholder" data-testid="loading-tracking"><i/><i/><i/></div> : shipments.length ? shipments.map((shipment, index) => {
-                const active = shipmentIsActive(shipment.status, shipment.shipmentStatus);
-                const events = [...shipment.events].sort((a, b) => (b.occurredAt ? new Date(b.occurredAt).getTime() : 0) - (a.occurredAt ? new Date(a.occurredAt).getTime() : 0));
-                return <div className="shipment-unit" key={`${shipment.awbCode ?? shipment.status}-${index}`} data-testid={`shipment-${index}`}>
-                  <div className="shipment-status-line">
-                    <span className={`shipment-status-symbol ${!active && shipment.status.toLowerCase().includes("deliver") ? "is-delivered" : ""}`}>{!active && shipment.status.toLowerCase().includes("deliver") ? <Check size={15}/> : <Truck size={15}/>}</span>
-                    <div><strong data-testid={`status-shipment-${index}`}>{customerFacingMessage(readable(shipment.status), "Delivery update")}</strong>
-                      {shipment.courierName && <span>Delivery partner</span>}
-                    </div>
-                    {shipment.estimatedDeliveryAt && active && <span className="shipment-estimate" data-testid={`text-estimated-delivery-${index}`}>Estimated {formatDate(shipment.estimatedDeliveryAt)}</span>}
-                  </div>
-                  {shipment.awbCode && <div className="tracking-reference">
-                    {shipment.awbCode && <span>Tracking number <strong data-testid={`text-tracking-number-${index}`}>{shipment.awbCode}</strong></span>}
-                    {shipment.trackingUrl && <a href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-carrier-tracking-${index}`}>View delivery tracking <ExternalLink size={13}/></a>}
-                  </div>}
-                  {events.length > 0 ? <ol className="tracking-timeline" data-testid={`timeline-shipment-${index}`}>
-                    {events.map((event, eventIndex) => {
-                      const location = customerFacingMessage(event.location, "");
-                      return <li key={`${event.occurredAt ?? event.status}-${eventIndex}`} className={eventIndex === 0 ? "is-current" : ""} data-testid={`event-shipment-${index}-${eventIndex}`}>
-                        <span className="timeline-dot"/><div className="timeline-event-copy"><strong>{customerFacingMessage(event.status, "Delivery update")}</strong><p>{customerFacingMessage(event.description, "Your parcel has a new delivery update.")}</p>
-                          {(event.occurredAt || location) && <small>{event.occurredAt && <time dateTime={event.occurredAt}>{formatDate(event.occurredAt, true)}</time>}{event.occurredAt && location && <span className="timeline-separator"> · </span>}{location && <span><MapPin size={11}/>{location}</span>}</small>}
-                        </div>
-                      </li>;
-                    })}
-                  </ol> : <p className="tracking-pending" data-testid={`text-tracking-pending-${index}`}><Clock3 size={14}/> Courier scans will appear here as the parcel moves.</p>}
-                </div>;
-              }) : <div className="tracking-pending" data-testid="empty-tracking"><Clock3 size={16}/><p>Tracking will appear here once your parcel has been handed to the courier.</p></div>}
-              {trackingQuery.data?.shipments.some((shipment) => shipmentIsActive(shipment.status)) && <p className="tracking-refresh-note" data-testid="text-tracking-auto-refresh">Updates are checked automatically while your parcel is moving.</p>}
+              </div> : trackingQuery.isLoading ? <div className="tracking-placeholder" data-testid="loading-tracking"><i/><i/><i/></div> : shipments.length ? shipments.map((shipment, index) => (
+                <ShipmentTrackingProgress
+                  key={`${shipment.awbCode ?? shipment.status}-${index}`}
+                  shipment={shipment}
+                  index={index}
+                  paymentConfirmed={order.financialStatus.toLowerCase() === "paid"}
+                />
+              )) : <div className="tracking-pending" data-testid="empty-tracking"><Clock3 size={16}/><p>Tracking will appear here once your parcel has been handed to the courier.</p></div>}
+              {order.financialStatus.toLowerCase() === "paid" && trackingQuery.data?.shipments.some((shipment) => shipmentIsActive(shipment.status, shipment.shipmentStatus)) && <p className="tracking-refresh-note" data-testid="text-tracking-auto-refresh">Updates are checked automatically while your parcel is moving.</p>}
             </section>
             <section className="detail-panel items-panel" aria-labelledby="items-title">
               <div className="detail-panel-heading"><span className="detail-icon"><PackageCheck size={19}/></span><div><span className="eyebrow">Made for you</span><h3 id="items-title">In this order</h3></div></div>

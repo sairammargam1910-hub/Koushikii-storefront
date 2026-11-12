@@ -1516,3 +1516,47 @@ test("retries a failed checkout cart refresh with the same saved cart ID", async
   );
   await context.close();
 });
+
+test("delivery progress separates the current stage from expandable courier scans on desktop", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await page.goto(`${origin}${fixtureUrl}?screen=shipment-progress`);
+
+  const journey = page.getByTestId("progress-shipment-0");
+  await journey.waitFor();
+  assert.equal(await journey.locator(":scope > li").count(), 5);
+  assert.equal(await journey.locator('[aria-current="step"] strong').innerText(), "In transit");
+  assert.equal(await page.getByTestId("latest-scan-shipment-0").isVisible(), true);
+  assert.equal(await page.getByTestId("details-shipment-history-0").getAttribute("open"), null);
+  assert.equal(await page.getByTestId("text-tracking-number-0").innerText(), "CHN-5482-9137");
+  await page.getByTestId("details-shipment-history-0").locator("summary").click();
+  assert.equal(await page.getByTestId("timeline-shipment-0").locator(":scope > li").count(), 4);
+  assert.equal(await page.getByTestId("event-shipment-0-3").innerText().then((text) => /DATA RECEIVED/.test(text)), true);
+  await context.close();
+});
+
+test("delivery progress fits a phone viewport without horizontal page overflow", async () => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto(`${origin}${fixtureUrl}?screen=shipment-progress`);
+  await page.getByTestId("progress-shipment-0").waitFor();
+
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth), false);
+  assert.equal(await page.locator(".shipment-progress-step[aria-current='step']").count(), 1);
+  await page.getByTestId("details-shipment-history-0").locator("summary").click();
+  assert.equal(await page.getByTestId("timeline-shipment-0").isVisible(), true);
+  await context.close();
+});
+
+test("delivery progress never exposes tracking for an unpaid order", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await page.goto(`${origin}${fixtureUrl}?screen=shipment-progress&paid=0`);
+
+  await page.getByTestId("notice-shipment-0").waitFor();
+  assert.match(await page.getByTestId("notice-shipment-0").innerText(), /after payment is confirmed/i);
+  assert.equal(await page.getByTestId("progress-shipment-0").count(), 0);
+  assert.equal(await page.getByTestId("text-tracking-number-0").count(), 0);
+  assert.equal(await page.getByTestId("latest-scan-shipment-0").count(), 0);
+  await context.close();
+});

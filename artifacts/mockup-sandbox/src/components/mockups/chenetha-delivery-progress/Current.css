@@ -1,0 +1,199 @@
+.tracking-preview {
+  min-height: 100%;
+  padding: 22px;
+  background: #f4eee3;
+  color: #3d2b23;
+  font-family: var(--app-font-sans);
+}
+
+.tracking-card {
+  width: min(100%, 940px);
+  margin: 0 auto;
+  padding: 27px 28px 21px;
+  border: 1px solid #dfd3c2;
+  background: #fbf7ef;
+}
+
+.tracking-heading,
+.tracking-current-status {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.tracking-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1e8d9;
+  color: #a22d2a;
+}
+
+.tracking-icon.small {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+}
+
+.tracking-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: #a22d2a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tracking-heading h1 {
+  margin: 0;
+  color: #432d24;
+  font: 500 27px/1.05 var(--app-font-serif);
+}
+
+.tracking-current-status {
+  margin-top: 22px;
+}
+
+.tracking-status-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.tracking-status-copy strong {
+  color: #4a362b;
+  font-size: 14px;
+}
+
+.tracking-status-copy span,
+.tracking-estimate {
+  color: #88776a;
+  font-size: 12px;
+}
+
+.tracking-estimate {
+  margin: 0 0 0 auto;
+  text-align: right;
+}
+
+.tracking-reference {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin: 17px 0 0 49px;
+  color: #88776a;
+  font-size: 11px;
+}
+
+.tracking-reference span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tracking-reference strong {
+  color: #513c31;
+  font: 11px var(--app-font-mono);
+}
+
+.tracking-reference a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9b2c2c;
+  text-decoration: none;
+}
+
+.tracking-timeline {
+  margin: 20px 0 0 16px;
+  padding: 0 0 0 18px;
+  border-left: 1px solid #d9cbb7;
+  list-style: none;
+}
+
+.tracking-timeline li {
+  position: relative;
+  padding: 0 0 21px 18px;
+}
+
+.tracking-timeline li:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  top: 3px;
+  left: -23px;
+  box-sizing: content-box;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fbf7ef;
+  border-radius: 50%;
+  background: #d4c6b2;
+}
+
+.tracking-timeline li.is-current .timeline-dot {
+  background: #a42c2a;
+}
+
+.timeline-event-copy strong {
+  display: block;
+  color: #564238;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.timeline-event-copy p {
+  margin: 4px 0;
+  color: #7b695d;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.timeline-event-copy small {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 9px;
+  color: #998678;
+  font-size: 10px;
+}
+
+.timeline-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tracking-refresh-note {
+  margin: 20px 0 0 49px;
+  color: #938271;
+  font-size: 10px;
+}
+
+@media (max-width: 600px) {
+  .tracking-preview {
+    padding: 12px;
+  }
+
+  .tracking-card {
+    padding: 19px 16px;
+  }
+
+  .tracking-heading h1 {
+    font-size: 24px;
+  }
+
+  .tracking-estimate {
+    max-width: 125px;
+    font-size: 11px;
+  }
+
+  .tracking-reference,
+  .tracking-refresh-note {
+    margin-left: 0;
+  }
+}
