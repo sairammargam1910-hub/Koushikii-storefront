@@ -27,6 +27,7 @@ import { Videos } from "./storefront/Videos";
 import { AdminDashboard, AdminDiscounts, AdminProducts, AdminSignInPrompt } from "./admin/Admin";
 import { AdminContent } from "./admin/ContentAdmin";
 import { ShopperPreferencesProvider } from "./storefront/ShopperPreferences";
+import { ScrollRestoration } from "./storefront/RouteEffects";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -176,6 +177,7 @@ function authWidgetUrl(route: "/sign-in" | "/sign-up", redirectPath: string): st
 
 function Router() {
   return <>
+    <ScrollRestoration/>
     <Metadata/>
     <RoutedErrorBoundary>
       <Switch>

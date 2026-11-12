@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ClerkProvider } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { Router as WouterRouter, useLocation } from "wouter";
+import { ScrollRestoration } from "../../src/storefront/RouteEffects";
 import { ShopperPreferencesProvider } from "../../src/storefront/ShopperPreferences";
 import { Collections } from "../../src/storefront/Collections";
 import { Home } from "../../src/storefront/Home";
@@ -21,6 +22,12 @@ function Fixture() {
   const [location] = useLocation();
   const screen = new URLSearchParams(window.location.search).get("screen")
     ?? (location.toLowerCase() === "/cart" ? "cart" : null);
+  if (location.toLowerCase() === "/collections") return <Collections />;
+  if (location.toLowerCase() === "/") return <Home />;
+  if (location.toLowerCase() === "/product") {
+    const handle = new URLSearchParams(window.location.search).get("product") || "fixture-saree";
+    return <ShopifyProductRoute handle={handle} />;
+  }
   if (screen === "home") return <Home />;
   if (screen === "collections") return <Collections />;
   if (screen === "product") return <ShopifyProductRoute handle="fixture-saree" />;
@@ -37,6 +44,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <WouterRouter base={basePath}>
+      <ScrollRestoration />
       <ClerkProvider
         publishableKey={clerkPublishableKey}
         proxyUrl={import.meta.env.VITE_CLERK_PROXY_URL}

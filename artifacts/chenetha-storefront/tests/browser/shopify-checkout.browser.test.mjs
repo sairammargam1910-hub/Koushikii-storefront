@@ -29,6 +29,48 @@ const productResponse = {
     }],
   }],
 };
+const liveCollectionProducts = [
+  {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/cotton",
+    handle: "cotton-fixture",
+    title: "Cotton handloom saree",
+    tags: ["cotton"],
+    attributes: { fabric: "Cotton", regionalHandloom: null, craftTechnique: null, region: "Telangana", colour: "Maroon" },
+    collections: [{ id: "gid://shopify/Collection/cotton", handle: "cotton-collection", title: "Cotton Collection" }],
+    variants: [{ ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/cotton" }],
+  },
+  {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/silk",
+    handle: "silk-fixture",
+    title: "Silk handloom saree",
+    tags: ["silk"],
+    attributes: { fabric: "Silk", regionalHandloom: null, craftTechnique: null, region: "Tamil Nadu", colour: "Gold" },
+    collections: [{ id: "gid://shopify/Collection/silk", handle: "silk-collection", title: "Silk Collection" }],
+    variants: [{ ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/silk" }],
+  },
+  {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/narayanpet",
+    handle: "narayanpet-fixture",
+    title: "Narayanpet cotton saree",
+    tags: ["cotton", "narayanpet"],
+    attributes: { fabric: "Cotton", regionalHandloom: "Narayanpet", craftTechnique: null, region: "Telangana", colour: "Maroon" },
+    collections: [],
+    variants: [{ ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/narayanpet" }],
+  },
+  {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/ikkat",
+    handle: "ikkat-fixture",
+    title: "Ikkat cotton saree",
+    tags: ["cotton", "ikkat"],
+    attributes: { fabric: "Cotton", regionalHandloom: null, craftTechnique: "Ikkat", region: "Telangana", colour: "Indigo" },
+    collections: [],
+    variants: [{ ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/ikkat" }],
+  },
+];
 const cartResponse = {
   id: "gid://shopify/Cart/browser-cart-123",
   checkoutUrl: null,
@@ -528,6 +570,109 @@ test("shows a bare Silk catalog tag under the Silk and Kanchipuram filters", asy
   await productTitle.waitFor();
   assert.equal(await productTitle.isVisible(), true);
   await context.close();
+});
+
+test("collection query changes update products immediately on desktop and mobile", async () => {
+  for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+    const context = await browser.newContext({
+      viewport,
+      isMobile: viewport.width < 600,
+      hasTouch: viewport.width < 600,
+    });
+    const page = await context.newPage();
+    let catalogRequests = 0;
+    let documentRequests = 0;
+    page.on("request", (request) => {
+      if (request.url().includes("/api/shopify/products")) catalogRequests += 1;
+      if (request.isNavigationRequest()) documentRequests += 1;
+    });
+    await page.route("**/api/shopify/products", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ products: liveCollectionProducts }),
+    }));
+    await page.goto(`${origin}${fixtureUrl}?screen=collections`);
+    await page.getByTestId("card-shopify-cotton-fixture").waitFor();
+    assert.equal(await page.locator("[data-testid^='card-shopify-']").count(), 4);
+    const initialDocumentRequests = documentRequests;
+
+    const changeQuery = async (key, value) => page.evaluate(({ key, value }) => {
+      const url = new URL(window.location.href);
+      url.pathname = "/Collections";
+      url.search = "";
+      url.searchParams.set(key, value);
+      window.history.pushState({}, "", url);
+    }, { key, value });
+
+    await changeQuery("fabric", "Cotton");
+    await page.getByTestId("card-shopify-cotton-fixture").waitFor();
+    assert.equal(await page.locator("[data-testid^='card-shopify-']").count(), 3);
+    assert.equal(await page.getByTestId("card-shopify-silk-fixture").count(), 0);
+
+    await page.evaluate(() => window.scrollTo(0, 450));
+    await page.waitForFunction(() => window.scrollY > 0);
+    await changeQuery("fabric", "Silk");
+    await page.getByTestId("card-shopify-silk-fixture").waitFor();
+    assert.equal(await page.locator("[data-testid^='card-shopify-']").count(), 1);
+    await page.waitForFunction(() => window.scrollY === 0);
+
+    await changeQuery("regionalHandloom", "Narayanpet");
+    await page.getByTestId("card-shopify-narayanpet-fixture").waitFor();
+    assert.equal(await page.locator("[data-testid^='card-shopify-']").count(), 1);
+    await changeQuery("weave", "Ikkat");
+    await page.getByTestId("card-shopify-ikkat-fixture").waitFor();
+    assert.equal(await page.locator("[data-testid^='card-shopify-']").count(), 1);
+
+    assert.equal(catalogRequests, 1, "changing client-side filters should use the loaded catalog without another page or API reload");
+    assert.equal(documentRequests, initialDocumentRequests, "filter navigation should not reload the document");
+    await context.close();
+  }
+});
+
+test("homepage collection links start at the top and browser back restores listing position", async () => {
+  for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+    const context = await browser.newContext({
+      viewport,
+      isMobile: viewport.width < 600,
+      hasTouch: viewport.width < 600,
+    });
+    const page = await context.newPage();
+    await page.route("**/api/shopify/products", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ products: liveCollectionProducts }),
+    }));
+    await page.route("**/api/site-content", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ items: [] }),
+    }));
+    await page.goto(`${origin}${fixtureUrl}?screen=home`);
+    const collectionLink = page.locator(".home-weave-section .weave-grid > a").filter({
+      has: page.getByRole("heading", { name: "Cotton Collection", exact: true }),
+    });
+    await collectionLink.waitFor();
+    await page.evaluate(() => window.scrollTo(0, 700));
+    await page.waitForFunction(() => window.scrollY > 0);
+    await collectionLink.click();
+    await page.waitForURL(/\/Collections\?collection=cotton-collection/);
+    await page.getByTestId("card-shopify-cotton-fixture").waitFor();
+    await page.waitForFunction(() => window.scrollY === 0);
+
+    const savedListingScroll = await page.evaluate(async () => {
+      window.scrollTo(0, 250);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      return window.scrollY;
+    });
+    assert.ok(savedListingScroll > 0, "listing page should have a restorable scroll position");
+    await page.getByTestId("card-shopify-cotton-fixture").getByRole("link").first().click();
+    await page.waitForURL(/\/Product\?/);
+    await page.goBack();
+    await page.waitForURL(/\/Collections\?collection=cotton-collection/);
+    await page.getByTestId("card-shopify-cotton-fixture").waitFor();
+    await page.waitForFunction((expected) => Math.abs(window.scrollY - expected) < 2, savedListingScroll);
+    await context.close();
+  }
 });
 
 test("all published products appear without collections and dynamic filters use Shopify data", async () => {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearch } from "wouter";
 import { Shell, PageHero } from "./_shared";
 import { defaultFilters, normalizeRegion, regions } from "./_shared/catalog-filter";
 import type { CatalogFilters } from "./_shared/catalog-filter";
@@ -67,20 +68,14 @@ function filterLabel(key: FilterKey, value: string) {
 
 export function Collections() {
   const catalog = useShopifyCatalog();
+  const search = useSearch();
   const [applied, setApplied] = useState<CatalogFilters>(readFilters);
   const [draft, setDraft] = useState<CatalogFilters>(readFilters);
   const [premiumOnly, setPremiumOnly] = useState(readPremiumOnly);
   const [premiumCategory, setPremiumCategory] = useState(readPremiumCategory);
-  const [locationKey, setLocationKey] = useState(window.location.pathname + window.location.search);
   const liveProducts = catalog.data?.products || [];
   const availableCollections = getAvailableShopifyCollections(liveProducts);
   const availableCollectionHandles = new Set(availableCollections.map(({ handle }) => handle));
-
-  useEffect(() => {
-    const syncLocation = () => setLocationKey(window.location.pathname + window.location.search);
-    window.addEventListener("popstate", syncLocation);
-    return () => window.removeEventListener("popstate", syncLocation);
-  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -105,18 +100,16 @@ export function Collections() {
     const nextUrl = window.location.pathname + (search ? `?${search}` : "") + window.location.hash;
     if (nextUrl !== window.location.pathname + window.location.search + window.location.hash) {
       window.history.replaceState(null, "", nextUrl);
-      setLocationKey(nextUrl);
     }
   }, [applied, premiumOnly, premiumCategory]);
 
   useEffect(() => {
-    if (locationKey === window.location.pathname + window.location.search) return;
     const next = readFilters();
     setApplied(next);
     setDraft(next);
     setPremiumOnly(readPremiumOnly());
     setPremiumCategory(readPremiumCategory());
-  }, [locationKey]);
+  }, [search]);
 
   const fabricOptions = useMemo(() => getShopifyFabricValues(liveProducts), [liveProducts]);
   const options: Record<FilterKey, string[]> = {
