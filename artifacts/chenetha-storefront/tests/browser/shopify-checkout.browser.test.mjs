@@ -708,29 +708,93 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "Premium Collection", exact: true }).count(), 0);
   await withoutCollection.context.close();
 
-  const featuredProduct = {
+  const premiumTaggedProduct = {
     ...productResponse.products[0],
-    tags: [...productResponse.products[0].tags, "featured"],
+    id: "gid://shopify/Product/457",
+    handle: "premium-tagged-saree",
+    title: "Premium tagged saree",
+    tags: ["premium"],
+    collections: [{
+      id: "gid://shopify/Collection/kanchipuram",
+      handle: "kanchipuram",
+      title: "Kanchipuram",
+    }],
   };
-  const featuredHome = await openHome({ width: 1280, height: 900 }, [featuredProduct]);
-  await featuredHome.page.getByRole("heading", { name: "Featured Products", exact: true }).waitFor();
-  assert.equal(await featuredHome.page.locator(".premium").count(), 1);
-  assert.equal(await featuredHome.page.locator(".shopify-premium-products").getByRole("heading", { name: "Kanchipuram silk saree" }).count(), 1);
-  await featuredHome.context.close();
-
-  const legacyPremiumProduct = {
+  const premiumCollectionProduct = {
     ...productResponse.products[0],
-    tags: productResponse.products[0].tags.filter((tag) => tag !== "new arrival"),
+    id: "gid://shopify/Product/458",
+    handle: "premium-collection-saree",
+    title: "Premium collection saree",
+    tags: [],
     collections: [{
       id: "gid://shopify/Collection/premium",
       handle: "premium-collection",
       title: "Premium Collection",
+    }, {
+      id: "gid://shopify/Collection/kanchipuram",
+      handle: "kanchipuram",
+      title: "Kanchipuram",
     }],
   };
-  const legacyPremiumHome = await openHome({ width: 1280, height: 900 }, [legacyPremiumProduct]);
-  await legacyPremiumHome.page.locator(".premium h2").getByText("Premium Collection", { exact: true }).waitFor();
-  assert.equal(await legacyPremiumHome.page.locator(".premium").count(), 1);
-  await legacyPremiumHome.context.close();
+  const regularCollectionProduct = {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/459",
+    handle: "regular-saree",
+    title: "Regular saree",
+    tags: [],
+    collections: [{
+      id: "gid://shopify/Collection/kanchipuram",
+      handle: "kanchipuram",
+      title: "Kanchipuram",
+    }],
+  };
+  const featuredOnlyProduct = {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/460",
+    handle: "featured-only-saree",
+    title: "Featured only saree",
+    tags: ["featured"],
+    collections: [{
+      id: "gid://shopify/Collection/banarasi",
+      handle: "banarasi",
+      title: "Banarasi",
+    }],
+  };
+  const premiumHome = await openHome({ width: 1280, height: 900 }, [
+    premiumTaggedProduct,
+    premiumCollectionProduct,
+    regularCollectionProduct,
+    featuredOnlyProduct,
+  ]);
+  const premiumTile = premiumHome.page.locator(".home-premium-collection");
+  await premiumHome.page.locator(".home-premium-section").waitFor();
+  assert.equal(await premiumTile.count(), 1, "only collections containing premium items should be shown");
+  assert.match(await premiumTile.getAttribute("href"), /Collections\?collection=kanchipuram&premium=1$/);
+  assert.match(await premiumTile.innerText(), /Kanchipuram[\s\S]*2 premium pieces/i);
+  await premiumHome.page.goto(`${origin}${fixtureUrl}?screen=collections&collection=kanchipuram&premium=1`);
+  await premiumHome.page.getByRole("heading", { name: "Premium Collection", exact: true }).waitFor();
+  assert.equal(await premiumHome.page.locator(".shopify-product-card").count(), 2);
+  assert.equal(await premiumHome.page.getByRole("heading", { name: "Premium tagged saree", exact: true }).count(), 1);
+  assert.equal(await premiumHome.page.getByRole("heading", { name: "Premium collection saree", exact: true }).count(), 1);
+  assert.equal(await premiumHome.page.getByRole("heading", { name: "Regular saree", exact: true }).count(), 0);
+  assert.equal(await premiumHome.page.getByRole("heading", { name: "Featured only saree", exact: true }).count(), 0);
+  await premiumHome.context.close();
+
+  const featuredOnlyHome = await openHome({ width: 1280, height: 900 }, [featuredOnlyProduct]);
+  await featuredOnlyHome.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
+  assert.equal(await featuredOnlyHome.page.locator(".home-premium-section").count(), 0, "featured tag alone must not mark an item premium");
+  await featuredOnlyHome.context.close();
+
+  const premiumWithoutBrowseCollection = {
+    ...premiumTaggedProduct,
+    id: "gid://shopify/Product/461",
+    handle: "premium-without-browse-collection",
+    collections: [],
+  };
+  const noBrowseablePremiumHome = await openHome({ width: 1280, height: 900 }, [premiumWithoutBrowseCollection]);
+  await noBrowseablePremiumHome.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
+  assert.equal(await noBrowseablePremiumHome.page.locator(".home-premium-section").count(), 0, "the premium panel should hide when premium items have no browseable collection");
+  await noBrowseablePremiumHome.context.close();
 
   const customFabricProduct = {
     ...productResponse.products[0],

@@ -5,6 +5,7 @@ import type { CatalogFilters } from "./_shared/catalog-filter";
 import {
   filterShopifyProducts,
   getAvailableShopifyCollections,
+  isPremiumProduct,
   ShopifyProductGrid,
   useShopifyCatalog,
 } from "./ShopifyCatalog";
@@ -43,6 +44,11 @@ function readFilters(): CatalogFilters {
   };
 }
 
+function readPremiumOnly() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("premium") === "1" || params.get("edit") === "premium";
+}
+
 function selectedCount(filters: CatalogFilters) {
   return FILTER_GROUPS.reduce((count, group) => count + filters[group.key].length, 0) +
     Number(Boolean(filters.minPrice || filters.maxPrice)) +
@@ -58,6 +64,7 @@ export function Collections() {
   const catalog = useShopifyCatalog();
   const [applied, setApplied] = useState<CatalogFilters>(readFilters);
   const [draft, setDraft] = useState<CatalogFilters>(readFilters);
+  const [premiumOnly, setPremiumOnly] = useState(readPremiumOnly);
   const [locationKey, setLocationKey] = useState(window.location.pathname + window.location.search);
   const liveProducts = catalog.data?.products || [];
   const availableCollections = getAvailableShopifyCollections(liveProducts);
@@ -85,6 +92,7 @@ export function Collections() {
     if (applied.minPrice) params.set("minPrice", applied.minPrice);
     if (applied.maxPrice) params.set("maxPrice", applied.maxPrice);
     if (applied.collection) params.set("collection", applied.collection);
+    if (premiumOnly) params.set("premium", "1");
     if (applied.sort !== defaultFilters.sort) params.set("sort", applied.sort);
     const search = params.toString();
     const nextUrl = window.location.pathname + (search ? `?${search}` : "") + window.location.hash;
@@ -92,13 +100,14 @@ export function Collections() {
       window.history.replaceState(null, "", nextUrl);
       setLocationKey(nextUrl);
     }
-  }, [applied]);
+  }, [applied, premiumOnly]);
 
   useEffect(() => {
     if (locationKey === window.location.pathname + window.location.search) return;
     const next = readFilters();
     setApplied(next);
     setDraft(next);
+    setPremiumOnly(readPremiumOnly());
   }, [locationKey]);
 
   const fabricOptions = useMemo(() => getShopifyFabricValues(liveProducts), [liveProducts]);
@@ -115,11 +124,11 @@ export function Collections() {
     ...applied,
     collection: availableCollectionHandles.has(applied.collection) ? applied.collection : "",
   };
-  const filteredProducts = useMemo(
-    () => filterShopifyProducts(liveProducts, effectiveFilters),
-    [liveProducts, applied],
-  );
-  const activeCount = selectedCount(applied);
+  const filteredProducts = useMemo(() => {
+    const matches = filterShopifyProducts(liveProducts, effectiveFilters);
+    return premiumOnly ? matches.filter(isPremiumProduct) : matches;
+  }, [liveProducts, applied, premiumOnly]);
+  const activeCount = selectedCount(applied) + Number(premiumOnly);
 
   function toggleDraft(key: FilterKey, value: string) {
     setDraft((current) => {
@@ -138,6 +147,7 @@ export function Collections() {
   function clearAll() {
     setDraft({ ...defaultFilters });
     setApplied({ ...defaultFilters });
+    setPremiumOnly(false);
   }
 
   function removeChip(key: FilterKey, value: string) {
@@ -155,8 +165,8 @@ export function Collections() {
   return <Shell>
     <PageHero
       eyebrow="Shop the collection"
-      title={legacyEdit === "premium" ? "Premium Collection" : legacyEdit === "new" ? "New Arrivals" : "All published products"}
-      subtitle="Explore available pieces. Refine by material, tradition, technique and more."
+      title={premiumOnly || legacyEdit === "premium" ? "Premium Collection" : legacyEdit === "new" ? "New Arrivals" : "All published products"}
+      subtitle={premiumOnly ? "Explore premium pieces in the collections that carry them." : "Explore available pieces. Refine by material, tradition, technique and more."}
     />
     <main className="content wrap">
       <div className="catalog-controls">
@@ -265,6 +275,9 @@ export function Collections() {
             Collection: {availableCollections.find(({ handle }) => handle === applied.collection)?.title} <span aria-hidden="true">×</span>
           </button>
         )}
+        {premiumOnly && <button type="button" className="filter-chip" onClick={() => setPremiumOnly(false)}>
+          Premium pieces only <span aria-hidden="true">×</span>
+        </button>}
         {applied.query && <button type="button" className="filter-chip" onClick={() => {
           setApplied((current) => ({ ...current, query: "" }));
           setDraft((current) => ({ ...current, query: "" }));

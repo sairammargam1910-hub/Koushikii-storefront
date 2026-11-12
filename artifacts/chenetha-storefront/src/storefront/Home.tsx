@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, base } from "./_shared";
-import { getAvailableShopifyCollections, getShopifyAttribute, isNewArrival, isPremiumProduct, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
+import { getAvailableShopifyCollections, getPremiumCollections, getShopifyAttribute, isNewArrival, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
 import { getFabricCategoryOptions, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import { useGetSiteContent, getGetSiteContentQueryKey, type SiteContentItem } from "@workspace/api-client-react";
@@ -189,15 +189,34 @@ function ProductCarousel({title,copy,collection,products}:{title:string;copy:str
    <div className="products" role="region" aria-label={collection?.title||title}>{products.slice(0,4).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
   </div></section>;
 }
-function PremiumFeature({collection,products}:{collection?:ShopifyProduct["collections"][number];products:ShopifyProduct[]}){
-  const premiumProducts=products.filter(product=>
-    isPremiumProduct(product)||(collection&&product.collections.some(item=>item.handle===collection.handle)),
-  );
-  if(!premiumProducts.length)return null;
-  const title=collection?.title||"Featured Products";
-  const destination=collection?base+"Collections?collection="+encodeURIComponent(collection.handle):base+"Collections";
-  return <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Featured collection</span><h2>{title}</h2><p>Explore a considered selection of handloom pieces.</p><a className="btn gold" href={destination}>Explore pieces <ArrowRight size={14}/></a></div>
-   <div className="shopify-premium-products">{premiumProducts.slice(0,2).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
+function PremiumFeature({collections}:{collections:ReturnType<typeof getPremiumCollections>}){
+  if(!collections.length)return null;
+  return <section className="section home-premium-section"><div className="wrap"><div className="premium home-premium-collections">
+   <div className="home-premium-copy">
+    <span className="eyebrow">Premium Collection</span>
+    <h2>For the days<br/>you will remember.</h2>
+    <p>Discover selected collections with premium handloom pieces.</p>
+    <a className="btn gold" href={base+"Collections?premium=1"}>Explore premium <ArrowRight size={14}/></a>
+   </div>
+   <div className="home-premium-tiles" role="group" aria-label="Collections with premium pieces">
+    {collections.map(({collection,premiumProducts},index)=>{
+      const image=premiumProducts.find(product=>product.images[0])?.images[0];
+      return <a
+        className="home-premium-collection"
+        key={collection.handle}
+        href={`${base}Collections?collection=${encodeURIComponent(collection.handle)}&premium=1`}
+        aria-label={`${collection.title}, ${premiumProducts.length} premium ${premiumProducts.length===1?"piece":"pieces"}`}
+      >
+       <span className="home-premium-art">
+        {image?<img src={image.url} alt={image.altText||collection.title} loading="lazy"/>:<Textile pattern={`s${index%6+1}`} label={`${collection.title} textile pattern`}/>}
+       </span>
+       <span className="home-premium-collection-copy">
+        <strong>{collection.title}</strong>
+        <small>{premiumProducts.length} premium {premiumProducts.length===1?"piece":"pieces"} <ArrowRight size={13}/></small>
+       </span>
+      </a>;
+    })}
+   </div>
   </div></div></section>
 }
 function IndiaWeaves({products}:{products:ShopifyProduct[]}){
@@ -290,7 +309,7 @@ export function Home(){
  const siteContent=useGetSiteContent({query:{queryKey:getGetSiteContentQueryKey(),staleTime:60_000}});
   const storefrontCatalog=useShopifyCatalog();
   const availableCollections=getAvailableShopifyCollections(storefrontCatalog.data?.products||[]);
-  const premiumCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="premium collection");
+  const premiumCollections=getPremiumCollections(storefrontCatalog.data?.products||[]);
   const newArrivalsCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="new arrivals");
   const storefrontProducts=storefrontCatalog.data?.products||[];
   const newArrivalProducts=storefrontProducts.filter(product=>
@@ -351,7 +370,7 @@ export function Home(){
      })}
     </div>
    </div></section>
-     <PremiumFeature collection={premiumCollection} products={storefrontProducts}/>
+      <PremiumFeature collections={premiumCollections}/>
       <ProductCarousel title="New Arrivals" copy="Discover the newest pieces in the collection." collection={newArrivalsCollection} products={newArrivalProducts}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
    <IndiaWeaves products={storefrontProducts}/>

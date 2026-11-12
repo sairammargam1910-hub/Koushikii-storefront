@@ -60,9 +60,37 @@ export function isNewArrival(product: ShopifyProduct) {
 
 export function isPremiumProduct(product: ShopifyProduct) {
   return (
-    hasTag(product, "featured", "featured-product", "featured-products", "premium", "collection:featured", "collection:premium") ||
-    ["featured", "premium"].includes(normalizedTag(getShopifyTagValue(product, "collection")))
+    hasTag(product, "premium", "premium-product", "premium-products", "collection:premium") ||
+    normalizedTag(getShopifyTagValue(product, "collection")) === "premium" ||
+    (product.collections ?? []).some((collection) =>
+      collection.handle.trim().toLowerCase() === "premium-collection" ||
+      collection.title.trim().toLowerCase() === "premium collection",
+    )
   );
+}
+
+export function getPremiumCollections(products: ShopifyProduct[]) {
+  const collections = new Map<string, {
+    collection: ShopifyProduct["collections"][number];
+    premiumProducts: ShopifyProduct[];
+  }>();
+
+  for (const product of products) {
+    if (!isPremiumProduct(product)) continue;
+    for (const collection of product.collections ?? []) {
+      if (
+        !collection.handle ||
+        collection.handle === "frontpage" ||
+        collection.handle.trim().toLowerCase() === "premium-collection" ||
+        collection.title.trim().toLowerCase() === "premium collection"
+      ) continue;
+      const existing = collections.get(collection.handle);
+      if (existing) existing.premiumProducts.push(product);
+      else collections.set(collection.handle, { collection, premiumProducts: [product] });
+    }
+  }
+
+  return [...collections.values()].sort((a, b) => a.collection.title.localeCompare(b.collection.title));
 }
 
 export function filterShopifyProducts(

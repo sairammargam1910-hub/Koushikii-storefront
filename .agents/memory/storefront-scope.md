@@ -140,8 +140,8 @@ Product classifications, search tags and collections serve different purposes. A
 
 **How to apply:** Derive fabric tiles, header links, filters and thumbnail choices from live product fabric values. Explain in the merchant form that Fabric creates a tile, tags are keywords, and collections group products.
 
-Homepage merchandising uses product tags: `new arrival` places a product in New Arrivals, and `featured` places it in the green Featured Products panel. The existing Premium Collection assignment remains supported.
+Homepage New Arrivals uses the `new arrival` tag. The green Premium Collection panel lists only customer collections containing premium products, and each link filters to premium products in that collection. Premium status comes from the `premium` tag or membership in Shopify's Premium Collection; `featured` is not a premium marker.
 
-**Why:** The user confirmed these are the merchant's existing product-tag workflow and reported that both homepage sections disappeared when they were tied only to collections.
+**Why:** On November 12, 2026, the user clarified that the green homepage area should show collections, not individual featured products, and only when those collections contain premium products.
 
-**How to apply:** Match tags case-insensitively after normalizing spaces and hyphens. Keep the featured panel hidden when no products are explicitly featured; never choose products arbitrarily.
+**How to apply:** Normalize premium tags case-insensitively; also treat membership in the explicit Premium Collection as premium status. Keep the panel hidden when no browseable collection contains a premium item, and preserve the `premium=1` filter when a collection tile is opened.
