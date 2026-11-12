@@ -769,9 +769,9 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   const premiumTile = premiumHome.page.locator(".home-premium-collection");
   await premiumHome.page.locator(".home-premium-section").waitFor();
   assert.equal(await premiumTile.count(), 1, "only collections containing premium items should be shown");
-  assert.match(await premiumTile.getAttribute("href"), /Collections\?collection=kanchipuram&premium=1$/);
+  assert.match(await premiumTile.getAttribute("href"), /Collections\?premium=1&premiumCategory=Kanchipuram$/);
   assert.match(await premiumTile.innerText(), /Kanchipuram[\s\S]*2 premium pieces/i);
-  await premiumHome.page.goto(`${origin}${fixtureUrl}?screen=collections&collection=kanchipuram&premium=1`);
+  await premiumHome.page.goto(`${origin}${fixtureUrl}?screen=collections&premium=1&premiumCategory=Kanchipuram`);
   await premiumHome.page.getByRole("heading", { name: "Premium Collection", exact: true }).waitFor();
   assert.equal(await premiumHome.page.locator(".shopify-product-card").count(), 2);
   assert.equal(await premiumHome.page.getByRole("heading", { name: "Premium tagged saree", exact: true }).count(), 1);
@@ -779,6 +779,37 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   assert.equal(await premiumHome.page.getByRole("heading", { name: "Regular saree", exact: true }).count(), 0);
   assert.equal(await premiumHome.page.getByRole("heading", { name: "Featured only saree", exact: true }).count(), 0);
   await premiumHome.context.close();
+
+  const premiumTraditionProduct = {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/462",
+    handle: "premium-test-tradition",
+    title: "Premium test tradition saree",
+    tags: ["Premium"],
+    attributes: { ...productResponse.products[0].attributes, regionalHandloom: "test tradition" },
+    collections: [],
+  };
+  const regularTraditionProduct = {
+    ...premiumTraditionProduct,
+    id: "gid://shopify/Product/463",
+    handle: "regular-test-tradition",
+    title: "Regular test tradition saree",
+    tags: [],
+  };
+  const premiumTraditionHome = await openHome({ width: 1280, height: 900 }, [
+    premiumTraditionProduct,
+    regularTraditionProduct,
+  ]);
+  const traditionTile = premiumTraditionHome.page.locator(".home-premium-collection");
+  await premiumTraditionHome.page.locator(".home-premium-section").waitFor();
+  assert.equal(await traditionTile.count(), 1, "a premium regional tradition should create a browse tile without Shopify collection membership");
+  assert.match(await traditionTile.getAttribute("href"), /Collections\?premium=1&premiumCategory=test%20tradition$/);
+  assert.match(await traditionTile.innerText(), /test tradition[\s\S]*1 premium piece/i);
+  await premiumTraditionHome.page.goto(`${origin}${fixtureUrl}?screen=collections&premium=1&premiumCategory=test%20tradition`);
+  assert.equal(await premiumTraditionHome.page.locator(".shopify-product-card").count(), 1);
+  assert.equal(await premiumTraditionHome.page.getByRole("heading", { name: "Premium test tradition saree", exact: true }).count(), 1);
+  assert.equal(await premiumTraditionHome.page.getByRole("heading", { name: "Regular test tradition saree", exact: true }).count(), 0);
+  await premiumTraditionHome.context.close();
 
   const featuredOnlyHome = await openHome({ width: 1280, height: 900 }, [featuredOnlyProduct]);
   await featuredOnlyHome.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();

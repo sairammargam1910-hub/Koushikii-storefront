@@ -195,10 +195,10 @@ function PremiumFeature({collections}:{collections:ReturnType<typeof getPremiumC
    <div className="home-premium-copy">
     <span className="eyebrow">Premium Collection</span>
     <h2>For the days<br/>you will remember.</h2>
-    <p>Discover selected collections with premium handloom pieces.</p>
+    <p>Browse collections and regional traditions with premium handloom pieces.</p>
     <a className="btn gold" href={base+"Collections?premium=1"}>Explore premium <ArrowRight size={14}/></a>
    </div>
-   <div className="home-premium-tiles" role="group" aria-label="Collections with premium pieces">
+   <div className="home-premium-tiles" role="group" aria-label="Premium collections and regional traditions">
     {collections.map(({title,premiumProducts},index)=>{
       const image=premiumProducts.find(product=>product.images[0])?.images[0];
       return <a

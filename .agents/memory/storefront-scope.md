@@ -140,8 +140,8 @@ Product classifications, search tags and collections serve different purposes. A
 
 **How to apply:** Derive fabric tiles, header links, filters and thumbnail choices from live product fabric values. Explain in the merchant form that Fabric creates a tile, tags are keywords, and collections group products.
 
-Homepage New Arrivals uses the `new arrival` tag. The green Premium Collection panel lists only customer collections containing premium products, and each link filters to premium products in that collection. Premium status comes from the `premium` tag or membership in Shopify's Premium Collection; `featured` is not a premium marker.
+Homepage New Arrivals uses the `new arrival` tag. The green Premium Collection panel lists Shopify collections and regional-handloom categories that contain premium items; each link filters to premium products in that category. Premium status comes from the `premium` tag or membership in Shopify's Premium Collection; `featured` is not a premium marker.
 
-**Why:** On November 12, 2026, the user clarified that the green homepage area should show collections, not individual featured products, and only when those collections contain premium products.
+**Why:** On November 12, 2026, the user clarified that the green homepage area should show browse categories, not individual featured products, and specifically expected a premium product's regional tradition to appear even without Shopify collection membership.
 
-**How to apply:** Normalize premium tags case-insensitively; also treat membership in the explicit Premium Collection as premium status. Keep the panel hidden when no browseable collection contains a premium item, and preserve the `premium=1` filter when a collection tile is opened.
+**How to apply:** Normalize premium tags case-insensitively; also treat membership in the explicit Premium Collection as premium status. Keep the panel hidden when no browseable Shopify collection or regional-handloom category contains a premium item, and preserve premium-only filtering when a tile is opened.
