@@ -609,6 +609,18 @@ test("collection query changes update products immediately on desktop and mobile
     assert.equal(await page.locator("[data-testid^='card-shopify-']").count(), 3);
     assert.equal(await page.getByTestId("card-shopify-silk-fixture").count(), 0);
 
+    await page.evaluate(() => window.scrollTo(0, 250));
+    await page.waitForFunction(() => window.scrollY > 0);
+    const filterScroll = await page.evaluate(() => window.scrollY);
+    await page.evaluate(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.set("minPrice", "1000");
+      window.history.pushState({}, "", url);
+    });
+    await page.getByTestId("card-shopify-cotton-fixture").waitFor();
+    await page.getByRole("button", { name: /Price: 1000/ }).waitFor();
+    assert.ok(filterScroll > 0 && await page.evaluate(() => window.scrollY > 0), "adding a filter within the same collection should not jump to the top");
+
     await page.evaluate(() => window.scrollTo(0, 450));
     await page.waitForFunction(() => window.scrollY > 0);
     await changeQuery("fabric", "Silk");
@@ -622,9 +634,18 @@ test("collection query changes update products immediately on desktop and mobile
     await changeQuery("weave", "Ikkat");
     await page.getByTestId("card-shopify-ikkat-fixture").waitFor();
     assert.equal(await page.locator("[data-testid^='card-shopify-']").count(), 1);
+    await page.goBack();
+    await page.waitForURL(/\/Collections\?regionalHandloom=Narayanpet/);
+    await page.getByTestId("card-shopify-narayanpet-fixture").waitFor();
+    await page.goForward();
+    await page.waitForURL(/\/Collections\?weave=Ikkat/);
+    await page.getByTestId("card-shopify-ikkat-fixture").waitFor();
 
     assert.equal(catalogRequests, 1, "changing client-side filters should use the loaded catalog without another page or API reload");
     assert.equal(documentRequests, initialDocumentRequests, "filter navigation should not reload the document");
+    await page.reload();
+    await page.getByTestId("card-shopify-ikkat-fixture").waitFor();
+    assert.equal(await page.locator("[data-testid^='card-shopify-']").count(), 1, "refresh should preserve the selected collection filter");
     await context.close();
   }
 });
@@ -671,6 +692,14 @@ test("homepage collection links start at the top and browser back restores listi
     await page.waitForURL(/\/Collections\?collection=cotton-collection/);
     await page.getByTestId("card-shopify-cotton-fixture").waitFor();
     await page.waitForFunction((expected) => Math.abs(window.scrollY - expected) < 2, savedListingScroll);
+    if (viewport.width < 600) {
+      await page.getByTestId("button-mobile-menu").click();
+      await page.locator(".collection-nav summary").click();
+      await page.locator(".collection-nav").getByRole("link", { name: "Narayanpet", exact: true }).click();
+      await page.waitForURL(/\/Collections\?regionalHandloom=Narayanpet/);
+      await page.getByTestId("card-shopify-narayanpet-fixture").waitFor();
+      await page.waitForFunction(() => window.scrollY === 0);
+    }
     await context.close();
   }
 });

@@ -78,14 +78,14 @@ export function ScrollRestoration() {
     };
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
-    const wrappedPushState: History["pushState"] = function (...args) {
+    const wrappedPushState: History["pushState"] = function (this: History, ...args) {
       saveCurrentPosition();
       navigationType.current = "push";
       const nextArgs = [...args] as Parameters<History["pushState"]>;
       nextArgs[0] = withEntryId(nextArgs[0], createEntryId());
       return originalPushState.apply(this, nextArgs);
     };
-    const wrappedReplaceState: History["replaceState"] = function (...args) {
+    const wrappedReplaceState: History["replaceState"] = function (this: History, ...args) {
       saveCurrentPosition();
       navigationType.current = "replace";
       const entryId =
