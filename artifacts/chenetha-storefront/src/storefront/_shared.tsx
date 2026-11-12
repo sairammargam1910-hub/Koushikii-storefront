@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 import { useShopifyCartMeta, useShopifyCart } from "./shopifyCartState";
 import { Show } from "@clerk/react";
 import { useShopperPreferences } from "./ShopperPreferences";
-import { FABRIC_CATEGORIES, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
+import { getFabricCategoryOptions, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
 import { useShopifyCatalog } from "./shopifyCatalogQuery";
 export { cottonWeaves } from "./shopifyCatalogData";
 
@@ -81,6 +81,7 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
     ...WEAVE_PRINTS,
     ...products.flatMap(product=>getShopifyAttributeValues(product,"weave")),
   ])).sort((a,b)=>a.localeCompare(b));
+   const fabricCategories=getFabricCategoryOptions(products.flatMap(product=>getShopifyAttributeValues(product,"fabric")));
   const shopifyCart=useShopifyCartMeta();
   const currentCart=useShopifyCart(shopifyCart?.id);
   const cartCount=shopifyCart
@@ -96,7 +97,7 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
         <div className="menu-dynamic-links" aria-label="Regional Handlooms">{regionalHandlooms.map(value=><a key={value} href={`${base}Collections?regionalHandloom=${encodeURIComponent(value)}`}>{value}</a>)}</div>
         <a href={base+"Collections"} className="link" style={{marginTop:18}}>View all products →</a></div>
        <div><strong>Shop by Fabric</strong>
-        <div className="menu-dynamic-links" aria-label="Shop by Fabric">{FABRIC_CATEGORIES.map(value=><a key={value} href={`${base}Collections?fabric=${encodeURIComponent(value)}`}>{value}</a>)}</div>
+         <div className="menu-dynamic-links" aria-label="Shop by Fabric">{fabricCategories.map(value=><a key={value} href={`${base}Collections?fabric=${encodeURIComponent(value)}`}>{value}</a>)}</div>
        </div><div><strong>Weave / Print</strong>
         <div className="menu-dynamic-links" aria-label="Weave / Print">{weavePrints.map(value=><a key={value} href={`${base}Collections?weave=${encodeURIComponent(value)}`}>{value}</a>)}</div>
         {catalog.isError&&!catalog.data&&<p role="status">Live product classifications could not be loaded. Starter traditions remain available.</p>}

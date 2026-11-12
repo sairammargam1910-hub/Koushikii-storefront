@@ -564,18 +564,26 @@ test("all published products appear without collections and dynamic filters use 
       title: "The Crafts Edit",
     }],
   };
+  const customFabricProduct = {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/test-fabric",
+    handle: "test-fabric-shawl",
+    title: "Test fabric shawl",
+    attributes: { fabric: "Test Fabric", regionalHandloom: null, craftTechnique: null, region: null, colour: null },
+    collections: [],
+  };
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   await page.route("**/api/shopify/products", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify({ products: [assignedProduct, unassignedProduct] }),
+    body: JSON.stringify({ products: [assignedProduct, unassignedProduct, customFabricProduct] }),
   }));
   await page.goto(`${origin}${fixtureUrl}?screen=collections`);
   await page.getByText("Kanchipuram silk saree", { exact: true }).waitFor();
   await page.getByText("Hand-block cotton table runner", { exact: true }).waitFor();
   await assertNoProviderBrandInPublicCopy(page);
-  assert.equal(await page.getByText("2 published products").count(), 1);
+  assert.equal(await page.getByText("3 published products").count(), 1);
   assert.equal(await page.getByText(/Cotton handlooms · Explore regional weaves/i).count(), 0);
   assert.equal(await page.getByText(/Uncategorised/i).count(), 0);
 
@@ -585,6 +593,14 @@ test("all published products appear without collections and dynamic filters use 
   await page.getByLabel("Filter by fabric: Silk").check();
   await page.getByRole("button", { name: "Apply Filters" }).click();
   assert.equal(await page.getByText("2 published products").count(), 1, "two fabric selections use OR logic");
+  await page.getByRole("button", { name: "Clear All" }).click();
+  await page.getByLabel("Filter by fabric: Test Fabric").check();
+  await page.getByRole("button", { name: "Apply Filters" }).click();
+  await page.getByText("Test fabric shawl", { exact: true }).waitFor();
+  assert.equal(await page.getByText("1 published product").count(), 1, "custom fabric filters should match only that value");
+  assert.equal(await page.getByText("Hand-block cotton table runner", { exact: true }).count(), 0);
+  await page.getByRole("button", { name: "Clear All" }).click();
+
   await page.locator(".filter-section").filter({ has: page.getByText("Regional Handloom", { exact: true }) }).locator("summary").click();
   await page.getByLabel("Filter by regional handloom: Narayanpet").check();
   await page.locator(".filter-section").filter({ has: page.getByText("Weave / Print", { exact: true }) }).locator("summary").click();
@@ -679,12 +695,11 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   const withoutCollection = await openHome({ width: 1280, height: 900 }, [productResponse.products[0]]);
   await withoutCollection.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
   await assertNoProviderBrandInPublicCopy(withoutCollection.page);
-  assert.equal(await withoutCollection.page.locator(".home-fabric-section .fabric-card").count(), 4);
+  assert.equal(await withoutCollection.page.locator(".home-fabric-section .fabric-card").count(), 3);
   await withoutCollection.page.getByRole("heading", { name: "Shop by Collection", exact: true }).waitFor();
   assert.equal(await withoutCollection.page.locator(".home-regional-section").count(), 0);
   assert.equal(await withoutCollection.page.locator(".home-weave-section .weave-grid > a").count(), 13);
   await withoutCollection.page.getByRole("heading", { name: "Shop by Weave", exact: true }).waitFor();
-  await assertHorizontalTrack(withoutCollection.page.locator(".home-fabric-section .home-horizontal-track"));
   await assertHorizontalTrack(withoutCollection.page.locator(".home-technique-section .home-horizontal-track"));
   await assertHorizontalTrack(withoutCollection.page.locator(".home-weave-section .home-horizontal-track"));
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "The Crafts Edit", exact: true }).count(), 0);
@@ -692,9 +707,37 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "Premium Collection", exact: true }).count(), 0);
   await withoutCollection.context.close();
 
+  const customFabricProduct = {
+    ...productResponse.products[0],
+    attributes: { ...productResponse.products[0].attributes, fabric: "Test Fabric" },
+  };
+  const customFabricContent = [{
+    id: "test-fabric-tile-image",
+    kind: "home_image",
+    placement: "fabric_tile",
+    title: "Test Fabric",
+    imageUrl: "https://cdn.example.test/test-fabric.webp",
+    altText: "A close-up of the test fabric",
+    published: true,
+    approved: false,
+    sortOrder: 0,
+  }];
+  const customFabricHome = await openHome({ width: 1280, height: 900 }, [customFabricProduct], customFabricContent);
+  const testFabricTile = customFabricHome.page.locator(".home-fabric-section .fabric-card").filter({
+    has: customFabricHome.page.getByRole("heading", { name: "Test Fabric", exact: true }),
+  });
+  await testFabricTile.waitFor();
+  assert.match(await testFabricTile.getAttribute("href"), /Collections\?fabric=Test%20Fabric$/);
+  assert.equal(await customFabricHome.page.locator(".home-fabric-section .fabric-card").filter({
+    has: customFabricHome.page.getByRole("heading", { name: "Others", exact: true }),
+  }).count(), 0, "a custom fabric should not be hidden in the generic Others tile");
+  assert.equal(await testFabricTile.locator("img").getAttribute("src"), "https://cdn.example.test/test-fabric.webp");
+  await assertHorizontalTrack(customFabricHome.page.locator(".home-fabric-section .home-horizontal-track"));
+  await customFabricHome.context.close();
+
   for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
     const { context, page } = await openHome(viewport, [tileProduct]);
-    await assertHorizontalTrack(page.locator(".home-fabric-section .home-horizontal-track"));
+    if (viewport.width < 600) await assertHorizontalTrack(page.locator(".home-fabric-section .home-horizontal-track"));
     await assertHorizontalTrack(page.locator(".home-technique-section .home-horizontal-track"));
     await assertHorizontalTrack(page.locator(".home-weave-section .home-horizontal-track"));
     const tile = page.locator(".home-weave-section").getByRole("link", { name: /The Crafts Edit/ });
@@ -769,7 +812,7 @@ test("header groups starter and live product classifications into three taxonomi
   const headerProduct = {
     ...productResponse.products[0],
     tags: ["fabric :Cotton", "weave :Narayanpet"],
-    attributes: { fabric: null, regionalHandloom: "Narayanpet", craftTechnique: "Ikkat", region: null, colour: null },
+    attributes: { fabric: '["Cotton","Test Fabric"]', regionalHandloom: "Narayanpet", craftTechnique: "Ikkat", region: null, colour: null },
     collections: [{
       id: "gid://shopify/Collection/narayanpet",
       handle: "narayanpet",
@@ -807,12 +850,15 @@ test("header groups starter and live product classifications into three taxonomi
     assert.equal(await fabricSection.locator(".menu-dynamic-links a").count(), 4);
     assert.equal(await techniqueSection.locator(".menu-dynamic-links a").count(), 5);
     const cotton = fabricSection.getByRole("link", { name: "Cotton", exact: true });
+    const testFabric = fabricSection.getByRole("link", { name: "Test Fabric", exact: true });
     const narayanpet = regionalSection.getByRole("link", { name: "Narayanpet", exact: true });
     const ikkat = techniqueSection.getByRole("link", { name: "Ikkat", exact: true });
     await cotton.waitFor();
+    await testFabric.waitFor();
     await narayanpet.waitFor();
     await ikkat.waitFor();
     assert.match(await cotton.getAttribute("href"), /Collections\?fabric=Cotton$/);
+    assert.match(await testFabric.getAttribute("href"), /Collections\?fabric=Test%20Fabric$/);
     assert.match(await narayanpet.getAttribute("href"), /Collections\?regionalHandloom=Narayanpet$/);
     assert.match(await ikkat.getAttribute("href"), /Collections\?weave=Ikkat$/);
     await context.close();

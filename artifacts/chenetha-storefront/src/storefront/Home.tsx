@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, base } from "./_shared";
 import { getAvailableShopifyCollections, getShopifyAttribute, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
-import { FABRIC_CATEGORIES, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
+import { getFabricCategoryOptions, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import { useGetSiteContent, getGetSiteContentQueryKey, type SiteContentItem } from "@workspace/api-client-react";
 import type { ShopifyProduct } from "@workspace/api-client-react";
@@ -293,9 +293,10 @@ export function Home(){
   const storefrontProducts=storefrontCatalog.data?.products||[];
   const published=siteContent.data?.items||[];
   const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];
-  const fabricCards=FABRIC_CATEGORIES.map(name=>{
+  const fabricNames=getFabricCategoryOptions(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"fabric")));
+  const fabricCards=fabricNames.map(name=>{
    const normalized=name.toLowerCase();
-   const pattern=name==="Cotton"?"cotton":name==="Silk"?"silk":name==="Cotton-Silk"?"cotton-silk":"blends";
+    const pattern=name==="Cotton"?"cotton":name==="Silk"?"silk":name==="Cotton-Silk"?"cotton-silk":name==="Others"?"blends":"cotton";
     const tile=homeTiles.find(item=>item.placement==="fabric_tile"&&item.title.trim().toLowerCase()===normalized);
     return {name,pattern,tile};
   });
@@ -329,7 +330,7 @@ export function Home(){
       {fabricCards.length?<div className="fabric-grid home-horizontal-track" role="region" aria-label="Shop by Fabric" tabIndex={0}>
        {fabricCards.map(item=><a className="fabric-card" key={item.name} href={base+"Collections?fabric="+encodeURIComponent(item.name)}>
          {item.tile?.imageUrl?<img className="dynamic-home-tile-image" src={item.tile.imageUrl} alt={item.tile.altText||item.name} loading="lazy"/>:<Textile pattern={item.pattern} label={item.name}/>}
-        <h3>{item.name}</h3><p>{item.name==="Others"?"Explore linen and other materials beyond the main fabric categories.":`Explore published pieces in the ${item.name.toLowerCase()} fabric group.`}</p><span className="link">Shop {item.name} →</span>
+        <h3>{item.name}</h3><p>{item.name==="Others"?"Explore other materials and blended fabrics.":`Explore published pieces made with ${item.name.toLowerCase()}.`}</p><span className="link">Shop {item.name} →</span>
        </a>)}
        </div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading available fabrics…":storefrontCatalog.isError?"We couldn’t load the product list. Try the collections page again shortly.":"Fabric categories appear when published products have a fabric value."}</p>}
   </div></section>

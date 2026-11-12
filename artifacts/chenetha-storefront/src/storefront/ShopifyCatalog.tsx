@@ -16,7 +16,7 @@ import { useShopperPreferences } from "./ShopperPreferences";
 import { customerFacingMessage } from "./customerFacingMessage";
 import type { CatalogFilters } from "./_shared/catalog-filter";
 import { normalizeRegion } from "./_shared/catalog-filter";
-import { fabricGroup, getAvailableShopifyCollections, getShopifyAttribute, getShopifyAttributeValues, getShopifyTagValue } from "./shopifyCatalogData";
+import { getAvailableShopifyCollections, getShopifyAttribute, getShopifyAttributeValues, getShopifyTagValue } from "./shopifyCatalogData";
 import { useShopifyCatalog } from "./shopifyCatalogQuery";
 export { getAvailableShopifyCollections, getShopifyAttribute, getShopifyTagValue } from "./shopifyCatalogData";
 export { useShopifyCatalog } from "./shopifyCatalogQuery";
@@ -105,11 +105,7 @@ export function filterShopifyProducts(
 
       if (query && !searchable.includes(query)) return false;
       if (selectedFabrics.length && !selectedFabrics.some((selected) =>
-        selected === "Others"
-          ? fabrics.some((value) => fabricGroup(value) === "Others")
-          : selected === "Cotton" || selected === "Silk" || selected === "Cotton-Silk"
-            ? fabrics.some((value) => fabricGroup(value) === selected)
-            : fabrics.some((value) => normalizedTag(value) === normalizedTag(selected)),
+        fabrics.some((value) => normalizedTag(value) === normalizedTag(selected)),
       )) return false;
       if (selectedRegional.length && !regionalHandlooms.some((value) => selectedRegional.includes(value.toLowerCase()))) return false;
       if (selectedWeaves.length && !weaves.some((value) => selectedWeaves.includes(value.toLowerCase()))) return false;

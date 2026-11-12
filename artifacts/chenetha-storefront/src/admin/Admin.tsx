@@ -323,10 +323,10 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
         {!allowVariantEdits && <p className="field-note">Edit prices, size/color values and stock per location using “Variants & stock” in the product list.</p>}
          <label>Product type<input list="shopify-product-type-options" maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Search or add a type…" data-testid="input-product-type"/><datalist id="shopify-product-type-options">{productTypeSuggestions.map((value)=><option key={value} value={value}/>)}</datalist></label>
         <label>Short description<textarea maxLength={10000} rows={3} value={draft.description} onChange={(e) => change("description", e.target.value)} placeholder="What makes this piece special?" data-testid="input-product-description"/></label>
-        <label>Tags <span className="label-hint">Separate with commas</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="silk, festive, handwoven" data-testid="input-product-tags"/></label>
+         <label>Search tags <span className="label-hint">Descriptive keywords for organizing and finding products. Use the Fabric field below to create a home-page fabric tile.</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="festive, handwoven, gift" data-testid="input-product-tags"/></label>
          <fieldset className="admin-product-attributes">
-           <legend>Optional product attributes</legend>
-           <p className="field-note">These are stored separately from collection assignments. Leave any field blank when it does not apply.</p>
+            <legend>Website categories &amp; filters</legend>
+            <p className="field-note">Fabric creates a separate “Shop by Fabric” tile. Weave / Print Technique feeds “Shop by Weave.” Regional tradition, origin and colour help shoppers filter products. Add a value with +, then save.</p>
            <div className="form-row">
              <ClassificationField label="Fabric" field="fabric" values={draft.fabric} suggestions={classificationSuggestions.fabric} onChange={(values) => change("fabric", values)} placeholder="Search or add a fabric"/>
              <ClassificationField label="Regional Handloom / Tradition" field="regional-handloom" values={draft.regionalHandloom} suggestions={classificationSuggestions.regionalHandloom} onChange={(values) => change("regionalHandloom", values)} placeholder="Search or add a tradition"/>
@@ -338,7 +338,8 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
            <ClassificationField label="Colour" field="colour" values={draft.colour} suggestions={classificationSuggestions.colour} onChange={(values) => change("colour", values)} placeholder="Search or add a colour"/>
          </fieldset>
          <fieldset className="admin-product-collections">
-           <legend>Shopify collections</legend>
+            <legend>Collections</legend>
+            <p className="field-note">Collections group products under “Shop by Collection.” They are separate from Fabric and Weave categories.</p>
            {collectionsLoading&&<p className="field-note" role="status">Loading collections…</p>}
            {collectionsError&&<p className="field-note" role="status">Collections could not be loaded. You can still save this product without assigning one.</p>}
            {!collectionsLoading&&!collections.length&&!collectionsError&&<p className="field-note">No manual collections yet. This product can still be published and will appear in All Products.</p>}
@@ -349,7 +350,7 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
                    ?[...new Set([...old.collectionIds,collection.id])]
                    :old.collectionIds.filter((id)=>id!==collection.id)}));
                }}/>
-               <span><b>{collection.title}</b><small>Shopify collection</small></span>
+                <span><b>{collection.title}</b><small>Product group</small></span>
              </label>)}
            </div>}
            <label>Create or assign a collection<input maxLength={120} value={draft.newCollectionTitle} onChange={(e)=>change("newCollectionTitle",e.target.value)} placeholder="The Crafts Edit"/></label>

@@ -9,7 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { AdminLayout } from "./Admin";
 import { ContentPreview } from "./ContentPreview";
-import { FABRIC_CATEGORIES, parseClassificationValues, WEAVE_PRINTS } from "../storefront/shopifyCatalogData";
+import { getFabricCategoryOptions, parseClassificationValues, WEAVE_PRINTS } from "../storefront/shopifyCatalogData";
 import { normalizeWeave } from "../storefront/_shared/catalog-filter";
 import "./ContentAdmin.css";
 
@@ -61,7 +61,7 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
   const busy = create.isPending || update.isPending || requestUpload.isPending || !!progress;
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft(current => ({ ...current, [key]: value }));
   const homeImageOptions = draft.placement === "fabric_tile"
-    ? [...FABRIC_CATEGORIES]
+    ? getFabricCategoryOptions((shopify.data?.products || []).flatMap(product => parseClassificationValues(product.fabric)))
     : draft.placement === "weave_tile"
       ? [...new Set([
         ...WEAVE_PRINTS,

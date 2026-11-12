@@ -25,7 +25,7 @@ export const WEAVE_PRINTS = [
   "Ajrakh",
 ];
 
-export const FABRIC_CATEGORIES = ["Cotton", "Silk", "Cotton-Silk", "Others"] as const;
+const STANDARD_FABRIC_CATEGORIES = ["Cotton", "Silk", "Cotton-Silk"] as const;
 
 export const cottonWeaves = REGIONAL_HANDLOOMS;
 
@@ -68,12 +68,37 @@ export function canonicalFabric(value: string): string {
   return fabrics[normalizedTag(value)] ?? value.trim();
 }
 
-export function fabricGroup(value: string): string {
-  const normalized = normalizedTag(canonicalFabric(value));
-  if (normalized === "cotton") return "Cotton";
-  if (normalized === "silk") return "Silk";
-  if (normalized === "cotton-silk") return "Cotton-Silk";
-  return "Others";
+export function getShopifyFabricValues(products: ShopifyProduct[]): string[] {
+  const values = new Map<string, string>();
+  for (const product of products) {
+    for (const value of getShopifyAttributeValues(product, "fabric")) {
+      const canonical = canonicalFabric(value);
+      const key = normalizedTag(canonical);
+      if (key && !values.has(key)) values.set(key, canonical);
+    }
+  }
+  return [...values.values()].sort((a, b) => a.localeCompare(b));
+}
+
+export function getFabricCategoryOptions(values: string[]): string[] {
+  const observed = new Map<string, string>();
+  for (const value of values) {
+    const canonical = canonicalFabric(value);
+    const key = normalizedTag(canonical);
+    if (key && !observed.has(key)) observed.set(key, canonical);
+  }
+
+  const standardKeys = new Set(STANDARD_FABRIC_CATEGORIES.map(normalizedTag));
+  const custom = [...observed.entries()]
+    .filter(([key]) => key !== "others" && !standardKeys.has(key))
+    .map(([, value]) => value)
+    .sort((a, b) => a.localeCompare(b));
+
+  return [
+    ...STANDARD_FABRIC_CATEGORIES,
+    ...custom,
+    ...(observed.has("others") ? ["Others"] : []),
+  ];
 }
 
 const weaveTags = new Map(

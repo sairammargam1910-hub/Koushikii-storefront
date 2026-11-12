@@ -434,6 +434,9 @@ test("merchant can upload and publish a matching Shop by Weave tile image", asyn
 test("merchant can publish without a collection and later assign a Shopify collection", async () => {
   const created = await openForm();
   const createMutations = await mockCreateOrUpdate(created.page);
+  await created.page.getByText("Fabric creates a separate “Shop by Fabric” tile.", { exact: false }).waitFor();
+  await created.page.getByText("Collections group products under “Shop by Collection.”", { exact: false }).waitFor();
+  await created.page.getByText("Use the Fabric field below to create a home-page fabric tile.", { exact: false }).waitFor();
   await created.page.getByTestId("input-product-title").fill("Hand-block print cotton runner");
   await created.page.getByTestId("input-product-type").fill("Home textile");
   await created.page.getByTestId("input-product-price").fill("1800");
@@ -474,6 +477,17 @@ test("merchant can publish without a collection and later assign a Shopify colle
   assert.deepEqual(updateMutations[0].body.collectionIds, []);
   assert.equal(updateMutations[0].body.newCollectionTitle, "New Craft Collection");
   await edited.context.close();
+});
+
+test("homepage fabric image picker includes custom product fabric values", async () => {
+  const { context, page } = await openForm();
+  await page.goto(`${origin}/tests/browser/fixture.html?screen=home-image-editor`);
+  await page.getByRole("dialog").waitFor();
+  await page.locator(".admin-form select").nth(0).selectOption("fabric_tile");
+  const categories = page.locator(".admin-form select").nth(1);
+  const options = await categories.locator("option").allTextContents();
+  assert.ok(options.includes("Linen"), "a custom product fabric should be available for its homepage image");
+  await context.close();
 });
 
 test("slow uploads disable Save until the staged photo reaches product creation", async () => {

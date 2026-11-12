@@ -133,3 +133,9 @@ Customer-facing content must not expose the internal platforms or implementation
 **Why:** The user explicitly requested natural customer wording across the entire storefront while keeping the services operating internally.
 
 **How to apply:** Use terms such as “your bag,” “secure online payment,” and “shipping and delivery.” Keep technical names in internal logs and admin tools where needed, and never simplify away the actual payment or shipment status.
+
+Product classifications, search tags and collections serve different purposes. A saved fabric value outside the standard material names should appear as its own home tile, browse filter and thumbnail option rather than being grouped under “Others.” Search tags are descriptive keywords; collections group related products for “Shop by Collection.”
+
+**Why:** On November 12, 2026, the user reported that a custom fabric entered in the product editor was grouped under “Others” and said the tags-versus-collections distinction was confusing.
+
+**How to apply:** Derive fabric tiles, header links, filters and thumbnail choices from live product fabric values. Explain in the merchant form that Fabric creates a tile, tags are keywords, and collections group products.

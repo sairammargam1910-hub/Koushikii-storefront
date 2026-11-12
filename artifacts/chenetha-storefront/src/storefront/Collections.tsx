@@ -8,7 +8,7 @@ import {
   ShopifyProductGrid,
   useShopifyCatalog,
 } from "./ShopifyCatalog";
-import { FABRIC_CATEGORIES, fabricGroup, getShopifyAttributeValues } from "./shopifyCatalogData";
+import { getShopifyAttributeValues, getShopifyFabricValues } from "./shopifyCatalogData";
 import "./ShopifyCatalog.css";
 
 type FilterKey = "fabrics" | "regionalHandlooms" | "weaves" | "productTypes" | "regions" | "colours";
@@ -101,12 +101,7 @@ export function Collections() {
     setDraft(next);
   }, [locationKey]);
 
-  const productsByFabric = useMemo(() => liveProducts.flatMap((product) =>
-    getShopifyAttributeValues(product, "fabric").map((value) => ({ value, group: fabricGroup(value) })),
-  ), [liveProducts]);
-  const fabricOptions: string[] = FABRIC_CATEGORIES.filter((category) => productsByFabric.some((item) =>
-    category === "Others" ? item.group === "Others" : item.group === category,
-  ));
+  const fabricOptions = useMemo(() => getShopifyFabricValues(liveProducts), [liveProducts]);
   const options: Record<FilterKey, string[]> = {
     fabrics: fabricOptions,
     regionalHandlooms: unique(liveProducts.flatMap((product) => getShopifyAttributeValues(product, "regionalHandloom"))),
