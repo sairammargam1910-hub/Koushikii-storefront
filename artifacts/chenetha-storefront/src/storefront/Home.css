@@ -890,4 +890,48 @@
   border-radius: 12px;
 }
 
+.kq .home-horizontal-track {
+  grid-auto-flow: column;
+  grid-template-columns: none;
+  grid-auto-columns: clamp(220px, 22vw, 275px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 2px;
+  scrollbar-color: var(--gold) transparent;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 2px 14px;
+}
+
+.kq .home-horizontal-track > * {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.kq .home-fabric-section .home-horizontal-track {
+  grid-auto-columns: clamp(260px, 25vw, 320px);
+  gap: 22px;
+}
+
+.kq .home-weave-section .home-horizontal-track {
+  grid-auto-columns: clamp(190px, 19vw, 245px);
+}
+
+@media (max-width: 767px) {
+  .kq .home-horizontal-track {
+    grid-auto-columns: 82vw;
+    gap: 12px;
+  }
+
+  .kq .home-fabric-section .home-horizontal-track {
+    grid-auto-columns: 82vw;
+    gap: 14px;
+  }
+
+  .kq .home-weave-section .home-horizontal-track {
+    grid-auto-columns: 82vw;
+  }
+}
 

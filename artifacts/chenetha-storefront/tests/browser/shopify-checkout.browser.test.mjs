@@ -651,6 +651,19 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
     await page.goto(`${origin}${fixtureUrl}?screen=home`);
     return { context, page };
   };
+  const assertHorizontalTrack = async (track) => {
+    await track.waitFor();
+    assert.equal(await track.getAttribute("role"), "region");
+    const metrics = await track.evaluate((element) => ({
+      overflowX: getComputedStyle(element).overflowX,
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+    }));
+    assert.equal(metrics.overflowX, "auto");
+    assert.ok(metrics.scrollWidth > metrics.clientWidth, "track should overflow horizontally rather than add vertical rows");
+    await track.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
+    assert.ok(await track.evaluate((element) => element.scrollLeft > 0), "track should be horizontally scrollable");
+  };
 
   const withoutCollection = await openHome({ width: 1280, height: 900 }, [productResponse.products[0]]);
   await withoutCollection.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
@@ -658,7 +671,10 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   await withoutCollection.page.getByRole("heading", { name: "Shop by Collection", exact: true }).waitFor();
   assert.equal(await withoutCollection.page.locator(".home-regional-section").count(), 0);
   assert.equal(await withoutCollection.page.locator(".home-weave-section .weave-grid > a").count(), 13);
-  await withoutCollection.page.getByRole("heading", { name: "Weave / Print", exact: true }).waitFor();
+  await withoutCollection.page.getByRole("heading", { name: "Shop by Weave", exact: true }).waitFor();
+  await assertHorizontalTrack(withoutCollection.page.locator(".home-fabric-section .home-horizontal-track"));
+  await assertHorizontalTrack(withoutCollection.page.locator(".home-technique-section .home-horizontal-track"));
+  await assertHorizontalTrack(withoutCollection.page.locator(".home-weave-section .home-horizontal-track"));
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "The Crafts Edit", exact: true }).count(), 0);
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "New Arrivals", exact: true }).count(), 0);
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "Premium Collection", exact: true }).count(), 0);
@@ -666,6 +682,9 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
 
   for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
     const { context, page } = await openHome(viewport, [tileProduct]);
+    await assertHorizontalTrack(page.locator(".home-fabric-section .home-horizontal-track"));
+    await assertHorizontalTrack(page.locator(".home-technique-section .home-horizontal-track"));
+    await assertHorizontalTrack(page.locator(".home-weave-section .home-horizontal-track"));
     const tile = page.locator(".home-weave-section").getByRole("link", { name: /The Crafts Edit/ });
     await tile.waitFor();
     assert.equal(await page.locator(".home-fabric-section").getByRole("link", { name: /The Crafts Edit/ }).count(), 0);

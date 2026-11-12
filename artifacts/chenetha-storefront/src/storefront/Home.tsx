@@ -325,16 +325,16 @@ export function Home(){
   <HomeHeroCarousel/>
 
    <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
-      {fabricCards.length?<div className="fabric-grid">
+      {fabricCards.length?<div className="fabric-grid home-horizontal-track" role="region" aria-label="Shop by Fabric" tabIndex={0}>
        {fabricCards.map(item=><a className="fabric-card" key={item.name} href={base+"Collections?fabric="+encodeURIComponent(item.name)}>
          {item.tile?.imageUrl?<img className="dynamic-home-tile-image" src={item.tile.imageUrl} alt={item.tile.altText||item.name} loading="lazy"/>:<Textile pattern={item.pattern} label={item.name}/>}
         <h3>{item.name}</h3><p>{item.name==="Others"?"Explore linen and other materials beyond the main fabric categories.":`Explore published pieces in the ${item.name.toLowerCase()} fabric group.`}</p><span className="link">Shop {item.name} →</span>
        </a>)}
        </div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading available fabrics…":storefrontCatalog.isError?"The Shopify catalog could not be loaded. Try the collection page again shortly.":"Fabric categories appear when published products have a fabric value."}</p>}
   </div></section>
-   <section className="section home-technique-section" id="weave-print"><div className="wrap">
-    <div className="section-head"><div><h2>Weave / Print</h2><p>Find a technique across the regions and materials where it appears.</p></div></div>
-    <div className="taxonomy-link-grid technique-link-grid" aria-label="Weave / Print">
+   <section className="section home-technique-section" id="shop-by-weave"><div className="wrap">
+    <div className="section-head"><div><h2>Shop by Weave</h2><p>Explore weaving traditions across regions and materials.</p></div></div>
+    <div className="taxonomy-link-grid technique-link-grid home-horizontal-track" role="region" aria-label="Shop by Weave" tabIndex={0}>
      {weavePrints.map((name,index)=><a key={name} href={base+"Collections?weave="+encodeURIComponent(name)}><Textile pattern={"s"+((index+2)%6+1)} label={name}/><span>{name}</span><small>Explore pieces →</small></a>)}
     </div>
    </div></section>
@@ -344,7 +344,7 @@ export function Home(){
    <IndiaWeaves products={storefrontProducts}/>
    <Reviews items={voices}/>
    <section className="section home-weave-section" id="shop-by-collection"><div className="wrap"><div className="section-head"><div><h2>Shop by Collection</h2><p>Browse Shopify collections and regional handlooms in one place.</p></div>{homeCollectionLinks.length>0&&<a href={base+"Collections"} className="link">All collections →</a>}</div>
-       {homeCollectionLinks.length?<div className="weave-grid">{homeCollectionLinks.map((item,index)=>{
+       {homeCollectionLinks.length?<div className="weave-grid home-horizontal-track" role="region" aria-label="Shop by Collection" tabIndex={0}>{homeCollectionLinks.map((item,index)=>{
          const tile=item.kind==="collection"?collectionTile(item.title):undefined;
          const href=item.kind==="collection"
            ?base+"Collections?collection="+encodeURIComponent(item.handle)
