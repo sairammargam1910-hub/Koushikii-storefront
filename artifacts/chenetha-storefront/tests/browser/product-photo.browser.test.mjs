@@ -343,6 +343,94 @@ test("mobile file selection previews the photo and rejects unsupported or oversi
   await context.close();
 });
 
+test("merchant can upload and publish a matching Shop by Weave tile image", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const uploads = [];
+  const savedItems = [];
+  await page.route("**/api/shopify/admin/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      currencyCode: "INR",
+      products: [{
+        id: "gid://shopify/Product/weave-options",
+        title: "Ikat cotton textile",
+        handle: "ikat-cotton-textile",
+        description: "",
+        productType: "Textile",
+        status: "ACTIVE",
+        tags: [],
+        fabric: "Cotton",
+        regionalHandloom: "",
+        craftTechnique: '["Bagru","Ikkat"]',
+        region: "",
+        colour: "",
+        collectionIds: [],
+        imageUrl: null,
+        variants: [],
+        options: [],
+      }],
+    }),
+  }));
+  await page.route("**/api/site-content/uploads", async (route) => {
+    const body = route.request().postDataJSON();
+    uploads.push(body);
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        uploadUrl: `${origin}/mock-content-upload`,
+        assetUrl: "https://cdn.example.test/home-ikkat.webp",
+      }),
+    });
+  });
+  await page.route("**/mock-content-upload", async (route) => {
+    assert.equal(route.request().method(), "PUT");
+    await route.fulfill({ status: 200, body: "" });
+  });
+  await page.route("**/api/site-content", async (route) => {
+    if (route.request().method() !== "POST") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
+    const body = route.request().postDataJSON();
+    savedItems.push(body);
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...body,
+        id: "homepage-ikkat-image",
+        createdAt: "2026-11-12T00:00:00.000Z",
+        updatedAt: "2026-11-12T00:00:00.000Z",
+      }),
+    });
+  });
+  await page.goto(`${origin}/tests/browser/fixture.html?screen=home-image-editor`);
+  await page.getByRole("dialog").waitFor();
+  await page.locator(".admin-form select").nth(0).selectOption("weave_tile");
+  await page.locator(".admin-form select").nth(1).selectOption("Ikkat");
+  await page.locator('.content-media-field input[type="file"]').setInputFiles({
+    name: "ikkat-closeup.webp",
+    mimeType: "image/webp",
+    buffer: Buffer.from("test-image"),
+  });
+  await page.getByAltText("Selected content preview").waitFor();
+  await page.getByRole("textbox", { name: "Image description" }).fill("Close-up of an indigo Ikkat weave");
+  await page.getByRole("checkbox", { name: /Publish/ }).check();
+  await page.getByRole("button", { name: "Save content" }).click();
+  await page.getByTestId("home-image-editor-closed").waitFor();
+
+  assert.equal(uploads.length, 1);
+  assert.equal(uploads[0].contentType, "image/webp");
+  assert.equal(savedItems.length, 1);
+  assert.equal(savedItems[0].kind, "home_image");
+  assert.equal(savedItems[0].placement, "weave_tile");
+  assert.equal(savedItems[0].title, "Ikkat");
+  assert.equal(savedItems[0].imageUrl, "https://cdn.example.test/home-ikkat.webp");
+  assert.equal(savedItems[0].altText, "Close-up of an indigo Ikkat weave");
+  assert.equal(savedItems[0].published, true);
+  await context.close();
+});
+
 test("merchant can publish without a collection and later assign a Shopify collection", async () => {
   const created = await openForm();
   const createMutations = await mockCreateOrUpdate(created.page);

@@ -2,6 +2,7 @@
 .home-fabric-section .dynamic-home-tile-image{height:275px}
 .home-weave-section .dynamic-home-tile-image{height:155px}
 @media(max-width:767px){.home-fabric-section .dynamic-home-tile-image{height:145px;grid-row:1/5;margin:0}.home-weave-section .dynamic-home-tile-image{height:150px}}
+.kq .dynamic-home-weave-image{grid-row:1/3;width:70px;height:70px;margin:0;object-fit:cover;border-radius:2px}
 /* Each client-supplied clip is 12 seconds long; keep the progress in sync. */
 .kq .home-making-journey.is-playing .home-making-progress span {
   animation-duration: 12s;
@@ -920,6 +921,11 @@
 }
 
 @media (max-width: 767px) {
+  .kq .dynamic-home-weave-image {
+    width: 52px;
+    height: 58px;
+  }
+
   .kq .home-horizontal-track {
     grid-auto-columns: 82vw;
     gap: 12px;

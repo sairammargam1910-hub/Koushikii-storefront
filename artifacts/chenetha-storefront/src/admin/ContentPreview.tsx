@@ -78,7 +78,7 @@ export function ContentPreview({
 
           {draft.kind === "home_image" && <section className={`section ${placement === "fabric_tile" ? "home-fabric-section" : "home-weave-section"}`}>
             <div className="wrap">
-               <div className="section-head"><div><span className="eyebrow">HOMEPAGE THUMBNAIL</span><h2>{placement === "fabric_tile" ? "Shop by Fabric" : "Shop by Collection"}</h2><p>{placement === "fabric_tile" ? "Find the cloth that feels like you." : "Browse published Shopify collections."}</p></div></div>
+               <div className="section-head"><div><span className="eyebrow">HOMEPAGE CATEGORY IMAGE</span><h2>{placement === "fabric_tile" ? "Shop by Fabric" : "Shop by Weave"}</h2><p>{placement === "fabric_tile" ? "Find the cloth that feels like you." : "Explore weaving traditions across regions and materials."}</p></div></div>
               {item.imageUrl
                 ? <DynamicHomeTiles items={[item]} placement={placement}/>
                 : <PreviewNeedsMedia>Upload an image to see this thumbnail.</PreviewNeedsMedia>}

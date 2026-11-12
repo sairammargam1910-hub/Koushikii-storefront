@@ -635,7 +635,7 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
       title: "The Crafts Edit",
     }],
   };
-  const openHome = async (viewport, products) => {
+  const openHome = async (viewport, products, contentItems = []) => {
     const context = await browser.newContext({ viewport, isMobile: viewport.width < 600, hasTouch: viewport.width < 600 });
     const page = await context.newPage();
     await page.route("**/api/shopify/products", (route) => route.fulfill({
@@ -646,7 +646,7 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
     await page.route("**/api/site-content", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ items: [] }),
+      body: JSON.stringify({ items: contentItems }),
     }));
     await page.goto(`${origin}${fixtureUrl}?screen=home`);
     return { context, page };
@@ -717,6 +717,40 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
     assert.equal(await page.locator(".home-regional-section").count(), 0);
     await context.close();
   }
+
+  const publishedImages = [
+    {
+      id: "cotton-tile-image",
+      kind: "home_image",
+      placement: "fabric_tile",
+      title: "Cotton",
+      imageUrl: "https://cdn.example.test/cotton-tile.webp",
+      altText: "Close-up of natural cotton cloth",
+      published: true,
+      approved: false,
+      sortOrder: 0,
+    },
+    {
+      id: "ikkat-tile-image",
+      kind: "home_image",
+      placement: "weave_tile",
+      title: "Ikkat",
+      imageUrl: "https://cdn.example.test/ikkat-tile.webp",
+      altText: "Close-up of indigo Ikkat",
+      published: true,
+      approved: false,
+      sortOrder: 1,
+    },
+  ];
+  const { context, page } = await openHome({ width: 1280, height: 900 }, [productResponse.products[0]], publishedImages);
+  await page.getByRole("heading", { name: "Shop by Weave", exact: true }).waitFor();
+  const cottonImage = page.locator(".home-fabric-section .fabric-card").filter({ has: page.getByRole("heading", { name: "Cotton", exact: true }) }).locator("img");
+  const ikkatImage = page.locator(".home-technique-section a").filter({ hasText: "Ikkat" }).locator("img");
+  assert.equal(await cottonImage.getAttribute("src"), "https://cdn.example.test/cotton-tile.webp");
+  assert.equal(await cottonImage.getAttribute("alt"), "Close-up of natural cotton cloth");
+  assert.equal(await ikkatImage.getAttribute("src"), "https://cdn.example.test/ikkat-tile.webp");
+  assert.equal(await ikkatImage.getAttribute("alt"), "Close-up of indigo Ikkat");
+  await context.close();
 });
 
 test("header groups starter and live product classifications into three taxonomies", async () => {

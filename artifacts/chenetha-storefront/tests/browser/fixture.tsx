@@ -6,6 +6,7 @@ import type { ShopifyAdminProduct } from "@workspace/api-client-react";
 import { ShopifyProductRoute } from "../../src/storefront/ShopifyCatalog";
 import { Cart } from "../../src/storefront/Cart";
 import { Checkout } from "../../src/storefront/Checkout";
+import { ContentEditor } from "../../src/admin/ContentAdmin";
 
 const product: ShopifyAdminProduct = {
   id: "gid://shopify/Product/browser-fixture",
@@ -38,6 +39,9 @@ function Fixture() {
   const params = new URLSearchParams(window.location.search);
   const editing = params.get("edit") === "1";
   const screen = params.get("screen");
+  if (screen === "home-image-editor") return closed
+    ? <p data-testid="home-image-editor-closed">Home image editor closed</p>
+    : <main className="merchant-app"><ContentEditor kind="home_image" onClose={() => setClosed(true)}/></main>;
   if (screen === "product") return <ShopifyProductRoute handle="fixture-saree" />;
   if (screen === "cart") return <Cart />;
   if (screen === "checkout") return <Checkout />;

@@ -222,9 +222,10 @@ function IndiaWeaves({products}:{products:ShopifyProduct[]}){
 }
 export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];placement:"fabric_tile"|"weave_tile"}){
   const fallback=base+"Collections";
-  return <div className={placement==="fabric_tile"?"fabric-grid":"weave-grid"}>{items.map(item=><a key={item.id} className={placement==="fabric_tile"?"fabric-card":""} href={item.ctaUrl||fallback}>
-   <img className="dynamic-home-tile-image" src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
-   <h3>{item.title}</h3>{item.body&&<p>{item.body}</p>}{item.ctaLabel&&<span className="link">{item.ctaLabel} →</span>}
+  const isFabric=placement==="fabric_tile";
+  return <div className={isFabric?"fabric-grid":"taxonomy-link-grid technique-link-grid"}>{items.map(item=><a key={item.id} className={isFabric?"fabric-card":""} href={item.ctaUrl||fallback}>
+   <img className={isFabric?"dynamic-home-tile-image":"dynamic-home-weave-image"} src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
+   {isFabric?<><h3>{item.title}</h3>{item.body&&<p>{item.body}</p>}{item.ctaLabel&&<span className="link">{item.ctaLabel} →</span>}</>:<><span>{item.title}</span><small>Explore pieces →</small></>}
   </a>)}</div>;
 }
 export function Reviews({items}:{items:SiteContentItem[]}){
@@ -335,7 +336,13 @@ export function Home(){
    <section className="section home-technique-section" id="shop-by-weave"><div className="wrap">
     <div className="section-head"><div><h2>Shop by Weave</h2><p>Explore weaving traditions across regions and materials.</p></div></div>
     <div className="taxonomy-link-grid technique-link-grid home-horizontal-track" role="region" aria-label="Shop by Weave" tabIndex={0}>
-     {weavePrints.map((name,index)=><a key={name} href={base+"Collections?weave="+encodeURIComponent(name)}><Textile pattern={"s"+((index+2)%6+1)} label={name}/><span>{name}</span><small>Explore pieces →</small></a>)}
+     {weavePrints.map((name,index)=>{
+       const tile=homeTiles.find(item=>item.placement==="weave_tile"&&item.title.trim().toLowerCase()===name.trim().toLowerCase());
+       return <a key={name} href={base+"Collections?weave="+encodeURIComponent(name)}>
+        {tile?.imageUrl?<img className="dynamic-home-weave-image" src={tile.imageUrl} alt={tile.altText||name} loading="lazy"/>:<Textile pattern={"s"+((index+2)%6+1)} label={name}/>}
+        <span>{name}</span><small>Explore pieces →</small>
+       </a>;
+     })}
     </div>
    </div></section>
      <PremiumFeature collection={premiumCollection} products={storefrontProducts}/>
