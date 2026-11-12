@@ -200,7 +200,6 @@ function PremiumFeature({collections}:{collections:ReturnType<typeof getPremiumC
    </div>
    <div className="home-premium-tiles" role="group" aria-label="Premium collections and regional traditions">
     {collections.map(({title,premiumProducts},index)=>{
-      const image=premiumProducts.find(product=>product.images[0])?.images[0];
       return <a
         className="home-premium-collection"
         key={title}
@@ -208,7 +207,7 @@ function PremiumFeature({collections}:{collections:ReturnType<typeof getPremiumC
         aria-label={`${title}, ${premiumProducts.length} premium ${premiumProducts.length===1?"piece":"pieces"}`}
       >
        <span className="home-premium-art">
-        {image?<img src={image.url} alt={image.altText||title} loading="lazy"/>:<Textile pattern={`s${index%6+1}`} label={`${title} textile pattern`}/>}
+        <Textile pattern={`s${index%6+1}`} label={`${title} textile pattern`}/>
        </span>
        <span className="home-premium-collection-copy">
         <strong>{title}</strong>

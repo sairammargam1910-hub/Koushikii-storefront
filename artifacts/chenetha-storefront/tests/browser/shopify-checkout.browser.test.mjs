@@ -771,6 +771,13 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   assert.equal(await premiumTile.count(), 1, "only collections containing premium items should be shown");
   assert.match(await premiumTile.getAttribute("href"), /Collections\?premium=1&premiumCategory=Kanchipuram$/);
   assert.match(await premiumTile.innerText(), /Kanchipuram[\s\S]*2 premium pieces/i);
+  assert.equal(await premiumHome.page.locator(".home-premium-art img").count(), 0, "category art should not reuse a product photo");
+  const desktopPremiumGrid = await premiumHome.page.locator(".home-premium-tiles").evaluate((element) => ({
+    columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
+    tileWidth: element.querySelector(".home-premium-collection")?.getBoundingClientRect().width ?? 0,
+  }));
+  assert.equal(desktopPremiumGrid.columns, 3, "desktop premium artwork should keep three collection slots");
+  assert.ok(desktopPremiumGrid.tileWidth < 300, "one category should not stretch into an oversized product panel");
   await premiumHome.page.goto(`${origin}${fixtureUrl}?screen=collections&premium=1&premiumCategory=Kanchipuram`);
   await premiumHome.page.getByRole("heading", { name: "Premium Collection", exact: true }).waitFor();
   assert.equal(await premiumHome.page.locator(".shopify-product-card").count(), 2);
@@ -810,6 +817,17 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   assert.equal(await premiumTraditionHome.page.getByRole("heading", { name: "Premium test tradition saree", exact: true }).count(), 1);
   assert.equal(await premiumTraditionHome.page.getByRole("heading", { name: "Regular test tradition saree", exact: true }).count(), 0);
   await premiumTraditionHome.context.close();
+
+  const premiumTraditionMobile = await openHome({ width: 390, height: 844 }, [premiumTraditionProduct]);
+  await premiumTraditionMobile.page.locator(".home-premium-section").waitFor();
+  const mobilePremiumGrid = await premiumTraditionMobile.page.locator(".home-premium-tiles").evaluate((element) => ({
+    columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
+    tileWidth: element.querySelector(".home-premium-collection")?.getBoundingClientRect().width ?? 0,
+  }));
+  assert.equal(mobilePremiumGrid.columns, 2, "mobile premium artwork should keep compact collection slots");
+  assert.ok(mobilePremiumGrid.tileWidth < 200, "one mobile category should not stretch across the panel");
+  assert.equal(await premiumTraditionMobile.page.locator(".home-premium-art img").count(), 0);
+  await premiumTraditionMobile.context.close();
 
   const featuredOnlyHome = await openHome({ width: 1280, height: 900 }, [featuredOnlyProduct]);
   await featuredOnlyHome.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
