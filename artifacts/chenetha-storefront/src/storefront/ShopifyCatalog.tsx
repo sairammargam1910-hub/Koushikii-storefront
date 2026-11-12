@@ -71,9 +71,23 @@ export function isPremiumProduct(product: ShopifyProduct) {
 
 export function getPremiumCollections(products: ShopifyProduct[]) {
   const collections = new Map<string, {
-    collection: ShopifyProduct["collections"][number];
+    title: string;
     premiumProducts: ShopifyProduct[];
   }>();
+
+  function addProduct(title: string, product: ShopifyProduct) {
+    const cleanedTitle = title.trim();
+    const normalizedTitle = normalizedTag(cleanedTitle);
+    if (!normalizedTitle || normalizedTitle === "premium-collection") return;
+    const existing = collections.get(normalizedTitle);
+    if (existing) {
+      if (!existing.premiumProducts.some((item) => item.id === product.id)) {
+        existing.premiumProducts.push(product);
+      }
+    } else {
+      collections.set(normalizedTitle, { title: cleanedTitle, premiumProducts: [product] });
+    }
+  }
 
   for (const product of products) {
     if (!isPremiumProduct(product)) continue;
@@ -84,13 +98,27 @@ export function getPremiumCollections(products: ShopifyProduct[]) {
         collection.handle.trim().toLowerCase() === "premium-collection" ||
         collection.title.trim().toLowerCase() === "premium collection"
       ) continue;
-      const existing = collections.get(collection.handle);
-      if (existing) existing.premiumProducts.push(product);
-      else collections.set(collection.handle, { collection, premiumProducts: [product] });
+      addProduct(collection.title, product);
+    }
+    for (const tradition of getShopifyAttributeValues(product, "regionalHandloom")) {
+      addProduct(tradition, product);
     }
   }
 
-  return [...collections.values()].sort((a, b) => a.collection.title.localeCompare(b.collection.title));
+  return [...collections.values()].sort((a, b) => a.title.localeCompare(b.title));
+}
+
+export function isInPremiumCategory(product: ShopifyProduct, category: string) {
+  const normalizedCategory = normalizedTag(category);
+  if (!normalizedCategory) return true;
+  return (
+    (product.collections ?? []).some((collection) =>
+      normalizedTag(collection.title) === normalizedCategory ||
+      normalizedTag(collection.handle) === normalizedCategory,
+    ) ||
+    getShopifyAttributeValues(product, "regionalHandloom")
+      .some((tradition) => normalizedTag(tradition) === normalizedCategory)
+  );
 }
 
 export function filterShopifyProducts(

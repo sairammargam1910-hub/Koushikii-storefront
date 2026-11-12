@@ -5,6 +5,7 @@ import type { CatalogFilters } from "./_shared/catalog-filter";
 import {
   filterShopifyProducts,
   getAvailableShopifyCollections,
+  isInPremiumCategory,
   isPremiumProduct,
   ShopifyProductGrid,
   useShopifyCatalog,
@@ -49,6 +50,10 @@ function readPremiumOnly() {
   return params.get("premium") === "1" || params.get("edit") === "premium";
 }
 
+function readPremiumCategory() {
+  return new URLSearchParams(window.location.search).get("premiumCategory") || "";
+}
+
 function selectedCount(filters: CatalogFilters) {
   return FILTER_GROUPS.reduce((count, group) => count + filters[group.key].length, 0) +
     Number(Boolean(filters.minPrice || filters.maxPrice)) +
@@ -65,6 +70,7 @@ export function Collections() {
   const [applied, setApplied] = useState<CatalogFilters>(readFilters);
   const [draft, setDraft] = useState<CatalogFilters>(readFilters);
   const [premiumOnly, setPremiumOnly] = useState(readPremiumOnly);
+  const [premiumCategory, setPremiumCategory] = useState(readPremiumCategory);
   const [locationKey, setLocationKey] = useState(window.location.pathname + window.location.search);
   const liveProducts = catalog.data?.products || [];
   const availableCollections = getAvailableShopifyCollections(liveProducts);
@@ -93,6 +99,7 @@ export function Collections() {
     if (applied.maxPrice) params.set("maxPrice", applied.maxPrice);
     if (applied.collection) params.set("collection", applied.collection);
     if (premiumOnly) params.set("premium", "1");
+    if (premiumCategory) params.set("premiumCategory", premiumCategory);
     if (applied.sort !== defaultFilters.sort) params.set("sort", applied.sort);
     const search = params.toString();
     const nextUrl = window.location.pathname + (search ? `?${search}` : "") + window.location.hash;
@@ -100,7 +107,7 @@ export function Collections() {
       window.history.replaceState(null, "", nextUrl);
       setLocationKey(nextUrl);
     }
-  }, [applied, premiumOnly]);
+  }, [applied, premiumOnly, premiumCategory]);
 
   useEffect(() => {
     if (locationKey === window.location.pathname + window.location.search) return;
@@ -108,6 +115,7 @@ export function Collections() {
     setApplied(next);
     setDraft(next);
     setPremiumOnly(readPremiumOnly());
+    setPremiumCategory(readPremiumCategory());
   }, [locationKey]);
 
   const fabricOptions = useMemo(() => getShopifyFabricValues(liveProducts), [liveProducts]);
@@ -126,9 +134,11 @@ export function Collections() {
   };
   const filteredProducts = useMemo(() => {
     const matches = filterShopifyProducts(liveProducts, effectiveFilters);
-    return premiumOnly ? matches.filter(isPremiumProduct) : matches;
-  }, [liveProducts, applied, premiumOnly]);
-  const activeCount = selectedCount(applied) + Number(premiumOnly);
+    return matches
+      .filter((product) => !premiumOnly || isPremiumProduct(product))
+      .filter((product) => !premiumCategory || isInPremiumCategory(product, premiumCategory));
+  }, [liveProducts, applied, premiumOnly, premiumCategory]);
+  const activeCount = selectedCount(applied) + Number(premiumOnly) + Number(Boolean(premiumCategory));
 
   function toggleDraft(key: FilterKey, value: string) {
     setDraft((current) => {
@@ -148,6 +158,7 @@ export function Collections() {
     setDraft({ ...defaultFilters });
     setApplied({ ...defaultFilters });
     setPremiumOnly(false);
+    setPremiumCategory("");
   }
 
   function removeChip(key: FilterKey, value: string) {
@@ -277,6 +288,9 @@ export function Collections() {
         )}
         {premiumOnly && <button type="button" className="filter-chip" onClick={() => setPremiumOnly(false)}>
           Premium pieces only <span aria-hidden="true">×</span>
+        </button>}
+        {premiumCategory && <button type="button" className="filter-chip" onClick={() => setPremiumCategory("")}>
+          Premium category: {premiumCategory} <span aria-hidden="true">×</span>
         </button>}
         {applied.query && <button type="button" className="filter-chip" onClick={() => {
           setApplied((current) => ({ ...current, query: "" }));

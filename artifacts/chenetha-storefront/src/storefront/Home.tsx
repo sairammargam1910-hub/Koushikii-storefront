@@ -199,19 +199,19 @@ function PremiumFeature({collections}:{collections:ReturnType<typeof getPremiumC
     <a className="btn gold" href={base+"Collections?premium=1"}>Explore premium <ArrowRight size={14}/></a>
    </div>
    <div className="home-premium-tiles" role="group" aria-label="Collections with premium pieces">
-    {collections.map(({collection,premiumProducts},index)=>{
+    {collections.map(({title,premiumProducts},index)=>{
       const image=premiumProducts.find(product=>product.images[0])?.images[0];
       return <a
         className="home-premium-collection"
-        key={collection.handle}
-        href={`${base}Collections?collection=${encodeURIComponent(collection.handle)}&premium=1`}
-        aria-label={`${collection.title}, ${premiumProducts.length} premium ${premiumProducts.length===1?"piece":"pieces"}`}
+        key={title}
+        href={`${base}Collections?premium=1&premiumCategory=${encodeURIComponent(title)}`}
+        aria-label={`${title}, ${premiumProducts.length} premium ${premiumProducts.length===1?"piece":"pieces"}`}
       >
        <span className="home-premium-art">
-        {image?<img src={image.url} alt={image.altText||collection.title} loading="lazy"/>:<Textile pattern={`s${index%6+1}`} label={`${collection.title} textile pattern`}/>}
+        {image?<img src={image.url} alt={image.altText||title} loading="lazy"/>:<Textile pattern={`s${index%6+1}`} label={`${title} textile pattern`}/>}
        </span>
        <span className="home-premium-collection-copy">
-        <strong>{collection.title}</strong>
+        <strong>{title}</strong>
         <small>{premiumProducts.length} premium {premiumProducts.length===1?"piece":"pieces"} <ArrowRight size={13}/></small>
        </span>
       </a>;
