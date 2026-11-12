@@ -703,9 +703,34 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
   await assertHorizontalTrack(withoutCollection.page.locator(".home-technique-section .home-horizontal-track"));
   await assertHorizontalTrack(withoutCollection.page.locator(".home-weave-section .home-horizontal-track"));
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "The Crafts Edit", exact: true }).count(), 0);
-  assert.equal(await withoutCollection.page.getByRole("heading", { name: "New Arrivals", exact: true }).count(), 0);
+  await withoutCollection.page.getByRole("heading", { name: "New Arrivals", exact: true }).waitFor();
+  assert.equal(await withoutCollection.page.getByRole("heading", { name: "Kanchipuram silk saree", exact: true }).count(), 1);
   assert.equal(await withoutCollection.page.getByRole("heading", { name: "Premium Collection", exact: true }).count(), 0);
   await withoutCollection.context.close();
+
+  const featuredProduct = {
+    ...productResponse.products[0],
+    tags: [...productResponse.products[0].tags, "featured"],
+  };
+  const featuredHome = await openHome({ width: 1280, height: 900 }, [featuredProduct]);
+  await featuredHome.page.getByRole("heading", { name: "Featured Products", exact: true }).waitFor();
+  assert.equal(await featuredHome.page.locator(".premium").count(), 1);
+  assert.equal(await featuredHome.page.locator(".shopify-premium-products").getByRole("heading", { name: "Kanchipuram silk saree" }).count(), 1);
+  await featuredHome.context.close();
+
+  const legacyPremiumProduct = {
+    ...productResponse.products[0],
+    tags: productResponse.products[0].tags.filter((tag) => tag !== "new arrival"),
+    collections: [{
+      id: "gid://shopify/Collection/premium",
+      handle: "premium-collection",
+      title: "Premium Collection",
+    }],
+  };
+  const legacyPremiumHome = await openHome({ width: 1280, height: 900 }, [legacyPremiumProduct]);
+  await legacyPremiumHome.page.locator(".premium h2").getByText("Premium Collection", { exact: true }).waitFor();
+  assert.equal(await legacyPremiumHome.page.locator(".premium").count(), 1);
+  await legacyPremiumHome.context.close();
 
   const customFabricProduct = {
     ...productResponse.products[0],

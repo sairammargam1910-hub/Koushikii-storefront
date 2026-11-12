@@ -436,7 +436,7 @@ test("merchant can publish without a collection and later assign a Shopify colle
   const createMutations = await mockCreateOrUpdate(created.page);
   await created.page.getByText("Fabric creates a separate “Shop by Fabric” tile.", { exact: false }).waitFor();
   await created.page.getByText("Collections group products under “Shop by Collection.”", { exact: false }).waitFor();
-  await created.page.getByText("Use the Fabric field below to create a home-page fabric tile.", { exact: false }).waitFor();
+  await created.page.getByText("Use Fabric to create a home-page fabric tile.", { exact: false }).waitFor();
   await created.page.getByTestId("input-product-title").fill("Hand-block print cotton runner");
   await created.page.getByTestId("input-product-type").fill("Home textile");
   await created.page.getByTestId("input-product-price").fill("1800");

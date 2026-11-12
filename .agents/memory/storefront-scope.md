@@ -139,3 +139,9 @@ Product classifications, search tags and collections serve different purposes. A
 **Why:** On November 12, 2026, the user reported that a custom fabric entered in the product editor was grouped under “Others” and said the tags-versus-collections distinction was confusing.
 
 **How to apply:** Derive fabric tiles, header links, filters and thumbnail choices from live product fabric values. Explain in the merchant form that Fabric creates a tile, tags are keywords, and collections group products.
+
+Homepage merchandising uses product tags: `new arrival` places a product in New Arrivals, and `featured` places it in the green Featured Products panel. The existing Premium Collection assignment remains supported.
+
+**Why:** The user confirmed these are the merchant's existing product-tag workflow and reported that both homepage sections disappeared when they were tied only to collections.
+
+**How to apply:** Match tags case-insensitively after normalizing spaces and hyphens. Keep the featured panel hidden when no products are explicitly featured; never choose products arbitrarily.

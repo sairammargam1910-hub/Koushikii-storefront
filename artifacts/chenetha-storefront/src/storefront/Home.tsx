@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, base } from "./_shared";
-import { getAvailableShopifyCollections, getShopifyAttribute, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
+import { getAvailableShopifyCollections, getShopifyAttribute, isNewArrival, isPremiumProduct, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
 import { getFabricCategoryOptions, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import { useGetSiteContent, getGetSiteContentQueryKey, type SiteContentItem } from "@workspace/api-client-react";
@@ -182,19 +182,21 @@ function MakingJourney(){
  </div>;
 }
 function ProductCarousel({title,copy,collection,products}:{title:string;copy:string;collection?:ShopifyProduct["collections"][number];products:ShopifyProduct[]}){
-  if(!collection)return null;
-  const collectionProducts=products.filter(product=>product.collections.some(item=>item.handle===collection.handle));
-  if(!collectionProducts.length)return null;
+  if(!products.length)return null;
+  const destination=collection?base+"Collections?collection="+encodeURIComponent(collection.handle):base+"Collections";
   return <section className="section home-product-section"><div className="wrap">
-   <div className="section-head"><div><h2>{collection.title||title}</h2><p>{copy}</p></div><a className="link" href={base+"Collections?collection="+encodeURIComponent(collection.handle)}>View collection →</a></div>
-   <div className="products" role="region" aria-label={collection.title||title}>{collectionProducts.slice(0,4).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
+   <div className="section-head"><div><h2>{collection?.title||title}</h2><p>{copy}</p></div><a className="link" href={destination}>{collection?"View collection →":"View all pieces →"}</a></div>
+   <div className="products" role="region" aria-label={collection?.title||title}>{products.slice(0,4).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
   </div></section>;
 }
 function PremiumFeature({collection,products}:{collection?:ShopifyProduct["collections"][number];products:ShopifyProduct[]}){
-  if(!collection)return null;
-  const premiumProducts=products.filter(product=>product.collections.some(item=>item.handle===collection.handle));
+  const premiumProducts=products.filter(product=>
+    isPremiumProduct(product)||(collection&&product.collections.some(item=>item.handle===collection.handle)),
+  );
   if(!premiumProducts.length)return null;
-  return <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Featured collection</span><h2>{collection.title}</h2><p>Explore the pieces in this collection, with product details kept up to date.</p><a className="btn gold" href={base+"Collections?collection="+encodeURIComponent(collection.handle)}>Explore collection <ArrowRight size={14}/></a></div>
+  const title=collection?.title||"Featured Products";
+  const destination=collection?base+"Collections?collection="+encodeURIComponent(collection.handle):base+"Collections";
+  return <section className="section"><div className="wrap"><div className="premium"><div><span className="eyebrow">Featured collection</span><h2>{title}</h2><p>Explore a considered selection of handloom pieces.</p><a className="btn gold" href={destination}>Explore pieces <ArrowRight size={14}/></a></div>
    <div className="shopify-premium-products">{premiumProducts.slice(0,2).map(product=><ShopifyProductCard key={product.id} product={product}/>)}</div>
   </div></div></section>
 }
@@ -291,6 +293,9 @@ export function Home(){
   const premiumCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="premium collection");
   const newArrivalsCollection=availableCollections.find(item=>item.title.trim().toLowerCase()==="new arrivals");
   const storefrontProducts=storefrontCatalog.data?.products||[];
+  const newArrivalProducts=storefrontProducts.filter(product=>
+    isNewArrival(product)||(newArrivalsCollection&&product.collections.some(item=>item.handle===newArrivalsCollection.handle)),
+  );
   const published=siteContent.data?.items||[];
   const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];
   const fabricNames=getFabricCategoryOptions(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"fabric")));
@@ -347,7 +352,7 @@ export function Home(){
     </div>
    </div></section>
      <PremiumFeature collection={premiumCollection} products={storefrontProducts}/>
-     <ProductCarousel title="New Arrivals" copy="Discover the newest pieces in the collection." collection={newArrivalsCollection} products={storefrontProducts}/>
+      <ProductCarousel title="New Arrivals" copy="Discover the newest pieces in the collection." collection={newArrivalsCollection} products={newArrivalProducts}/>
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
    <IndiaWeaves products={storefrontProducts}/>
    <Reviews items={voices}/>

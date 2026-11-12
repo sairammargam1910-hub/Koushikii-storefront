@@ -60,8 +60,8 @@ export function isNewArrival(product: ShopifyProduct) {
 
 export function isPremiumProduct(product: ShopifyProduct) {
   return (
-    hasTag(product, "premium", "collection:premium") ||
-    normalizedTag(getShopifyTagValue(product, "collection")) === "premium"
+    hasTag(product, "featured", "featured-product", "featured-products", "premium", "collection:featured", "collection:premium") ||
+    ["featured", "premium"].includes(normalizedTag(getShopifyTagValue(product, "collection")))
   );
 }
 
