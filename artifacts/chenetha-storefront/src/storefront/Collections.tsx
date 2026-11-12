@@ -161,7 +161,7 @@ export function Collections() {
     <PageHero
       eyebrow="Shop the collection"
       title={legacyEdit === "premium" ? "Premium Collection" : legacyEdit === "new" ? "New Arrivals" : "All published products"}
-      subtitle="Explore the products published in Shopify. Refine by material, tradition, technique and more."
+      subtitle="Explore available pieces. Refine by material, tradition, technique and more."
     />
     <main className="content wrap">
       <div className="catalog-controls">
@@ -227,10 +227,10 @@ export function Collections() {
             </details>
             {availableCollections.length > 0 && (
               <details className="filter-section" open={false}>
-                <summary>Shopify Collection</summary>
+                <summary>Collection</summary>
                 <label className="filter-collection">Collection
                   <select
-                    aria-label="Filter by Shopify collection"
+                    aria-label="Filter by collection"
                     value={draft.collection}
                     onChange={(event) => setDraft((current) => ({ ...current, collection: event.target.value }))}
                   >
@@ -248,7 +248,7 @@ export function Collections() {
         </details>
       </div>
       <div className="active-filters" aria-live="polite">
-        <strong>{catalog.isLoading && !catalog.data ? "Loading Shopify products…" : `${filteredProducts.length} published ${filteredProducts.length === 1 ? "product" : "products"}`}</strong>
+        <strong>{catalog.isLoading && !catalog.data ? "Loading products…" : `${filteredProducts.length} published ${filteredProducts.length === 1 ? "product" : "products"}`}</strong>
         {FILTER_GROUPS.flatMap(({ key, title }) => applied[key].map((value) => (
           <button type="button" className="filter-chip" key={`${key}:${value}`} onClick={() => removeChip(key, value)} aria-label={`Remove ${title} filter ${value}`}>
             {title}: {filterLabel(key, value)} <span aria-hidden="true">×</span>
@@ -278,14 +278,14 @@ export function Collections() {
       {catalog.isLoading && !catalog.data
         ? <p role="status" className="shopify-catalog-status">Loading the collection…</p>
         : catalog.isError && !catalog.data
-          ? <div className="empty"><span className="eyebrow">Shopify catalog unavailable</span><h2 style={{ marginTop: 15 }}>We couldn’t load the products just now.</h2><p>Your store data has not been replaced with sample products. Try again in a moment.</p><button className="btn" onClick={() => void catalog.refetch()}>Try again</button></div>
+          ? <div className="empty"><span className="eyebrow">Product list unavailable</span><h2 style={{ marginTop: 15 }}>We couldn’t load the products just now.</h2><p>Your store data has not been replaced with sample products. Try again in a moment.</p><button className="btn" onClick={() => void catalog.refetch()}>Try again</button></div>
           : liveProducts.length
             ? filteredProducts.length
               ? <ShopifyProductGrid products={filteredProducts}/>
               : <div className="empty"><span className="eyebrow">No matching products</span><h2 style={{ marginTop: 15 }}>No published products match these filters.</h2><p>Change or clear the filters to see other products.</p><button className="btn" onClick={clearAll}>Clear All</button></div>
-            : <div className="empty"><span className="eyebrow">Shopify catalog</span><h2 style={{ marginTop: 15 }}>No published products are available yet.</h2><p>Published products will appear here directly from Shopify.</p></div>}
-      {catalog.isError && catalog.data && <p role="status" className="shopify-catalog-status">Showing the last successfully loaded Shopify catalog; the latest refresh failed.</p>}
-      <p className="muted" style={{ fontSize: 11, marginTop: 25 }}>Product names, photos, prices and collection membership come from Shopify. Product classification is maintained separately for fabric, regional tradition, technique and region of origin.</p>
+            : <div className="empty"><span className="eyebrow">Our collection</span><h2 style={{ marginTop: 15 }}>No published products are available yet.</h2><p>Published products will appear here when available.</p></div>}
+      {catalog.isError && catalog.data && <p role="status" className="shopify-catalog-status">Showing the last successfully loaded product list; the latest refresh failed.</p>}
+      <p className="muted" style={{ fontSize: 11, marginTop: 25 }}>Product names, photos, prices and collection membership are kept current for this store. Fabric, regional tradition, technique and origin details are managed separately.</p>
     </main>
   </Shell>;
 }

@@ -9,6 +9,7 @@ import {
   useGetShopifyOrderTracking,
 } from "@workspace/api-client-react";
 import { Shell, PageHero, base } from "./_shared";
+import { customerFacingMessage } from "./customerFacingMessage";
 import "./_orders.css";
 
 function formatDate(value: string | null | undefined, includeTime = false) {
@@ -121,21 +122,24 @@ export function OrderDetail() {
                 return <div className="shipment-unit" key={`${shipment.awbCode ?? shipment.status}-${index}`} data-testid={`shipment-${index}`}>
                   <div className="shipment-status-line">
                     <span className={`shipment-status-symbol ${!active && shipment.status.toLowerCase().includes("deliver") ? "is-delivered" : ""}`}>{!active && shipment.status.toLowerCase().includes("deliver") ? <Check size={15}/> : <Truck size={15}/>}</span>
-                    <div><strong data-testid={`status-shipment-${index}`}>{readable(shipment.status)}</strong>
-                      {shipment.courierName && <span>{shipment.courierName}</span>}
+                    <div><strong data-testid={`status-shipment-${index}`}>{customerFacingMessage(readable(shipment.status), "Delivery update")}</strong>
+                      {shipment.courierName && <span>Delivery partner</span>}
                     </div>
                     {shipment.estimatedDeliveryAt && active && <span className="shipment-estimate" data-testid={`text-estimated-delivery-${index}`}>Estimated {formatDate(shipment.estimatedDeliveryAt)}</span>}
                   </div>
                   {shipment.awbCode && <div className="tracking-reference">
                     {shipment.awbCode && <span>Tracking number <strong data-testid={`text-tracking-number-${index}`}>{shipment.awbCode}</strong></span>}
-                    {shipment.trackingUrl && <a href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-carrier-tracking-${index}`}>Open carrier tracking <ExternalLink size={13}/></a>}
+                    {shipment.trackingUrl && <a href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-carrier-tracking-${index}`}>View delivery tracking <ExternalLink size={13}/></a>}
                   </div>}
                   {events.length > 0 ? <ol className="tracking-timeline" data-testid={`timeline-shipment-${index}`}>
-                    {events.map((event, eventIndex) => <li key={`${event.occurredAt ?? event.status}-${eventIndex}`} className={eventIndex === 0 ? "is-current" : ""} data-testid={`event-shipment-${index}-${eventIndex}`}>
-                      <span className="timeline-dot"/><div className="timeline-event-copy"><strong>{event.status}</strong><p>{event.description}</p>
-                        {(event.occurredAt || event.location) && <small>{event.occurredAt && <time dateTime={event.occurredAt}>{formatDate(event.occurredAt, true)}</time>}{event.occurredAt && event.location && <span className="timeline-separator"> · </span>}{event.location && <span><MapPin size={11}/>{event.location}</span>}</small>}
-                      </div>
-                    </li>)}
+                    {events.map((event, eventIndex) => {
+                      const location = customerFacingMessage(event.location, "");
+                      return <li key={`${event.occurredAt ?? event.status}-${eventIndex}`} className={eventIndex === 0 ? "is-current" : ""} data-testid={`event-shipment-${index}-${eventIndex}`}>
+                        <span className="timeline-dot"/><div className="timeline-event-copy"><strong>{customerFacingMessage(event.status, "Delivery update")}</strong><p>{customerFacingMessage(event.description, "Your parcel has a new delivery update.")}</p>
+                          {(event.occurredAt || location) && <small>{event.occurredAt && <time dateTime={event.occurredAt}>{formatDate(event.occurredAt, true)}</time>}{event.occurredAt && location && <span className="timeline-separator"> · </span>}{location && <span><MapPin size={11}/>{location}</span>}</small>}
+                        </div>
+                      </li>;
+                    })}
                   </ol> : <p className="tracking-pending" data-testid={`text-tracking-pending-${index}`}><Clock3 size={14}/> Courier scans will appear here as the parcel moves.</p>}
                 </div>;
               }) : <div className="tracking-pending" data-testid="empty-tracking"><Clock3 size={16}/><p>Tracking will appear here once your parcel has been handed to the courier.</p></div>}
@@ -164,7 +168,7 @@ export function OrderDetail() {
               <span className="eyebrow">Dispatch details</span>
               {order.fulfillments.map((fulfillment, index) => <div className="fulfillment-detail" key={`${fulfillment.trackingNumber ?? fulfillment.status}-${index}`} data-testid={`fulfillment-${index}`}>
                 <strong>{readable(fulfillment.status)}</strong>
-                {fulfillment.trackingCompany && <span>{fulfillment.trackingCompany}</span>}
+                {fulfillment.trackingCompany && <span>Delivery partner</span>}
                 {fulfillment.trackingNumber && <span className="fulfillment-number">{fulfillment.trackingNumber}</span>}
                 {fulfillment.estimatedDeliveryAt && <span>Expected {formatDate(fulfillment.estimatedDeliveryAt)}</span>}
                 {fulfillment.trackingUrl && <a href={fulfillment.trackingUrl} target="_blank" rel="noopener noreferrer">Track this parcel <ExternalLink size={13}/></a>}

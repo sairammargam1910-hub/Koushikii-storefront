@@ -403,10 +403,10 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
           <>
             <div className="checkout-total-row"><span>Items subtotal</span><strong data-testid="text-checkout-item-subtotal">{formatShopifyMoney(quote.itemSubtotal, quote.currencyCode)}</strong></div>
             <div className="checkout-total-row is-discount"><span>Discount</span><strong data-testid="text-checkout-discount">−{formatShopifyMoney(quote.discountAmount, quote.currencyCode)}</strong></div>
-            <div className="checkout-total-row"><span>Shipping · {quote.courierName || "Delivery"}</span><strong data-testid="text-checkout-shipping">{formatShopifyMoney(quote.shippingAmount, quote.currencyCode)}</strong></div>
+            <div className="checkout-total-row"><span>Shipping · Delivery</span><strong data-testid="text-checkout-shipping">{formatShopifyMoney(quote.shippingAmount, quote.currencyCode)}</strong></div>
             <div className="checkout-total-row checkout-grand-total"><strong>Total to pay</strong><strong data-testid="text-checkout-total">{formatShopifyMoney(quote.totalAmount, quote.currencyCode)}</strong></div>
             <div className="checkout-quote-meta">
-              <span>{quote.courierName || "Delivery service"} · {quote.parcelCount} {quote.parcelCount === 1 ? "parcel" : "parcels"}</span>
+              <span>Delivery option · {quote.parcelCount} {quote.parcelCount === 1 ? "parcel" : "parcels"}</span>
               <span>{quoteExpired ? "Quote expired. Request a fresh quote." : `Quote valid until ${formatExpiry(quote.expiresAt)}`}</span>
             </div>
           </>
@@ -417,10 +417,10 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
           </>
         )}
         <p className="checkout-customs-note" role="note" data-testid="checkout-customs-note">
-          Import duties and customs charges are excluded unless included in the carrier quote. These may be collected separately on delivery.
+          Import duties and customs charges are excluded unless included in the delivery quote. These may be collected separately on delivery.
         </p>
         <p className="checkout-summary-note">Your delivery address and parcel details are used to calculate available delivery options.</p>
-        {quote?.excludedCharges.length ? <p className="checkout-summary-note">Not included: {quote.excludedCharges.join(", ")}.</p> : null}
+        {quote?.excludedCharges.length ? <p className="checkout-summary-note">Not included: {customerFacingMessage(quote.excludedCharges.join(", "), "Additional delivery charges may apply")}.</p> : null}
         <div className="checkout-payment-trust"><ShieldCheck size={17} /><span>Secure payment on a hosted checkout page</span></div>
         <a className="link checkout-return-link" href={base + "Cart"}>Return to your bag</a>
       </aside>

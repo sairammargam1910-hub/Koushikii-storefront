@@ -58,6 +58,15 @@ let server;
 let browser;
 let origin;
 
+async function assertNoProviderBrandInPublicCopy(page) {
+  const copy = await page.locator("body").evaluate((root) => [
+    root.innerText,
+    ...Array.from(root.querySelectorAll("[aria-label], [title], [alt], [placeholder]"))
+      .flatMap((element) => ["aria-label", "title", "alt", "placeholder"].map((attribute) => element.getAttribute(attribute) ?? "")),
+  ].join("\n"));
+  assert.doesNotMatch(copy, /Shopify|Cashfree|Shiprocket|Delhivery|Xpressbees|Blue Dart/i);
+}
+
 async function findPort() {
   const listener = createServer();
   await new Promise((resolve, reject) => {
@@ -412,7 +421,7 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
           taxAmount: "0.00",
           totalAmount: "1350.00",
           carrier: "Shiprocket",
-          courierName: "Economy",
+          courierName: "Delhivery Surface 2 Kgs",
           parcelCount: 1,
           excludedCharges: ["Import duties and customs charges"],
         }),
@@ -466,7 +475,7 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
   assert.equal(await page.getByTestId("text-checkout-tax").count(), 0);
   assert.match(await page.getByTestId("checkout-customs-note").innerText(), /duties and customs charges are excluded/i);
   assert.match(await checkoutButton.innerText(), /Continue to secure payment/i);
-  assert.doesNotMatch(await page.locator("body").innerText(), /Shopify|Cashfree|Shiprocket/i);
+  await assertNoProviderBrandInPublicCopy(page);
   assert.deepEqual(quoteRequests[0], {
     cartId: savedCart.id,
     email: "buyer@example.com",
@@ -565,6 +574,7 @@ test("all published products appear without collections and dynamic filters use 
   await page.goto(`${origin}${fixtureUrl}?screen=collections`);
   await page.getByText("Kanchipuram silk saree", { exact: true }).waitFor();
   await page.getByText("Hand-block cotton table runner", { exact: true }).waitFor();
+  await assertNoProviderBrandInPublicCopy(page);
   assert.equal(await page.getByText("2 published products").count(), 1);
   assert.equal(await page.getByText(/Cotton handlooms · Explore regional weaves/i).count(), 0);
   assert.equal(await page.getByText(/Uncategorised/i).count(), 0);
@@ -584,8 +594,8 @@ test("all published products appear without collections and dynamic filters use 
   assert.equal(await page.getByText("Kanchipuram silk saree", { exact: true }).count(), 0);
   await page.getByRole("button", { name: "Clear All" }).click();
 
-  await page.locator(".filter-section").filter({ has: page.getByText("Shopify Collection", { exact: true }) }).locator("summary").click();
-  const collectionFilter = page.getByLabel("Filter by Shopify collection");
+  await page.locator(".filter-section").filter({ has: page.getByText("Collection", { exact: true }) }).locator("summary").click();
+  const collectionFilter = page.getByLabel("Filter by collection");
   assert.deepEqual(await collectionFilter.locator("option").allTextContents(), ["All collections", "The Crafts Edit"]);
   await collectionFilter.selectOption("the-crafts-edit");
   await page.getByRole("button", { name: "Apply Filters" }).click();
@@ -619,6 +629,7 @@ test("a Shopify catalog failure never substitutes the sample catalog", async () 
   await page.getByRole("heading", { name: "We couldn’t load the products just now." }).waitFor({ timeout: 15000 });
   assert.equal(await page.getByText("Nila Ikat", { exact: true }).count(), 0);
   assert.equal(await page.getByRole("button", { name: "Sarees", exact: true }).count(), 0);
+  await assertNoProviderBrandInPublicCopy(page);
   await context.close();
 });
 
@@ -667,6 +678,7 @@ test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mo
 
   const withoutCollection = await openHome({ width: 1280, height: 900 }, [productResponse.products[0]]);
   await withoutCollection.page.getByRole("heading", { name: "Shop by Fabric" }).waitFor();
+  await assertNoProviderBrandInPublicCopy(withoutCollection.page);
   assert.equal(await withoutCollection.page.locator(".home-fabric-section .fabric-card").count(), 4);
   await withoutCollection.page.getByRole("heading", { name: "Shop by Collection", exact: true }).waitFor();
   assert.equal(await withoutCollection.page.locator(".home-regional-section").count(), 0);
