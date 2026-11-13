@@ -381,7 +381,10 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
           <section aria-label="Product photos">
             <div className="gallery-main shopify-gallery-main">
               {image ? (
-                <img src={image.url} alt={image.altText || product.title} />
+                <img
+                  src={image.url}
+                  alt={image.altText || product.title}
+                />
               ) : (
                 <div className="shopify-detail-placeholder">
                   <span className="textile s1" />

@@ -9,8 +9,8 @@
 .kq .shopify-image-placeholder,.kq .shopify-detail-placeholder{height:100%;min-height:220px;display:grid;place-items:center;align-content:center;gap:8px;padding:16px;text-align:center;background:#eee3cf;color:var(--muted);font-size:11px}
 .kq .shopify-image-placeholder .textile,.kq .shopify-detail-placeholder .textile{width:100%;height:100%;position:absolute;inset:0;opacity:.5}
 .kq .shopify-image-placeholder>span:last-child,.kq .shopify-detail-placeholder>span:last-child{z-index:1;background:#f7f1e6e8;padding:8px 10px}
-.kq .shopify-gallery-main{position:relative;overflow:hidden;display:grid;place-items:center;background:#eee3cf}
-.kq .shopify-gallery-main>img{width:auto;height:100%;max-width:100%;max-height:100%;object-fit:contain}
+.kq .splitdetail .shopify-gallery-main{position:relative;height:auto;min-height:0;overflow:visible;display:grid;place-items:center;background:#eee3cf}
+.kq .splitdetail .shopify-gallery-main>img{display:block;width:100%;height:auto;max-width:100%;object-fit:contain}
 .kq .shopify-detail-placeholder{width:100%;height:100%;position:relative}
 .kq .shopify-demo-badge{position:absolute;top:14px;left:14px;z-index:2;padding:8px 12px;font-size:10px;font-weight:700}
 .kq .shopify-thumbs{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
