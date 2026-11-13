@@ -226,6 +226,9 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
   const price = productPrice(product);
   const demo = isDemoProduct(product);
   const available = product.variants.some(isShopifyVariantPurchasable);
+  const outOfStock = !demo &&
+    product.variants.length > 0 &&
+    product.variants.every((variant) => !variant.availableForSale);
   const href = `${base}Product?product=${encodeURIComponent(product.handle)}`;
   const wishlist = useStore("kq-wish");
   const { toggleWishlist, loading, error } = useShopperPreferences();
@@ -246,9 +249,16 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
             <span>Product photo not available</span>
           </span>
         )}
-        <span className={`pill shopify-product-badge${demo ? " is-demo" : ""}`}>
-          {demo ? "Demo only" : available ? "Available" : "Currently unavailable"}
-        </span>
+        {outOfStock && (
+          <span className="shopify-oos-overlay" role="status">
+            <span>Out of stock</span>
+          </span>
+        )}
+        {(!outOfStock || demo) && (
+          <span className={`pill shopify-product-badge${demo ? " is-demo" : ""}`}>
+            {demo ? "Demo only" : available ? "Available" : "Currently unavailable"}
+          </span>
+        )}
       </a>
       <button
         className="heart"

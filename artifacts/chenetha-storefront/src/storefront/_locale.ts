@@ -38,6 +38,7 @@ const phrases: Record<string, [string, string]> = {
   "Product details": ["ఉత్పత్తి వివరాలు", "उत्पाद की जानकारी"],
   "Available": ["అందుబాటులో ఉంది", "उपलब्ध"],
   "Currently unavailable": ["ప్రస్తుతం అందుబాటులో లేదు", "अभी उपलब्ध नहीं"],
+  "Out of stock": ["స్టాక్‌లో లేదు", "स्टॉक में नहीं है"],
   "Your selected option and current price will be checked again before checkout.": ["చెక్‌అవుట్‌కు ముందు మీరు ఎంచుకున్న ఎంపిక, ప్రస్తుత ధరను మళ్లీ పరిశీలిస్తాం.", "चेकआउट से पहले चुने गए विकल्प और मौजूदा कीमत की फिर से जाँच होगी।"],
   "Delivery charges are quoted at checkout. Payment is completed securely on a hosted payment page.": ["చెక్‌అవుట్‌లో డెలివరీ ఛార్జీలు చూపబడతాయి. సురక్షిత చెల్లింపు పేజీలో చెల్లింపు పూర్తవుతుంది.", "चेकआउट पर डिलीवरी शुल्क बताया जाएगा। सुरक्षित भुगतान पेज पर भुगतान पूरा होगा।"],
   "Continue to secure payment": ["సురక్షిత చెల్లింపుకు కొనసాగండి", "सुरक्षित भुगतान जारी रखें"],

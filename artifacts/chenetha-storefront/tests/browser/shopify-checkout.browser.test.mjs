@@ -329,6 +329,56 @@ test("shows Shopify quantity errors and keeps the saved bag visible", async () =
   await context.close();
 });
 
+test("shows an out-of-stock overlay only when every product variant is unavailable", async () => {
+  const image = {
+    url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%23b22222'/%3E%3C/svg%3E",
+    altText: "Maroon handloom",
+  };
+  const soldOutProduct = {
+    ...productResponse.products[0],
+    handle: "sold-out-saree",
+    title: "Sold out saree",
+    images: [image],
+    variants: productResponse.products[0].variants.map((variant) => ({
+      ...variant,
+      availableForSale: false,
+    })),
+  };
+  const availableProduct = {
+    ...productResponse.products[0],
+    id: "gid://shopify/Product/available",
+    handle: "available-saree",
+    title: "Available saree",
+    images: [image],
+  };
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const page = await context.newPage();
+  await page.route("**/api/shopify/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ products: [soldOutProduct, availableProduct] }),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=collections`);
+
+  const soldOutCard = page.locator('[data-testid="card-shopify-sold-out-saree"]');
+  const soldOutOverlay = soldOutCard.locator(".shopify-oos-overlay");
+  await soldOutOverlay.getByText("Out of stock", { exact: true }).waitFor();
+  assert.equal(await soldOutCard.locator(".shopify-product-badge").count(), 0);
+  const overlayBounds = await soldOutOverlay.boundingBox();
+  const thumbnailBounds = await soldOutCard.locator(".shopify-product-img").boundingBox();
+  assert.ok(overlayBounds && thumbnailBounds);
+  assert.ok(Math.abs(overlayBounds.width - thumbnailBounds.width) <= 3);
+  assert.ok(Math.abs(overlayBounds.height - thumbnailBounds.height) <= 3);
+
+  const availableCard = page.locator('[data-testid="card-shopify-available-saree"]');
+  assert.equal(await availableCard.locator(".shopify-oos-overlay").count(), 0);
+  await context.close();
+});
+
 test("hides Shopify's placeholder variant title from shoppers", async () => {
   const product = await openProduct();
   assert.equal(await product.page.locator(".shopify-variant-select").count(), 0);
