@@ -2376,12 +2376,16 @@ components:
             $ref: "#/components/schemas/ShopifyAdminProductOptionValue"
     ShopifyAdminVariantCreate:
       type: object
-      required: [price, selectedOptions]
+      required: [price, weightKg, selectedOptions]
       additionalProperties: false
       properties:
         price:
           type: number
           exclusiveMinimum: 0
+        weightKg:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1000
         selectedOptions:
           type: array
           minItems: 1
@@ -2394,6 +2398,10 @@ components:
         price:
           type: number
           exclusiveMinimum: 0
+        weightKg:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1000
         stock:
           $ref: "#/components/schemas/ShopifyAdminStockUpdate"
         selectedOptions:
@@ -2423,6 +2431,8 @@ components:
           type: string
         price:
           type: string
+        weightKg:
+          type: ["number", "null"]
         inventoryQuantity:
           type: ["integer", "null"]
         inventoryTracked:
@@ -2438,7 +2448,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyAdminInventoryLevel"
-      required: [id, title, price, inventoryQuantity, inventoryTracked, inventoryPolicy, selectedOptions, inventoryLevels]
+      required: [id, title, price, weightKg, inventoryQuantity, inventoryTracked, inventoryPolicy, selectedOptions, inventoryLevels]
     ShopifyAdminProduct:
       type: object
       properties:
@@ -2658,12 +2668,16 @@ components:
         inventoryQuantity:
           type: integer
           minimum: 0
+        weightKg:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1000
         imageUrl:
           type: ["string", "null"]
           format: uri
         publishToWebsite:
           type: boolean
-      required: [title, description, tags, price, inventoryQuantity, publishToWebsite]
+      required: [title, description, tags, price, inventoryQuantity, weightKg, publishToWebsite]
     ShopifyAdminProductUpdate:
       type: object
       properties:

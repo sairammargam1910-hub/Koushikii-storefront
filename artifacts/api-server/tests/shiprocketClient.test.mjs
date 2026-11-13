@@ -144,6 +144,44 @@ test("AWB assignment saves confirmed courier and tracking details using one requ
   });
 });
 
+test("creates one Shiprocket order with every cart item, combined value, and combined weight", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = mockShiprocketFetch(calls);
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+      SHIPROCKET_PICKUP_POSTCODE: "500007",
+      SHIPROCKET_REASON_OF_EXPORT: null,
+      SHIPROCKET_TERMS_OF_INVOICE: null,
+    }, async () => {
+      const { createShiprocketPackage } = loadModule();
+      const result = await createShiprocketPackage({
+        ...baseInput,
+        sellingPrice: "480.00",
+        weightKg: 3,
+        orderItems: [
+          { name: "Cotton saree - Default", sku: "COTTON-1", units: 2, sellingPrice: "150.00" },
+          { name: "Silk saree - Maroon", sku: "SILK-2", units: 1, sellingPrice: "180.00" },
+        ],
+      });
+      assert.deepEqual(result, { orderId: "456", shipmentId: "789" });
+      const createCall = calls.find((call) => call.url.pathname.endsWith("/orders/create/adhoc"));
+      assert.ok(createCall);
+      assert.deepEqual(createCall.body.order_items, [
+        { name: "Cotton saree - Default", sku: "COTTON-1", units: 2, selling_price: 150 },
+        { name: "Silk saree - Maroon", sku: "SILK-2", units: 1, selling_price: 180 },
+      ]);
+      assert.equal(createCall.body.sub_total, 480);
+      assert.equal(createCall.body.weight, 3);
+      assert.equal("mode" in createCall.body, false, "shipping mode is not sent as an unsupported order field");
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("finds a cloned Shiprocket order by exact channel reference with a read-only request", async () => {
   const calls = [];
   const originalFetch = globalThis.fetch;

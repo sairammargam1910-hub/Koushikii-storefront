@@ -36,7 +36,12 @@ const cart = {
         subtotalAmount: { amount: "100.00", currencyCode: "INR" },
         totalAmount: { amount: "99.99", currencyCode: "INR" },
       },
-      merchandise: { id: "gid://shopify/ProductVariant/1", availableForSale: true },
+       merchandise: {
+         id: "gid://shopify/ProductVariant/1",
+         availableForSale: true,
+         weight: 750,
+         weightUnit: "GRAMS",
+       },
     }],
   },
 };
@@ -65,6 +70,22 @@ test("per-item parcel values preserve the exact discounted line total", () => {
   assert.deepEqual(pieces, ["33.33", "33.33", "33.33"]);
   assert.equal(addMoney(pieces), "99.99");
   assert.throws(() => divideMoney("10.00", 3), /represented exactly/);
+});
+
+test("variant weights normalize to kilograms and multiply by quantity", () => {
+  const { getCartWeightKg, weightToKilograms } = loadModule();
+  assert.equal(weightToKilograms(750, "GRAMS"), 0.75);
+  assert.equal(weightToKilograms(2, "POUNDS"), 0.907);
+  assert.equal(weightToKilograms(0, "KILOGRAMS"), null);
+  assert.equal(getCartWeightKg(cart), 2.25);
+  const missingWeightCart = {
+    ...cart,
+    lines: { nodes: [{
+      ...cart.lines.nodes[0],
+      merchandise: { ...cart.lines.nodes[0].merchandise, weight: 0 },
+    }] },
+  };
+  assert.equal(getCartWeightKg(missingWeightCart), null);
 });
 
 test("shopper quote hashes stay stable and remain shopper-specific", () => {
@@ -96,9 +117,19 @@ test("quote fingerprint changes when destination, cart, or parcel changes", () =
     base,
   );
   assert.notEqual(
-    checkoutCartFingerprint({ ...baseInput, parcel: { ...baseInput.parcel, weightKg: 1.1 } }),
+    checkoutCartFingerprint({ ...baseInput, parcel: { ...baseInput.parcel, lengthCm: 36 } }),
     base,
   );
+  const changedProductWeight = {
+    ...cart,
+    lines: {
+      nodes: cart.lines.nodes.map((line) => ({
+        ...line,
+        merchandise: { ...line.merchandise, weight: 800 },
+      })),
+    },
+  };
+  assert.notEqual(checkoutCartFingerprint({ ...baseInput, cart: changedProductWeight }), base);
   assert.notEqual(
     checkoutCartFingerprint({
       ...baseInput,

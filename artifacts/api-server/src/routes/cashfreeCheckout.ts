@@ -31,8 +31,10 @@ import {
   getShopperQuoteHash,
   getCartDiscountAmount,
   getCheckoutItemTotal,
+  getCartWeightKg,
   minimalCartSnapshot,
   splitMoney,
+  weightToKilograms,
   type CheckoutAddress,
 } from "../lib/checkoutPricing";
 import {
@@ -43,6 +45,7 @@ import {
   getConfiguredParcel,
   getShiprocketShipmentDetails,
   ShiprocketError,
+  type ShiprocketPackageInput,
   type ShiprocketQuote,
 } from "../lib/shiprocketClient";
 import {
@@ -74,6 +77,7 @@ type CheckoutSnapshot = {
   providerPackages: ShiprocketQuote[];
   courierName: string;
   parcelCount: number;
+  packageStrategy?: "combined_cart";
 };
 
 type CheckoutOrderRow = typeof cashfreeCheckoutOrdersTable.$inferSelect;
@@ -564,7 +568,10 @@ async function bookQuotedShipments(row: CheckoutOrderRow): Promise<CheckoutOrder
       let shipmentId = shipment.shiprocketShipmentId;
       if (!shipmentId && !shipment.shiprocketOrderId) {
         const snapshot = snapshotFromRow(row);
-        const input = buildProviderPackageInputs({
+        const packageInputBuilder = snapshot.packageStrategy === "combined_cart"
+          ? buildProviderPackageInputs
+          : buildLegacyProviderPackageInputs;
+        const input = packageInputBuilder({
           quoteId: row.id,
           cart: snapshot.cart,
           address: snapshot.address,
@@ -770,7 +777,7 @@ function validateCartForCheckout(cart: ShopifyCartNode): void {
   }
   if (cart.totalQuantity > 20) {
     throw new ShopifyCheckoutInputError(
-      "This checkout supports up to 20 individually packed items per order.",
+      "This checkout supports up to 20 pieces in one parcel.",
       422,
     );
   }
@@ -809,8 +816,79 @@ function buildProviderPackageInputs(input: {
 }) {
   const parcel = getConfiguredParcel();
   const prefix = `cfq_${input.quoteId.replace(/-/g, "")}`;
+  const orderItems: NonNullable<ShiprocketPackageInput["orderItems"]> = [];
+  let surfaceOnly = false;
+  for (const line of input.cart.lines.nodes) {
+    const merchandise = line.merchandise!;
+    const unitWeightKg = weightToKilograms(merchandise.weight, merchandise.weightUnit);
+    if (unitWeightKg === null) {
+      throw new ShopifyCheckoutInputError(
+        `Shipping weight is missing for “${merchandise.product.title}”. The store needs to add its weight in kilograms before checkout.`,
+        422,
+      );
+    }
+    surfaceOnly ||= getShiprocketModeForProductTags(merchandise.product.tags) === "Surface";
+    const unitPrices = splitMoney(line.cost.totalAmount.amount, line.quantity);
+    const name = `${merchandise.product.title} - ${merchandise.title}`;
+    const sku = merchandise.sku || merchandise.id.split("/").at(-1) || merchandise.id;
+    const groupedPrices = new Map<string, number>();
+    for (const price of unitPrices) {
+      groupedPrices.set(price, (groupedPrices.get(price) ?? 0) + 1);
+    }
+    for (const [sellingPrice, units] of groupedPrices) {
+      orderItems.push({ name, sku, units, sellingPrice });
+    }
+  }
+  const weightKg = getCartWeightKg(input.cart);
+  if (weightKg === null) {
+    throw new ShopifyCheckoutInputError(
+      "Shipping weight is missing for one or more products. The store needs to add each product’s weight in kilograms before checkout.",
+      422,
+    );
+  }
+  const firstMerchandise = input.cart.lines.nodes[0]?.merchandise;
+  if (!firstMerchandise) {
+    throw new ShopifyCheckoutInputError("A product in your bag is unavailable. Refresh your bag and try again.", 409);
+  }
+  return [{
+    orderId: `${prefix}_p0`,
+    packageIndex: 0,
+    destination: {
+      recipient: input.address.recipient,
+      street: input.address.street,
+      ...(input.address.address2 ? { address2: input.address.address2 } : {}),
+      city: input.address.city,
+      ...(input.address.state ? { state: input.address.state } : {}),
+      postalCode: input.address.pin,
+      countryCode: input.address.countryCode,
+      countryName: input.countryName,
+    },
+    email: input.email,
+    phone: input.phone,
+    productName: "Chenetha cart",
+    sku: firstMerchandise.sku || firstMerchandise.id.split("/").at(-1) || firstMerchandise.id,
+    orderItems,
+    sellingPrice: getCheckoutItemTotal(input.cart),
+    currencyCode: input.cart.cost.totalAmount.currencyCode,
+    hsnCode: process.env.SHIPROCKET_HSN_CODE?.trim(),
+    ...(surfaceOnly ? { mode: "Surface" as const } : {}),
+    ...parcel,
+    weightKg,
+  }];
+}
+
+function buildLegacyProviderPackageInputs(input: {
+  quoteId: string;
+  cart: ShopifyCartNode;
+  address: CheckoutAddress;
+  email: string;
+  phone: string;
+  countryName: string;
+}) {
+  const parcel = getConfiguredParcel();
+  const prefix = `cfq_${input.quoteId.replace(/-/g, "")}`;
   let packageIndex = 0;
-  const packages = input.cart.lines.nodes.flatMap((line) => {
+  return input.cart.lines.nodes.flatMap((line) => {
     const merchandise = line.merchandise!;
     const mode = getShiprocketModeForProductTags(merchandise.product.tags);
     const unitPrices = splitMoney(line.cost.totalAmount.amount, line.quantity);
@@ -838,7 +916,6 @@ function buildProviderPackageInputs(input: {
       ...parcel,
     }));
   });
-  return packages;
 }
 
 router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
@@ -961,6 +1038,7 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       providerPackages,
       courierName,
       parcelCount: providerPackages.length,
+      packageStrategy: "combined_cart",
     };
     const cashfreeOrderId = `chenetha_${quoteId.replace(/-/g, "")}`;
     const row = await db.transaction(async (tx) => {

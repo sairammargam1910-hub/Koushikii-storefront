@@ -55,6 +55,9 @@ type AdminVariant = {
   inventoryItem: {
     id: string;
     tracked: boolean;
+    measurement: {
+      weight: { value: number; unit: "GRAMS" | "KILOGRAMS" | "OUNCES" | "POUNDS" } | null;
+    } | null;
     inventoryLevels: {
       nodes: Array<{ location: { id: string; name: string; isActive: boolean }; quantities: Array<{ name: string; quantity: number }> }>;
       pageInfo: { hasNextPage: boolean; endCursor: string };
@@ -209,6 +212,7 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
       inventoryItem {
         id
         tracked
+        measurement { weight { value unit } }
         inventoryLevels(first: 1) {
           pageInfo { hasNextPage endCursor }
           nodes { location { id name isActive } quantities(names: ["available"]) { name quantity } }
@@ -700,6 +704,7 @@ function mapProduct(
       inventoryTracked: variant.inventoryItem?.tracked ?? false,
       inventoryPolicy: variant.inventoryPolicy,
       selectedOptions: variant.selectedOptions,
+      weightKg: weightToKilograms(variant.inventoryItem?.measurement?.weight),
       inventoryLevels: variant.inventoryItem?.inventoryLevels.nodes.map((level) => ({
         locationId: level.location.id,
         locationName: level.location.name,
@@ -708,6 +713,19 @@ function mapProduct(
       })) ?? [],
     })),
   };
+}
+
+function weightToKilograms(
+  weight: { value: number; unit: "GRAMS" | "KILOGRAMS" | "OUNCES" | "POUNDS" } | null | undefined,
+): number | null {
+  if (!weight || !Number.isFinite(weight.value) || weight.value <= 0) return null;
+  const kilograms = ({
+    GRAMS: weight.value / 1000,
+    KILOGRAMS: weight.value,
+    OUNCES: weight.value * 0.028349523125,
+    POUNDS: weight.value * 0.45359237,
+  } as const)[weight.unit];
+  return Math.round(kilograms * 1000) / 1000;
 }
 
 function respondShopifyError(
@@ -1112,6 +1130,20 @@ async function setVariantPrice(
   assertNoUserErrors(result.productVariantsBulkUpdate.userErrors);
 }
 
+async function setVariantWeight(variant: AdminVariant, weightKg: number): Promise<void> {
+  const inventoryItem = variant.inventoryItem;
+  if (!inventoryItem) {
+    throw new ShopifyInputError("This product has no inventory item to store its shipping weight.");
+  }
+  const result = await shopifyAdminRequest<{
+    inventoryItemUpdate: { userErrors: ShopifyUserErrors };
+  }>(INVENTORY_ITEM_UPDATE, {
+    id: inventoryItem.id,
+    input: { measurement: { weight: { value: weightKg, unit: "KILOGRAMS" } } },
+  });
+  assertNoUserErrors(result.inventoryItemUpdate.userErrors);
+}
+
 async function setVariantInventory(
   variant: AdminVariant,
   quantity: number,
@@ -1514,6 +1546,9 @@ router.patch("/shopify/admin/products/:productId/variants/:variantId", async (re
     if (!variant) throw new ShopifyNotFoundError("This variant does not belong to this product.");
     const stock = input.stock;
     const item = variant.inventoryItem;
+    if (input.weightKg !== undefined && !item) {
+      throw new ShopifyInputError("This variant has no inventory item to store its shipping weight.");
+    }
     if (stock) {
       const level = item?.inventoryLevels.nodes.find((entry) => entry.location.id === stock.locationId);
       if (!item?.tracked || !level?.location.isActive) {
@@ -1542,6 +1577,9 @@ router.patch("/shopify/admin/products/:productId/variants/:variantId", async (re
         }] },
       );
       assertNoUserErrors(result.productVariantsBulkUpdate.userErrors);
+    }
+    if (input.weightKg !== undefined) {
+      await setVariantWeight(variant, input.weightKg);
     }
     if (stock && item) {
       const result = await shopifyAdminRequest<{ inventorySetQuantities: { userErrors: Array<{ field?: string[] | null; message: string; code?: string }> } }>(
@@ -1646,9 +1684,14 @@ router.post("/shopify/admin/products/:productId/variants", async (req, res): Pro
     if (created.productVariantsBulkCreate.productVariants.some((variant) => !refreshedVariantIds.has(variant.id))) {
       throw new ShopifyAdminError("Shopify created the variant but did not return it in the refreshed product.");
     }
+    const createdVariantIds = new Set(created.productVariantsBulkCreate.productVariants.map((variant) => variant.id));
+    for (const variant of updated.product.variants.nodes.filter((entry) => createdVariantIds.has(entry.id))) {
+      await setVariantWeight(variant, input.weightKg);
+    }
+    const refreshed = await fetchProduct(productId);
     res.json(CreateShopifyAdminVariantResponse.parse({
-      currencyCode: updated.currencyCode,
-      product: mapProduct(updated.product),
+      currencyCode: refreshed.currencyCode,
+      product: mapProduct(refreshed.product),
     }));
   } catch (error) {
     respondShopifyError(req, res, error, "Shopify could not create this variant. Some option values may have saved; refresh before retrying.");
@@ -1749,6 +1792,7 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
       );
     }
     await setVariantPrice(productId, variant.id, input.price);
+    await setVariantWeight(variant, input.weightKg);
     await setVariantInventory(variant, input.inventoryQuantity);
 
     await saveProductAttributes(productId, {

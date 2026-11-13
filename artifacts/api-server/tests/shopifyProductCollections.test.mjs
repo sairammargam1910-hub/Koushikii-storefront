@@ -71,6 +71,7 @@ function createFixtureProduct() {
         inventoryItem: {
           id: inventoryItemId,
           tracked: true,
+          measurement: { weight: { value: 0.5, unit: "KILOGRAMS" } },
           inventoryLevels: {
             nodes: [{
               location: { id: locationId, name: "Main location", isActive: true },
@@ -188,6 +189,9 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
         return Response.json({ data: { productVariantsBulkUpdate: { userErrors: [] } } });
       }
       if (query.includes("mutation MerchantInventoryItemUpdate")) {
+        const item = state.product.variants.nodes[0].inventoryItem;
+        if (variables.input.measurement) item.measurement = variables.input.measurement;
+        if (variables.input.tracked !== undefined) item.tracked = variables.input.tracked;
         return Response.json({ data: { inventoryItemUpdate: { userErrors: [] } } });
       }
       if (query.includes("query MerchantInventoryLocations")) {
@@ -319,6 +323,7 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
       tags: [],
       price: 1800,
       inventoryQuantity: 4,
+      weightKg: 0.875,
       publishToWebsite: true,
       collectionIds: [],
       fabric: "Cotton",
@@ -327,10 +332,14 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
       colour: "Indigo",
     }),
   });
-  assert.equal(created.status, 201, await created.text());
+  assert.equal(created.status, 201);
+  const createdData = await created.json();
   assert.equal(state.product.status, "ACTIVE");
   assert.equal(state.productCreateCount, 1);
   assert.deepEqual(state.product.collections.nodes, []);
+  assert.equal(state.product.variants.nodes[0].inventoryItem.measurement.weight.value, 0.875);
+  assert.equal(state.product.variants.nodes[0].inventoryItem.measurement.weight.unit, "KILOGRAMS");
+  assert.equal(createdData.product.variants[0].weightKg, 0.875);
 
   const allProducts = await fetch(`${base}/shopify/products`);
   assert.equal(allProducts.status, 200);

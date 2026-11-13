@@ -67,6 +67,8 @@ type ShopifyCartMerchandise = {
   title: string;
   sku: string | null;
   availableForSale: boolean;
+  weight: number;
+  weightUnit: "GRAMS" | "KILOGRAMS" | "OUNCES" | "POUNDS";
   price: ShopifyMoney;
   selectedOptions: Array<{ name: string; value: string }>;
   product: {
@@ -220,6 +222,8 @@ const CART_FIELDS = `#graphql
           title
           sku
           availableForSale
+          weight
+          weightUnit
           price { amount currencyCode }
           selectedOptions { name value }
           product {

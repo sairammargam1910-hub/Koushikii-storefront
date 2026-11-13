@@ -57,6 +57,34 @@ export function splitMoney(amount: string, divisor: number): string[] {
   );
 }
 
+export function weightToKilograms(
+  weight: number | null | undefined,
+  unit: string | null | undefined,
+): number | null {
+  if (!Number.isFinite(weight) || !unit) return null;
+  const kilograms = ({
+    GRAMS: weight! / 1000,
+    KILOGRAMS: weight!,
+    OUNCES: weight! * 0.028349523125,
+    POUNDS: weight! * 0.45359237,
+  } as const)[unit as "GRAMS" | "KILOGRAMS" | "OUNCES" | "POUNDS"];
+  if (!Number.isFinite(kilograms) || kilograms <= 0) return null;
+  return Math.round(kilograms * 1000) / 1000;
+}
+
+export function getCartWeightKg(cart: ShopifyCartNode): number | null {
+  let totalGrams = 0;
+  for (const line of cart.lines.nodes) {
+    const merchandise = line.merchandise;
+    const weightKg = weightToKilograms(merchandise?.weight, merchandise?.weightUnit);
+    if (weightKg === null || !Number.isInteger(line.quantity) || line.quantity < 1) {
+      return null;
+    }
+    totalGrams += Math.round(weightKg * 1000) * line.quantity;
+  }
+  return totalGrams > 0 ? totalGrams / 1000 : null;
+}
+
 export function getCartDiscountAmount(cart: ShopifyCartNode): string {
   const pairs = cart.lines.nodes.map((line) => [
     line.cost.subtotalAmount.amount,
@@ -103,6 +131,10 @@ export function checkoutCartFingerprint(input: {
       shiprocketMode: getShiprocketModeForProductTags(
         line.merchandise?.product?.tags,
       ) ?? null,
+      unitWeightKg: weightToKilograms(
+        line.merchandise?.weight,
+        line.merchandise?.weightUnit,
+      ),
     })),
     email: input.email.trim().toLowerCase(),
     phone: input.phone.trim(),
@@ -115,7 +147,11 @@ export function checkoutCartFingerprint(input: {
       postalCode: input.address.pin.trim().toLowerCase(),
       countryCode: input.address.countryCode.toUpperCase(),
     },
-    parcel: input.parcel,
+    parcel: {
+      lengthCm: input.parcel.lengthCm,
+      breadthCm: input.parcel.breadthCm,
+      heightCm: input.parcel.heightCm,
+    },
   };
   return createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }

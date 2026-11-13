@@ -923,6 +923,7 @@ export const GetShopifyAdminProductsResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
+  "weightKg": zod.number().nullable(),
   "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
@@ -981,6 +982,9 @@ export const createShopifyAdminProductBodyPriceExclusiveMin = 0;
 
 export const createShopifyAdminProductBodyInventoryQuantityMin = 0;
 
+export const createShopifyAdminProductBodyWeightKgExclusiveMin = 0;
+export const createShopifyAdminProductBodyWeightKgMax = 1000;
+
 
 
 export const CreateShopifyAdminProductBody = zod.object({
@@ -997,6 +1001,7 @@ export const CreateShopifyAdminProductBody = zod.object({
   "newCollectionTitle": zod.string().max(createShopifyAdminProductBodyNewCollectionTitleMax).optional(),
   "price": zod.number().gt(createShopifyAdminProductBodyPriceExclusiveMin),
   "inventoryQuantity": zod.int().min(createShopifyAdminProductBodyInventoryQuantityMin),
+  "weightKg": zod.number().gt(createShopifyAdminProductBodyWeightKgExclusiveMin).max(createShopifyAdminProductBodyWeightKgMax),
   "imageUrl": zod.url().nullish(),
   "publishToWebsite": zod.boolean()
 })
@@ -1022,6 +1027,7 @@ export const CreateShopifyAdminProductResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
+  "weightKg": zod.number().nullable(),
   "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
@@ -1118,6 +1124,7 @@ export const GetShopifyAdminProductResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
+  "weightKg": zod.number().nullable(),
   "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
@@ -1219,6 +1226,7 @@ export const UpdateShopifyAdminProductResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
+  "weightKg": zod.number().nullable(),
   "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
@@ -1290,6 +1298,9 @@ export const UpdateShopifyAdminVariantParams = zod.object({
 
 export const updateShopifyAdminVariantBodyPriceExclusiveMin = 0;
 
+export const updateShopifyAdminVariantBodyWeightKgExclusiveMin = 0;
+export const updateShopifyAdminVariantBodyWeightKgMax = 1000;
+
 export const updateShopifyAdminVariantBodyStockQuantityMin = 0;
 export const updateShopifyAdminVariantBodyStockQuantityMax = 1000000;
 
@@ -1299,6 +1310,7 @@ export const updateShopifyAdminVariantBodySelectedOptionsMax = 3;
 
 export const UpdateShopifyAdminVariantBody = zod.object({
   "price": zod.number().gt(updateShopifyAdminVariantBodyPriceExclusiveMin).optional(),
+  "weightKg": zod.number().gt(updateShopifyAdminVariantBodyWeightKgExclusiveMin).max(updateShopifyAdminVariantBodyWeightKgMax).optional(),
   "stock": zod.object({
   "locationId": zod.string(),
   "quantity": zod.int().min(updateShopifyAdminVariantBodyStockQuantityMin).max(updateShopifyAdminVariantBodyStockQuantityMax),
@@ -1331,6 +1343,7 @@ export const UpdateShopifyAdminVariantResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
+  "weightKg": zod.number().nullable(),
   "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
@@ -1387,6 +1400,7 @@ export const DeleteShopifyAdminVariantResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
+  "weightKg": zod.number().nullable(),
   "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),
@@ -1427,12 +1441,16 @@ export const CreateShopifyAdminVariantParams = zod.object({
 
 export const createShopifyAdminVariantBodyPriceExclusiveMin = 0;
 
+export const createShopifyAdminVariantBodyWeightKgExclusiveMin = 0;
+export const createShopifyAdminVariantBodyWeightKgMax = 1000;
+
 export const createShopifyAdminVariantBodySelectedOptionsMax = 3;
 
 
 
 export const CreateShopifyAdminVariantBody = zod.object({
   "price": zod.number().gt(createShopifyAdminVariantBodyPriceExclusiveMin),
+  "weightKg": zod.number().gt(createShopifyAdminVariantBodyWeightKgExclusiveMin).max(createShopifyAdminVariantBodyWeightKgMax),
   "selectedOptions": zod.array(zod.object({
   "name": zod.string(),
   "value": zod.string()
@@ -1460,6 +1478,7 @@ export const CreateShopifyAdminVariantResponse = zod.object({
   "id": zod.string(),
   "title": zod.string(),
   "price": zod.string(),
+  "weightKg": zod.number().nullable(),
   "inventoryQuantity": zod.int().nullable(),
   "inventoryTracked": zod.boolean(),
   "inventoryPolicy": zod.enum(['DENY', 'CONTINUE']),

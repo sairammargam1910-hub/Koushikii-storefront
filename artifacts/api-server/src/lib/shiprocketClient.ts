@@ -92,6 +92,12 @@ export type ShiprocketPackageInput = {
   sellingPrice: string;
   currencyCode: string;
   hsnCode?: string;
+  orderItems?: Array<{
+    name: string;
+    sku: string;
+    units: number;
+    sellingPrice: string;
+  }>;
   mode?: ShiprocketMode;
   weightKg: number;
   lengthCm: number;
@@ -363,6 +369,41 @@ function makeShiprocketOrderBody(
   if (!Number.isFinite(itemPrice) || itemPrice < 0) {
     throw new ShiprocketError("Shopify returned an invalid item price for shipping.");
   }
+  const sourceItems = input.orderItems?.length
+    ? input.orderItems
+    : [{
+        name: input.productName,
+        sku: input.sku,
+        units: 1,
+        sellingPrice: input.sellingPrice,
+      }];
+  const orderItems = sourceItems.map((item) => {
+    const sellingPrice = Number(item.sellingPrice);
+    if (
+      !item.name.trim() ||
+      !item.sku.trim() ||
+      !Number.isInteger(item.units) ||
+      item.units < 1 ||
+      !Number.isFinite(sellingPrice) ||
+      sellingPrice < 0
+    ) {
+      throw new ShiprocketError("Shopify returned invalid product details for the shipment.");
+    }
+    return {
+      name: item.name.slice(0, 120),
+      sku: item.sku.slice(0, 80),
+      units: item.units,
+      selling_price: sellingPrice,
+      ...(international && input.hsnCode ? { hsn: Number(input.hsnCode) } : {}),
+    };
+  });
+  const itemsTotalPaise = orderItems.reduce(
+    (sum, item) => sum + Math.round(item.selling_price * 100) * item.units,
+    0,
+  );
+  if (itemsTotalPaise !== Math.round(itemPrice * 100)) {
+    throw new ShiprocketError("Shipment item values do not match the Shopify cart total.");
+  }
   const body: Record<string, unknown> = {
     order_id: input.orderId,
     order_date: new Date().toISOString().slice(0, 16).replace("T", " "),
@@ -379,13 +420,7 @@ function makeShiprocketOrderBody(
     billing_email: input.email,
     billing_phone: input.phone.replace(/\D/g, ""),
     shipping_is_billing: true,
-    order_items: [{
-      name: input.productName.slice(0, 120),
-      sku: input.sku.slice(0, 80),
-      units: 1,
-      selling_price: itemPrice,
-      ...(international && input.hsnCode ? { hsn: Number(input.hsnCode) } : {}),
-    }],
+    order_items: orderItems,
     payment_method: "Prepaid",
     shipping_charges: 0,
     sub_total: itemPrice,

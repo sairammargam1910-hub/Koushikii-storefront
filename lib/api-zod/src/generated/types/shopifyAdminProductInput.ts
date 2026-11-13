@@ -39,6 +39,11 @@ export interface ShopifyAdminProductInput {
   price: number;
   /** @minimum 0 */
   inventoryQuantity: number;
+  /**
+     * @maximum 1000
+     * @exclusiveMinimum 0
+     */
+  weightKg: number;
   /** @nullable */
   imageUrl?: string | null;
   publishToWebsite: boolean;

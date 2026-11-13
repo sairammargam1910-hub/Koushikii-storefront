@@ -503,6 +503,11 @@ export interface ShopifyAdminVariantCreate {
   /** @exclusiveMinimum 0 */
   price: number;
   /**
+     * @maximum 1000
+     * @exclusiveMinimum 0
+     */
+  weightKg: number;
+  /**
      * @minItems 1
      * @maxItems 3
      */
@@ -522,6 +527,11 @@ export interface ShopifyAdminStockUpdate {
 export interface ShopifyAdminVariantUpdate {
   /** @exclusiveMinimum 0 */
   price?: number;
+  /**
+     * @maximum 1000
+     * @exclusiveMinimum 0
+     */
+  weightKg?: number;
   stock?: ShopifyAdminStockUpdate;
   /**
      * @minItems 1
@@ -542,6 +552,8 @@ export interface ShopifyAdminProductVariant {
   id: string;
   title: string;
   price: string;
+  /** @nullable */
+  weightKg: number | null;
   /** @nullable */
   inventoryQuantity: number | null;
   inventoryTracked: boolean;
@@ -726,6 +738,11 @@ export interface ShopifyAdminProductInput {
   price: number;
   /** @minimum 0 */
   inventoryQuantity: number;
+  /**
+     * @maximum 1000
+     * @exclusiveMinimum 0
+     */
+  weightKg: number;
   /** @nullable */
   imageUrl?: string | null;
   publishToWebsite: boolean;

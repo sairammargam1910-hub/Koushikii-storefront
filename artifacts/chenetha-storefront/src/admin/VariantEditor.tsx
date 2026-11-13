@@ -38,15 +38,20 @@ function VariantCard({ variant, currencyCode, disabled, canDelete, save, remove 
   save: Save; remove: (variant: ShopifyAdminProductVariant) => void;
 }) {
   const [price, setPrice] = useState(variant.price);
+  const [weightKg, setWeightKg] = useState(variant.weightKg == null ? "" : String(variant.weightKg));
   const [options, setOptions] = useState(variant.selectedOptions);
   const optionSnapshot = JSON.stringify(variant.selectedOptions);
   useEffect(() => setPrice(variant.price), [variant.price]);
+  useEffect(() => setWeightKg(variant.weightKg == null ? "" : String(variant.weightKg)), [variant.weightKg]);
   useEffect(() => setOptions(JSON.parse(optionSnapshot)), [optionSnapshot]);
-  const changed = Number(price) !== Number(variant.price) || options.some((option, i) => option.value !== variant.selectedOptions[i].value);
+  const weightChanged = weightKg.trim() !== (variant.weightKg == null ? "" : String(variant.weightKg));
+  const invalidWeightChange = weightChanged && (!Number.isFinite(Number(weightKg)) || Number(weightKg) <= 0);
+  const changed = Number(price) !== Number(variant.price) || weightChanged || options.some((option, i) => option.value !== variant.selectedOptions[i].value);
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!disabled && changed) save(variant.id, {
+    if (!disabled && changed && !invalidWeightChange) save(variant.id, {
       ...(Number(price) !== Number(variant.price) ? { price: Number(price) } : {}),
+      ...(weightChanged ? { weightKg: Number(weightKg) } : {}),
       ...(options.some((option, i) => option.value !== variant.selectedOptions[i].value) ? { selectedOptions: options } : {}),
     });
   };
@@ -57,7 +62,8 @@ function VariantCard({ variant, currencyCode, disabled, canDelete, save, remove 
     <form className="variant-details admin-form" onSubmit={submit}>
       {options.filter((option) => option.name !== "Title").map((option) => <label key={option.name}>{option.name}<input required maxLength={255} disabled={disabled} value={option.value} onChange={(e) => setOptions((current) => current.map((entry) => entry.name === option.name ? { ...entry, value: e.target.value } : entry))}/></label>)}
       <label>Price ({currencyCode})<input type="number" min="0.01" step="0.01" required disabled={disabled} value={price} onChange={(e) => setPrice(e.target.value)}/></label>
-      <button className="button button-quiet" disabled={disabled || !changed}>Save variant</button>
+      <label>Weight per piece (kg)<input type="number" min="0.001" max="1000" step="0.001" required disabled={disabled} value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="e.g. 0.750"/></label>
+      <button className="button button-quiet" disabled={disabled || !changed || invalidWeightChange}>Save variant</button>
     </form>
     {variant.inventoryPolicy === "CONTINUE" && <p className="field-note">Shopify currently allows selling after stock runs out. Saving stock here switches this variant to “stop selling when out of stock”.</p>}
     {!variant.inventoryTracked && <p className="field-note">Inventory is not tracked. Enable “Track quantity” in Shopify, then refresh before editing stock.</p>}
@@ -75,17 +81,18 @@ function NewVariantForm({ options, currencyCode, disabled, create }: {
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [price, setPrice] = useState("");
+  const [weightKg, setWeightKg] = useState("");
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const selectedOptions = options.map((option) => ({ name: option.name, value: (values[option.name] ?? "").trim() }));
-    if (!disabled && selectedOptions.every((option) => option.value) && Number(price) > 0) {
-      create({ price: Number(price), selectedOptions });
+    if (!disabled && selectedOptions.every((option) => option.value) && Number(price) > 0 && Number(weightKg) > 0) {
+      create({ price: Number(price), weightKg: Number(weightKg), selectedOptions });
     }
   };
   return <section className="new-variant-section" aria-labelledby="new-variant-heading">
     <h3 id="new-variant-heading">Add a size/color combination</h3>
     {!options.length ? <p className="field-note">Add at least one product option (such as Size or Color) in Shopify before creating variants here.</p> : <>
-      <p className="field-note">Choose an existing value or type a new one. Shopify will not track stock on new variants by default; set up tracking and a location quantity in Shopify before making them available for sale.</p>
+      <p className="field-note">Choose an existing value or type a new one. Enter this variant’s piece weight. Shopify will not track stock on new variants by default; set up tracking and a location quantity in Shopify before making them available for sale.</p>
       <form className="new-variant-form admin-form" onSubmit={submit}>
         {options.map((option, index) => <label key={option.id}>{option.name}
           <input
@@ -101,7 +108,8 @@ function NewVariantForm({ options, currencyCode, disabled, create }: {
           </datalist>
         </label>)}
         <label>Price ({currencyCode})<input data-testid="new-variant-price" type="number" min="0.01" step="0.01" required disabled={disabled} value={price} onChange={(event) => setPrice(event.target.value)}/></label>
-        <button className="button button-primary" data-testid="create-variant" disabled={disabled || !options.length}>Create variant</button>
+        <label>Weight per piece (kg)<input data-testid="new-variant-weight" type="number" min="0.001" max="1000" step="0.001" required disabled={disabled} value={weightKg} onChange={(event) => setWeightKg(event.target.value)} placeholder="e.g. 0.750"/></label>
+        <button className="button button-primary" data-testid="create-variant" disabled={disabled || !options.length || Number(price) <= 0 || Number(weightKg) <= 0}>Create variant</button>
       </form>
     </>}
   </section>;
@@ -134,7 +142,7 @@ export function VariantEditor({ productId, onClose }: { productId: string; onClo
       onSuccess: (result) => {
         client.setQueryData(getGetShopifyAdminProductQueryKey(productId), result);
         invalidate();
-        setNotice("Saved in Shopify. Prices and location quantities below are current.");
+         setNotice("Saved in Shopify. Prices, weights and location quantities below are current.");
       },
       onError: (reason) => {
         setError(reason.message || "Could not save. Refresh before retrying.");
@@ -181,7 +189,7 @@ export function VariantEditor({ productId, onClose }: { productId: string; onClo
       <header className="modal-head"><div><span className="eyebrow">VARIANTS & LOCATION STOCK</span><h2 id="variant-editor-title">{product.data?.product.title ?? "Loading variants…"}</h2></div>
         <button className="icon-button" aria-label="Close variants" disabled={busy} onClick={onClose}><X size={18}/></button></header>
       <div className="variant-content">
-        <p className="field-note">Edit each size/color combination separately. Quantities are available pieces at the named location, never a combined total. Stock saves reject changes made since you loaded this screen.</p>
+        <p className="field-note">Edit each size/color combination and its piece weight separately. Quantities are available pieces at the named location, never a combined total. Stock saves reject changes made since you loaded this screen.</p>
         <p className="field-note">Create combinations and delete obsolete variants here. Add or rename option types, enable tracking, assign locations, and set stock in <a href="https://admin.shopify.com/" target="_blank" rel="noreferrer">Shopify admin</a>.</p>
         <button className="button button-quiet" disabled={busy} onClick={() => void refresh()}><RefreshCw size={15}/> Refresh Shopify values</button>
         {notice && <p role="status">{notice}</p>}

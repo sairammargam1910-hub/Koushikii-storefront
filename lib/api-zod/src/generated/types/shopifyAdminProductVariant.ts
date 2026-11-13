@@ -14,6 +14,8 @@ export interface ShopifyAdminProductVariant {
   title: string;
   price: string;
   /** @nullable */
+  weightKg: number | null;
+  /** @nullable */
   inventoryQuantity: number | null;
   inventoryTracked: boolean;
   inventoryPolicy: ShopifyAdminProductVariantInventoryPolicy;

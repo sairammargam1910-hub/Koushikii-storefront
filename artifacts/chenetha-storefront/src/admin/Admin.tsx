@@ -53,6 +53,7 @@ type ProductDraft = {
   collectionIds: string[];
   newCollectionTitle: string;
   price: string;
+  weightKg: string;
   inventoryQuantity: string;
   imageUrl: string;
   publishToWebsite: boolean;
@@ -60,7 +61,7 @@ type ProductDraft = {
 
 const blankProduct: ProductDraft = {
   title: "", description: "", productType: "", tags: "", fabric: [],
-  regionalHandloom: [], craftTechnique: [], region: [], colour: [], collectionIds: [], newCollectionTitle: "", price: "",
+  regionalHandloom: [], craftTechnique: [], region: [], colour: [], collectionIds: [], newCollectionTitle: "", price: "", weightKg: "",
   inventoryQuantity: "1", imageUrl: "", publishToWebsite: true,
 };
 
@@ -319,8 +320,10 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
         {allowVariantEdits && <div className="form-row">
           <label>Price{currencyCode ? ` (${currencyCode})` : ""}<input type="number" min="0.01" step="0.01" required={allowVariantEdits} disabled={!allowVariantEdits} value={draft.price} onChange={(e) => change("price", e.target.value)} placeholder="0.00" data-testid="input-product-price"/></label>
           <label>Available pieces<input type="number" min="0" step="1" required={allowVariantEdits} disabled={!allowVariantEdits} value={draft.inventoryQuantity} onChange={(e) => change("inventoryQuantity", e.target.value)} data-testid="input-product-inventory"/></label>
+          <label>Weight per piece (kg)<input type="number" min="0.001" max="1000" step="0.001" required value={draft.weightKg} onChange={(e) => change("weightKg", e.target.value)} placeholder="e.g. 0.750" data-testid="input-product-weight"/></label>
+          <p className="field-note">Used to calculate one combined parcel for the whole bag. Each size/color variant has its own weight in “Variants &amp; stock”.</p>
         </div>}
-        {!allowVariantEdits && <p className="field-note">Edit prices, size/color values and stock per location using “Variants & stock” in the product list.</p>}
+        {!allowVariantEdits && <p className="field-note">Edit prices, piece weights, size/color values and stock per location using “Variants &amp; stock” in the product list.</p>}
          <label>Product type<input list="shopify-product-type-options" maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Search or add a type…" data-testid="input-product-type"/><datalist id="shopify-product-type-options">{productTypeSuggestions.map((value)=><option key={value} value={value}/>)}</datalist></label>
         <label>Short description<textarea maxLength={10000} rows={3} value={draft.description} onChange={(e) => change("description", e.target.value)} placeholder="What makes this piece special?" data-testid="input-product-description"/></label>
          <label>Search tags <span className="label-hint">Use “new arrival” for New Arrivals. Tag premium items “premium” (or assign them to the Premium Collection). A premium item’s Shopify collection and Regional Handloom / Tradition categories appear in the green panel.</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="new arrival, premium, handwoven" data-testid="input-product-tags"/></label>
@@ -383,6 +386,7 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
     craftTechnique: parseClassificationValues(detailedProduct.craftTechnique), region: parseClassificationValues(detailedProduct.region),
     colour: parseClassificationValues(detailedProduct.colour), collectionIds: detailedProduct.collectionIds || [],
     newCollectionTitle: "", price: detailedProduct.variants[0]?.price || "",
+     weightKg: detailedProduct.variants[0]?.weightKg == null ? "" : String(detailedProduct.variants[0].weightKg),
     inventoryQuantity: String(detailedProduct.variants[0]?.inventoryQuantity ?? 0),
     imageUrl: "", publishToWebsite: detailedProduct.status === "ACTIVE",
   } : blankProduct;
@@ -414,7 +418,11 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
       tags: values.tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
       ...attributes,
       collectionIds: values.collectionIds, newCollectionTitle: values.newCollectionTitle.trim(),
-      ...(!product ? { price: Number(values.price), inventoryQuantity: Number(values.inventoryQuantity) } : {}),
+      ...(!product ? {
+        price: Number(values.price),
+        inventoryQuantity: Number(values.inventoryQuantity),
+        weightKg: Number(values.weightKg),
+      } : {}),
       ...(values.imageUrl.trim() ? { imageUrl: values.imageUrl.trim() } : {}),
       publishToWebsite: values.publishToWebsite,
     };
@@ -428,6 +436,7 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
         ...input,
         price: Number(values.price),
         inventoryQuantity: Number(values.inventoryQuantity),
+        weightKg: Number(values.weightKg),
       },
     }, options);
   };

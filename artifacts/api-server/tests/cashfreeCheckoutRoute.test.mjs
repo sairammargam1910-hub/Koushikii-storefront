@@ -148,9 +148,23 @@ const compiled = await build({
           export const checkoutCartFingerprint = () => "hash";
           export const getShopperQuoteHash = (shopperUserId, fingerprint) => shopperUserId + ":" + fingerprint;
           export const getCartDiscountAmount = () => "0.00";
-          export const getCheckoutItemTotal = () => "100.00";
+          export const getCheckoutItemTotal = (cart) => cart.lines.nodes.reduce((sum, line) => sum + Number(line.cost.totalAmount.amount), 0).toFixed(2);
           export const minimalCartSnapshot = (cart) => cart;
           export const splitMoney = (amount, count) => Array(count).fill((Number(amount) / count).toFixed(2));
+          export const weightToKilograms = (weight, unit) => {
+            if (!Number.isFinite(weight) || weight <= 0) return null;
+            const factor = { GRAMS: 0.001, KILOGRAMS: 1, OUNCES: 0.028349523125, POUNDS: 0.45359237 }[unit];
+            return factor ? Math.round(weight * factor * 1000) / 1000 : null;
+          };
+          export const getCartWeightKg = (cart) => {
+            let grams = 0;
+            for (const line of cart.lines.nodes) {
+              const unit = weightToKilograms(line.merchandise?.weight, line.merchandise?.weightUnit);
+              if (unit === null) return null;
+              grams += Math.round(unit * 1000) * line.quantity;
+            }
+            return grams ? grams / 1000 : null;
+          };
         `,
         shiprocket: `
           const state = globalThis.__checkoutRouteTest;
@@ -279,6 +293,8 @@ function makeOrder(overrides = {}) {
           sku: "TEST-1",
           availableForSale: true,
           product: { title: "Handwoven saree", description: "Silk saree", tags: ["saree"] },
+          weight: 1.5,
+          weightUnit: "KILOGRAMS",
         },
       }],
     },
@@ -423,6 +439,17 @@ async function withLiveAwbBooking(callback) {
   }
 }
 
+async function withoutLiveAwbBooking(callback) {
+  const previous = process.env.SHIPROCKET_LIVE_BOOKING_ENABLED;
+  process.env.SHIPROCKET_LIVE_BOOKING_ENABLED = "false";
+  try {
+    await callback();
+  } finally {
+    if (previous === undefined) delete process.env.SHIPROCKET_LIVE_BOOKING_ENABLED;
+    else process.env.SHIPROCKET_LIVE_BOOKING_ENABLED = previous;
+  }
+}
+
 test("checkout quote, payment session, and status require Clerk sign-in", async () => {
   await harness(async ({ state, getStatus, postQuote, postSession }) => {
     const quote = await postQuote({}, { "x-test-user": "anonymous" });
@@ -500,6 +527,9 @@ test("shipping quote performs rate lookup only and saves no carrier order IDs", 
     });
     assert.equal(result.status, 200);
     assert.equal(state.rateCalls, 1);
+    assert.equal(state.quoteInputs[0].weightKg, 1.5);
+    assert.equal(result.body.parcelCount, 1);
+    assert.equal(state.shipments.length, 1);
     assert.equal(state.quoteInputs[0].mode, undefined);
     assert.equal(state.carrierCreateCalls.length, 0);
     assert.equal(state.awbCalls, 0);
@@ -513,6 +543,98 @@ test("shipping quote performs rate lookup only and saves no carrier order IDs", 
     );
     assert.equal(session.status, 200);
     assert.equal(session.body.amount, "120.00");
+  });
+});
+
+test("multiple cart lines are quoted and saved as one parcel with summed variant weights", async () => {
+  await withoutLiveAwbBooking(() => harness(async ({ state, postQuote, getStatus }) => {
+    state.cart.totalQuantity = 3;
+    state.cart.cost.subtotalAmount.amount = "480.00";
+    state.cart.cost.totalAmount.amount = "480.00";
+    state.cart.lines.nodes[0].quantity = 2;
+    state.cart.lines.nodes[0].cost.subtotalAmount.amount = "300.00";
+    state.cart.lines.nodes[0].cost.totalAmount.amount = "300.00";
+    state.cart.lines.nodes[0].merchandise.weight = 0.75;
+    state.cart.lines.nodes.push({
+      id: "gid://shopify/CartLine/2",
+      quantity: 1,
+      cost: {
+        subtotalAmount: { amount: "180.00", currencyCode: "INR" },
+        totalAmount: { amount: "180.00", currencyCode: "INR" },
+      },
+      merchandise: {
+        id: "gid://shopify/ProductVariant/2",
+        title: "Indigo",
+        sku: "TEST-2",
+        availableForSale: true,
+        weight: 1.5,
+        weightUnit: "KILOGRAMS",
+        product: { title: "Cotton saree", description: "", tags: ["saree", "shiprocket-surface-only"] },
+      },
+    });
+    state.order.quoteHash = "old-hash";
+
+    const result = await postQuote({
+      cartId: state.order.cartId,
+      email: "buyer@example.com",
+      phone: "+919876543210",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        pin: "500008",
+        countryCode: "IN",
+      },
+    });
+
+    assert.equal(result.status, 200);
+    assert.equal(result.body.parcelCount, 1);
+    assert.equal(state.rateCalls, 1);
+    assert.equal(state.quoteInputs[0].weightKg, 3);
+    assert.equal(state.quoteInputs[0].sellingPrice, "480.00");
+    assert.equal(state.quoteInputs[0].mode, "Surface");
+    assert.deepEqual(state.quoteInputs[0].orderItems, [
+      { name: "Handwoven saree - Default", sku: "TEST-1", units: 2, sellingPrice: "150.00" },
+      { name: "Cotton saree - Indigo", sku: "TEST-2", units: 1, sellingPrice: "180.00" },
+    ]);
+    assert.equal(state.shipments.length, 1);
+    assert.equal(state.shipments[0].packageIndex, 0);
+    const savedQuote = state.orders.find((order) => order.id === result.body.quoteId);
+    assert.equal(savedQuote.checkoutSnapshot.packageStrategy, "combined_cart");
+    assert.equal(savedQuote.checkoutSnapshot.parcelCount, 1);
+    state.order = savedQuote;
+    state.environment = "production";
+    await getStatus();
+    assert.equal(state.carrierCreateCalls.length, 1);
+    assert.equal(state.carrierCreateCalls[0].weightKg, 3);
+    assert.equal(state.carrierCreateCalls[0].sellingPrice, "480.00");
+    assert.equal(state.carrierCreateCalls[0].orderItems.length, 2);
+    assert.equal(state.awbCalls, 0, "the test confirms package creation only, not live AWB assignment");
+  }));
+});
+
+test("checkout quote fails without a variant shipping weight instead of using the fixed parcel weight", async () => {
+  await harness(async ({ state, postQuote }) => {
+    state.cart.lines.nodes[0].merchandise.weight = 0;
+    state.order.quoteHash = "old-hash";
+    const result = await postQuote({
+      cartId: state.order.cartId,
+      email: "buyer@example.com",
+      phone: "+919876543210",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        pin: "500008",
+        countryCode: "IN",
+      },
+    });
+    assert.equal(result.status, 422);
+    assert.match(result.body.error, /weight is missing/i);
+    assert.equal(state.rateCalls, 0);
+    assert.equal(state.shipments.length, 0);
   });
 });
 

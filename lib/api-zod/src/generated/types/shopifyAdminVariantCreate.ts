@@ -11,6 +11,11 @@ export interface ShopifyAdminVariantCreate {
   /** @exclusiveMinimum 0 */
   price: number;
   /**
+     * @maximum 1000
+     * @exclusiveMinimum 0
+     */
+  weightKg: number;
+  /**
      * @minItems 1
      * @maxItems 3
      */

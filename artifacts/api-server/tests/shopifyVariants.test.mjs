@@ -43,6 +43,7 @@ function fixture() {
       inventoryPolicy: "CONTINUE",
       inventoryItem: {
         id: gid("InventoryItem", id), tracked: true,
+        measurement: { weight: { value: 0.75, unit: "KILOGRAMS" } },
         inventoryLevels: { nodes: [
           { location: { id: locationId, name: "Hyderabad", isActive: true }, quantities: [{ name: "available", quantity: 5 }] },
           { location: { id: gid("Location", 21), name: "Vijayawada", isActive: true }, quantities: [{ name: "available", quantity: 7 }] },
@@ -94,6 +95,11 @@ async function harness(run, configure = () => {}) {
         if (input.inventoryPolicy) variant.inventoryPolicy = input.inventoryPolicy;
         if (input.optionValues) variant.selectedOptions = input.optionValues.map((option) => ({ name: option.optionName, value: option.name }));
         data = { productVariantsBulkUpdate: { userErrors: [] } };
+      } else if (query.includes("mutation MerchantInventoryItemUpdate")) {
+        const variant = state.product.variants.nodes.find((entry) => entry.inventoryItem.id === v.id);
+        if (v.input.measurement) variant.inventoryItem.measurement = v.input.measurement;
+        if (v.input.tracked !== undefined) variant.inventoryItem.tracked = v.input.tracked;
+        data = { inventoryItemUpdate: { userErrors: [] } };
       } else if (query.includes("mutation MerchantProductOptionUpdate")) {
         const option = state.product.options.find((entry) => entry.id === v.option.id);
         const name = v.optionValuesToAdd[0].name;
@@ -111,7 +117,7 @@ async function harness(run, configure = () => {}) {
         state.product.variants.nodes.push({
           id: createdId, title: selectedOptions.map((option) => option.value).join(" / "),
           price: v.variants[0].price, selectedOptions, inventoryQuantity: null,
-          inventoryPolicy: "DENY", inventoryItem: { id: gid("InventoryItem", 200), tracked: false, inventoryLevels: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
+          inventoryPolicy: "DENY", inventoryItem: { id: gid("InventoryItem", 200), tracked: false, measurement: { weight: { value: 0, unit: "KILOGRAMS" } }, inventoryLevels: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } } },
         });
         data = { productVariantsBulkCreate: { productVariants: [{ id: createdId }], userErrors: [] } };
       } else if (query.includes("mutation MerchantProductVariantDelete")) {
@@ -255,10 +261,23 @@ test("edits existing size/color values and price without changing any stock", as
     assert.equal((await request({ selectedOptions: [{ name: "Size", value: " " }] })).status, 400);
   });
 });
+test("updates the Shopify inventory-item weight in kilograms for checkout shipping", async () => {
+  await harness(async ({ request, state }) => {
+    const result = await request({ weightKg: 0.825 });
+    assert.equal(result.status, 200);
+    assert.equal(result.data.product.variants[0].weightKg, 0.825);
+    const weightCall = state.calls.find((call) => call.query.includes("mutation MerchantInventoryItemUpdate"));
+    assert.deepEqual(weightCall.variables.input, {
+      measurement: { weight: { value: 0.825, unit: "KILOGRAMS" } },
+    });
+    assert.match(weightCall.query, /inventoryItemUpdate\(id: \$id, input: \$input\)/);
+  });
+});
 test("creates a variant from Shopify-resolved option IDs and adds missing values without inventing stock", async () => {
   await harness(async ({ request, state }) => {
     const result = await request({
       price: 250,
+      weightKg: 0.9,
       selectedOptions: [{ name: "Size", value: "XXL" }],
     }, "/variants", true, "POST");
     assert.equal(result.status, 200);
@@ -266,20 +285,21 @@ test("creates a variant from Shopify-resolved option IDs and adds missing values
     assert.deepEqual(result.data.product.variants[3].selectedOptions, [{ name: "Size", value: "XXL" }]);
     assert.equal(result.data.product.variants[3].inventoryTracked, false);
     assert.deepEqual(result.data.product.variants[3].inventoryLevels, []);
+    assert.equal(result.data.product.variants[3].weightKg, 0.9);
     const createCall = state.calls.find((call) => call.query.includes("mutation MerchantProductVariantCreate"));
     assert.deepEqual(createCall.variables.variants[0].optionValues, [{
       optionId: gid("ProductOption", 30),
       id: gid("ProductOptionValue", 31),
     }]);
     assert.ok(state.calls.some((call) => call.query.includes("MerchantProductOptionUpdate")));
-    assert.equal(state.calls.filter((call) => call.query.includes("query MerchantProduct(")).length, 3, "loads before, after adding the value, and after variant creation");
+    assert.equal(state.calls.filter((call) => call.query.includes("query MerchantProduct(")).length, 4, "reloads after setting the newly created variant's weight");
   });
 });
 test("rejects duplicate combinations and option mismatches without creating variants", async () => {
   await harness(async ({ request, state }) => {
-    const duplicate = await request({ price: 200, selectedOptions: [{ name: "Size", value: "11" }] }, "/variants", true, "POST");
+    const duplicate = await request({ price: 200, weightKg: 0.75, selectedOptions: [{ name: "Size", value: "11" }] }, "/variants", true, "POST");
     assert.equal(duplicate.status, 400);
-    const invalid = await request({ price: 200, selectedOptions: [{ name: "Colour", value: "Red" }] }, "/variants", true, "POST");
+    const invalid = await request({ price: 200, weightKg: 0.75, selectedOptions: [{ name: "Colour", value: "Red" }] }, "/variants", true, "POST");
     assert.equal(invalid.status, 400);
     assert.equal(state.calls.some((call) => call.query.includes("mutation MerchantProductVariantCreate")), false);
   });
@@ -292,7 +312,7 @@ test("requires real size/color product options instead of Shopify's standalone T
       title: "Default Title",
       selectedOptions: [{ name: "Title", value: "Default Title" }],
     }];
-    const result = await request({ price: 200, selectedOptions: [{ name: "Title", value: "New" }] }, "/variants", true, "POST");
+    const result = await request({ price: 200, weightKg: 0.75, selectedOptions: [{ name: "Title", value: "New" }] }, "/variants", true, "POST");
     assert.equal(result.status, 400);
     assert.match(result.data.error, /real product option/);
     assert.equal(state.calls.some((call) => call.query.includes("mutation MerchantProductVariantCreate")), false);

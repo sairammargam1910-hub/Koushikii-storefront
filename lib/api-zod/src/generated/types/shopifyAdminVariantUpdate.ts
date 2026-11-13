@@ -11,6 +11,11 @@ import type { ShopifyAdminVariantOption } from './shopifyAdminVariantOption';
 export interface ShopifyAdminVariantUpdate {
   /** @exclusiveMinimum 0 */
   price?: number;
+  /**
+     * @maximum 1000
+     * @exclusiveMinimum 0
+     */
+  weightKg?: number;
   stock?: ShopifyAdminStockUpdate;
   /**
      * @minItems 1
