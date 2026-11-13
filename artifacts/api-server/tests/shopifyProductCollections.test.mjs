@@ -204,7 +204,7 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
         return Response.json({
           data: {
             metafieldDefinitions: {
-              nodes: ["fabric", "craft_technique", "region", "colour"].map((key) => ({
+              nodes: ["fabric", "regional_handloom", "craft_technique", "region", "colour"].map((key) => ({
                 id: `gid://shopify/MetafieldDefinition/${key}`,
                 namespace: "chenetha",
                 key,
@@ -332,7 +332,7 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
       colour: "Indigo",
     }),
   });
-  assert.equal(created.status, 201);
+  assert.equal(created.status, 201, await created.clone().text());
   const createdData = await created.json();
   assert.equal(state.product.status, "ACTIVE");
   assert.equal(state.productCreateCount, 1);

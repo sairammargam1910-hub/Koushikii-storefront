@@ -20,11 +20,11 @@ The client's Shopify store (`gtnbsw-x3.myshopify.com`) is now the connected prod
 
 **How to apply:** Keep product data and checkout tied to the client store. Publish website products to the Online Store channel. Do not seed demo items or modify the client catalog without explicit approval.
 
-The merchant selected address-based Shiprocket quotes for the custom storefront checkout and confirmed that the account offers international shipping. Pack each sold unit separately; the confirmed default parcel is 1 kg and 35 × 25 × 8 cm, with pickup postcode 500007. The merchant confirmed Shiprocket export-purpose value `3` and invoice terms `FOB`. Domestic and international prices must come from live provider quotes.
+The merchant selected address-based Shiprocket quotes for the custom storefront checkout and confirmed that the account offers international shipping. Group all items and quantities in a cart into one parcel; calculate its weight from the Shopify variant weights and quantities. Use configured parcel dimensions of 35 × 25 × 8 cm and pickup postcode 500007. The merchant confirmed Shiprocket export-purpose value `3` and invoice terms `FOB`. Domestic and international prices must come from live provider quotes.
 
-**Why:** The merchant later replaced the earlier Shopify-managed-rate approach, confirmed international service, and specified how each packet is packed.
+**Why:** The merchant replaced the earlier per-item parcel approach and explicitly chose one parcel for the whole cart, using real product weights instead of the static 1.5 kg value.
 
-**How to apply:** Send the actual weight and dimensions to Shiprocket and use returned serviceability and rates; do not hardcode prices. Use the confirmed export purpose and invoice terms in international quote requests. Volumetric weight is derived from the supplied dimensions by the provider.
+**How to apply:** Require a valid weight on each purchased variant and stop the quote with an actionable setup message if one is missing; never silently substitute a fixed product weight. Sum item weights by quantity, send that total with the configured dimensions, and use the carrier's live quote. Use the confirmed export purpose and invoice terms for international requests; the provider calculates volumetric weight from the dimensions.
 
 The client does not yet have all international-export documents and will enable international shipping in Shiprocket after receiving them. Defer the app's international configuration until the required documents and product classifications are available.
 
