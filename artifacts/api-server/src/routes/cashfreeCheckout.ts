@@ -850,6 +850,7 @@ function buildProviderPackageInputs(input: {
   if (!firstMerchandise) {
     throw new ShopifyCheckoutInputError("A product in your bag is unavailable. Refresh your bag and try again.", 409);
   }
+  const itemCount = input.cart.lines.nodes.reduce((total, line) => total + line.quantity, 0);
   return [{
     orderId: `${prefix}_p0`,
     packageIndex: 0,
@@ -874,6 +875,7 @@ function buildProviderPackageInputs(input: {
     ...(surfaceOnly ? { mode: "Surface" as const } : {}),
     ...parcel,
     weightKg,
+    heightCm: parcel.heightCm * itemCount,
   }];
 }
 

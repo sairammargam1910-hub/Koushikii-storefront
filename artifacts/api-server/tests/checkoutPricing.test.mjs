@@ -108,7 +108,7 @@ test("quote fingerprint changes when destination, cart, or parcel changes", () =
       pin: "500007",
       countryCode: "IN",
     },
-    parcel: { weightKg: 1, lengthCm: 35, breadthCm: 25, heightCm: 8 },
+    parcel: { weightKg: 1, lengthCm: 33, breadthCm: 37.5, heightCm: 5 },
   };
   const base = checkoutCartFingerprint(baseInput);
   assert.equal(checkoutCartFingerprint(baseInput), base);

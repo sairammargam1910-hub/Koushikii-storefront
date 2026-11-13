@@ -211,7 +211,7 @@ const compiled = await build({
             if (state.carrierCreateFailure) throw new ShiprocketError("test unavailable");
             return { orderId: "sr-paid-1", shipmentId: "sr-shipment-1" };
           };
-          export const getConfiguredParcel = () => ({ weightKg: 1, lengthCm: 35, breadthCm: 25, heightCm: 8 });
+          export const getConfiguredParcel = () => ({ weightKg: 1, lengthCm: 33, breadthCm: 37.5, heightCm: 5 });
         `,
         shopifyOrder: `
           const state = globalThis.__checkoutRouteTest;
@@ -528,6 +528,9 @@ test("shipping quote performs rate lookup only and saves no carrier order IDs", 
     assert.equal(result.status, 200);
     assert.equal(state.rateCalls, 1);
     assert.equal(state.quoteInputs[0].weightKg, 1.5);
+    assert.equal(state.quoteInputs[0].lengthCm, 33);
+    assert.equal(state.quoteInputs[0].breadthCm, 37.5);
+    assert.equal(state.quoteInputs[0].heightCm, 5);
     assert.equal(result.body.parcelCount, 1);
     assert.equal(state.shipments.length, 1);
     assert.equal(state.quoteInputs[0].mode, undefined);
@@ -594,6 +597,9 @@ test("multiple cart lines are quoted and saved as one parcel with summed variant
     assert.equal(state.quoteInputs[0].weightKg, 3);
     assert.equal(state.quoteInputs[0].sellingPrice, "480.00");
     assert.equal(state.quoteInputs[0].mode, "Surface");
+    assert.equal(state.quoteInputs[0].lengthCm, 33);
+    assert.equal(state.quoteInputs[0].breadthCm, 37.5);
+    assert.equal(state.quoteInputs[0].heightCm, 15);
     assert.deepEqual(state.quoteInputs[0].orderItems, [
       { name: "Handwoven saree - Default", sku: "TEST-1", units: 2, sellingPrice: "150.00" },
       { name: "Cotton saree - Indigo", sku: "TEST-2", units: 1, sellingPrice: "180.00" },
@@ -608,6 +614,9 @@ test("multiple cart lines are quoted and saved as one parcel with summed variant
     await getStatus();
     assert.equal(state.carrierCreateCalls.length, 1);
     assert.equal(state.carrierCreateCalls[0].weightKg, 3);
+    assert.equal(state.carrierCreateCalls[0].lengthCm, 33);
+    assert.equal(state.carrierCreateCalls[0].breadthCm, 37.5);
+    assert.equal(state.carrierCreateCalls[0].heightCm, 15);
     assert.equal(state.carrierCreateCalls[0].sellingPrice, "480.00");
     assert.equal(state.carrierCreateCalls[0].orderItems.length, 2);
     assert.equal(state.awbCalls, 0, "the test confirms package creation only, not live AWB assignment");

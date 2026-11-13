@@ -95,9 +95,9 @@ const baseInput = {
   sellingPrice: "2500.00",
   currencyCode: "INR",
   weightKg: 1,
-  lengthCm: 35,
-  breadthCm: 25,
-  heightCm: 8,
+  lengthCm: 33,
+  breadthCm: 37.5,
+  heightCm: 5,
 };
 
 async function withAwbResponse(payload, run) {
@@ -161,6 +161,7 @@ test("creates one Shiprocket order with every cart item, combined value, and com
         ...baseInput,
         sellingPrice: "480.00",
         weightKg: 3,
+        heightCm: 15,
         orderItems: [
           { name: "Cotton saree - Default", sku: "COTTON-1", units: 2, sellingPrice: "150.00" },
           { name: "Silk saree - Maroon", sku: "SILK-2", units: 1, sellingPrice: "180.00" },
@@ -175,11 +176,30 @@ test("creates one Shiprocket order with every cart item, combined value, and com
       ]);
       assert.equal(createCall.body.sub_total, 480);
       assert.equal(createCall.body.weight, 3);
+      assert.equal(createCall.body.length, 33);
+      assert.equal(createCall.body.breadth, 37.5);
+      assert.equal(createCall.body.height, 15);
       assert.equal("mode" in createCall.body, false, "shipping mode is not sent as an unsupported order field");
     });
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("single-product parcel defaults use the provided packed dimensions", async () => {
+  await withEnvironment({
+    SHIPROCKET_PARCEL_LENGTH_CM: null,
+    SHIPROCKET_PARCEL_BREADTH_CM: null,
+    SHIPROCKET_PARCEL_HEIGHT_CM: null,
+  }, async () => {
+    const { getConfiguredParcel } = loadModule();
+    assert.deepEqual(getConfiguredParcel(), {
+      weightKg: 1,
+      lengthCm: 33,
+      breadthCm: 37.5,
+      heightCm: 5,
+    });
+  });
 });
 
 test("finds a cloned Shiprocket order by exact channel reference with a read-only request", async () => {
@@ -320,6 +340,9 @@ test("domestic rate lookup never creates a provider order or AWB", async () => {
       assert.equal(quote.url.searchParams.get("delivery_postcode"), "500008");
       assert.equal(quote.url.searchParams.has("order_id"), false);
       assert.equal(quote.url.searchParams.get("weight"), "1");
+      assert.equal(quote.url.searchParams.get("length"), "33");
+      assert.equal(quote.url.searchParams.get("breadth"), "37.5");
+      assert.equal(quote.url.searchParams.get("height"), "5");
       assert.equal(quote.url.searchParams.has("mode"), false);
       assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
     });

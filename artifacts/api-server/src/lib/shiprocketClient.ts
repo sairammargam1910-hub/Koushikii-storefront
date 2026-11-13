@@ -270,9 +270,9 @@ function getConfiguredPickupPostcode(): string {
 
 function getParcelDimensions() {
   const weightKg = Number(process.env.SHIPROCKET_PARCEL_WEIGHT_KG || "1");
-  const lengthCm = Number(process.env.SHIPROCKET_PARCEL_LENGTH_CM || "35");
-  const breadthCm = Number(process.env.SHIPROCKET_PARCEL_BREADTH_CM || "25");
-  const heightCm = Number(process.env.SHIPROCKET_PARCEL_HEIGHT_CM || "8");
+  const lengthCm = Number(process.env.SHIPROCKET_PARCEL_LENGTH_CM || "33");
+  const breadthCm = Number(process.env.SHIPROCKET_PARCEL_BREADTH_CM || "37.5");
+  const heightCm = Number(process.env.SHIPROCKET_PARCEL_HEIGHT_CM || "5");
   if (
     !Number.isFinite(weightKg) || weightKg <= 0 ||
     !Number.isFinite(lengthCm) || lengthCm <= 0 ||
