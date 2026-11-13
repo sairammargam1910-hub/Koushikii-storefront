@@ -17,9 +17,9 @@ function homeCollectionKey(title:string){
  return title.trim().toLowerCase().replace(/[^a-z0-9]+/g,"");
 }
 const homeHeroSlides = [
-  {image:"/images/chenetha-home-hero-courtyard.png", alt:"Rose and vermilion Kanjeevaram silk saree in a sunlit South Indian courtyard", eyebrow:"THE LIVING ART OF HANDLOOM", title:<>Chronicles<br/>of weaves.</>, copy:"Discover the quiet beauty of South Indian handlooms.", cta:"Shop the collection", href:base+"Collections"},
-  {image:"/images/chenetha-home-hero-weaving.png", alt:"Midnight-indigo handloom with a fine gold border in a weaving atelier", eyebrow:"A THREAD WORTH FOLLOWING", title:<>Woven by hand.<br/>Kept for years.</>, copy:"Find a weave with colour, character and a story of its own.", cta:"Explore the weaves", href:base+"Collections"},
-  {image:"/images/chenetha-home-hero-garden.png", alt:"Bottle-green silk saree with an antique-gold border in a heritage garden", eyebrow:"COLOUR FROM THE LOOM", title:<>A little gold.<br/>A lot of soul.</>, copy:"Meet considered handlooms for days both special and everyday.", cta:"Discover the collection", href:base+"Collections"}
+  {image:"/images/chenetha-home-hero-courtyard.png", alt:"Rose and vermilion Kanjeevaram silk saree in a sunlit South Indian courtyard", eyebrow:"THE LIVING ART OF HANDLOOM", title:<>Chronicles<br/>of weaves.</>, copy:"Discover the quiet beauty of South Indian handlooms.", cta:"Explore the collection", href:base+"Collections"},
+  {image:"/images/chenetha-home-hero-weaving.png", alt:"Midnight-indigo handloom with a fine gold border in a weaving atelier", eyebrow:"A THREAD WORTH FOLLOWING", title:<>Woven by hand.<br/>Kept for years.</>, copy:"Find a weave with colour, character and a story of its own.", cta:"Heirloom classics", href:base+"Collections"},
+  {image:"/images/chenetha-home-hero-garden.png", alt:"Bottle-green silk saree with an antique-gold border in a heritage garden", eyebrow:"COLOUR FROM THE LOOM", title:<>A little gold.<br/>A lot of soul.</>, copy:"Meet considered handlooms for days both special and everyday.", cta:"Shop the edit", href:base+"Collections"}
 ];
 function StaticHomeHeroCarousel(){
  const [active,setActive]=useState(0);
@@ -224,7 +224,7 @@ function IndiaWeaves({products}:{products:ShopifyProduct[]}){
   const selectedRegion=stateNames[selected]||"";
   const hasRegionProducts=products.some(product=>normalizeRegion(getShopifyAttribute(product,"region"))===normalizeRegion(selectedRegion));
  return <section className="section"><div className="wrap">
-  <div className="section-head"><div><span className="eyebrow">Many places. Many ways of weaving.</span><h2>Weaves of India</h2><p>Begin in the South. Follow the threads across the country.</p></div></div>
+   <div className="section-head"><div><span className="eyebrow">Tap the map. Meet the loom.</span><h2>The Loom Atlas</h2><p>Every piece has a hometown. Tap around to see the heritage behind your fit.</p></div></div>
   <div className="map-layout"><div>
    {Object.keys(statePaths).length?<svg className="india-map" viewBox="0 0 612 696" role="group" aria-label="Explore the client's original India state map">
     {Object.entries(statePaths).map(([code,d])=><path key={code} d={d} fill={selected===code?"#b22222":stateWeaves[code]?"#d4a23b":"#e2d5b8"} stroke="#886c49" strokeWidth=".8" tabIndex={0} role="button" aria-label={stateNames[code]} aria-pressed={selected===code} onMouseEnter={()=>setSelected(code)} onFocus={()=>setSelected(code)} onClick={()=>setSelected(code)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(code)}}}/>)}
@@ -349,7 +349,7 @@ export function Home(){
  return <Shell>
   <HomeHeroCarousel/>
 
-   <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Find the cloth that feels like you.</p></div></div>
+    <section className="section home-fabric-section" id="fabric"><div className="wrap"><div className="section-head"><div><h2>Shop by Fabric</h2><p>Curated for you.</p></div></div>
       {fabricCards.length?<div className="fabric-grid home-horizontal-track" role="region" aria-label="Shop by Fabric" tabIndex={0}>
        {fabricCards.map(item=><a className="fabric-card" key={item.name} href={base+"Collections?fabric="+encodeURIComponent(item.name)}>
          {item.tile?.imageUrl?<img className="dynamic-home-tile-image" src={item.tile.imageUrl} alt={item.tile.altText||item.name} loading="lazy"/>:<Textile pattern={item.pattern} label={item.name}/>}
