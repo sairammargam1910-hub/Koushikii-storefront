@@ -976,3 +976,30 @@
   }
 }
 
+/* Keep the homepage sections connected without removing their visual rhythm. */
+.kq:has(.home-fabric-section) .section {
+  padding-block: clamp(24px, 2.5vw, 36px);
+}
+
+.kq:has(.home-fabric-section) .section-head {
+  margin-bottom: 18px;
+}
+
+.kq:has(.home-fabric-section) .home-premium-section {
+  padding-block: clamp(18px, 2.2vw, 28px);
+}
+
+@media (max-width: 767px) {
+  .kq:has(.home-fabric-section) .section {
+    padding-block: 18px;
+  }
+
+  .kq:has(.home-fabric-section) .section-head {
+    margin-bottom: 14px;
+  }
+
+  .kq:has(.home-fabric-section) .home-premium-section {
+    padding-block: 14px;
+  }
+}
+
