@@ -230,6 +230,14 @@ test("shows live blouse details and ranked, purchasable related products", async
     await page.locator(".shopify-related-section .shopify-product-title h3").allTextContents(),
     ["Related narayanpet-related", "Related ikkat-related", "Related cotton-related", "Related saree-related"],
   );
+  assert.equal(
+    await page.locator(".shopify-related-section .shopify-product-img>img").first().evaluate((image) => getComputedStyle(image).objectFit),
+    "contain",
+  );
+  assert.equal(
+    await page.locator(".shopify-related-heading h2").evaluate((heading) => getComputedStyle(heading).textAlign),
+    "left",
+  );
   assert.equal(await page.getByTestId("card-shopify-unavailable-related").count(), 0);
   assert.match(
     await page.getByTestId("card-shopify-narayanpet-related").locator("a.shopify-product-title").getAttribute("href"),
