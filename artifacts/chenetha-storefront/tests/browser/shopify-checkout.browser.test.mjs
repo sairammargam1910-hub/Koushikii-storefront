@@ -224,6 +224,21 @@ test("shows live blouse details and ranked, purchasable related products", async
 
   await page.locator(".shopify-product-summary").getByRole("heading", { name: "About the product" }).waitFor();
   await page.getByTestId("text-blouse-availability").getByText("Blouse Piece Included").waitFor();
+  await page.getByTestId("text-checkout-note").getByText(
+    "Price and availability are confirmed before payment; delivery is quoted at checkout.",
+  ).waitFor();
+  assert.equal(await page.locator(".shopify-product-information").count(), 0);
+  assert.equal(await page.getByText("Current product details", { exact: true }).count(), 0);
+  assert.equal(await page.evaluate(() => {
+    const summary = document.querySelector('[data-testid="text-product-summary"]');
+    const blouse = document.querySelector('[data-testid="text-blouse-availability"]');
+    const buyButton = document.querySelector('[data-testid="button-add-shopify-to-cart"]');
+    return Boolean(
+      summary && blouse && buyButton &&
+      (summary.compareDocumentPosition(buyButton) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+      (blouse.compareDocumentPosition(buyButton) & Node.DOCUMENT_POSITION_FOLLOWING),
+    );
+  }), true, "about-product and blouse details should come before the add-to-bag button");
   await page.getByTestId("section-related-products").getByRole("heading", { name: "You May Also Like" }).waitFor();
   assert.match(await page.getByTestId("text-product-summary").innerText(), /A Narayanpet cotton saree\./);
   assert.doesNotMatch(await page.getByTestId("text-product-summary").innerText(), /longer second sentence/i);

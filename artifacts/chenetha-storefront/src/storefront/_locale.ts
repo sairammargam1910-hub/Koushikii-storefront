@@ -41,6 +41,7 @@ const phrases: Record<string, [string, string]> = {
   "Blouse Piece Included": ["జాకెట్ ముక్క ఉంది", "ब्लाउज़ का कपड़ा शामिल है"],
   "Blouse Piece Not Included": ["జాకెట్ ముక్క లేదు", "ब्लाउज़ का कपड़ा शामिल नहीं है"],
   "Blouse availability not specified.": ["జాకెట్ ముక్క లభ్యత పేర్కొనలేదు.", "ब्लाउज़ के कपड़े की उपलब्धता नहीं बताई गई है।"],
+  "Price and availability are confirmed before payment; delivery is quoted at checkout.": ["చెల్లింపుకు ముందు ధర, లభ్యతను నిర్ధారిస్తాం; చెక్‌అవుట్‌లో డెలివరీ ఛార్జీని తెలియజేస్తాం.", "भुगतान से पहले कीमत और उपलब्धता की पुष्टि होगी; चेकआउट पर डिलीवरी शुल्क बताया जाएगा।"],
   "Thoughtfully chosen": ["ఆలోచనతో ఎంపిక చేసినవి", "सोच-समझकर चुने गए"],
   "You May Also Like": ["మీకు ఇవి కూడా నచ్చవచ్చు", "आपको यह भी पसंद आ सकता है"],
   "Available": ["అందుబాటులో ఉంది", "उपलब्ध"],

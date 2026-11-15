@@ -453,6 +453,16 @@ function ShopifyProductDetail({ product, catalogProducts }: {
               {demo ? "Demo price · " : ""}
               {price || "Price to be confirmed"}
             </span>
+            <div className="shopify-product-summary" data-testid="text-product-summary">
+              <h2>About the product</h2>
+              <p>{productSummary}</p>
+            </div>
+            {isSareeProductType(product.productType) && (
+              <div className="shopify-blouse-availability" data-testid="text-blouse-availability">
+                <span className="eyebrow">Blouse piece</span>
+                <strong>{blouseAvailabilityText}</strong>
+              </div>
+            )}
             {product.variants.length > 0 && hasVariantChoice && (
               <label className="shopify-variant-select">
                 {product.variants.length > 1 ? "Choose an option" : "Selected option"}
@@ -518,41 +528,13 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                 <p className="muted">This option is currently out of stock.</p>
               )}
             </div>
+            {!demo && (
+              <p className="shopify-checkout-note" data-testid="text-checkout-note">
+                Price and availability are confirmed before payment; delivery is quoted at checkout.
+              </p>
+            )}
           </section>
         </div>
-        <section className="shopify-product-information" aria-label="Product information">
-          <div className="shopify-product-copy">
-            <div className="shopify-product-summary" data-testid="text-product-summary">
-              <h2>About the product</h2>
-              <p>{productSummary}</p>
-            </div>
-            {isSareeProductType(product.productType) && (
-              <div className="shopify-blouse-availability" data-testid="text-blouse-availability">
-                <span className="eyebrow">Blouse piece</span>
-                <strong>{blouseAvailabilityText}</strong>
-              </div>
-            )}
-          </div>
-          <aside className={`product-sample shopify-product-notice${demo ? " is-demo" : ""}`}>
-            {demo ? (
-              <>
-                <strong>Demo only — not for sale</strong>
-                <br />
-                This sample listing contains illustrative details and cannot be purchased.
-              </>
-            ) : (
-              <>
-                <strong>{purchasable ? "Current product details" : "This option is not available to purchase"}</strong>
-                <br />
-                {purchasable
-                  ? "Your selected option and current price will be checked again before checkout."
-                  : "Choose an available option. Availability and price are checked again at checkout."}
-                <br />
-                Delivery charges are quoted at checkout. Payment is completed securely on a hosted payment page.
-              </>
-            )}
-          </aside>
-        </section>
         {recommendations.length > 0 && (
           <section
             className="shopify-related-section"

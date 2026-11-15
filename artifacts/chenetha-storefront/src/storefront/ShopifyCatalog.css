@@ -23,14 +23,13 @@
 .kq .shopify-detail-price{display:block;margin:16px 0}
 .kq .shopify-product-notice{margin:16px 0}
 .kq .shopify-product-notice.is-demo{border-left-color:#b77927;background:#fff3d8}
-.kq .shopify-product-information{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:28px;align-items:start;padding:25px 0 40px;border-top:1px solid var(--line)}
 .kq .splitdetail.shopify-product-detail{padding-bottom:30px}
-.kq .shopify-product-copy{display:grid;gap:20px}
+.kq .shopify-product-summary{margin:22px 0 16px}
 .kq .shopify-product-summary h2{font-size:clamp(24px,2.6vw,32px);line-height:1.1;letter-spacing:-.02em}
-.kq .shopify-product-summary p{max-width:680px;margin:9px 0 0;color:var(--muted);font-size:15px;line-height:1.75}
-.kq .shopify-blouse-availability{display:grid;gap:7px;padding-top:16px;border-top:1px solid var(--line)}
+.kq .shopify-product-summary p{max-width:680px;margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.65}
+.kq .shopify-blouse-availability{display:grid;gap:6px;margin:0 0 16px;padding:11px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .kq .shopify-blouse-availability strong{font-size:13px;font-weight:600;color:var(--ink)}
-.kq .shopify-product-information .shopify-product-notice{margin:0}
+.kq .shopify-checkout-note{margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.55}
 .kq .shopify-related-section{padding:35px 0 70px;border-top:1px solid var(--line)}
 .kq .shopify-related-heading{display:grid;justify-items:start;gap:9px;margin-bottom:25px}
 .kq .shopify-related-heading h2{font-size:clamp(32px,4vw,46px);margin:0;text-align:left}
@@ -71,7 +70,8 @@
 .kq .shopify-demo-badge-inline{margin:4px 0 8px;background:#fff5de;color:#7c311d}
 .kq .shopify-sample-selections{margin-top:28px}
 @media(max-width:650px){
-  .kq .shopify-product-information{grid-template-columns:1fr;gap:18px;padding:20px 0 30px}
+  .kq .shopify-product-summary{margin:18px 0 14px}
+  .kq .shopify-product-summary h2{font-size:25px}
   .kq .shopify-related-section{padding:28px 0 48px}
   .kq .shopify-related-heading{justify-items:start;margin-bottom:18px}
   .kq .shopify-related-section .shopify-product-img{height:auto;aspect-ratio:4/5}
