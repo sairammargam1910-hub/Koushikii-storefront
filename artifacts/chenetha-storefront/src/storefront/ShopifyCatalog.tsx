@@ -245,25 +245,34 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
       className={`product-card shopify-product-card${demo ? " is-demo" : ""}`}
       data-testid={`card-shopify-${product.handle}`}
     >
-      <a href={href} className="product-img shopify-product-img">
-        {image ? (
-          <img src={image.url} alt={image.altText || product.title} loading="lazy" />
-        ) : (
-          <span className="shopify-image-placeholder" role="img" aria-label="Product photo not available">
-            <span className="textile s1" />
-            <span>Product photo not available</span>
-          </span>
-        )}
-        {outOfStock && (
-          <span className="shopify-oos-overlay" role="status">
-            <span>Out of stock</span>
-          </span>
-        )}
-        {(!outOfStock || demo) && (
-          <span className={`pill shopify-product-badge${demo ? " is-demo" : ""}`}>
-            {demo ? "Demo only" : available ? "Available" : "Currently unavailable"}
-          </span>
-        )}
+      <a href={href} className="shopify-card-link" aria-label={`View ${product.title}`}>
+        <div className="product-img shopify-product-img">
+          {image ? (
+            <img src={image.url} alt={image.altText || product.title} loading="lazy" />
+          ) : (
+            <span className="shopify-image-placeholder" role="img" aria-label="Product photo not available">
+              <span className="textile s1" />
+              <span>Product photo not available</span>
+            </span>
+          )}
+          {outOfStock && (
+            <span className="shopify-oos-overlay" role="status">
+              <span>Out of stock</span>
+            </span>
+          )}
+          {(!outOfStock || demo) && (
+            <span className={`pill shopify-product-badge${demo ? " is-demo" : ""}`}>
+              {demo ? "Demo only" : available ? "Available" : "Currently unavailable"}
+            </span>
+          )}
+        </div>
+        <div className="shopify-product-title"><h3>{product.title}</h3></div>
+        <p>{product.productType || "Saree"}</p>
+        <span className="price">
+          {demo ? "Demo price · " : ""}
+          {price || "Price to be confirmed"}
+        </span>
+        {demo && <small className="shopify-card-note">Not for sale · Sample details</small>}
       </a>
       <button
         className="heart"
@@ -279,15 +288,6 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
       >
         <Heart size={16} fill={saved ? "var(--red)" : "none"} />
       </button>
-      <a href={href} className="shopify-product-title">
-        <h3>{product.title}</h3>
-      </a>
-      <p>{product.productType || "Saree"}</p>
-      <span className="price">
-        {demo ? "Demo price · " : ""}
-        {price || "Price to be confirmed"}
-      </span>
-      {demo && <small className="shopify-card-note">Not for sale · Sample details</small>}
       {wishlistError && <small role="alert">Wishlist could not be saved. Please try again.</small>}
     </article>
   );

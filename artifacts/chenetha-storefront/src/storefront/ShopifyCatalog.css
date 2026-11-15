@@ -6,6 +6,9 @@
 .kq .shopify-oos-overlay>span{padding:10px 15px;border:1px solid #b22222;background:#f7f1e6;color:#b22222;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
 .kq .shopify-product-badge.is-demo,.kq .shopify-demo-badge{background:#fff5de;color:#7c311d;border:1px solid #d3a05c}
 .kq .shopify-product-title{display:block;text-decoration:none;color:inherit}
+.kq .shopify-card-link{display:block;color:inherit;text-decoration:none}
+.kq .shopify-card-link:focus-visible .shopify-product-img{outline:2px solid var(--red);outline-offset:3px}
+.kq .shopify-product-card .heart{z-index:2}
 .kq .shopify-product-title h3{margin-top:13px}
 .kq .shopify-card-note{display:block;margin:5px 8px 0;color:#805d37;font-size:10px}
 .kq .shopify-image-placeholder,.kq .shopify-detail-placeholder{height:100%;min-height:220px;display:grid;place-items:center;align-content:center;gap:8px;padding:16px;text-align:center;background:#eee3cf;color:var(--muted);font-size:11px}

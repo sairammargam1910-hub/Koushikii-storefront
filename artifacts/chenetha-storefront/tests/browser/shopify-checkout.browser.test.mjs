@@ -256,9 +256,12 @@ test("shows live blouse details and ranked, purchasable related products", async
   );
   assert.equal(await page.getByTestId("card-shopify-unavailable-related").count(), 0);
   assert.match(
-    await page.getByTestId("card-shopify-narayanpet-related").locator("a.shopify-product-title").getAttribute("href"),
+    await page.getByTestId("card-shopify-narayanpet-related").locator("a.shopify-card-link").getAttribute("href"),
     /Product\?product=narayanpet-related$/,
   );
+  await page.getByTestId("card-shopify-narayanpet-related").locator("a.shopify-card-link").click();
+  await page.waitForURL(/\/Product\?product=narayanpet-related$/);
+  await page.getByRole("heading", { name: "Related narayanpet-related", exact: true }).waitFor();
   await context.close();
 
   const mobile = await openProduct({ catalog, viewport: { width: 390, height: 844 } });
