@@ -8,6 +8,7 @@ import { ScrollRestoration } from "../../src/storefront/RouteEffects";
 import { ShopperPreferencesProvider } from "../../src/storefront/ShopperPreferences";
 import { Collections } from "../../src/storefront/Collections";
 import { Home } from "../../src/storefront/Home";
+import { Product } from "../../src/storefront/Product";
 import { ShopifyProductRoute } from "../../src/storefront/ShopifyCatalog";
 import { Cart } from "../../src/storefront/Cart";
 import { Checkout } from "../../src/storefront/Checkout";
@@ -56,7 +57,7 @@ function Fixture() {
   }
   if (location.toLowerCase() === "/collections") return <Collections />;
   const productPathHandle = location.match(/^\/Product\/([^/]+)\/?$/i)?.[1];
-  if (productPathHandle) return <ShopifyProductRoute handle={decodeURIComponent(productPathHandle)} />;
+  if (productPathHandle) return <Product />;
   if (location.toLowerCase() === "/") return <Home />;
   if (location.toLowerCase() === "/product") {
     const handle = new URLSearchParams(window.location.search).get("product") || "fixture-saree";

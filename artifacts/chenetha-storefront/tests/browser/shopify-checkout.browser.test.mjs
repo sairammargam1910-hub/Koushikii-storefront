@@ -170,6 +170,10 @@ async function openProduct({
     await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
   }
   const page = await context.newPage();
+  let documentNavigations = 0;
+  page.on("request", (request) => {
+    if (request.isNavigationRequest()) documentNavigations += 1;
+  });
   page.on("pageerror", (error) => console.error("[shopify-browser-page-error]", error.message));
   await page.route("**/api/shopify/products", (route) => route.fulfill({
     status: 200,
@@ -178,7 +182,7 @@ async function openProduct({
   }));
   await page.goto(`${origin}${fixtureUrl}?screen=product`);
   await page.getByTestId("button-add-shopify-to-cart").waitFor({ timeout: 5000 });
-  return { context, page };
+  return { context, page, getDocumentNavigationCount: () => documentNavigations };
 }
 
 test("shows live blouse details and ranked, purchasable related products", async () => {
@@ -220,7 +224,7 @@ test("shows live blouse details and ranked, purchasable related products", async
     variants: [{ ...current.variants[0], id: "gid://shopify/ProductVariant/unavailable", availableForSale: false }],
   });
   const catalog = { products: [current, sameType, fabric, unavailable, weave, tradition] };
-  const { context, page } = await openProduct({ catalog });
+  const { context, page, getDocumentNavigationCount } = await openProduct({ catalog });
 
   await page.locator(".shopify-product-summary").getByRole("heading", { name: "About the product" }).waitFor();
   await page.getByTestId("text-blouse-availability").getByText("Blouse Piece Included").waitFor();
@@ -257,11 +261,13 @@ test("shows live blouse details and ranked, purchasable related products", async
   assert.equal(await page.getByTestId("card-shopify-unavailable-related").count(), 0);
   assert.match(
     await page.getByTestId("card-shopify-narayanpet-related").locator("a.shopify-card-link").getAttribute("href"),
-    /Product\?product=narayanpet-related$/,
+    /Product\/narayanpet-related$/,
   );
+  const beforeCardClickNavigations = getDocumentNavigationCount();
   await page.getByTestId("card-shopify-narayanpet-related").locator("a.shopify-card-link").click();
-  await page.waitForURL(/\/Product\?product=narayanpet-related$/);
+  await page.waitForURL(/\/Product\/narayanpet-related$/);
   await page.getByRole("heading", { name: "Related narayanpet-related", exact: true }).waitFor();
+  assert.equal(getDocumentNavigationCount(), beforeCardClickNavigations, "recommended products should load without a document reload");
   await context.close();
 
   const mobile = await openProduct({ catalog, viewport: { width: 390, height: 844 } });
