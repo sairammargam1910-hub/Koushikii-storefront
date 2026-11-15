@@ -190,6 +190,7 @@ function Router() {
           <Route path="/" component={Home}/>
         <Route path="/Home" component={Home}/>
         <Route path="/Collections" component={Collections}/>
+        <Route path="/Product/:handle" component={Product}/>
         <Route path="/Product" component={Product}/>
         <Route path="/Cart" component={Cart}/>
         <Route path="/Wishlist" component={Wishlist}/>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Heart } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -234,7 +234,7 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
   const outOfStock = !demo &&
     product.variants.length > 0 &&
     product.variants.every((variant) => !variant.availableForSale);
-  const href = `${base}Product?product=${encodeURIComponent(product.handle)}`;
+  const href = `${base}Product/${encodeURIComponent(product.handle)}`;
   const wishlist = useStore("kq-wish");
   const { toggleWishlist, loading, error } = useShopperPreferences();
   const [wishlistError, setWishlistError] = useState(false);
@@ -245,7 +245,7 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
       className={`product-card shopify-product-card${demo ? " is-demo" : ""}`}
       data-testid={`card-shopify-${product.handle}`}
     >
-      <a href={href} className="shopify-card-link" aria-label={`View ${product.title}`}>
+      <Link href={href} className="shopify-card-link" aria-label={`View ${product.title}`}>
         <div className="product-img shopify-product-img">
           {image ? (
             <img src={image.url} alt={image.altText || product.title} loading="lazy" />
@@ -273,7 +273,7 @@ export function ShopifyProductCard({ product }: { product: ShopifyProduct }) {
           {price || "Price to be confirmed"}
         </span>
         {demo && <small className="shopify-card-note">Not for sale · Sample details</small>}
-      </a>
+      </Link>
       <button
         className="heart"
         type="button"

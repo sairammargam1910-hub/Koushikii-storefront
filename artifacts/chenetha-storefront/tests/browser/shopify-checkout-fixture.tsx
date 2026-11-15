@@ -55,6 +55,8 @@ function Fixture() {
     </main>;
   }
   if (location.toLowerCase() === "/collections") return <Collections />;
+  const productPathHandle = location.match(/^\/Product\/([^/]+)\/?$/i)?.[1];
+  if (productPathHandle) return <ShopifyProductRoute handle={decodeURIComponent(productPathHandle)} />;
   if (location.toLowerCase() === "/") return <Home />;
   if (location.toLowerCase() === "/product") {
     const handle = new URLSearchParams(window.location.search).get("product") || "fixture-saree";

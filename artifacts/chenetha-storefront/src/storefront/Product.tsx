@@ -9,7 +9,12 @@ export function Product() {
  const [location] = useLocation();
  const search = location.includes("?") ? location.slice(location.indexOf("?") + 1) : window.location.search.slice(1);
  const params = new URLSearchParams(search);
- const productHandle = params.get("product") || params.get("shopify");
+ const routeHandle = location.split("?")[0].match(/^\/Product\/([^/]+)\/?$/i)?.[1];
+ let decodedRouteHandle: string | null = null;
+ if (routeHandle) {
+  try { decodedRouteHandle = decodeURIComponent(routeHandle); } catch { decodedRouteHandle = routeHandle; }
+ }
+ const productHandle = decodedRouteHandle || params.get("product") || params.get("shopify");
  return productHandle
     ? <ShopifyProductRoute key={productHandle} handle={productHandle}/>
   : <SampleProductRoute id={params.get("id") || "nila"}/>;
