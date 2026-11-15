@@ -37,6 +37,7 @@ type ShopifyProduct = {
   tags: string[];
   fabric: { value: string } | null;
   regionalHandloom: { value: string } | null;
+  blouseAvailability: { value: string } | null;
   craftTechnique: { value: string } | null;
   region: { value: string } | null;
   colour: { value: string } | null;
@@ -174,6 +175,7 @@ const SHOPIFY_PRODUCTS_QUERY = `#graphql
         tags
         fabric: metafield(namespace: "chenetha", key: "fabric") { value }
         regionalHandloom: metafield(namespace: "chenetha", key: "regional_handloom") { value }
+        blouseAvailability: metafield(namespace: "chenetha", key: "blouse_availability") { value }
         craftTechnique: metafield(namespace: "chenetha", key: "craft_technique") { value }
         region: metafield(namespace: "chenetha", key: "region") { value }
         colour: metafield(namespace: "chenetha", key: "colour") { value }
@@ -197,6 +199,13 @@ const SHOPIFY_PRODUCTS_QUERY = `#graphql
     }
   }
 `;
+
+function normalizeBlouseAvailability(value: string | null | undefined) {
+  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return normalized === "included" || normalized === "not_included" || normalized === "not_specified"
+    ? normalized
+    : "not_specified";
+}
 
 const CART_FIELDS = `#graphql
   id
@@ -861,6 +870,7 @@ router.get("/shopify/products", async (_req, res) => {
           craftTechnique: product.craftTechnique?.value ?? null,
           region: product.region?.value ?? null,
           colour: product.colour?.value ?? null,
+          blouseAvailability: normalizeBlouseAvailability(product.blouseAvailability?.value),
         },
         collections: product.collections.nodes,
         images: product.images.nodes,

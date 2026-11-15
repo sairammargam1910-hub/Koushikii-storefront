@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShopifyAdminProductUpdateBlouseAvailability } from './shopifyAdminProductUpdateBlouseAvailability';
 
 export interface ShopifyAdminProductUpdate {
   /**
@@ -25,6 +26,7 @@ export interface ShopifyAdminProductUpdate {
   fabric?: string;
   /** @maxLength 255 */
   regionalHandloom?: string;
+  blouseAvailability?: ShopifyAdminProductUpdateBlouseAvailability;
   /** @maxLength 255 */
   craftTechnique?: string;
   /** @maxLength 255 */

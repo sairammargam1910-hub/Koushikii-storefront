@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { Heart } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,6 +17,11 @@ import { customerFacingMessage } from "./customerFacingMessage";
 import type { CatalogFilters } from "./_shared/catalog-filter";
 import { normalizeRegion } from "./_shared/catalog-filter";
 import { getAvailableShopifyCollections, getShopifyAttribute, getShopifyAttributeValues, getShopifyTagValue } from "./shopifyCatalogData";
+import {
+  getShopifyProductRecommendations,
+  getShopifyProductSummary,
+  isSareeProductType,
+} from "./shopifyProductRecommendations";
 import { useShopifyCatalog } from "./shopifyCatalogQuery";
 export { getAvailableShopifyCollections, getShopifyAttribute, getShopifyTagValue } from "./shopifyCatalogData";
 export { useShopifyCatalog } from "./shopifyCatalogQuery";
@@ -333,10 +338,19 @@ export function ShopifyProductRoute({ handle }: { handle: string }) {
     );
   }
 
-  return <ShopifyProductDetail key={product.handle} product={product} />;
+  return (
+    <ShopifyProductDetail
+      key={product.handle}
+      product={product}
+      catalogProducts={catalog.data?.products ?? []}
+    />
+  );
 }
 
-function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
+function ShopifyProductDetail({ product, catalogProducts }: {
+  product: ShopifyProduct;
+  catalogProducts: ShopifyProduct[];
+}) {
   const [imageIndex, setImageIndex] = useState(0);
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? "");
   const [quantity, setQuantity] = useState(1);
@@ -347,6 +361,18 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
   const image = product.images[imageIndex];
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
   const price = variant ? formatShopifyMoney(variant.price, variant.currencyCode) : "";
+  const recommendations = useMemo(
+    () => getShopifyProductRecommendations(product, catalogProducts),
+    [product, catalogProducts],
+  );
+  const productSummary = getShopifyProductSummary(product.description) ||
+    "More details about this piece will be added soon.";
+  const blouseAvailability = product.attributes.blouseAvailability ?? "not_specified";
+  const blouseAvailabilityText = blouseAvailability === "included"
+    ? "Blouse Piece Included"
+    : blouseAvailability === "not_included"
+      ? "Blouse Piece Not Included"
+      : "Blouse availability not specified.";
   const demo = isDemoProduct(product);
   const hasVariantChoice = product.variants.length > 1 ||
     (product.variants.length === 1 && !isDefaultShopifyVariantTitle(product.variants[0].title));
@@ -423,7 +449,10 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
           <section className="detail">
             <span className="eyebrow">{product.productType || "Saree"}</span>
             <h1>{product.title}</h1>
-            <p>{product.description || "More details about this piece will be added soon."}</p>
+            <span className="price shopify-detail-price">
+              {demo ? "Demo price · " : ""}
+              {price || "Price to be confirmed"}
+            </span>
             {product.variants.length > 0 && hasVariantChoice && (
               <label className="shopify-variant-select">
                 {product.variants.length > 1 ? "Choose an option" : "Selected option"}
@@ -436,29 +465,6 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
                 </select>
               </label>
             )}
-            <span className="price shopify-detail-price">
-              {demo ? "Demo price · " : ""}
-              {price || "Price to be confirmed"}
-            </span>
-            <div className={`product-sample shopify-product-notice${demo ? " is-demo" : ""}`}>
-              {demo ? (
-                <>
-                  <strong>Demo only — not for sale</strong>
-                  <br />
-                  This sample listing contains illustrative details and cannot be purchased.
-                </>
-              ) : (
-                <>
-                  <strong>{purchasable ? "Current product details" : "This option is not available to purchase"}</strong>
-                  <br />
-                  {purchasable
-                    ? "Your selected option and current price will be checked again before checkout."
-                    : "Choose an available option. Availability and price are checked again at checkout."}
-                  <br />
-                  Delivery charges are quoted at checkout. Payment is completed securely on a hosted payment page.
-                </>
-              )}
-            </div>
             <div className="shopify-buy-controls">
               <label className="shopify-quantity-label">
                 Quantity
@@ -514,6 +520,52 @@ function ShopifyProductDetail({ product }: { product: ShopifyProduct }) {
             </div>
           </section>
         </div>
+        <section className="shopify-product-information" aria-label="Product information">
+          <div className="shopify-product-copy">
+            <div className="shopify-product-summary" data-testid="text-product-summary">
+              <span className="eyebrow">About this piece</span>
+              <p>{productSummary}</p>
+            </div>
+            {isSareeProductType(product.productType) && (
+              <div className="shopify-blouse-availability" data-testid="text-blouse-availability">
+                <span className="eyebrow">Blouse piece</span>
+                <strong>{blouseAvailabilityText}</strong>
+              </div>
+            )}
+          </div>
+          <aside className={`product-sample shopify-product-notice${demo ? " is-demo" : ""}`}>
+            {demo ? (
+              <>
+                <strong>Demo only — not for sale</strong>
+                <br />
+                This sample listing contains illustrative details and cannot be purchased.
+              </>
+            ) : (
+              <>
+                <strong>{purchasable ? "Current product details" : "This option is not available to purchase"}</strong>
+                <br />
+                {purchasable
+                  ? "Your selected option and current price will be checked again before checkout."
+                  : "Choose an available option. Availability and price are checked again at checkout."}
+                <br />
+                Delivery charges are quoted at checkout. Payment is completed securely on a hosted payment page.
+              </>
+            )}
+          </aside>
+        </section>
+        {recommendations.length > 0 && (
+          <section
+            className="shopify-related-section"
+            aria-labelledby="shopify-related-title"
+            data-testid="section-related-products"
+          >
+            <header className="shopify-related-heading">
+              <span className="eyebrow">Thoughtfully chosen</span>
+              <h2 id="shopify-related-title">You May Also Like</h2>
+            </header>
+            <ShopifyProductGrid products={recommendations} />
+          </section>
+        )}
       </main>
     </Shell>
   );

@@ -91,6 +91,8 @@ function adminProductResponse(product) {
   return {
     ...rest,
     fabricMetafield: metafields.find(({ key }) => key === "fabric") ?? null,
+    regionalHandloomMetafield: metafields.find(({ key }) => key === "regional_handloom") ?? null,
+    blouseAvailabilityMetafield: metafields.find(({ key }) => key === "blouse_availability") ?? null,
     craftTechniqueMetafield: metafields.find(({ key }) => key === "craft_technique") ?? null,
     regionMetafield: metafields.find(({ key }) => key === "region") ?? null,
     colourMetafield: metafields.find(({ key }) => key === "colour") ?? null,
@@ -101,6 +103,8 @@ function assertAdminProductMetafieldQuery(query) {
   assert.doesNotMatch(query, /metafields\s*\(\s*identifiers\s*:/);
   for (const [alias, key] of [
     ["fabricMetafield", "fabric"],
+    ["regionalHandloomMetafield", "regional_handloom"],
+    ["blouseAvailabilityMetafield", "blouse_availability"],
     ["craftTechniqueMetafield", "craft_technique"],
     ["regionMetafield", "region"],
     ["colourMetafield", "colour"],
@@ -215,8 +219,37 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
           },
         });
       }
+      if (query.includes("mutation ChenethaMetafieldDefinitionCreate")) {
+        assert.deepEqual(variables.definition, {
+          namespace: "chenetha",
+          key: "blouse_availability",
+          name: "Blouse piece availability",
+          description: "Structured blouse piece availability attribute used by the Chenetha storefront.",
+          ownerType: "PRODUCT",
+          type: "single_line_text_field",
+          access: { storefront: "PUBLIC_READ" },
+        });
+        return Response.json({
+          data: {
+            metafieldDefinitionCreate: {
+              createdDefinition: {
+                id: "gid://shopify/MetafieldDefinition/blouse_availability",
+                namespace: "chenetha",
+                key: "blouse_availability",
+                type: { name: "single_line_text_field" },
+                access: { storefront: "PUBLIC_READ" },
+              },
+              userErrors: [],
+            },
+          },
+        });
+      }
       if (query.includes("mutation ChenethaProductMetafieldsSet")) {
-        state.product.metafields = variables.metafields.map(({ key, value }) => ({ key, value }));
+        for (const { key, value } of variables.metafields) {
+          const current = state.product.metafields.find((entry) => entry.key === key);
+          if (current) current.value = value;
+          else state.product.metafields.push({ key, value });
+        }
         return Response.json({ data: { metafieldsSet: { metafields: state.product.metafields, userErrors: [] } } });
       }
       if (query.includes("query MerchantCollections")) {
@@ -265,6 +298,7 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
     },
     async (query) => {
       assert.match(query, /query ChenethaProducts/);
+      assert.match(query, /blouseAvailability:\s*metafield\(namespace: "chenetha", key: "blouse_availability"\)\s*\{ value \}/);
       const publishedProduct = state.product && state.published.has(productId)
         ? {
             ...structuredClone(state.product),
@@ -289,6 +323,9 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
               : null,
             colour: state.product.metafields.find(({ key }) => key === "colour")
               ? { value: state.product.metafields.find(({ key }) => key === "colour").value }
+              : null,
+            blouseAvailability: state.product.metafields.find(({ key }) => key === "blouse_availability")
+              ? { value: state.product.metafields.find(({ key }) => key === "blouse_availability").value }
               : null,
             collections: { nodes: state.published.has(collectionId) ? state.product.collections.nodes : [] },
           }
@@ -330,6 +367,7 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
       craftTechnique: "Block printing",
       region: "Telangana",
       colour: "Indigo",
+      blouseAvailability: "included",
     }),
   });
   assert.equal(created.status, 201, await created.clone().text());
@@ -340,12 +378,15 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
   assert.equal(state.product.variants.nodes[0].inventoryItem.measurement.weight.value, 0.875);
   assert.equal(state.product.variants.nodes[0].inventoryItem.measurement.weight.unit, "KILOGRAMS");
   assert.equal(createdData.product.variants[0].weightKg, 0.875);
+  assert.equal(createdData.product.blouseAvailability, "included");
+  assert.equal(state.product.metafields.find(({ key }) => key === "blouse_availability")?.value, "included");
 
   const allProducts = await fetch(`${base}/shopify/products`);
   assert.equal(allProducts.status, 200);
   const unassigned = await allProducts.json();
   assert.deepEqual(unassigned.products.map(({ id }) => id), [productId]);
   assert.deepEqual(unassigned.products[0].collections, []);
+  assert.equal(unassigned.products[0].attributes.blouseAvailability, "included");
 
   const updated = await fetch(`${base}/shopify/admin/products/${encodeURIComponent(productId)}`, {
     method: "PATCH",
@@ -354,13 +395,24 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
       collectionIds: [],
       newCollectionTitle: "The Crafts Edit",
       publishToWebsite: true,
+      blouseAvailability: "not_included",
     }),
   });
-  assert.equal(updated.status, 200, await updated.text());
+  assert.equal(updated.status, 200, await updated.clone().text());
+  assert.equal((await updated.json()).product.blouseAvailability, "not_included");
+  assert.equal(state.product.metafields.find(({ key }) => key === "blouse_availability")?.value, "not_included");
   assert.equal(state.productCreateCount, 1, "collection assignment must not create another product");
   assert.equal(state.collections.length, 1);
   assert.equal(state.collections[0].title, "The Crafts Edit");
   assert.deepEqual(state.product.collections.nodes.map(({ id }) => id), [collectionId]);
+
+  const invalidBlouse = await fetch(`${base}/shopify/admin/products/${encodeURIComponent(productId)}`, {
+    method: "PATCH",
+    headers: adminHeaders,
+    body: JSON.stringify({ blouseAvailability: "maybe" }),
+  });
+  assert.equal(invalidBlouse.status, 400);
+  assert.equal(state.product.metafields.find(({ key }) => key === "blouse_availability")?.value, "not_included");
 
   const catalogAfterAssignment = await fetch(`${base}/shopify/products`);
   const assigned = await catalogAfterAssignment.json();

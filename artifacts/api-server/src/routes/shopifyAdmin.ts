@@ -66,6 +66,7 @@ type AdminVariant = {
 };
 
 type AdminProductMetafield = { key: string; value: string | null };
+type BlouseAvailability = "included" | "not_included" | "not_specified";
 
 type AdminProduct = {
   id: string;
@@ -77,6 +78,7 @@ type AdminProduct = {
   tags: string[];
   fabricMetafield: AdminProductMetafield | null;
   regionalHandloomMetafield: AdminProductMetafield | null;
+  blouseAvailabilityMetafield: AdminProductMetafield | null;
   craftTechniqueMetafield: AdminProductMetafield | null;
   regionMetafield: AdminProductMetafield | null;
   colourMetafield: AdminProductMetafield | null;
@@ -183,6 +185,7 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
   tags
   fabricMetafield: metafield(namespace: "chenetha", key: "fabric") { key value }
   regionalHandloomMetafield: metafield(namespace: "chenetha", key: "regional_handloom") { key value }
+  blouseAvailabilityMetafield: metafield(namespace: "chenetha", key: "blouse_availability") { key value }
   craftTechniqueMetafield: metafield(namespace: "chenetha", key: "craft_technique") { key value }
   regionMetafield: metafield(namespace: "chenetha", key: "region") { key value }
   colourMetafield: metafield(namespace: "chenetha", key: "colour") { key value }
@@ -324,6 +327,7 @@ const ADMIN_METAFIELDS_DELETE = `#graphql
 const CHENETHA_PRODUCT_ATTRIBUTES = [
   { key: "fabric", name: "Fabric" },
   { key: "regional_handloom", name: "Regional Handloom / Tradition" },
+  { key: "blouse_availability", name: "Blouse piece availability" },
   { key: "craft_technique", name: "Craft / Technique" },
   { key: "region", name: "Region" },
   { key: "colour", name: "Colour" },
@@ -663,10 +667,18 @@ function productAttributeMetafields(product: AdminProduct): AdminProductMetafiel
   return [
     product.fabricMetafield,
     product.regionalHandloomMetafield,
+    product.blouseAvailabilityMetafield,
     product.craftTechniqueMetafield,
     product.regionMetafield,
     product.colourMetafield,
   ].filter((entry): entry is AdminProductMetafield => entry != null);
+}
+
+function normalizeBlouseAvailability(value: string | null | undefined): BlouseAvailability {
+  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return normalized === "included" || normalized === "not_included" || normalized === "not_specified"
+    ? normalized
+    : "not_specified";
 }
 
 function mapProduct(
@@ -686,6 +698,7 @@ function mapProduct(
     tags: product.tags,
     fabric: metafield("fabric"),
     regionalHandloom: metafield("regional_handloom"),
+    blouseAvailability: normalizeBlouseAvailability(metafield("blouse_availability")),
     craftTechnique: metafield("craft_technique"),
     region: metafield("region"),
     colour: metafield("colour"),
@@ -955,6 +968,32 @@ async function saveProductAttributes(
     }>(ADMIN_METAFIELDS_DELETE, { metafields: toDelete });
     assertNoUserErrors(result.metafieldsDelete.userErrors);
   }
+}
+
+async function saveBlouseAvailability(
+  productId: string,
+  value: BlouseAvailability,
+  existing: AdminProductMetafield[] = [],
+): Promise<void> {
+  if (!["included", "not_included", "not_specified"].includes(value)) {
+    throw new ShopifyInputError("Choose a valid blouse-piece availability.");
+  }
+  const current = existing.find((entry) => entry.key === "blouse_availability")?.value;
+  if (current === value) return;
+
+  await ensureProductAttributeDefinitions();
+  const result = await shopifyAdminRequest<{
+    metafieldsSet: { userErrors: ShopifyUserErrors };
+  }>(ADMIN_METAFIELDS_SET, {
+    metafields: [{
+      ownerId: productId,
+      namespace: "chenetha",
+      key: "blouse_availability",
+      type: "single_line_text_field",
+      value,
+    }],
+  });
+  assertNoUserErrors(result.metafieldsSet.userErrors);
 }
 
 function uniqueCollectionIds(ids: string[]): string[] {
@@ -1802,6 +1841,11 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
       region: input.region ?? "",
       colour: input.colour ?? "",
     }, productAttributeMetafields(initial.product));
+    await saveBlouseAvailability(
+      productId,
+      input.blouseAvailability ?? "not_specified",
+      productAttributeMetafields(initial.product),
+    );
 
     const collectionPlan =
       selectedCollectionIds.length || newCollectionTitle
@@ -1951,6 +1995,14 @@ router.patch(
           region: input.region ?? "",
           colour: input.colour ?? "",
         }, productAttributeMetafields(existing.product));
+      }
+
+      if (input.blouseAvailability !== undefined) {
+        await saveBlouseAvailability(
+          productId,
+          input.blouseAvailability,
+          productAttributeMetafields(existing.product),
+        );
       }
 
       if (input.publishToWebsite === true) {

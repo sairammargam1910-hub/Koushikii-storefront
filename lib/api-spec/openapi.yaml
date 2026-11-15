@@ -1939,7 +1939,10 @@ components:
           type: ["string", "null"]
         colour:
           type: ["string", "null"]
-      required: [fabric, regionalHandloom, craftTechnique, region, colour]
+        blouseAvailability:
+          type: string
+          enum: [included, not_included, not_specified]
+      required: [fabric, regionalHandloom, craftTechnique, region, colour, blouseAvailability]
     ShopifyProduct:
       type: object
       properties:
@@ -2473,6 +2476,9 @@ components:
           type: string
         regionalHandloom:
           type: string
+        blouseAvailability:
+          type: string
+          enum: [included, not_included, not_specified]
         craftTechnique:
           type: string
         region:
@@ -2494,7 +2500,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyAdminProductOption"
-      required: [id, title, handle, description, productType, status, tags, fabric, regionalHandloom, craftTechnique, region, colour, collectionIds, imageUrl, variants, options]
+      required: [id, title, handle, description, productType, status, tags, fabric, regionalHandloom, blouseAvailability, craftTechnique, region, colour, collectionIds, imageUrl, variants, options]
     ShopifyAdminCollection:
       type: object
       properties:
@@ -2645,6 +2651,9 @@ components:
         regionalHandloom:
           type: string
           maxLength: 255
+        blouseAvailability:
+          type: string
+          enum: [included, not_included, not_specified]
         craftTechnique:
           type: string
           maxLength: 255
@@ -2703,6 +2712,9 @@ components:
         regionalHandloom:
           type: string
           maxLength: 255
+        blouseAvailability:
+          type: string
+          enum: [included, not_included, not_specified]
         craftTechnique:
           type: string
           maxLength: 255

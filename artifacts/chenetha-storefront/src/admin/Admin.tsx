@@ -44,6 +44,7 @@ type ProductDraft = {
   title: string;
   description: string;
   productType: string;
+  blouseAvailability: "included" | "not_included" | "not_specified";
   tags: string;
   fabric: string[];
   regionalHandloom: string[];
@@ -60,7 +61,7 @@ type ProductDraft = {
 };
 
 const blankProduct: ProductDraft = {
-  title: "", description: "", productType: "", tags: "", fabric: [],
+  title: "", description: "", productType: "", blouseAvailability: "not_specified", tags: "", fabric: [],
   regionalHandloom: [], craftTechnique: [], region: [], colour: [], collectionIds: [], newCollectionTitle: "", price: "", weightKg: "",
   inventoryQuantity: "1", imageUrl: "", publishToWebsite: true,
 };
@@ -326,6 +327,14 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
         {!allowVariantEdits && <p className="field-note">Edit prices, piece weights, size/color values and stock per location using “Variants &amp; stock” in the product list.</p>}
          <label>Product type<input list="shopify-product-type-options" maxLength={100} value={draft.productType} onChange={(e) => change("productType", e.target.value)} placeholder="Search or add a type…" data-testid="input-product-type"/><datalist id="shopify-product-type-options">{productTypeSuggestions.map((value)=><option key={value} value={value}/>)}</datalist></label>
         <label>Short description<textarea maxLength={10000} rows={3} value={draft.description} onChange={(e) => change("description", e.target.value)} placeholder="What makes this piece special?" data-testid="input-product-description"/></label>
+        <label>Blouse piece availability
+          <select required value={draft.blouseAvailability} onChange={(event) => change("blouseAvailability", event.target.value as ProductDraft["blouseAvailability"])} data-testid="select-blouse-availability">
+            <option value="included">Included</option>
+            <option value="not_included">Not included</option>
+            <option value="not_specified">Not specified</option>
+          </select>
+          <span className="field-note">Choose this for sarees. Shoppers see the blouse-piece detail on the product page.</span>
+        </label>
          <label>Search tags <span className="label-hint">Use “new arrival” for New Arrivals. Tag premium items “premium” (or assign them to the Premium Collection). A premium item’s Shopify collection and Regional Handloom / Tradition categories appear in the green panel.</span><input value={draft.tags} onChange={(e) => change("tags", e.target.value)} placeholder="new arrival, premium, handwoven" data-testid="input-product-tags"/></label>
          <fieldset className="admin-product-attributes">
             <legend>Website categories &amp; filters</legend>
@@ -381,6 +390,7 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
   const [error, setError] = useState("");
   const draft: ProductDraft = detailedProduct ? {
     title: detailedProduct.title, description: detailedProduct.description || "", productType: detailedProduct.productType || "",
+    blouseAvailability: detailedProduct.blouseAvailability || "not_specified",
     tags: detailedProduct.tags.join(", "), fabric: parseClassificationValues(detailedProduct.fabric),
     regionalHandloom: parseClassificationValues(detailedProduct.regionalHandloom),
     craftTechnique: parseClassificationValues(detailedProduct.craftTechnique), region: parseClassificationValues(detailedProduct.region),
@@ -415,6 +425,7 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
     }
     const input = {
       title: values.title.trim(), description: values.description, productType: values.productType.trim(),
+      blouseAvailability: values.blouseAvailability,
       tags: values.tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
       ...attributes,
       collectionIds: values.collectionIds, newCollectionTitle: values.newCollectionTitle.trim(),
@@ -427,7 +438,7 @@ export function ProductForm({ product, onClose, currencyCode }: { product?: Shop
       publishToWebsite: values.publishToWebsite,
     };
     const options = {
-      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminCollectionsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetShopifyProductsQueryKey() }); onClose(); },
+      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductsQueryKey() }); void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminCollectionsQueryKey() }); if (product) void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminProductQueryKey(product.id) }); void queryClient.invalidateQueries({ queryKey: getGetShopifyProductsQueryKey() }); onClose(); },
       onError: (reason: Error) => setError(reason.message || "Please check your details and try again."),
     };
     if (product) update.mutate({ productId: product.id, data: input }, options);

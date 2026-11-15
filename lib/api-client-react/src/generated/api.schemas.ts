@@ -143,6 +143,15 @@ export interface ShopifyProductCollection {
   title: string;
 }
 
+export type ShopifyProductAttributesBlouseAvailability = typeof ShopifyProductAttributesBlouseAvailability[keyof typeof ShopifyProductAttributesBlouseAvailability];
+
+
+export const ShopifyProductAttributesBlouseAvailability = {
+  included: 'included',
+  not_included: 'not_included',
+  not_specified: 'not_specified',
+} as const;
+
 export interface ShopifyProductAttributes {
   /** @nullable */
   fabric: string | null;
@@ -154,6 +163,7 @@ export interface ShopifyProductAttributes {
   region: string | null;
   /** @nullable */
   colour: string | null;
+  blouseAvailability: ShopifyProductAttributesBlouseAvailability;
 }
 
 export interface ShopifyProduct {
@@ -571,6 +581,15 @@ export const ShopifyAdminProductStatus = {
   ARCHIVED: 'ARCHIVED',
 } as const;
 
+export type ShopifyAdminProductBlouseAvailability = typeof ShopifyAdminProductBlouseAvailability[keyof typeof ShopifyAdminProductBlouseAvailability];
+
+
+export const ShopifyAdminProductBlouseAvailability = {
+  included: 'included',
+  not_included: 'not_included',
+  not_specified: 'not_specified',
+} as const;
+
 export interface ShopifyAdminProduct {
   id: string;
   title: string;
@@ -581,6 +600,7 @@ export interface ShopifyAdminProduct {
   tags: string[];
   fabric: string;
   regionalHandloom: string;
+  blouseAvailability: ShopifyAdminProductBlouseAvailability;
   craftTechnique: string;
   region: string;
   colour: string;
@@ -705,6 +725,15 @@ export interface ShopifyAdminImageResponse {
   resourceUrl: string;
 }
 
+export type ShopifyAdminProductInputBlouseAvailability = typeof ShopifyAdminProductInputBlouseAvailability[keyof typeof ShopifyAdminProductInputBlouseAvailability];
+
+
+export const ShopifyAdminProductInputBlouseAvailability = {
+  included: 'included',
+  not_included: 'not_included',
+  not_specified: 'not_specified',
+} as const;
+
 export interface ShopifyAdminProductInput {
   /**
      * @minLength 1
@@ -724,6 +753,7 @@ export interface ShopifyAdminProductInput {
   fabric?: string;
   /** @maxLength 255 */
   regionalHandloom?: string;
+  blouseAvailability?: ShopifyAdminProductInputBlouseAvailability;
   /** @maxLength 255 */
   craftTechnique?: string;
   /** @maxLength 255 */
@@ -748,6 +778,15 @@ export interface ShopifyAdminProductInput {
   publishToWebsite: boolean;
 }
 
+export type ShopifyAdminProductUpdateBlouseAvailability = typeof ShopifyAdminProductUpdateBlouseAvailability[keyof typeof ShopifyAdminProductUpdateBlouseAvailability];
+
+
+export const ShopifyAdminProductUpdateBlouseAvailability = {
+  included: 'included',
+  not_included: 'not_included',
+  not_specified: 'not_specified',
+} as const;
+
 export interface ShopifyAdminProductUpdate {
   /**
      * @minLength 1
@@ -767,6 +806,7 @@ export interface ShopifyAdminProductUpdate {
   fabric?: string;
   /** @maxLength 255 */
   regionalHandloom?: string;
+  blouseAvailability?: ShopifyAdminProductUpdateBlouseAvailability;
   /** @maxLength 255 */
   craftTechnique?: string;
   /** @maxLength 255 */

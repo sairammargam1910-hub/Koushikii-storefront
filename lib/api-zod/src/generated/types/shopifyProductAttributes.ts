@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShopifyProductAttributesBlouseAvailability } from './shopifyProductAttributesBlouseAvailability';
 
 export interface ShopifyProductAttributes {
   /** @nullable */
@@ -17,4 +18,5 @@ export interface ShopifyProductAttributes {
   region: string | null;
   /** @nullable */
   colour: string | null;
+  blouseAvailability: ShopifyProductAttributesBlouseAvailability;
 }

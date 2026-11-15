@@ -1,5 +1,5 @@
 import type { ShopifyProduct } from "@workspace/api-client-react";
-import { normalizeWeave } from "./_shared/catalog-filter";
+import { normalizeWeave } from "./_shared/catalog-filter.ts";
 
 export const REGIONAL_HANDLOOMS = [
   "Mangalagiri Cotton",

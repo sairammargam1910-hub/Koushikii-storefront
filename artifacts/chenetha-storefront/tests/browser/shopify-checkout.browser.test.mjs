@@ -160,8 +160,12 @@ after(async () => {
   }
 });
 
-async function openProduct({ savedCart } = {}) {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+async function openProduct({
+  savedCart,
+  catalog = productResponse,
+  viewport = { width: 1280, height: 900 },
+} = {}) {
+  const context = await browser.newContext({ viewport });
   if (savedCart) {
     await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
   }
@@ -170,12 +174,98 @@ async function openProduct({ savedCart } = {}) {
   await page.route("**/api/shopify/products", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify(productResponse),
+    body: JSON.stringify(catalog),
   }));
   await page.goto(`${origin}${fixtureUrl}?screen=product`);
   await page.getByTestId("button-add-shopify-to-cart").waitFor({ timeout: 5000 });
   return { context, page };
 }
+
+test("shows live blouse details and ranked, purchasable related products", async () => {
+  const current = {
+    ...productResponse.products[0],
+    description: "A Narayanpet cotton saree. A longer second sentence should not appear in the summary.",
+    attributes: {
+      ...productResponse.products[0].attributes,
+      fabric: "Cotton",
+      regionalHandloom: "Narayanpet",
+      craftTechnique: "Ikkat",
+      blouseAvailability: "included",
+    },
+  };
+  const makeRelated = (handle, overrides = {}) => ({
+    ...current,
+    id: `gid://shopify/Product/${handle}`,
+    handle,
+    title: `Related ${handle}`,
+    images: [{ url: `https://images.example/${handle}.jpg`, altText: handle }],
+    ...overrides,
+  });
+  const tradition = makeRelated("narayanpet-related", {
+    attributes: { ...current.attributes, regionalHandloom: "Narayanpet" },
+  });
+  const weave = makeRelated("ikkat-related", {
+    productType: "Dupatta",
+    attributes: { ...current.attributes, regionalHandloom: null, craftTechnique: "Ikkat" },
+  });
+  const fabric = makeRelated("cotton-related", {
+    productType: "Runner",
+    attributes: { ...current.attributes, regionalHandloom: null, craftTechnique: null, fabric: "Cotton" },
+  });
+  const sameType = makeRelated("saree-related", {
+    attributes: { ...current.attributes, regionalHandloom: null, craftTechnique: null, fabric: null },
+  });
+  const unavailable = makeRelated("unavailable-related", {
+    attributes: { ...current.attributes, regionalHandloom: "Narayanpet" },
+    variants: [{ ...current.variants[0], id: "gid://shopify/ProductVariant/unavailable", availableForSale: false }],
+  });
+  const catalog = { products: [current, sameType, fabric, unavailable, weave, tradition] };
+  const { context, page } = await openProduct({ catalog });
+
+  await page.getByTestId("text-blouse-availability").getByText("Blouse Piece Included").waitFor();
+  await page.getByTestId("section-related-products").getByRole("heading", { name: "You May Also Like" }).waitFor();
+  assert.match(await page.getByTestId("text-product-summary").innerText(), /A Narayanpet cotton saree\./);
+  assert.doesNotMatch(await page.getByTestId("text-product-summary").innerText(), /longer second sentence/i);
+  assert.deepEqual(
+    await page.locator(".shopify-related-section .shopify-product-title h3").allTextContents(),
+    ["Related narayanpet-related", "Related ikkat-related", "Related cotton-related", "Related saree-related"],
+  );
+  assert.equal(await page.getByTestId("card-shopify-unavailable-related").count(), 0);
+  assert.match(
+    await page.getByTestId("card-shopify-narayanpet-related").locator("a.shopify-product-title").getAttribute("href"),
+    /Product\?product=narayanpet-related$/,
+  );
+  await context.close();
+
+  const mobile = await openProduct({ catalog, viewport: { width: 390, height: 844 } });
+  await mobile.page.getByTestId("section-related-products").waitFor();
+  assert.equal(await mobile.page.locator(".shopify-related-section .shopify-product-card").count(), 4);
+  const mobileLayout = await mobile.page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  assert.ok(mobileLayout.scrollWidth <= mobileLayout.clientWidth + 1, "product page should fit the mobile viewport");
+  await mobile.context.close();
+});
+
+test("hides blouse details for non-sarees and shows unspecified for an unconfigured saree", async () => {
+  const dupatta = {
+    ...productResponse.products[0],
+    productType: "Dupatta",
+    attributes: { ...productResponse.products[0].attributes, blouseAvailability: "included" },
+  };
+  const nonSaree = await openProduct({ catalog: { products: [dupatta] } });
+  assert.equal(await nonSaree.page.getByTestId("text-blouse-availability").count(), 0);
+  await nonSaree.context.close();
+
+  const saree = {
+    ...productResponse.products[0],
+    attributes: { ...productResponse.products[0].attributes, blouseAvailability: null },
+  };
+  const unspecified = await openProduct({ catalog: { products: [saree] } });
+  await unspecified.page.getByTestId("text-blouse-availability").getByText("Blouse availability not specified.").waitFor();
+  await unspecified.context.close();
+});
 
 async function openCart({
   savedCart,

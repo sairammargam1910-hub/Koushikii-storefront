@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShopifyAdminProductBlouseAvailability } from './shopifyAdminProductBlouseAvailability';
 import type { ShopifyAdminProductOption } from './shopifyAdminProductOption';
 import type { ShopifyAdminProductStatus } from './shopifyAdminProductStatus';
 import type { ShopifyAdminProductVariant } from './shopifyAdminProductVariant';
@@ -19,6 +20,7 @@ export interface ShopifyAdminProduct {
   tags: string[];
   fabric: string;
   regionalHandloom: string;
+  blouseAvailability: ShopifyAdminProductBlouseAvailability;
   craftTechnique: string;
   region: string;
   colour: string;
