@@ -36,7 +36,7 @@ const phrases: Record<string, [string, string]> = {
   "Product details could not be loaded.": ["ఉత్పత్తి వివరాలను లోడ్ చేయలేకపోయాం.", "उत्पाद की जानकारी लोड नहीं हो सकी।"],
   "This product is not available here.": ["ఈ ఉత్పత్తి ప్రస్తుతం అందుబాటులో లేదు.", "यह उत्पाद अभी उपलब्ध नहीं है।"],
   "Product details": ["ఉత్పత్తి వివరాలు", "उत्पाद की जानकारी"],
-  "About this piece": ["ఈ వస్త్రం గురించి", "इस वस्त्र के बारे में"],
+  "About the product": ["ఉత్పత్తి గురించి", "उत्पाद के बारे में"],
   "Blouse piece": ["జాకెట్ ముక్క", "ब्लाउज़ का कपड़ा"],
   "Blouse Piece Included": ["జాకెట్ ముక్క ఉంది", "ब्लाउज़ का कपड़ा शामिल है"],
   "Blouse Piece Not Included": ["జాకెట్ ముక్క లేదు", "ब्लाउज़ का कपड़ा शामिल नहीं है"],

@@ -26,7 +26,8 @@
 .kq .shopify-product-information{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:28px;align-items:start;padding:25px 0 40px;border-top:1px solid var(--line)}
 .kq .splitdetail.shopify-product-detail{padding-bottom:30px}
 .kq .shopify-product-copy{display:grid;gap:20px}
-.kq .shopify-product-summary p{max-width:680px;margin:8px 0 0;color:var(--muted);font-size:15px;line-height:1.8}
+.kq .shopify-product-summary h2{font-size:clamp(24px,2.6vw,32px);line-height:1.1;letter-spacing:-.02em}
+.kq .shopify-product-summary p{max-width:680px;margin:9px 0 0;color:var(--muted);font-size:15px;line-height:1.75}
 .kq .shopify-blouse-availability{display:grid;gap:7px;padding-top:16px;border-top:1px solid var(--line)}
 .kq .shopify-blouse-availability strong{font-size:13px;font-weight:600;color:var(--ink)}
 .kq .shopify-product-information .shopify-product-notice{margin:0}

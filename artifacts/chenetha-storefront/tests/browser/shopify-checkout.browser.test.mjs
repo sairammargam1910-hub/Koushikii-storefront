@@ -222,6 +222,7 @@ test("shows live blouse details and ranked, purchasable related products", async
   const catalog = { products: [current, sameType, fabric, unavailable, weave, tradition] };
   const { context, page } = await openProduct({ catalog });
 
+  await page.locator(".shopify-product-summary").getByRole("heading", { name: "About the product" }).waitFor();
   await page.getByTestId("text-blouse-availability").getByText("Blouse Piece Included").waitFor();
   await page.getByTestId("section-related-products").getByRole("heading", { name: "You May Also Like" }).waitFor();
   assert.match(await page.getByTestId("text-product-summary").innerText(), /A Narayanpet cotton saree\./);

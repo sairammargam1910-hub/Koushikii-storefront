@@ -523,7 +523,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
         <section className="shopify-product-information" aria-label="Product information">
           <div className="shopify-product-copy">
             <div className="shopify-product-summary" data-testid="text-product-summary">
-              <span className="eyebrow">About this piece</span>
+              <h2>About the product</h2>
               <p>{productSummary}</p>
             </div>
             {isSareeProductType(product.productType) && (
