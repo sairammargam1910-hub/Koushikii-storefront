@@ -2,11 +2,12 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProductForm } from "../../src/admin/Admin";
-import type { ShopifyAdminProduct } from "@workspace/api-client-react";
+import type { ShopifyAdminProduct, SiteContentItem } from "@workspace/api-client-react";
 import { ShopifyProductRoute } from "../../src/storefront/ShopifyCatalog";
 import { Cart } from "../../src/storefront/Cart";
 import { Checkout } from "../../src/storefront/Checkout";
 import { ContentEditor } from "../../src/admin/ContentAdmin";
+import { PublishedHero } from "../../src/storefront/Home";
 
 const product: ShopifyAdminProduct = {
   id: "gid://shopify/Product/browser-fixture",
@@ -34,11 +35,59 @@ const product: ShopifyAdminProduct = {
   }],
 };
 
+const heroItem = (orientation: string, focalPointX: number | null = null, focalPointY: number | null = null): SiteContentItem => ({
+  id: "00000000-0000-4000-8000-000000000130",
+  kind: "hero_slide",
+  placement: null,
+  title: "Focal point browser fixture",
+  eyebrow: "A saved hero image",
+  body: "Test copy",
+  imageUrl: `/tests/browser/media/hero-${orientation}.svg`,
+  mediaUrl: null,
+  altText: "Test hero image",
+  focalPointX,
+  focalPointY,
+  ctaLabel: "Explore",
+  ctaUrl: "/Collections",
+  linkedProductId: null,
+  sortOrder: 0,
+  published: true,
+  approved: false,
+  createdAt: "2026-11-17T00:00:00.000Z",
+  updatedAt: "2026-11-17T00:00:00.000Z",
+});
+
+function HeroEditorFixture({ orientation }: { orientation: string }) {
+  const [closed, setClosed] = useState(false);
+  const [item] = useState<SiteContentItem>(() => {
+    try {
+      const saved = window.localStorage.getItem("hero-focal-browser-fixture");
+      if (saved) return JSON.parse(saved) as SiteContentItem;
+    } catch {}
+    return heroItem(orientation);
+  });
+  return <main className="merchant-app">
+    {closed
+      ? <p data-testid="hero-editor-closed">Hero editor closed</p>
+      : <ContentEditor item={item} kind="hero_slide" onClose={() => setClosed(true)}/>}
+  </main>;
+}
+
+function HeroPreviewFixture({ orientation, x, y }: { orientation: string; x: number; y: number }) {
+  return <div className="kq"><PublishedHero slides={[heroItem(orientation, x, y)]}/></div>;
+}
+
 function Fixture() {
   const [closed, setClosed] = useState(false);
   const params = new URLSearchParams(window.location.search);
   const editing = params.get("edit") === "1";
   const screen = params.get("screen");
+  if (screen === "hero-editor") return <HeroEditorFixture orientation={params.get("orientation") || "landscape"}/>;
+  if (screen === "hero-preview") return <HeroPreviewFixture
+    orientation={params.get("orientation") || "landscape"}
+    x={Number(params.get("x") ?? 50)}
+    y={Number(params.get("y") ?? 54)}
+  />;
   if (screen === "home-image-editor") return closed
     ? <p data-testid="home-image-editor-closed">Home image editor closed</p>
     : <main className="merchant-app"><ContentEditor kind="home_image" onClose={() => setClosed(true)}/></main>;
