@@ -261,8 +261,8 @@
 
 @media (max-width: 650px) {
   .kq .home-hero-images {
-    height: min(690px, calc(100svh - 140px));
-    min-height: 530px;
+    height: min(640px, calc(100svh - 180px));
+    min-height: 540px;
   }
 
   .kq .home-hero-image {
@@ -270,8 +270,8 @@
   }
 
   .kq .home-hero-images.has-portrait-image {
-    height: min(740px, calc(100svh - 120px));
-    min-height: 570px;
+    height: min(640px, calc(100svh - 180px));
+    min-height: 540px;
   }
 
   .kq .home-hero-images.has-portrait-image .home-hero-image {
@@ -288,20 +288,20 @@
       linear-gradient(
         90deg,
         var(--paper) 0%,
-        var(--paper) 30%,
-        rgba(247, 241, 230, .98) 43%,
-        rgba(247, 241, 230, .88) 56%,
-        rgba(247, 241, 230, .62) 70%,
-        rgba(247, 241, 230, .28) 84%,
+        var(--paper) 24%,
+        rgba(247, 241, 230, .94) 38%,
+        rgba(247, 241, 230, .82) 52%,
+        rgba(247, 241, 230, .56) 66%,
+        rgba(247, 241, 230, .22) 82%,
         rgba(247, 241, 230, 0) 100%
       ),
-      linear-gradient(0deg, rgba(247, 241, 230, .2), transparent 38%);
+      linear-gradient(0deg, rgba(247, 241, 230, .12), transparent 38%);
   }
 
   .kq .home-hero-content.wrap {
     justify-content: center;
-    gap: 26px;
-    padding-block: 58px 44px;
+    gap: 20px;
+    padding-block: 44px 42px;
   }
 
   .kq .home-hero-copy {

@@ -271,12 +271,40 @@ content_type = "image/png"
 id = "NIc9GF2lvm1b4yTzs0tlu"
 uri = "file://generated-artifacts/hero-gradient/mobile-portrait.png"
 type = "image"
-title = "Hero fade — mobile portrait"
-description = "Mobile preview using the uploaded portrait hero photo."
+title = "Mobile hero — portrait photo"
+description = "Phone layout checked with the portrait saree photo."
 logical_id = "ba95be2a-86b8-41c4-bb9e-40cf24a997db"
-content_hash = "sha256:888de305901a154ecad93788909ef858fc48699beafc5e23b93361be6986bdb0"
-size = 300370
-mtime_ms = 1794916805938
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/ba95be2a-86b8-41c4-bb9e-40cf24a997db/e6645111-e57c-4739-a9c3-e15db80a6a02"
-storage_version_token = "1794916901133103"
+content_hash = "sha256:397e7c51ffcf75ac579987dc2b245629fa0d9d2257edcb25742aaa0d04b0ca72"
+size = 298782
+mtime_ms = 1794917144414
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/ba95be2a-86b8-41c4-bb9e-40cf24a997db/75ec3769-0dc9-47fc-9d90-3bf88574acbb"
+storage_version_token = "1794917180036000"
+content_type = "image/png"
+
+[[outputs]]
+id = "Yg-Qvdi-Q_yYVZ9Q1-tTl"
+uri = "file://generated-artifacts/hero-gradient/mobile-courtyard.png"
+type = "image"
+title = "Mobile hero — bright courtyard"
+description = "Refined phone layout with the courtyard slide and a lighter gradient."
+logical_id = "a7159f18-244e-4782-8404-8d3c23ac8eda"
+content_hash = "sha256:cddaf24c8f5a102569b3c3b3012ba9b7ff7e9538b593d80be920582eb025feaa"
+size = 323124
+mtime_ms = 1794917140501
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/a7159f18-244e-4782-8404-8d3c23ac8eda/1e21c03f-a8a5-4679-a0f8-85b95ec19d7b"
+storage_version_token = "1794917177482596"
+content_type = "image/png"
+
+[[outputs]]
+id = "9Hvkhi--0WF89kOB4D6XU"
+uri = "file://generated-artifacts/hero-gradient/mobile-weaving.png"
+type = "image"
+title = "Mobile hero — darker weaving image"
+description = "Phone layout checked with the darker weaving-room slide."
+logical_id = "b143eca1-0b08-45fd-b1b3-63cabea777e5"
+content_hash = "sha256:1217e45b5d91c087b9f13f4721e794262af887eae208f8d35e6c5ff15aadd91f"
+size = 295178
+mtime_ms = 1794917141909
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b143eca1-0b08-45fd-b1b3-63cabea777e5/1708be7c-e286-4f51-9938-5b3b994aded7"
+storage_version_token = "1794917178754692"
 content_type = "image/png"
