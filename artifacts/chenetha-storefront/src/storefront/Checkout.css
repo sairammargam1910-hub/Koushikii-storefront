@@ -188,41 +188,6 @@
   color: #3d684b;
 }
 
-.kq .checkout-delivery-choice {
-  display: grid;
-  gap: 7px;
-  padding: 11px 0;
-  border-top: 1px solid #e7ded2;
-}
-
-.kq .checkout-delivery-choice label {
-  color: #61564d;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.kq .checkout-delivery-choice select {
-  width: 100%;
-  min-height: 42px;
-  padding: 9px 11px;
-  border: 1px solid #d8c9b5;
-  border-radius: 3px;
-  background: #fffdf8;
-  color: #34231f;
-  font: inherit;
-}
-
-.kq .checkout-delivery-choice select:focus-visible {
-  outline: 2px solid #a94740;
-  outline-offset: 2px;
-}
-
-.kq .checkout-delivery-choice small {
-  color: #796d61;
-  font-size: 10px;
-  line-height: 1.5;
-}
-
 .kq .checkout-grand-total {
   margin-top: 2px;
   border-top: 1px solid #bfae9a;

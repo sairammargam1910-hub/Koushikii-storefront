@@ -1621,7 +1621,6 @@ test("locks cart controls while a server update is pending", async () => {
 
 test("shows discounted final item prices plus the address-based carrier quote", async () => {
   const savedCart = { id: "gid://shopify/Cart/discounted-quote-cart", totalQuantity: 1 };
-  const selectedOptions = [];
   const { context, page } = await openCheckout({
     savedCart,
     onCartRequest: (route) => route.fulfill({
@@ -1657,32 +1656,6 @@ test("shows discounted final item prices plus the address-based carrier quote", 
         excludedCharges: [],
       }),
     }),
-    onShippingOptionRequest: async (route) => {
-      const body = route.request().postDataJSON();
-      selectedOptions.push(body);
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          quoteId: "discounted-quote",
-          expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
-          destinationCountryCode: "IN",
-          currencyCode: "INR",
-          itemSubtotal: "1250.00",
-          discountAmount: "125.00",
-          shippingAmount: "150.00",
-          taxAmount: "0.00",
-          totalAmount: "1275.00",
-          parcelCount: 1,
-          deliveryOptions: [
-            { id: "10", amount: "100.00", currencyCode: "INR" },
-            { id: "20", amount: "150.00", currencyCode: "INR" },
-          ],
-          selectedDeliveryOptionId: "20",
-          excludedCharges: [],
-        }),
-      });
-    },
   });
 
   assert.equal(await page.getByTestId("text-checkout-total").count(), 0);
@@ -1701,15 +1674,13 @@ test("shows discounted final item prices plus the address-based carrier quote", 
   assert.match(await page.getByTestId("text-checkout-discount").innerText(), /125/);
   assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /100/);
   assert.equal(await page.getByTestId("text-checkout-tax").count(), 0);
-  await page.getByTestId("select-checkout-delivery-option").selectOption("20");
-  await page.getByTestId("text-checkout-total").getByText(/1,275/).waitFor();
-  assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /150/);
-  assert.deepEqual(selectedOptions, [{ quoteId: "discounted-quote", deliveryOptionId: "20" }]);
+  assert.equal(await page.getByTestId("select-checkout-delivery-option").count(), 0);
+  assert.match(await page.getByText(/Delivery quote · 1 parcel/).innerText(), /Delivery quote/);
   await assertNoProviderBrandInPublicCopy(page);
   await context.close();
 });
 
-test("delivery choice and order totals fit the mobile checkout viewport", async () => {
+test("single delivery quote and order totals fit the mobile checkout viewport", async () => {
   const savedCart = { id: "gid://shopify/Cart/mobile-delivery-options", totalQuantity: 1 };
   const quoteResponse = {
     quoteId: "mobile-quote",
@@ -1742,16 +1713,6 @@ test("delivery choice and order totals fit the mobile checkout viewport", async 
       contentType: "application/json",
       body: JSON.stringify(quoteResponse),
     }),
-    onShippingOptionRequest: (route) => route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        ...quoteResponse,
-        shippingAmount: "150.00",
-        totalAmount: "1400.00",
-        selectedDeliveryOptionId: "20",
-      }),
-    }),
   });
 
   await page.getByTestId("input-checkout-email").fill("buyer@example.com");
@@ -1761,8 +1722,8 @@ test("delivery choice and order totals fit the mobile checkout viewport", async 
   await page.getByTestId("input-checkout-city").fill("Chennai");
   await page.getByTestId("input-checkout-postal").fill("600001");
   await page.getByTestId("button-submit-checkout-details").click();
-  await page.getByTestId("select-checkout-delivery-option").selectOption("20");
-  await page.getByTestId("text-checkout-total").getByText(/1,400/).waitFor();
+  await page.getByTestId("text-checkout-total").getByText(/1,350/).waitFor();
+  assert.equal(await page.getByTestId("select-checkout-delivery-option").count(), 0);
   const bounds = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     clientWidth: document.documentElement.clientWidth,

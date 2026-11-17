@@ -54,3 +54,14 @@ not permission to remove Surface-only tags or dangerous-goods classifications.
 **How to apply:** Reconcile an already-existing clone without creating another
 provider order or assigning another AWB. Do not generalize a replacement
 courier's eligibility to future shipments.
+
+At checkout, present one delivery quote using the lowest currently serviceable
+Shiprocket rate; do not ask shoppers to choose among couriers.
+
+**Why:** The user chose an automatic lowest-rate policy after the documented
+serviceability response provided rates but no verified Shiprocket recommendation
+field.
+
+**How to apply:** Keep the server-selected courier and rate tied to the quote
+through payment and later shipment processing; never label the lowest rate as
+Shiprocket's recommendation.

@@ -533,7 +533,7 @@ test("legacy quotes cannot be claimed with another account's email", async () =>
   });
 });
 
-test("shipping quotes stay unbooked and selected delivery rates update the verified total", async () => {
+test("shipping quotes stay unbooked and lock checkout to the lowest courier rate", async () => {
   await harness(async ({ state, postQuote, postShippingOption, postSession }) => {
     state.order.quoteHash = "old-hash";
     const result = await postQuote({
@@ -558,10 +558,10 @@ test("shipping quotes stay unbooked and selected delivery rates update the verif
     assert.equal(result.body.parcelCount, 1);
     assert.deepEqual(result.body.deliveryOptions, [
       { id: "10", amount: "20.00", currencyCode: "INR" },
-      { id: "20", amount: "35.00", currencyCode: "INR" },
     ]);
     assert.equal(result.body.selectedDeliveryOptionId, "10");
     assert.equal(state.shipments.length, 1);
+    assert.equal(state.shipments.at(-1).courierId, "10");
     assert.equal(state.quoteInputs[0].mode, undefined);
     assert.equal(state.carrierCreateCalls.length, 0);
     assert.equal(state.awbCalls, 0);
@@ -569,23 +569,22 @@ test("shipping quotes stay unbooked and selected delivery rates update the verif
     assert.ok(createdQuote.quoteExpiresAt.getTime() - Date.now() > 29 * 60_000);
     assert.equal(state.shipments.at(-1).shiprocketOrderId, undefined);
     assert.equal(state.shipments.at(-1).shiprocketShipmentId, undefined);
-    const selected = await postShippingOption({
+    const alternate = await postShippingOption({
       quoteId: result.body.quoteId,
       deliveryOptionId: "20",
     });
-    assert.equal(selected.status, 200);
-    assert.equal(selected.body.shippingAmount, "35.00");
-    assert.equal(selected.body.totalAmount, "135.00");
-    assert.equal(selected.body.selectedDeliveryOptionId, "20");
-    assert.equal(state.shipments.at(-1).courierId, "20");
-    assert.equal(state.rateCalls, 1, "choosing a listed option must not request another rate");
+    assert.equal(alternate.status, 409);
+    assert.match(alternate.body.error, /one delivery quote/i);
+    assert.equal(state.orders.find((order) => order.id === result.body.quoteId).shippingAmount, "20.00");
+    assert.equal(state.shipments.at(-1).courierId, "10");
     const session = await postSession(
       { quoteId: result.body.quoteId },
       { Origin: "https://preview.replit.dev" },
     );
     assert.equal(session.status, 200);
-    assert.equal(session.body.amount, "135.00");
-    assert.equal(state.cashfreeCreateInput.amount, "135.00");
+    assert.equal(session.body.amount, "120.00");
+    assert.equal(state.cashfreeCreateInput.amount, "120.00");
+    assert.equal(state.rateCalls, 1);
   });
 });
 

@@ -258,14 +258,14 @@ function cashfreeReturnUrl(orderId: string, req: Request): string {
 
 function responseForQuote(row: CheckoutOrderRow) {
   const snapshot = snapshotFromRow(row);
-  const deliveryOptions = (snapshot.shippingOptions?.length
-    ? snapshot.shippingOptions
-    : snapshot.providerPackages.slice(0, 1))
-    .map(({ courierId, amount, currencyCode }) => ({
-      id: courierId,
-      amount,
-      currencyCode,
-    }));
+  const selectedPackage = snapshot.providerPackages[0];
+  const deliveryOptions = selectedPackage
+    ? [{
+        id: selectedPackage.courierId,
+        amount: row.shippingAmount,
+        currencyCode: row.currencyCode,
+      }]
+    : [];
   return CreateShopifyCheckoutQuoteResponse.parse({
     quoteId: row.id,
     expiresAt: row.quoteExpiresAt.toISOString(),
@@ -278,7 +278,7 @@ function responseForQuote(row: CheckoutOrderRow) {
     totalAmount: row.totalAmount,
     parcelCount: snapshot.parcelCount,
     deliveryOptions,
-    selectedDeliveryOptionId: snapshot.providerPackages[0]?.courierId ?? "",
+    selectedDeliveryOptionId: selectedPackage?.courierId ?? "",
     excludedCharges: snapshot.address.countryCode.toUpperCase() === "IN"
       ? []
       : [
@@ -1162,73 +1162,14 @@ router.post("/shopify/checkout/shipping-option", async (req, res): Promise<void>
   }
 
   const snapshot = snapshotFromRow(row);
-  const options = snapshot.shippingOptions?.length
-    ? snapshot.shippingOptions
-    : snapshot.providerPackages.slice(0, 1);
-  const selectedOption = options.find((option) =>
-    option.courierId === parsed.data.deliveryOptionId
-  );
-  if (!selectedOption || selectedOption.currencyCode !== row.currencyCode) {
-    res.status(400).json({ error: "That delivery option is no longer available. Choose another option or request a fresh quote." });
+  const selectedPackage = snapshot.providerPackages[0];
+  if (!selectedPackage || selectedPackage.courierId !== parsed.data.deliveryOptionId) {
+    res.status(409).json({
+      error: "This checkout uses one delivery quote. Request a fresh quote to recalculate the delivery charge.",
+    });
     return;
   }
-
-  const providerPackages = snapshot.providerPackages.map((item, index) =>
-    index === 0 ? selectedOption : item
-  );
-  const shippingAmount = addMoney(providerPackages.map(({ amount }) => amount));
-  const totalAmount = addMoney([
-    getCheckoutItemTotal(snapshot.cart),
-    shippingAmount,
-  ]);
-  const courierName = [...new Set(providerPackages.map(({ courierName }) => courierName))].join(", ");
-  const updatedSnapshot: CheckoutSnapshot = {
-    ...snapshot,
-    providerPackages,
-    courierName,
-  };
-  const now = new Date();
-  const updated = await db.transaction(async (tx) => {
-    const [updatedRow] = await tx.update(cashfreeCheckoutOrdersTable)
-      .set({
-        shippingAmount,
-        totalAmount,
-        checkoutSnapshot: updatedSnapshot,
-        updatedAt: now,
-      })
-      .where(and(
-        eq(cashfreeCheckoutOrdersTable.id, row.id),
-        eq(cashfreeCheckoutOrdersTable.status, "quote_ready"),
-        gt(cashfreeCheckoutOrdersTable.quoteExpiresAt, now),
-      ))
-      .returning();
-    if (!updatedRow) return null;
-
-    for (const [packageIndex, item] of providerPackages.entries()) {
-      const packageUpdates = await tx.update(checkoutShipmentPackagesTable)
-        .set({
-          courierId: item.courierId,
-          courierName: item.courierName,
-          quotedAmount: item.amount,
-          updatedAt: now,
-        })
-        .where(and(
-          eq(checkoutShipmentPackagesTable.checkoutOrderId, row.id),
-          eq(checkoutShipmentPackagesTable.packageIndex, packageIndex),
-          eq(checkoutShipmentPackagesTable.status, "quoted"),
-        ))
-        .returning();
-      if (packageUpdates.length !== 1) {
-        throw new Error("The quoted delivery option could not be saved for every parcel.");
-      }
-    }
-    return updatedRow;
-  });
-  if (!updated) {
-    res.status(409).json({ error: "This delivery quote is no longer available. Request a fresh quote." });
-    return;
-  }
-  res.json(responseForQuote(updated));
+  res.json(responseForQuote(row));
 });
 
 router.post("/shopify/checkout/payment-session", async (req, res): Promise<void> => {
