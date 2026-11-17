@@ -1,0 +1,25 @@
+.kq.reference-hero-photo-wash {
+  min-height: 0;
+  background: var(--paper);
+}
+
+.kq.reference-hero-photo-wash .home-hero-images.has-portrait-image .home-hero-shade {
+  background: linear-gradient(
+    90deg,
+    rgba(247, 241, 230, .99) 0%,
+    rgba(247, 241, 230, .99) 37%,
+    rgba(247, 241, 230, .88) 44%,
+    rgba(247, 241, 230, .66) 51%,
+    rgba(247, 241, 230, .38) 59%,
+    rgba(247, 241, 230, .14) 67%,
+    rgba(247, 241, 230, 0) 76%
+  );
+}
+
+@media (max-width: 650px) {
+  .kq.reference-hero-photo-wash .home-hero-images.has-portrait-image .home-hero-shade {
+    background:
+      linear-gradient(90deg, rgba(247, 241, 230, .94) 0%, rgba(247, 241, 230, .78) 40%, rgba(247, 241, 230, .36) 72%, rgba(247, 241, 230, .1) 100%),
+      linear-gradient(0deg, rgba(247, 241, 230, .16), transparent 42%);
+  }
+}
