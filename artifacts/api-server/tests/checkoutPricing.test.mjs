@@ -114,6 +114,39 @@ test("per-item parcel values preserve the exact discounted line total", () => {
   assert.throws(() => divideMoney("10.00", 3), /represented exactly/);
 });
 
+test("order-level coupons reduce all totals while keeping allocated line amounts exact", () => {
+  const { getCartDiscountAmount, getCheckoutItemTotal, getCheckoutLineTotals } = loadModule();
+  const discounted = {
+    ...cart,
+    discountAllocations: [{
+      discountedAmount: { amount: "200.00", currencyCode: "INR" },
+      targetType: "LINE_ITEM",
+    }],
+    lines: { nodes: [{
+      ...cart.lines.nodes[0],
+      cost: {
+        subtotalAmount: { amount: "2000.00", currencyCode: "INR" },
+        totalAmount: { amount: "2000.00", currencyCode: "INR" },
+      },
+    }] },
+  };
+  assert.equal(getCartDiscountAmount(discounted), "200.00");
+  assert.equal(getCheckoutItemTotal(discounted), "1800.00");
+  assert.deepEqual(getCheckoutLineTotals(discounted), ["1800.00"]);
+
+  discounted.discountAllocations[0].discountedAmount.amount = "0.01";
+  discounted.lines.nodes = Array.from({ length: 3 }, (_, i) => ({
+    ...discounted.lines.nodes[0],
+    id: `line-${i}`,
+    cost: {
+      subtotalAmount: { amount: "10.00", currencyCode: "INR" },
+      totalAmount: { amount: "10.00", currencyCode: "INR" },
+    },
+  }));
+  assert.deepEqual(getCheckoutLineTotals(discounted), ["9.99", "10.00", "10.00"]);
+  assert.equal(getCheckoutItemTotal(discounted), "29.99");
+});
+
 test("variant weights normalize to kilograms and multiply by quantity", () => {
   const { getCartWeightKg, weightToKilograms } = loadModule();
   assert.equal(weightToKilograms(750, "GRAMS"), 0.75);

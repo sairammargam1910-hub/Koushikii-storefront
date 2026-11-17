@@ -471,6 +471,10 @@ test("bag totals include merchandise and discounts only, never an unrequested sh
         totalAmount: { amount: "2000.00", currencyCode: "INR" },
       },
       discountCodes: [{ code: "NEW26", applicable: true }],
+      discountAllocations: [{
+        discountedAmount: { amount: "200.00", currencyCode: "INR" },
+        targetType: "LINE_ITEM",
+      }],
       lines: {
         nodes: [{
           id: "gid://shopify/CartLine/line-123",
@@ -479,10 +483,7 @@ test("bag totals include merchandise and discounts only, never an unrequested sh
             subtotalAmount: { amount: "2000.00", currencyCode: "INR" },
             totalAmount: { amount: "2000.00", currencyCode: "INR" },
           },
-          discountAllocations: [{
-            discountedAmount: { amount: "200.00", currencyCode: "INR" },
-            targetType: "LINE_ITEM",
-          }],
+          discountAllocations: [],
           merchandise: cart().lines.nodes[0].merchandise,
         }],
       },

@@ -259,6 +259,26 @@ test("syncs final item prices when Shopify omits its cart tax total", async () =
   assert.equal(state.createdOrderInput.taxLines, undefined);
 });
 
+test("paid order creation and reconciliation preserve an order-level coupon", async () => {
+  const state = fixtureState();
+  const input = orderInput();
+  // Shopify keeps the 10% order discount separate from the unchanged line cost.
+  input.snapshot.cart.lines.nodes[0].cost.subtotalAmount.amount = "111.10";
+  input.snapshot.cart.lines.nodes[0].cost.totalAmount.amount = "111.10";
+  input.snapshot.cart.discountAllocations = [{
+    discountedAmount: { amount: "11.10", currencyCode: "INR" },
+    targetType: "LINE_ITEM",
+  }];
+  const { createOrFindShopifyPaidOrder } = loadModule(state);
+  const result = await createOrFindShopifyPaidOrder(input);
+  assert.equal(result.name, "#1001");
+  assert.deepEqual(
+    state.createdOrderInput.lineItems.map((line) => line.priceSet.shopMoney.amount),
+    ["50.00", "50.00"],
+  );
+  assert.equal(state.createdOrderInput.transactions[0].amountSet.shopMoney.amount, "120.00");
+});
+
 test("rejects sandbox orders when Shopify did not retain the quoted payment details", async () => {
   const mismatches = [
     ["amount", (transaction) => {

@@ -157,6 +157,7 @@ const compiled = await build({
              cart.lines.nodes.reduce((sum, line) => sum + Number(line.cost.subtotalAmount.amount), 0).toFixed(2)
            );
           export const getCheckoutItemTotal = (cart) => cart.lines.nodes.reduce((sum, line) => sum + Number(line.cost.totalAmount.amount), 0).toFixed(2);
+          export const getCheckoutLineTotals = (cart) => cart.lines.nodes.map((line) => line.cost.totalAmount.amount);
           export const minimalCartSnapshot = (cart) => cart;
           export const splitMoney = (amount, count) => Array(count).fill((Number(amount) / count).toFixed(2));
           export const weightToKilograms = (weight, unit) => {

@@ -95,6 +95,10 @@ export type ShopifyCartNode = {
     totalTaxAmount?: ShopifyMoney | null;
   };
   discountCodes: Array<{ code: string; applicable: boolean }>;
+  discountAllocations?: Array<{
+    discountedAmount: ShopifyMoney;
+    targetType: "LINE_ITEM" | "SHIPPING_LINE";
+  }>;
   lines: {
     nodes: Array<{
       id: string;
@@ -206,6 +210,10 @@ const CART_FIELDS = `#graphql
     totalTaxAmount { amount currencyCode }
   }
   discountCodes { code applicable }
+  discountAllocations {
+    discountedAmount { amount currencyCode }
+    targetType
+  }
   lines(first: 50) {
     nodes {
       id

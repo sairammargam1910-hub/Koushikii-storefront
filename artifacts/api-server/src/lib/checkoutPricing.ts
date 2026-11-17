@@ -85,48 +85,65 @@ export function getCartWeightKg(cart: ShopifyCartNode): number | null {
   return totalGrams > 0 ? totalGrams / 1000 : null;
 }
 
-export function getCartDiscountAmount(cart: ShopifyCartNode): string {
-  const hasAllocations = cart.lines.nodes.some(
-    (line) => (line.discountAllocations?.length ?? 0) > 0,
-  );
-  if (hasAllocations) {
-    return addMoney(
-      cart.lines.nodes.flatMap((line) =>
-        (line.discountAllocations ?? [])
-          .filter((allocation) => allocation.targetType === "LINE_ITEM")
-          .map((allocation) => allocation.discountedAmount.amount),
-      ),
-    );
-  }
-
-  const pairs = cart.lines.nodes.map((line) => [
+// Product discounts live on lines; order-wide discounts live on the cart.
+// Allocate the latter across paid lines so shipping values and order creation
+// match the exact discounted total, including the final paisa.
+export function getCheckoutLineTotals(cart: ShopifyCartNode): string[] {
+  const amounts = cart.lines.nodes.flatMap((line) => [
     line.cost.subtotalAmount.amount,
     line.cost.totalAmount.amount,
+    ...(line.discountAllocations ?? []).map((item) => item.discountedAmount.amount),
   ]);
+  amounts.push(...(cart.discountAllocations ?? []).map((item) => item.discountedAmount.amount));
   const scale = Math.max(
     2,
-    ...pairs.flatMap((pair) => pair.map((amount) => amount.split(".")[1]?.length ?? 0)),
+    ...amounts.map((amount) => amount.split(".")[1]?.length ?? 0),
   );
-  const discount = pairs.reduce((total, [subtotal, discounted]) => {
-    const difference = toMinorUnits(subtotal, scale) - toMinorUnits(discounted, scale);
-    return total + (difference > 0n ? difference : 0n);
-  }, 0n);
-  return fromMinorUnits(discount, scale);
+  const totals = cart.lines.nodes.map((line) => {
+    const allocations = line.discountAllocations ?? [];
+    const subtotal = toMinorUnits(line.cost.subtotalAmount.amount, scale);
+    const total = allocations.length
+      ? subtotal - allocations
+        .filter((item) => item.targetType === "LINE_ITEM")
+        .reduce((sum, item) => sum + toMinorUnits(item.discountedAmount.amount, scale), 0n)
+      : toMinorUnits(line.cost.totalAmount.amount, scale);
+    if (total < 0n || total > subtotal) throw new Error("Shopify returned inconsistent line discounts.");
+    return total;
+  });
+  const orderDiscount = (cart.discountAllocations ?? [])
+    .filter((item) => item.targetType === "LINE_ITEM")
+    .reduce((sum, item) => sum + toMinorUnits(item.discountedAmount.amount, scale), 0n);
+  const sum = totals.reduce((total, amount) => total + amount, 0n);
+  if (orderDiscount < 0n || orderDiscount > sum) {
+    throw new Error("Shopify returned inconsistent order discounts.");
+  }
+  if (orderDiscount === 0n) return totals.map((total) => fromMinorUnits(total, scale));
+  const shares = totals.map((total, index) => ({
+    index,
+    amount: orderDiscount * total / sum,
+    remainder: orderDiscount * total % sum,
+  }));
+  let remaining = orderDiscount - shares.reduce((total, share) => total + share.amount, 0n);
+  const ranked = [...shares].sort((a, b) =>
+    a.remainder === b.remainder ? a.index - b.index : a.remainder > b.remainder ? -1 : 1,
+  );
+  for (const share of ranked) {
+    if (remaining === 0n) break;
+    share.amount += 1n;
+    remaining -= 1n;
+  }
+  return totals.map((total, index) => fromMinorUnits(total - shares[index].amount, scale));
+}
+
+export function getCartDiscountAmount(cart: ShopifyCartNode): string {
+  const subtotal = getCheckoutItemSubtotal(cart);
+  const total = getCheckoutItemTotal(cart);
+  const scale = Math.max(2, subtotal.split(".")[1]?.length ?? 0, total.split(".")[1]?.length ?? 0);
+  return fromMinorUnits(toMinorUnits(subtotal, scale) - toMinorUnits(total, scale), scale);
 }
 
 export function getCheckoutItemTotal(cart: ShopifyCartNode): string {
-  const subtotal = addMoney(
-    cart.lines.nodes.map((line) => line.cost.subtotalAmount.amount),
-  );
-  const discount = getCartDiscountAmount(cart);
-  const scale = Math.max(
-    2,
-    subtotal.split(".")[1]?.length ?? 0,
-    discount.split(".")[1]?.length ?? 0,
-  );
-  const totalMinorUnits =
-    toMinorUnits(subtotal, scale) - toMinorUnits(discount, scale);
-  return fromMinorUnits(totalMinorUnits > 0n ? totalMinorUnits : 0n, scale);
+  return addMoney(getCheckoutLineTotals(cart));
 }
 
 export function getCheckoutItemSubtotal(cart: ShopifyCartNode): string {

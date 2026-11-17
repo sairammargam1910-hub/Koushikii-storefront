@@ -3,7 +3,7 @@ import {
   shopifyAdminRequest,
   ShopifyAdminError,
 } from "./shopifyAdminClient";
-import { getCheckoutItemTotal, splitMoney } from "./checkoutPricing";
+import { getCheckoutItemTotal, getCheckoutLineTotals, splitMoney } from "./checkoutPricing";
 import { getCashfreeEnvironment } from "./cashfreeClient";
 import type { ShopifyCartNode } from "../routes/shopify";
 
@@ -190,11 +190,12 @@ async function verifySandboxOrderPayment(input: {
   const expectedAmount = inMinorUnits(input.amount);
   const expectedShippingAmount = inMinorUnits(input.shippingAmount);
   const expectedItems = new Map<string, number>();
-  for (const line of input.cart.lines.nodes) {
+  const lineTotals = getCheckoutLineTotals(input.cart);
+  for (const [index, line] of input.cart.lines.nodes.entries()) {
     if (!line.merchandise) {
       throw new ShopifyCheckoutSyncError("The paid Shopify cart is missing a product variant.");
     }
-    for (const price of splitMoney(line.cost.totalAmount.amount, line.quantity)) {
+    for (const price of splitMoney(lineTotals[index], line.quantity)) {
       const minorUnits = inMinorUnits(price);
       if (minorUnits === null) {
         throw new ShopifyCheckoutSyncError("The paid Shopify cart contains an invalid item price.");
@@ -343,12 +344,13 @@ export async function createOrFindShopifyPaidOrder(input: {
     return found;
   }
   const { firstName, lastName } = splitName(input.snapshot.address.recipient);
-  const lineItems = cart.lines.nodes.flatMap((line) => {
+  const lineTotals = getCheckoutLineTotals(cart);
+  const lineItems = cart.lines.nodes.flatMap((line, index) => {
     const merchandise = line.merchandise;
     if (!merchandise || !merchandise.availableForSale) {
       throw new ShopifyCheckoutSyncError("A paid Shopify cart item is no longer available for order sync.");
     }
-    return splitMoney(line.cost.totalAmount.amount, line.quantity).map((unitPrice) => ({
+    return splitMoney(lineTotals[index], line.quantity).map((unitPrice) => ({
       variantId: merchandise.id,
       title: `${merchandise.product.title} · ${merchandise.title}`,
       sku: merchandise.sku || merchandise.id.split("/").at(-1),

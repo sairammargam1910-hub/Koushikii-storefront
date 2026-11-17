@@ -14,3 +14,4 @@
 - [Neon migration preparation](neon-migration-preparation.md) — prepared migrations reject dollar-quoted DO blocks; test equivalent plain SQL on the temporary branch first.
 - [Shopify classification storage](shopify-classification-storage.md) — preserve scalar metafields; store multiple classification values as JSON without changing Shopify definitions.
 - [Git push verification](git-push-verification.md) — an internal mirror push can succeed remotely before a local tracking-ref safety error; verify before retrying.
+- [Shopify discount totals](shopify-discount-totals.md) — order-level coupons can leave line costs unchanged; include cart allocations and keep paid-line totals consistent.

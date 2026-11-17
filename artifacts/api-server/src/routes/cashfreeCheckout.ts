@@ -33,6 +33,7 @@ import {
   getCartDiscountAmount,
   getCheckoutItemSubtotal,
   getCheckoutItemTotal,
+  getCheckoutLineTotals,
   getCartWeightKg,
   minimalCartSnapshot,
   splitMoney,
@@ -836,7 +837,8 @@ function buildProviderPackageInputs(input: {
   const prefix = `cfq_${input.quoteId.replace(/-/g, "")}`;
   const orderItems: NonNullable<ShiprocketPackageInput["orderItems"]> = [];
   let surfaceOnly = false;
-  for (const line of input.cart.lines.nodes) {
+  const lineTotals = getCheckoutLineTotals(input.cart);
+  for (const [index, line] of input.cart.lines.nodes.entries()) {
     const merchandise = line.merchandise!;
     const unitWeightKg = weightToKilograms(merchandise.weight, merchandise.weightUnit);
     if (unitWeightKg === null) {
@@ -846,7 +848,7 @@ function buildProviderPackageInputs(input: {
       );
     }
     surfaceOnly ||= getShiprocketModeForProductTags(merchandise.product.tags) === "Surface";
-    const unitPrices = splitMoney(line.cost.totalAmount.amount, line.quantity);
+    const unitPrices = splitMoney(lineTotals[index], line.quantity);
     const name = `${merchandise.product.title} - ${merchandise.title}`;
     const sku = merchandise.sku || merchandise.id.split("/").at(-1) || merchandise.id;
     const groupedPrices = new Map<string, number>();
@@ -908,10 +910,11 @@ function buildLegacyProviderPackageInputs(input: {
   const parcel = getConfiguredParcel();
   const prefix = `cfq_${input.quoteId.replace(/-/g, "")}`;
   let packageIndex = 0;
-  return input.cart.lines.nodes.flatMap((line) => {
+  const lineTotals = getCheckoutLineTotals(input.cart);
+  return input.cart.lines.nodes.flatMap((line, index) => {
     const merchandise = line.merchandise!;
     const mode = getShiprocketModeForProductTags(merchandise.product.tags);
-    const unitPrices = splitMoney(line.cost.totalAmount.amount, line.quantity);
+    const unitPrices = splitMoney(lineTotals[index], line.quantity);
     return unitPrices.map((sellingPrice) => ({
       orderId: `${prefix}_p${packageIndex}`,
       packageIndex: packageIndex++,
