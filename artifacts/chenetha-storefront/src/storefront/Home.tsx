@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, base } from "./_shared";
 import { getAvailableShopifyCollections, getPremiumCollections, getShopifyAttribute, isNewArrival, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
-import { getCustomerNavigationValues, getFabricCategoryOptions, getShopifyAttributeValues, getShopifyRegionalHandloomCategories } from "./shopifyCatalogData";
+import { getCustomerNavigationValues, getFabricCategoryOptions, getMegaMenuWeaveOptions, getShopifyAttributeValues, getShopifyRegionalHandloomCategories } from "./shopifyCatalogData";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import { useGetSiteContent, getGetSiteContentQueryKey, type SiteContentItem } from "@workspace/api-client-react";
 import type { ShopifyProduct } from "@workspace/api-client-react";
@@ -391,7 +391,7 @@ export function Home(){
   });
    const regionalHandlooms=getShopifyRegionalHandloomCategories(storefrontProducts);
    const homeCollectionLinks=regionalHandlooms.map(name=>({key:`regional:${name}`,title:name}));
-   const weavePrints=getCustomerNavigationValues(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"weave")));
+    const weavePrints=getMegaMenuWeaveOptions(storefrontProducts);
  const voices=published.filter(item=>item.kind==="customer_voice"&&item.published&&item.approved&&Boolean(item.body?.trim())).sort((a,b)=>a.sortOrder-b.sortOrder);
  return <Shell>
   <HomeHeroCarousel/>

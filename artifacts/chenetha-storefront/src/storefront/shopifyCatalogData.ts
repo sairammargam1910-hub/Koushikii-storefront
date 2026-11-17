@@ -26,7 +26,6 @@ export const WEAVE_PRINTS = [
 ];
 
 const STANDARD_FABRIC_CATEGORIES = ["Cotton", "Silk", "Cotton-Silk"] as const;
-const MEGA_MENU_WEAVES = ["Ajrakh", "Bagru", "Bandhani", "Ikkat", "Jamdani"] as const;
 const STANDARD_FABRIC_KEYS = new Set(STANDARD_FABRIC_CATEGORIES.map(normalizedTag));
 
 export const cottonWeaves = REGIONAL_HANDLOOMS;
@@ -158,11 +157,7 @@ export function getRegionalHandloomOptionsForFabric(products: ShopifyProduct[], 
 }
 
 export function getMegaMenuWeaveOptions(products: ShopifyProduct[]) {
-  const available = new Set(
-    getCustomerNavigationValues(products.flatMap((product) => getShopifyAttributeValues(product, "weave")))
-      .map(normalizedTag),
-  );
-  return MEGA_MENU_WEAVES.filter((value) => available.has(normalizedTag(value)));
+  return getShopifyClassificationValues(products, "weave");
 }
 
 export function matchesShopifyNavigationSelection(

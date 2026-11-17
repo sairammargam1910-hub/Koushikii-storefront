@@ -134,16 +134,32 @@ test("regional handlooms are derived by selected fabric and deduplicated", () =>
   assert.deepEqual(getRegionalHandloomOptionsForFabric(products, "Others"), ["Kota Cottons"]);
 });
 
-test("weave choices require published products, use the requested order, and hide test values", () => {
+test("weave choices include every available category in alphabetical order and hide test values", () => {
   const products = [
     product("jamdani", { weave: "Jamdani" }),
     product("ikat", { weave: "Ikat" }),
     product("ajrakh", { weave: "Ajrakh" }),
     product("test", { weave: "test print" }),
-    product("unused", { weave: "Kanchipuram" }),
+    product("kanchipuram", { weave: "Kanchipuram" }),
   ];
 
-  assert.deepEqual(getMegaMenuWeaveOptions(products), ["Ajrakh", "Ikkat", "Jamdani"]);
+  assert.deepEqual(getMegaMenuWeaveOptions(products), ["Ajrakh", "Ikkat", "Jamdani", "Kanchipuram"]);
+});
+
+test("header and homepage share custom, scalar, multi-value and tagged weave categories", () => {
+  const products = [
+    product("narayanpet", { weave: "narayanpet" }),
+    product("multiple", { weave: '["Ajrakh","Dobby","narayanpet"]' }),
+    { ...product("tagged"), tags: ["weave:Jacquard"] },
+    product("duplicate", { weave: "NARAYANPET" }),
+    product("hidden", { weave: "demo print" }),
+  ];
+  assert.deepEqual(getMegaMenuWeaveOptions(products), [
+    "Ajrakh", "Dobby", "Jacquard", "narayanpet",
+  ]);
+  assert.deepEqual(getMegaMenuWeaveOptions(products), getShopifyClassificationValues(products, "weave"));
+  assert.equal(matchesShopifyNavigationSelection(products[0], { weaves: ["narayanpet"] }), true);
+  assert.deepEqual(getMegaMenuWeaveOptions([]), []);
 });
 
 test("combined fabric and regional filters use AND while weave browsing stays independent", () => {
