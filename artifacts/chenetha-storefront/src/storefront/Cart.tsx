@@ -343,7 +343,7 @@ function ShopifyBag({
         {isUpdating && <p role="status" className="muted">Updating your bag…</p>}
         <div className="cart-note">
           <Check size={16} aria-hidden="true" />
-          <p>Your chosen pieces and current prices are checked again at checkout. Delivery charges are confirmed before you pay.</p>
+          <p>Your chosen pieces and current prices are checked again at checkout. Delivery charges are calculated at checkout based on your delivery address and available shipping options.</p>
         </div>
       </section>
 
@@ -367,7 +367,7 @@ function ShopifyBag({
             </div>
           )}
           <div className="row summary-total">
-            <strong>Estimated total</strong>
+            <strong>Total before shipping</strong>
             <strong data-testid="text-shopify-cart-total">{formatShopifyMoney(cart.totalAmount, cart.currencyCode)}</strong>
           </div>
         </div>
@@ -403,7 +403,7 @@ function ShopifyBag({
             </button>
           </div>
         </form>
-        {promotions.data?.promotions.length ? <div className="cart-public-offers" aria-label="Available store offers">
+        {promotions.data?.promotions?.length ? <div className="cart-public-offers" aria-label="Available store offers">
           <p>Available offers · choose one to check it against your bag.</p>
           {promotions.data.promotions.map((offer) => <div className="cart-public-offer" key={offer.code}>
             <div className="cart-public-offer-copy">
@@ -436,7 +436,7 @@ function ShopifyBag({
             key={discount.code}
           >
             {discount.applicable
-              ? `Shopify confirms ${discount.code} applies to your bag. Your total reflects the savings shown above.`
+              ? `Your code ${discount.code} applies to your bag. Your total reflects the savings shown above.`
               : `Code ${discount.code} does not apply to this bag.`}
           </p>
         ))}
@@ -463,7 +463,7 @@ function ShopifyBag({
             <p className="secure-caption">Get a current delivery quote here · pay securely online</p>
           </div>
         )}
-        <p className="address-footnote cart-summary-footnote">Your delivery details and current shipping quote are confirmed on the next page. Import duties or customs charges may be separate.</p>
+        <p className="address-footnote cart-summary-footnote">Import duties or customs charges may be separate.</p>
       </aside>
     </div>
   );

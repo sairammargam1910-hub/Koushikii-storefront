@@ -57,7 +57,7 @@ function WhatsAppHeaderIcon({language}:{language:StoreLanguage}){
  return <a className="iconbtn header-whatsapp" href={whatsappOrderUrl(messages[language])} target="_blank" rel="noopener noreferrer" aria-label="Order on WhatsApp" title="Order on WhatsApp"><WhatsAppMark/></a>;
 }
 export function addItem(id:string){const list=getItems("kq-cart");const found=list.find(x=>x.id===id);if(found)found.qty++;else list.push({id,qty:1});saveItems("kq-cart",list)}
-export function useStore(key:string){const shopper=useShopperPreferences();const [items,set]=useState<Item[]>(()=>getItems(key));useEffect(()=>{const sync=()=>set(getItems(key));window.addEventListener("storage",sync);window.addEventListener("kq-storage",sync);return()=>{window.removeEventListener("storage",sync);window.removeEventListener("kq-storage",sync)}},[key]);return key==="kq-wish"?shopper.wishlist:items}
+export function useStore(key:string){const shopper=useShopperPreferences();const [items,set]=useState<Item[]>(()=>getItems(key));useEffect(()=>{const sync=()=>set(getItems(key));window.addEventListener("storage",sync);window.addEventListener("kq-storage",sync);return()=>{window.removeEventListener("storage",sync);window.removeEventListener("kq-storage",sync)}},[key]);return key==="kq-wish"?(shopper.wishlist??[]):items}
 export function TempleBorder(){return <div className="temple-border" aria-hidden="true"/>}
 function LanguageSelect({language,onChange}:{language:StoreLanguage;onChange:(language:StoreLanguage)=>void}){
  return <label className="language-switcher">
@@ -144,7 +144,7 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
    <a href={base+"Wishlist"} className="iconbtn optional" data-testid="link-wishlist" aria-label={`Wishlist${wish.length?`, ${wish.length} saved pieces`:""}`}><Heart size={17}/>{wish.length>0&&<span className="count">{wish.length}</span>}</a>
     <a href={base+"Cart"} className="iconbtn" data-testid="link-cart" aria-label={`Shopping bag${cartCount?`, ${cartCount} items`:""}`}><ShoppingBag size={18}/>{cartCount>0&&<span className="count" data-testid="header-cart-count">{cartCount}</span>}</a></div>
    </div>{search&&<div className="wrap searchline active"><form style={{display:"flex",width:"100%"}} onSubmit={event=>{event.preventDefault();const query=String(new FormData(event.currentTarget).get("q")||"").trim();setLocation(base+"Collections"+(query?"?q="+encodeURIComponent(query):""));setSearch(false)}}><input data-testid="input-header-search" name="q" aria-label="Search textiles" placeholder="Search Ikat, cotton, Kanchipuram…" autoFocus/><button className="btn small" data-testid="button-submit-search">Search</button></form></div>}</header>
-   {promotions.data?.promotions.length ? <aside className="store-offer-banner" aria-label="Current store offers">
+    {promotions.data?.promotions?.length ? <aside className="store-offer-banner" aria-label="Current store offers">
      <div className="wrap store-offer-inner">
        <span className="store-offer-label"><BadgePercent size={15} aria-hidden="true"/> A LITTLE THANK-YOU</span>
        <div className="store-offer-list">

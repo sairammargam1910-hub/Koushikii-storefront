@@ -108,6 +108,12 @@ export function getCheckoutItemTotal(cart: ShopifyCartNode): string {
   );
 }
 
+export function getCheckoutItemSubtotal(cart: ShopifyCartNode): string {
+  return addMoney(
+    cart.lines.nodes.map((line) => line.cost.subtotalAmount.amount),
+  );
+}
+
 export function checkoutCartFingerprint(input: {
   cart: ShopifyCartNode;
   email: string;
@@ -118,9 +124,14 @@ export function checkoutCartFingerprint(input: {
   const payload = {
     cartId: input.cart.id,
     currencyCode: input.cart.cost.totalAmount.currencyCode,
-    itemSubtotal: input.cart.cost.subtotalAmount.amount,
-    itemTotal: input.cart.cost.totalAmount.amount,
-    taxAmount: input.cart.cost.totalTaxAmount?.amount ?? null,
+    itemSubtotal: getCheckoutItemSubtotal(input.cart),
+    itemTotal: getCheckoutItemTotal(input.cart),
+    discountCodes: [...input.cart.discountCodes]
+      .map(({ code, applicable }) => ({
+        code: code.trim().toUpperCase(),
+        applicable,
+      }))
+      .sort((left, right) => left.code.localeCompare(right.code)),
     lines: input.cart.lines.nodes.map((line) => ({
       id: line.id,
       merchandiseId: line.merchandise?.id ?? null,
@@ -166,7 +177,6 @@ export function minimalCartSnapshot(cart: ShopifyCartNode): ShopifyCartNode {
   return {
     ...cart,
     checkoutUrl: "",
-    deliveryGroups: null,
     discountCodes: [],
     lines: {
       nodes: cart.lines.nodes.map((line) => ({

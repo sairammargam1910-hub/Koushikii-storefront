@@ -351,6 +351,30 @@ test("domestic rate lookup never creates a provider order or AWB", async () => {
   }
 });
 
+test("returns all unique, serviceable rates ordered by quoted price without booking", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = mockShiprocketFetch(calls);
+  try {
+    await withEnvironment({
+      SHIPROCKET_API_USER_EMAIL: "merchant@example.com",
+      SHIPROCKET_API_USER_PASSWORD: "test-password",
+      SHIPROCKET_PICKUP_POSTCODE: "500007",
+    }, async () => {
+      const { quoteShiprocketPackageOptions } = loadModule();
+      const options = await quoteShiprocketPackageOptions(baseInput);
+      assert.deepEqual(options, [
+        { courierId: "10", courierName: "Economy", amount: "225.50", currencyCode: "INR" },
+        { courierId: "20", courierName: "Higher", amount: "325.00", currencyCode: "INR" },
+      ]);
+      assert.equal(calls.some((call) => call.url.pathname.includes("/orders/create/")), false);
+      assert.equal(calls.some((call) => call.url.pathname.includes("/assign/awb")), false);
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("Surface-only quote requests Surface serviceability and selects only that response", async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];

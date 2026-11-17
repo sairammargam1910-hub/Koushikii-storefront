@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShopifyCheckoutDeliveryOption } from './shopifyCheckoutDeliveryOption';
 
 export interface ShopifyCheckoutQuoteResponse {
   quoteId: string;
@@ -18,9 +19,9 @@ export interface ShopifyCheckoutQuoteResponse {
   shippingAmount: string;
   taxAmount: string;
   totalAmount: string;
-  carrier: string;
-  courierName: string;
   /** @minimum 1 */
   parcelCount: number;
+  deliveryOptions: ShopifyCheckoutDeliveryOption[];
+  selectedDeliveryOptionId: string;
   excludedCharges: string[];
 }

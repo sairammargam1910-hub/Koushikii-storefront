@@ -5,6 +5,7 @@ import {
   useCreateShopifyCheckoutPaymentSession,
   useCreateShopifyCheckoutQuote,
   useGetShopifyAvailableCountries,
+  useSelectShopifyCheckoutShippingOption,
   type ShopifyCartBuyerIdentityInput,
   type ShopifyCartResponse,
   type ShopifyCheckoutPaymentStatusResponse,
@@ -73,6 +74,7 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
   const countriesQuery = useGetShopifyAvailableCountries();
   const createQuote = useCreateShopifyCheckoutQuote();
   const createPaymentSession = useCreateShopifyCheckoutPaymentSession();
+  const selectDeliveryOption = useSelectShopifyCheckoutShippingOption();
   const paymentStatus = useVerifiedPaymentStatus(paymentOrderId);
   useEffect(() => {
     if (!orderIsRecorded(paymentStatus.data)) return;
@@ -173,6 +175,27 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
         countryCode: details.countryCode,
       },
     };
+  }
+
+  async function changeDeliveryOption(deliveryOptionId: string) {
+    if (!quote || deliveryOptionId === quote.selectedDeliveryOptionId) return;
+    setSubmitError("");
+    try {
+      const updatedQuote = await selectDeliveryOption.mutateAsync({
+        data: { quoteId: quote.quoteId, deliveryOptionId },
+      });
+      if (activeQuote.current?.quoteId === updatedQuote.quoteId) {
+        setQuote(updatedQuote);
+      }
+    } catch (error) {
+      if (error && typeof error === "object" && "status" in error && error.status === 409) {
+        discardQuote();
+      }
+      setSubmitError(customerFacingMessage(
+        getApiError(error) ?? error,
+        "That delivery option could not be selected. Please request a fresh quote.",
+      ));
+    }
   }
 
   async function loadCashfreeSdk(): Promise<void> {
@@ -312,7 +335,9 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
     );
   }
 
-  const busy = createQuote.isPending || createPaymentSession.isPending;
+  const busy = createQuote.isPending ||
+    createPaymentSession.isPending ||
+    selectDeliveryOption.isPending;
   return (
     <div className="checkout-layout">
       <form className="panel checkout-details" onSubmit={(event) => void submit(event)}>
@@ -399,23 +424,53 @@ export function ShopifyBuyerCheckout({ cart }: { cart: ShopifyCartResponse }) {
             </div>
           ))}
         </div>
-        {quote ? (
+          {quote ? (
           <>
             <div className="checkout-total-row"><span>Items subtotal</span><strong data-testid="text-checkout-item-subtotal">{formatShopifyMoney(quote.itemSubtotal, quote.currencyCode)}</strong></div>
             <div className="checkout-total-row is-discount"><span>Discount</span><strong data-testid="text-checkout-discount">−{formatShopifyMoney(quote.discountAmount, quote.currencyCode)}</strong></div>
-            <div className="checkout-total-row"><span>Shipping · Delivery</span><strong data-testid="text-checkout-shipping">{formatShopifyMoney(quote.shippingAmount, quote.currencyCode)}</strong></div>
+              <div className="checkout-total-row"><span>Delivery charge</span><strong data-testid="text-checkout-shipping">{formatShopifyMoney(quote.shippingAmount, quote.currencyCode)}</strong></div>
+              {quote.deliveryOptions.length > 1 && (
+                <div className="checkout-delivery-choice">
+                  <label htmlFor="checkout-delivery-option">Choose a delivery option</label>
+                  <select
+                    id="checkout-delivery-option"
+                    data-testid="select-checkout-delivery-option"
+                    value={quote.selectedDeliveryOptionId}
+                    disabled={busy || quoteExpired}
+                    onChange={(event) => void changeDeliveryOption(event.currentTarget.value)}
+                  >
+                    {quote.deliveryOptions.map((option, index) => (
+                      <option value={option.id} key={option.id}>
+                        Option {index + 1} · {formatShopifyMoney(option.amount, option.currencyCode)}
+                      </option>
+                    ))}
+                  </select>
+                  <small>Each amount is a current delivery quote. Options are listed from lowest to highest price.</small>
+                </div>
+              )}
             <div className="checkout-total-row checkout-grand-total"><strong>Total to pay</strong><strong data-testid="text-checkout-total">{formatShopifyMoney(quote.totalAmount, quote.currencyCode)}</strong></div>
             <div className="checkout-quote-meta">
-              <span>Delivery option · {quote.parcelCount} {quote.parcelCount === 1 ? "parcel" : "parcels"}</span>
+                <span>{quote.deliveryOptions.length > 1 ? "Selected delivery option" : "Delivery option"} · {quote.parcelCount} {quote.parcelCount === 1 ? "parcel" : "parcels"}</span>
               <span>{quoteExpired ? "Quote expired. Request a fresh quote." : `Quote valid until ${formatExpiry(quote.expiresAt)}`}</span>
             </div>
           </>
         ) : (
           <>
             <div className="checkout-total-row"><span>Items subtotal</span><strong data-testid="text-checkout-item-subtotal">{formatShopifyMoney(cart.subtotalAmount, cart.currencyCode)}</strong></div>
-            <div className="checkout-total-row"><span>Shipping and total</span><strong>Shown after quote</strong></div>
+              {Number(cart.discountAmount) > 0 && (
+                <div className="checkout-total-row is-discount">
+                  <span>Discount</span>
+                  <strong data-testid="text-checkout-discount">−{formatShopifyMoney(cart.discountAmount, cart.currencyCode)}</strong>
+                </div>
+              )}
+              <div className="checkout-total-row"><span>Delivery and total</span><strong>Shown after quote</strong></div>
           </>
         )}
+          {cart.discountCodes.filter((discount) => !discount.applicable).map((discount) => (
+            <p className="checkout-inline-error" role="alert" key={discount.code}>
+              Code {discount.code} no longer applies. Return to your bag to remove it or choose an eligible offer.
+            </p>
+          ))}
         <p className="checkout-customs-note" role="note" data-testid="checkout-customs-note">
           Import duties and customs charges are excluded unless included in the delivery quote. These may be collected separately on delivery.
         </p>

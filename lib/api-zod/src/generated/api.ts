@@ -441,13 +441,6 @@ export const GetShopifyCartResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
-  "shippingEstimate": zod.union([zod.object({
-  "amount": zod.string(),
-  "currencyCode": zod.string(),
-  "method": zod.string(),
-  "basis": zod.enum(['selected', 'lowest_available'])
-}),zod.null()]),
-  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -497,13 +490,6 @@ export const AddShopifyCartLineResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
-  "shippingEstimate": zod.union([zod.object({
-  "amount": zod.string(),
-  "currencyCode": zod.string(),
-  "method": zod.string(),
-  "basis": zod.enum(['selected', 'lowest_available'])
-}),zod.null()]),
-  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -557,13 +543,6 @@ export const UpdateShopifyCartLinesResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
-  "shippingEstimate": zod.union([zod.object({
-  "amount": zod.string(),
-  "currencyCode": zod.string(),
-  "method": zod.string(),
-  "basis": zod.enum(['selected', 'lowest_available'])
-}),zod.null()]),
-  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -612,13 +591,6 @@ export const RemoveShopifyCartLinesResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
-  "shippingEstimate": zod.union([zod.object({
-  "amount": zod.string(),
-  "currencyCode": zod.string(),
-  "method": zod.string(),
-  "basis": zod.enum(['selected', 'lowest_available'])
-}),zod.null()]),
-  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -667,13 +639,6 @@ export const UpdateShopifyCartDiscountCodesResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
-  "shippingEstimate": zod.union([zod.object({
-  "amount": zod.string(),
-  "currencyCode": zod.string(),
-  "method": zod.string(),
-  "basis": zod.enum(['selected', 'lowest_available'])
-}),zod.null()]),
-  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -759,13 +724,6 @@ export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
   "discountAmount": zod.string(),
   "totalAmount": zod.string(),
   "currencyCode": zod.string(),
-  "shippingEstimate": zod.union([zod.object({
-  "amount": zod.string(),
-  "currencyCode": zod.string(),
-  "method": zod.string(),
-  "basis": zod.enum(['selected', 'lowest_available'])
-}),zod.null()]),
-  "estimatedTotalAmount": zod.string().nullable(),
   "discountCodes": zod.array(zod.object({
   "code": zod.string(),
   "applicable": zod.boolean()
@@ -832,6 +790,7 @@ export const CreateShopifyCheckoutQuoteBody = zod.object({
 export const createShopifyCheckoutQuoteResponseDestinationCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
 export const createShopifyCheckoutQuoteResponseCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
 
+export const createShopifyCheckoutQuoteResponseDeliveryOptionsItemCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
 
 
 export const CreateShopifyCheckoutQuoteResponse = zod.object({
@@ -844,9 +803,53 @@ export const CreateShopifyCheckoutQuoteResponse = zod.object({
   "shippingAmount": zod.string(),
   "taxAmount": zod.string(),
   "totalAmount": zod.string(),
-  "carrier": zod.string(),
-  "courierName": zod.string(),
   "parcelCount": zod.int().min(1),
+  "deliveryOptions": zod.array(zod.object({
+  "id": zod.string(),
+  "amount": zod.string(),
+  "currencyCode": zod.string().regex(createShopifyCheckoutQuoteResponseDeliveryOptionsItemCurrencyCodeRegExp)
+})),
+  "selectedDeliveryOptionId": zod.string(),
+  "excludedCharges": zod.array(zod.string())
+})
+
+
+/**
+ * Updates the selected quoted delivery rate before payment without creating a shipment.
+ * @summary Select a serviceable delivery option for a current quote
+ */
+export const selectShopifyCheckoutShippingOptionBodyDeliveryOptionIdMax = 24;
+
+
+
+export const SelectShopifyCheckoutShippingOptionBody = zod.object({
+  "quoteId": zod.uuid(),
+  "deliveryOptionId": zod.string().min(1).max(selectShopifyCheckoutShippingOptionBodyDeliveryOptionIdMax)
+})
+
+export const selectShopifyCheckoutShippingOptionResponseDestinationCountryCodeRegExp = new RegExp('^[A-Z]{2}$');
+export const selectShopifyCheckoutShippingOptionResponseCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
+
+export const selectShopifyCheckoutShippingOptionResponseDeliveryOptionsItemCurrencyCodeRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const SelectShopifyCheckoutShippingOptionResponse = zod.object({
+  "quoteId": zod.uuid(),
+  "expiresAt": zod.coerce.date(),
+  "destinationCountryCode": zod.string().regex(selectShopifyCheckoutShippingOptionResponseDestinationCountryCodeRegExp),
+  "currencyCode": zod.string().regex(selectShopifyCheckoutShippingOptionResponseCurrencyCodeRegExp),
+  "itemSubtotal": zod.string(),
+  "discountAmount": zod.string(),
+  "shippingAmount": zod.string(),
+  "taxAmount": zod.string(),
+  "totalAmount": zod.string(),
+  "parcelCount": zod.int().min(1),
+  "deliveryOptions": zod.array(zod.object({
+  "id": zod.string(),
+  "amount": zod.string(),
+  "currencyCode": zod.string().regex(selectShopifyCheckoutShippingOptionResponseDeliveryOptionsItemCurrencyCodeRegExp)
+})),
+  "selectedDeliveryOptionId": zod.string(),
   "excludedCharges": zod.array(zod.string())
 })
 

@@ -23,6 +23,7 @@ function loadModule() {
 
 const cart = {
   id: "gid://shopify/Cart/cart-test",
+  discountCodes: [],
   cost: {
     subtotalAmount: { amount: "100.00", currencyCode: "INR" },
     totalAmount: { amount: "99.99", currencyCode: "INR" },
@@ -130,10 +131,20 @@ test("quote fingerprint changes when destination, cart, or parcel changes", () =
     },
   };
   assert.notEqual(checkoutCartFingerprint({ ...baseInput, cart: changedProductWeight }), base);
+  const changedLineTotal = {
+    ...cart,
+    lines: {
+      nodes: cart.lines.nodes.map((line) => ({
+        ...line,
+        cost: { ...line.cost, totalAmount: { amount: "98.99", currencyCode: "INR" } },
+      })),
+    },
+  };
+  assert.notEqual(checkoutCartFingerprint({ ...baseInput, cart: changedLineTotal }), base);
   assert.notEqual(
     checkoutCartFingerprint({
       ...baseInput,
-      cart: { ...cart, cost: { ...cart.cost, totalAmount: { amount: "100.00", currencyCode: "INR" } } },
+      cart: { ...cart, discountCodes: [{ code: "NEW26", applicable: true }] },
     }),
     base,
   );

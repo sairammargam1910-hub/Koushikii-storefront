@@ -326,6 +326,18 @@ export function selectLowestCourier(
   couriers: ShiprocketCourier[],
   mode?: ShiprocketMode,
 ): { courierId: string; courierName: string; amount: string } {
+  const lowest = listServiceableCouriers(couriers, mode)[0];
+  return {
+    courierId: lowest.courierId,
+    courierName: lowest.courierName,
+    amount: lowest.amount,
+  };
+}
+
+export function listServiceableCouriers(
+  couriers: ShiprocketCourier[],
+  mode?: ShiprocketMode,
+): Array<{ courierId: string; courierName: string; amount: string }> {
   const valid = couriers.flatMap((courier) => {
     const amount = toAmount(courier.rate ?? courier.freight_charge);
     if (
@@ -339,19 +351,29 @@ export function selectLowestCourier(
       amount,
     }];
   });
-  const lowest = valid.sort((left, right) => left.amount - right.amount)[0];
-  if (!lowest) {
+  const byId = new Map<string, (typeof valid)[number]>();
+  for (const courier of valid) {
+    const previous = byId.get(courier.courierId);
+    if (!previous || courier.amount < previous.amount) {
+      byId.set(courier.courierId, courier);
+    }
+  }
+  const sorted = [...byId.values()].sort((left, right) =>
+    left.amount - right.amount ||
+    left.courierName.localeCompare(right.courierName),
+  );
+  if (!sorted.length) {
     throw new ShiprocketError(
       mode === "Surface"
         ? "Shiprocket has no serviceable Surface courier for this address. Verify Surface serviceability for the pickup and delivery postcodes; this product cannot fall back to Air."
         : "Shiprocket has no serviceable courier for this address.",
     );
   }
-  return {
-    courierId: lowest.courierId,
-    courierName: lowest.courierName,
-    amount: lowest.amount.toFixed(2),
-  };
+  return sorted.map((courier) => ({
+    courierId: courier.courierId,
+    courierName: courier.courierName,
+    amount: courier.amount.toFixed(2),
+  }));
 }
 
 function splitName(value: string) {
@@ -485,9 +507,9 @@ export async function createShiprocketPackage(
 }
 
 // Rate lookup must never create a prepaid provider order or reserve a shipment.
-export async function quoteShiprocketPackage(
+export async function quoteShiprocketPackageOptions(
   input: ShiprocketPackageInput,
-): Promise<ShiprocketQuote> {
+): Promise<ShiprocketQuote[]> {
   const international = input.destination.countryCode !== "IN";
   // Validate export configuration without sending an order to Shiprocket.
   if (international) makeShiprocketOrderBody(input, await getPickupLocation(), true);
@@ -537,11 +559,15 @@ export async function quoteShiprocketPackage(
   if ((serviceability.currency?.toUpperCase() ?? (international ? "" : "INR")) !== "INR") {
     throw new ShiprocketError("Shiprocket did not return a supported INR shipping quote.");
   }
-  const selected = selectLowestCourier(parseCouriers(serviceability), input.mode);
-  return {
-    ...selected,
-    currencyCode: "INR",
-  };
+  return listServiceableCouriers(parseCouriers(serviceability), input.mode)
+    .map((option) => ({ ...option, currencyCode: "INR" }));
+}
+
+export async function quoteShiprocketPackage(
+  input: ShiprocketPackageInput,
+): Promise<ShiprocketQuote> {
+  const [lowest] = await quoteShiprocketPackageOptions(input);
+  return lowest;
 }
 
 export async function bookShiprocketPackage(input: {

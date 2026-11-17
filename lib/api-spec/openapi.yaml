@@ -661,6 +661,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/checkout/shipping-option:
+    post:
+      operationId: selectShopifyCheckoutShippingOption
+      tags: [shopify]
+      summary: Select a serviceable delivery option for a current quote
+      description: Updates the selected quoted delivery rate before payment without creating a shipment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyCheckoutShippingOptionInput"
+      responses:
+        "200":
+          description: Updated checkout quote total
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyCheckoutQuoteResponse"
+        "400":
+          description: Invalid delivery option
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Quote could not be found for this shopper
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Quote expired or is no longer available for selection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/checkout/payment-session:
     post:
       operationId: createShopifyCheckoutPaymentSession
@@ -2189,6 +2226,28 @@ components:
     ShopifyCheckoutQuoteInput:
       allOf:
         - $ref: "#/components/schemas/ShopifyCartBuyerIdentityInput"
+    ShopifyCheckoutShippingOptionInput:
+      type: object
+      properties:
+        quoteId:
+          type: string
+          format: uuid
+        deliveryOptionId:
+          type: string
+          minLength: 1
+          maxLength: 24
+      required: [quoteId, deliveryOptionId]
+    ShopifyCheckoutDeliveryOption:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: string
+        currencyCode:
+          type: string
+          pattern: "^[A-Z]{3}$"
+      required: [id, amount, currencyCode]
     ShopifyCheckoutQuoteResponse:
       type: object
       properties:
@@ -2214,18 +2273,20 @@ components:
           type: string
         totalAmount:
           type: string
-        carrier:
-          type: string
-        courierName:
-          type: string
         parcelCount:
           type: integer
           minimum: 1
+        deliveryOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyCheckoutDeliveryOption"
+        selectedDeliveryOptionId:
+          type: string
         excludedCharges:
           type: array
           items:
             type: string
-      required: [quoteId, expiresAt, destinationCountryCode, currencyCode, itemSubtotal, discountAmount, shippingAmount, taxAmount, totalAmount, carrier, courierName, parcelCount, excludedCharges]
+      required: [quoteId, expiresAt, destinationCountryCode, currencyCode, itemSubtotal, discountAmount, shippingAmount, taxAmount, totalAmount, parcelCount, deliveryOptions, selectedDeliveryOptionId, excludedCharges]
     ShopifyCheckoutPaymentSessionInput:
       type: object
       properties:
@@ -2309,19 +2370,6 @@ components:
             - $ref: "#/components/schemas/ShopifyImage"
             - type: "null"
       required: [id, merchandiseId, productHandle, productTitle, variantTitle, quantity, unitPrice, currencyCode, availableForSale, isDemo, image]
-    ShopifyCartShippingEstimate:
-      type: object
-      properties:
-        amount:
-          type: string
-        currencyCode:
-          type: string
-        method:
-          type: string
-        basis:
-          type: string
-          enum: [selected, lowest_available]
-      required: [amount, currencyCode, method, basis]
     ShopifyCartResponse:
       type: object
       properties:
@@ -2340,12 +2388,6 @@ components:
           type: string
         currencyCode:
           type: string
-        shippingEstimate:
-          anyOf:
-            - $ref: "#/components/schemas/ShopifyCartShippingEstimate"
-            - type: "null"
-        estimatedTotalAmount:
-          type: ["string", "null"]
         discountCodes:
           type: array
           items:
@@ -2354,7 +2396,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyCartLine"
-      required: [id, checkoutUrl, totalQuantity, subtotalAmount, discountAmount, totalAmount, currencyCode, shippingEstimate, estimatedTotalAmount, discountCodes, lines]
+      required: [id, checkoutUrl, totalQuantity, subtotalAmount, discountAmount, totalAmount, currencyCode, discountCodes, lines]
     ShopifyAdminInventoryLevel:
       type: object
       required: [locationId, locationName, active, available]

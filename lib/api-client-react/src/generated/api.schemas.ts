@@ -321,6 +321,22 @@ export interface ShopifyCartBuyerIdentityInput {
 
 export type ShopifyCheckoutQuoteInput = ShopifyCartBuyerIdentityInput;
 
+export interface ShopifyCheckoutShippingOptionInput {
+  quoteId: string;
+  /**
+     * @minLength 1
+     * @maxLength 24
+     */
+  deliveryOptionId: string;
+}
+
+export interface ShopifyCheckoutDeliveryOption {
+  id: string;
+  amount: string;
+  /** @pattern ^[A-Z]{3}$ */
+  currencyCode: string;
+}
+
 export interface ShopifyCheckoutQuoteResponse {
   quoteId: string;
   expiresAt: string;
@@ -333,10 +349,10 @@ export interface ShopifyCheckoutQuoteResponse {
   shippingAmount: string;
   taxAmount: string;
   totalAmount: string;
-  carrier: string;
-  courierName: string;
   /** @minimum 1 */
   parcelCount: number;
+  deliveryOptions: ShopifyCheckoutDeliveryOption[];
+  selectedDeliveryOptionId: string;
   excludedCharges: string[];
 }
 
@@ -422,21 +438,6 @@ export interface ShopifyCartLine {
   image: ShopifyImage | null;
 }
 
-export type ShopifyCartShippingEstimateBasis = typeof ShopifyCartShippingEstimateBasis[keyof typeof ShopifyCartShippingEstimateBasis];
-
-
-export const ShopifyCartShippingEstimateBasis = {
-  selected: 'selected',
-  lowest_available: 'lowest_available',
-} as const;
-
-export interface ShopifyCartShippingEstimate {
-  amount: string;
-  currencyCode: string;
-  method: string;
-  basis: ShopifyCartShippingEstimateBasis;
-}
-
 export interface ShopifyCartResponse {
   id: string;
   /** @nullable */
@@ -446,9 +447,6 @@ export interface ShopifyCartResponse {
   discountAmount: string;
   totalAmount: string;
   currencyCode: string;
-  shippingEstimate: ShopifyCartShippingEstimate | null;
-  /** @nullable */
-  estimatedTotalAmount: string | null;
   discountCodes: ShopifyCartDiscountCode[];
   lines: ShopifyCartLine[];
 }

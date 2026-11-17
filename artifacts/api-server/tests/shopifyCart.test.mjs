@@ -47,7 +47,6 @@ function cart(overrides = {}) {
       subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
       totalAmount: { amount: "1250.00", currencyCode: "INR" },
     },
-    deliveryGroups: { nodes: [] },
     discountCodes: [],
     lines: {
       nodes: [{
@@ -94,10 +93,6 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     },
     calls: [],
     cartMutationResult: { cart: cart(), userErrors: [] },
-    shippingQuote: {
-      id: "gid://shopify/Cart/cart-123",
-      deliveryGroups: { nodes: [] },
-    },
   };
   const module = { exports: {} };
   new Function("require", "module", "exports", "storefrontRequest", compiled.outputFiles[0].text)(
@@ -120,9 +115,6 @@ async function harness(run, { useDevStorePreview = false } = {}) {
             })),
           },
         };
-      }
-      if (query.includes("query ShopifyCartShippingEstimate")) {
-        return { cart: state.shippingQuote };
       }
       if (query.includes("query ShopifyCart")) {
         return { cart: state.cartMutationResult.cart };
@@ -447,7 +439,7 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
     assert.equal(withAddress.status, 200);
     assert.equal(withAddress.data.subtotalAmount, "1250.00");
     assert.equal(withAddress.data.discountAmount, "125.00");
-    assert.equal(withAddress.data.totalAmount, "1385.00");
+    assert.equal(withAddress.data.totalAmount, "1125.00");
 
     state.cartMutationResult = {
       cart: cart({ discountCodes: [{ code: "EXPIRED", applicable: false }] }),
@@ -470,66 +462,35 @@ test("applies, validates, and removes discount codes on the Shopify cart", async
   });
 });
 
-test("returns the selected or lowest Shopify shipping rate and a shipping-inclusive estimate", async () => {
-  await harness(async ({ state, postBuyerIdentity }) => {
-    state.shippingQuote = {
-      id: "gid://shopify/Cart/cart-123",
-      deliveryGroups: {
-        nodes: [
-          {
-            selectedDeliveryOption: null,
-            deliveryOptions: [
-              {
-                title: "Standard",
-                deliveryMethodType: "SHIPPING",
-                estimatedCost: { amount: "100.00", currencyCode: "INR" },
-              },
-              {
-                title: "Economy",
-                deliveryMethodType: "SHIPPING",
-                estimatedCost: { amount: "75.00", currencyCode: "INR" },
-              },
-              {
-                title: "Pickup",
-                deliveryMethodType: "PICK_UP",
-                estimatedCost: { amount: "0.00", currencyCode: "INR" },
-              },
-            ],
-          },
-          {
-            selectedDeliveryOption: {
-              title: "Express",
-              deliveryMethodType: "SHIPPING",
-              estimatedCost: { amount: "250.00", currencyCode: "INR" },
-            },
-            deliveryOptions: [],
-          },
-        ],
+test("bag totals include merchandise and discounts only, never an unrequested shipping estimate", async () => {
+  await harness(async ({ state, getCart }) => {
+    state.cartMutationResult.cart = cart({
+      cost: {
+        subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
+        totalAmount: { amount: "1500.00", currencyCode: "INR" },
       },
-    };
-
-    const result = await postBuyerIdentity({
-      cartId: "gid://shopify/Cart/cart-123",
-      email: "shopper@example.com",
-      deliveryAddress: {
-        recipient: "Asha Rao",
-        street: "12 Example Road",
-        city: "Chennai",
-        pin: "600001",
-        countryCode: "IN",
+      discountCodes: [{ code: "NEW26", applicable: true }],
+      lines: {
+        nodes: [{
+          id: "gid://shopify/CartLine/line-123",
+          quantity: 1,
+          cost: {
+            subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
+            totalAmount: { amount: "1125.00", currencyCode: "INR" },
+          },
+          merchandise: cart().lines.nodes[0].merchandise,
+        }],
       },
     });
+    const result = await getCart("gid://shopify/Cart/cart-123");
 
     assert.equal(result.status, 200);
-    assert.deepEqual(result.data.shippingEstimate, {
-      amount: "325.00",
-      currencyCode: "INR",
-      method: "Economy, Express",
-      basis: "lowest_available",
-    });
-    assert.equal(result.data.estimatedTotalAmount, "1575.00");
-    assert.match(state.calls.at(-1).query, /deliveryGroups\(first: 20\)/);
-    assert.match(state.calls.at(-1).query, /estimatedCost \{ amount currencyCode \}/);
+    assert.equal(result.data.subtotalAmount, "1250.00");
+    assert.equal(result.data.discountAmount, "125.00");
+    assert.equal(result.data.totalAmount, "1125.00");
+    assert.equal("shippingEstimate" in result.data, false);
+    assert.equal("estimatedTotalAmount" in result.data, false);
+    assert.doesNotMatch(state.calls.at(-1).query, /deliveryGroups|estimatedCost/);
   });
 });
 
@@ -564,6 +525,11 @@ test("prefills Shopify checkout with a saved shopper address", async () => {
       call.query.includes("ReplaceShopifyCartDeliveryAddress"),
     );
     assert.match(addressCall.query, /cartDeliveryAddressesReplace/);
+    assert.equal(
+      state.calls.some((call) => /deliveryGroups|estimatedCost/.test(call.query)),
+      false,
+      "saving address details must not request a speculative shipping estimate",
+    );
     assert.deepEqual(addressCall.variables, {
       cartId: "gid://shopify/Cart/cart-123",
       addresses: [{

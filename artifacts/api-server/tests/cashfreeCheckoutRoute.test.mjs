@@ -112,6 +112,7 @@ const compiled = await build({
           export const CreateShopifyCheckoutPaymentSessionResponse = schema;
           export const CreateShopifyCheckoutQuoteBody = schema;
           export const CreateShopifyCheckoutQuoteResponse = schema;
+          export const SelectShopifyCheckoutShippingOptionBody = schema;
           export const GetShopifyCheckoutPaymentStatusQueryParams = schema;
           export const GetShopifyCheckoutPaymentStatusResponse = schema;
         `,
@@ -147,7 +148,14 @@ const compiled = await build({
           export const addMoney = (amounts) => amounts.reduce((sum, amount) => sum + Number(amount), 0).toFixed(2);
           export const checkoutCartFingerprint = () => "hash";
           export const getShopperQuoteHash = (shopperUserId, fingerprint) => shopperUserId + ":" + fingerprint;
-          export const getCartDiscountAmount = () => "0.00";
+           export const getCartDiscountAmount = (cart) => (
+             cart.lines.nodes.reduce((sum, line) =>
+               sum + Number(line.cost.subtotalAmount.amount) - Number(line.cost.totalAmount.amount), 0
+             ).toFixed(2)
+           );
+           export const getCheckoutItemSubtotal = (cart) => (
+             cart.lines.nodes.reduce((sum, line) => sum + Number(line.cost.subtotalAmount.amount), 0).toFixed(2)
+           );
           export const getCheckoutItemTotal = (cart) => cart.lines.nodes.reduce((sum, line) => sum + Number(line.cost.totalAmount.amount), 0).toFixed(2);
           export const minimalCartSnapshot = (cart) => cart;
           export const splitMoney = (amount, count) => Array(count).fill((Number(amount) / count).toFixed(2));
@@ -194,7 +202,7 @@ const compiled = await build({
             if (state.shipmentDetailsError) throw new Error("test provider read failed");
             return state.shipmentDetails ?? { awbCode: null };
           };
-          export const quoteShiprocketPackage = async (input) => {
+          export const quoteShiprocketPackageOptions = async (input) => {
             state.rateCalls += 1;
             state.quoteInputs.push(input);
             if (state.noSurfaceCourier && input.mode === "Surface") {
@@ -203,8 +211,14 @@ const compiled = await build({
               );
             }
             return input.mode === "Surface"
-              ? { courierId: "44", courierName: "Delhivery Surface 2 Kgs", amount: "20.00", currencyCode: "INR" }
-              : { courierId: "10", courierName: "Economy", amount: "20.00", currencyCode: "INR" };
+              ? [
+                  { courierId: "44", courierName: "Surface Economy", amount: "20.00", currencyCode: "INR" },
+                  { courierId: "45", courierName: "Surface Priority", amount: "35.00", currencyCode: "INR" },
+                ]
+              : [
+                  { courierId: "10", courierName: "Economy", amount: "20.00", currencyCode: "INR" },
+                  { courierId: "20", courierName: "Priority", amount: "35.00", currencyCode: "INR" },
+                ];
           };
           export const createShiprocketPackage = async (input) => {
             state.carrierCreateCalls.push(input);
@@ -279,6 +293,7 @@ function makeOrder(overrides = {}) {
       totalAmount: { amount: "100.00", currencyCode: "INR" },
       totalTaxAmount: { amount: "0.00", currencyCode: "INR" },
     },
+    discountCodes: [],
     lines: {
       nodes: [{
         id: "gid://shopify/CartLine/1",
@@ -408,6 +423,14 @@ async function harness(run, options = {}) {
     });
     return { status: response.status, body: await response.json() };
   };
+  const postShippingOption = async (body, headers = {}) => {
+    const response = await fetch(`${base}/shopify/checkout/shipping-option`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-user": "shopper-1", ...headers },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.json() };
+  };
   const sendWebhook = async (event) => {
     const response = await fetch(`${base}/cashfree/webhook`, {
       method: "POST",
@@ -421,7 +444,7 @@ async function harness(run, options = {}) {
     return { status: response.status, body: await response.json() };
   };
   try {
-    await run({ state, getStatus, postQuote, postSession, sendWebhook });
+    await run({ state, getStatus, postQuote, postShippingOption, postSession, sendWebhook });
   } finally {
     await new Promise((resolve) => server.close(resolve));
     delete globalThis.__checkoutRouteTest;
@@ -509,8 +532,8 @@ test("legacy quotes cannot be claimed with another account's email", async () =>
   });
 });
 
-test("shipping quote performs rate lookup only and saves no carrier order IDs", async () => {
-  await harness(async ({ state, postQuote, postSession }) => {
+test("shipping quotes stay unbooked and selected delivery rates update the verified total", async () => {
+  await harness(async ({ state, postQuote, postShippingOption, postSession }) => {
     state.order.quoteHash = "old-hash";
     const result = await postQuote({
       cartId: state.order.cartId,
@@ -532,6 +555,11 @@ test("shipping quote performs rate lookup only and saves no carrier order IDs", 
     assert.equal(state.quoteInputs[0].breadthCm, 37.5);
     assert.equal(state.quoteInputs[0].heightCm, 5);
     assert.equal(result.body.parcelCount, 1);
+    assert.deepEqual(result.body.deliveryOptions, [
+      { id: "10", amount: "20.00", currencyCode: "INR" },
+      { id: "20", amount: "35.00", currencyCode: "INR" },
+    ]);
+    assert.equal(result.body.selectedDeliveryOptionId, "10");
     assert.equal(state.shipments.length, 1);
     assert.equal(state.quoteInputs[0].mode, undefined);
     assert.equal(state.carrierCreateCalls.length, 0);
@@ -540,12 +568,76 @@ test("shipping quote performs rate lookup only and saves no carrier order IDs", 
     assert.ok(createdQuote.quoteExpiresAt.getTime() - Date.now() > 29 * 60_000);
     assert.equal(state.shipments.at(-1).shiprocketOrderId, undefined);
     assert.equal(state.shipments.at(-1).shiprocketShipmentId, undefined);
+    const selected = await postShippingOption({
+      quoteId: result.body.quoteId,
+      deliveryOptionId: "20",
+    });
+    assert.equal(selected.status, 200);
+    assert.equal(selected.body.shippingAmount, "35.00");
+    assert.equal(selected.body.totalAmount, "135.00");
+    assert.equal(selected.body.selectedDeliveryOptionId, "20");
+    assert.equal(state.shipments.at(-1).courierId, "20");
+    assert.equal(state.rateCalls, 1, "choosing a listed option must not request another rate");
     const session = await postSession(
       { quoteId: result.body.quoteId },
       { Origin: "https://preview.replit.dev" },
     );
     assert.equal(session.status, 200);
-    assert.equal(session.body.amount, "120.00");
+    assert.equal(session.body.amount, "135.00");
+    assert.equal(state.cashfreeCreateInput.amount, "135.00");
+  });
+});
+
+test("checkout refuses an inapplicable saved discount before requesting delivery rates", async () => {
+  await harness(async ({ state, postQuote }) => {
+    state.order.quoteHash = "old-hash";
+    state.cart.discountCodes = [{ code: "NEW26", applicable: false }];
+    const result = await postQuote({
+      cartId: state.order.cartId,
+      email: "buyer@example.com",
+      phone: "+919876543210",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        pin: "500008",
+        countryCode: "IN",
+      },
+    });
+    assert.equal(result.status, 409);
+    assert.match(result.body.error, /NEW26.*no longer applies/i);
+    assert.equal(state.rateCalls, 0);
+    assert.equal(state.carrierCreateCalls.length, 0);
+  });
+});
+
+test("checkout adds delivery once to the discounted merchandise total", async () => {
+  await harness(async ({ state, postQuote }) => {
+    state.order.quoteHash = "old-hash";
+    state.cart.cost.subtotalAmount.amount = "1250.00";
+    state.cart.cost.totalAmount.amount = "1500.00";
+    state.cart.lines.nodes[0].cost.subtotalAmount.amount = "1250.00";
+    state.cart.lines.nodes[0].cost.totalAmount.amount = "1125.00";
+    state.cart.discountCodes = [{ code: "NEW26", applicable: true }];
+    const result = await postQuote({
+      cartId: state.order.cartId,
+      email: "buyer@example.com",
+      phone: "+919876543210",
+      deliveryAddress: {
+        recipient: "Asha Rao",
+        street: "12 Example Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        pin: "500008",
+        countryCode: "IN",
+      },
+    });
+    assert.equal(result.status, 200);
+    assert.equal(result.body.itemSubtotal, "1250.00");
+    assert.equal(result.body.discountAmount, "125.00");
+    assert.equal(result.body.shippingAmount, "20.00");
+    assert.equal(result.body.totalAmount, "1145.00");
   });
 });
 
@@ -669,7 +761,7 @@ test("Surface-only Shopify tag saves and books the courier selected by the Surfa
     assert.equal(state.quoteInputs.at(-1).mode, "Surface");
     const savedPackage = state.shipments.at(-1);
     assert.equal(savedPackage.courierId, "44");
-    assert.equal(savedPackage.courierName, "Delhivery Surface 2 Kgs");
+    assert.equal(savedPackage.courierName, "Surface Economy");
     assert.equal(savedPackage.status, "quoted");
 
     state.order = state.orders.find((order) => order.id === quote.body.quoteId);

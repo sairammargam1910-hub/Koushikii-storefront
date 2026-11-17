@@ -79,8 +79,6 @@ const cartResponse = {
   discountAmount: "0.00",
   totalAmount: "1250.00",
   currencyCode: "INR",
-  shippingEstimate: null,
-  estimatedTotalAmount: null,
   discountCodes: [],
   lines: [{
     id: "gid://shopify/CartLine/browser-line-123",
@@ -174,7 +172,7 @@ async function openProduct({
   page.on("request", (request) => {
     if (request.isNavigationRequest()) documentNavigations += 1;
   });
-  page.on("pageerror", (error) => console.error("[shopify-browser-page-error]", error.message));
+  page.on("pageerror", (error) => console.error("[shopify-browser-page-error]", error.stack ?? error.message));
   await page.route("**/api/shopify/products", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -308,7 +306,7 @@ async function openCart({
   const context = await browser.newContext({ viewport });
   await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
   const page = await context.newPage();
-  page.on("pageerror", (error) => console.error("[shopify-browser-page-error]", error.message));
+  page.on("pageerror", (error) => console.error("[shopify-browser-page-error]", error.stack ?? error.message));
   const requests = [];
   let currentCart = {
     ...cartResponse,
@@ -325,7 +323,7 @@ async function openCart({
       0,
     );
     currentCart.subtotalAmount = subtotal.toFixed(2);
-    currentCart.totalAmount = subtotal.toFixed(2);
+    currentCart.totalAmount = (subtotal - Number(currentCart.discountAmount || 0)).toFixed(2);
   };
   refreshTotals();
   await page.route("**/api/shopify/cart**", async (route) => {
@@ -349,6 +347,9 @@ async function openCart({
       }
     } else if (method === "POST" && request.url().includes("/remove-lines")) {
       currentCart.lines = currentCart.lines.filter((line) => !body.lineIds.includes(line.id));
+    } else if (method === "POST" && request.url().includes("/discount-codes")) {
+      currentCart.discountCodes = body.discountCodes.map((code) => ({ code, applicable: true }));
+      currentCart.discountAmount = body.discountCodes.length ? "125.00" : "0.00";
     }
     refreshTotals();
     await route.fulfill({
@@ -359,19 +360,21 @@ async function openCart({
   });
   await page.goto(`${origin}${fixtureUrl}?screen=cart`);
   await page.getByRole("heading", { name: "Kanchipuram silk saree" }).waitFor({ timeout: 5000 });
-  return { context, page, requests };
+  return { context, page, requests, getCurrentCart: () => currentCart };
 }
 
 async function openCheckout({
   savedCart,
+  viewport = { width: 1280, height: 900 },
   onCartRequest,
   onQuoteRequest,
+  onShippingOptionRequest,
   onPaymentSessionRequest,
   onPaymentStatusRequest,
   returnOrderId,
   holdCashfreeCheckout = false,
 } = {}) {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({ viewport });
   await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
   await context.addInitScript((holdCheckout) => {
     window.__cashfreeCalls = [];
@@ -407,6 +410,9 @@ async function openCheckout({
   });
   if (onQuoteRequest) {
     await page.route("**/api/shopify/checkout/quote", (route) => onQuoteRequest(route));
+  }
+  if (onShippingOptionRequest) {
+    await page.route("**/api/shopify/checkout/shipping-option", (route) => onShippingOptionRequest(route));
   }
   if (onPaymentSessionRequest) {
     await page.route("**/api/shopify/checkout/payment-session", (route) => onPaymentSessionRequest(route));
@@ -583,26 +589,55 @@ test("opens the website checkout from a Shopify bag without a Shopify checkout U
   await context.close();
 });
 
-test("Buy now saves the selected Shopify product to the guest bag before checkout", async () => {
-  const { context, page } = await openProduct();
+test("Buy now adds to the existing bag and opens it without creating checkout", async () => {
+  const savedCart = { id: "gid://shopify/Cart/existing-bag", totalQuantity: 4 };
+  const mergedBag = {
+    ...cartResponse,
+    id: savedCart.id,
+    totalQuantity: 6,
+    lines: [
+      { ...cartResponse.lines[0], quantity: 5 },
+      {
+        ...cartResponse.lines[0],
+        id: "gid://shopify/CartLine/existing-other",
+        merchandiseId: "gid://shopify/ProductVariant/789",
+        productHandle: "existing-cotton",
+        productTitle: "Existing cotton saree",
+        quantity: 1,
+      },
+    ],
+  };
+  const { context, page } = await openProduct({ savedCart });
   let cartMutation;
+  const checkoutRequests = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/shopify/checkout/")) checkoutRequests.push(request.url());
+  });
   await page.route("**/api/shopify/cart**", async (route) => {
-    cartMutation = route.request().postDataJSON();
+    if (route.request().method() !== "GET") {
+      cartMutation = route.request().postDataJSON();
+    }
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify(cartResponse),
+      body: JSON.stringify(mergedBag),
     });
   });
 
+  await page.getByTestId("button-increase-quantity").click();
   await page.getByTestId("button-buy-shopify-now").click();
-  await page.waitForURL("**/Checkout", { timeout: 5000 });
+  await page.waitForURL("**/Cart", { timeout: 5000 });
   assert.equal(cartMutation.merchandiseId, variantId);
-  assert.equal(cartMutation.quantity, 1);
+  assert.equal(cartMutation.quantity, 2);
+  assert.equal(cartMutation.cartId, savedCart.id);
+  await page.getByTestId("text-cart-items-count").getByText(/Your pieces · 6 pieces/).waitFor();
+  await page.getByText("Existing cotton saree").waitFor();
+  assert.equal(await page.locator(".shopify-cart-row").count(), 2, "the same variant should be merged, not duplicated");
   assert.deepEqual(
     await page.evaluate(() => JSON.parse(localStorage.getItem("kq-shopify-cart"))),
-    { id: cartResponse.id, totalQuantity: cartResponse.totalQuantity },
+    { id: savedCart.id, totalQuantity: mergedBag.totalQuantity },
   );
+  assert.deepEqual(checkoutRequests, [], "Buy now must not create a quote or payment session");
   await context.close();
 });
 
@@ -635,9 +670,9 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
           shippingAmount: "100.00",
           taxAmount: "0.00",
           totalAmount: "1350.00",
-          carrier: "Shiprocket",
-          courierName: "Delhivery Surface 2 Kgs",
           parcelCount: 1,
+          deliveryOptions: [{ id: "10", amount: "100.00", currencyCode: "INR" }],
+          selectedDeliveryOptionId: "10",
           excludedCharges: ["Import duties and customs charges"],
         }),
       });
@@ -683,6 +718,7 @@ test("quotes the current address and hands payment to Cashfree without Shopify c
   await page.getByTestId("input-checkout-postal").fill("600001");
 
   const checkoutButton = page.getByTestId("button-submit-checkout-details");
+  assert.equal(quoteRequests.length, 0, "shipping must not be quoted before the shopper submits a delivery address");
   await checkoutButton.click();
   await page.getByTestId("text-checkout-total").getByText(/1,350/).waitFor();
   assert.match(await page.getByTestId("text-checkout-item-subtotal").innerText(), /1,250/);
@@ -1372,7 +1408,7 @@ test("Filter & Sort drawer fits and remains usable on a phone", async () => {
   await context.close();
 });
 
-test("applies shopper-entered discount codes to the Shopify bag", async () => {
+test("applies a discount to the bag total without estimating delivery", async () => {
   const savedCart = { id: "gid://shopify/Cart/browser-cart-123", totalQuantity: 1 };
   const { context, page } = await openCart({ savedCart });
   let mutation;
@@ -1394,9 +1430,43 @@ test("applies shopper-entered discount codes to the Shopify bag", async () => {
   await page.getByTestId("button-apply-shopify-discount").click();
   await page.getByTestId("status-shopify-discount").waitFor();
   assert.deepEqual(mutation, { cartId: savedCart.id, discountCodes: ["SILK10"] });
-  assert.match(await page.getByTestId("status-shopify-discount").innerText(), /SILK10.*applied/i);
+  assert.match(await page.getByTestId("status-shopify-discount").innerText(), /SILK10.*applies/i);
+  assert.doesNotMatch(await page.getByTestId("status-shopify-discount").innerText(), /Shopify/i);
   assert.match(await page.getByTestId("text-shopify-cart-discount").innerText(), /125/);
   assert.match(await page.getByTestId("text-shopify-cart-total").innerText(), /1,125/);
+  assert.match(await page.getByText("Total before shipping").innerText(), /Total before shipping/);
+  assert.match(await page.getByText(/Delivery charges are calculated at checkout based on your delivery address and available shipping options/).innerText(), /Delivery charges are calculated at checkout/);
+  assert.equal(await page.getByText(/Estimated total/i).count(), 0);
+  await context.close();
+});
+
+test("explains an invalid coupon and lets the shopper remove it", async () => {
+  const savedCart = { id: "gid://shopify/Cart/invalid-discount", totalQuantity: 1 };
+  const { context, page } = await openCart({ savedCart });
+  const submitted = [];
+  await page.route("**/api/shopify/cart/discount-codes", async (route) => {
+    const body = route.request().postDataJSON();
+    submitted.push(body.discountCodes);
+    const code = body.discountCodes[0];
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...cartResponse,
+        id: savedCart.id,
+        discountCodes: code ? [{ code, applicable: false }] : [],
+      }),
+    });
+  });
+
+  await page.getByTestId("input-shopify-discount-code").fill("NOTVALID");
+  await page.getByTestId("button-apply-shopify-discount").click();
+  await page.getByTestId("notice-shopify-discount").getByText(/does not apply/i).waitFor();
+  assert.equal(await page.getByTestId("button-remove-shopify-discount").count(), 1);
+  await page.getByTestId("button-remove-shopify-discount").click();
+  await page.getByTestId("button-remove-shopify-discount").waitFor({ state: "detached" });
+  assert.deepEqual(submitted, [["NOTVALID"], []]);
+  assert.equal(await page.getByTestId("text-shopify-cart-total").innerText(), "₹1,250.00");
   await context.close();
 });
 
@@ -1533,6 +1603,7 @@ test("locks cart controls while a server update is pending", async () => {
 
 test("shows discounted final item prices plus the address-based carrier quote", async () => {
   const savedCart = { id: "gid://shopify/Cart/discounted-quote-cart", totalQuantity: 1 };
+  const selectedOptions = [];
   const { context, page } = await openCheckout({
     savedCart,
     onCartRequest: (route) => route.fulfill({
@@ -1559,15 +1630,47 @@ test("shows discounted final item prices plus the address-based carrier quote", 
         shippingAmount: "100.00",
         taxAmount: "0.00",
         totalAmount: "1225.00",
-        carrier: "Shiprocket",
-        courierName: "Economy",
         parcelCount: 1,
+        deliveryOptions: [
+          { id: "10", amount: "100.00", currencyCode: "INR" },
+          { id: "20", amount: "150.00", currencyCode: "INR" },
+        ],
+        selectedDeliveryOptionId: "10",
         excludedCharges: [],
       }),
     }),
+    onShippingOptionRequest: async (route) => {
+      const body = route.request().postDataJSON();
+      selectedOptions.push(body);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          quoteId: "discounted-quote",
+          expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+          destinationCountryCode: "IN",
+          currencyCode: "INR",
+          itemSubtotal: "1250.00",
+          discountAmount: "125.00",
+          shippingAmount: "150.00",
+          taxAmount: "0.00",
+          totalAmount: "1275.00",
+          parcelCount: 1,
+          deliveryOptions: [
+            { id: "10", amount: "100.00", currencyCode: "INR" },
+            { id: "20", amount: "150.00", currencyCode: "INR" },
+          ],
+          selectedDeliveryOptionId: "20",
+          excludedCharges: [],
+        }),
+      });
+    },
   });
 
   assert.equal(await page.getByTestId("text-checkout-total").count(), 0);
+  assert.match(await page.getByTestId("text-checkout-discount").innerText(), /125/);
+  assert.match(await page.getByText("Shown after quote").innerText(), /Shown after quote/);
+  assert.equal(await page.getByTestId("text-checkout-shipping").count(), 0);
   await page.getByTestId("input-checkout-email").fill("buyer@example.com");
   await page.getByTestId("input-checkout-phone").fill("+919876543210");
   await page.getByTestId("input-checkout-recipient").fill("Asha Rao");
@@ -1580,6 +1683,74 @@ test("shows discounted final item prices plus the address-based carrier quote", 
   assert.match(await page.getByTestId("text-checkout-discount").innerText(), /125/);
   assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /100/);
   assert.equal(await page.getByTestId("text-checkout-tax").count(), 0);
+  await page.getByTestId("select-checkout-delivery-option").selectOption("20");
+  await page.getByTestId("text-checkout-total").getByText(/1,275/).waitFor();
+  assert.match(await page.getByTestId("text-checkout-shipping").innerText(), /150/);
+  assert.deepEqual(selectedOptions, [{ quoteId: "discounted-quote", deliveryOptionId: "20" }]);
+  await assertNoProviderBrandInPublicCopy(page);
+  await context.close();
+});
+
+test("delivery choice and order totals fit the mobile checkout viewport", async () => {
+  const savedCart = { id: "gid://shopify/Cart/mobile-delivery-options", totalQuantity: 1 };
+  const quoteResponse = {
+    quoteId: "mobile-quote",
+    expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    destinationCountryCode: "IN",
+    currencyCode: "INR",
+    itemSubtotal: "1250.00",
+    discountAmount: "0.00",
+    shippingAmount: "100.00",
+    taxAmount: "0.00",
+    totalAmount: "1350.00",
+    parcelCount: 1,
+    deliveryOptions: [
+      { id: "10", amount: "100.00", currencyCode: "INR" },
+      { id: "20", amount: "150.00", currencyCode: "INR" },
+    ],
+    selectedDeliveryOptionId: "10",
+    excludedCharges: [],
+  };
+  const { context, page } = await openCheckout({
+    savedCart,
+    viewport: { width: 390, height: 844 },
+    onCartRequest: (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ...cartResponse, id: savedCart.id }),
+    }),
+    onQuoteRequest: (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(quoteResponse),
+    }),
+    onShippingOptionRequest: (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...quoteResponse,
+        shippingAmount: "150.00",
+        totalAmount: "1400.00",
+        selectedDeliveryOptionId: "20",
+      }),
+    }),
+  });
+
+  await page.getByTestId("input-checkout-email").fill("buyer@example.com");
+  await page.getByTestId("input-checkout-phone").fill("+919876543210");
+  await page.getByTestId("input-checkout-recipient").fill("Asha Rao");
+  await page.getByTestId("input-checkout-address1").fill("12 Example Road");
+  await page.getByTestId("input-checkout-city").fill("Chennai");
+  await page.getByTestId("input-checkout-postal").fill("600001");
+  await page.getByTestId("button-submit-checkout-details").click();
+  await page.getByTestId("select-checkout-delivery-option").selectOption("20");
+  await page.getByTestId("text-checkout-total").getByText(/1,400/).waitFor();
+  const bounds = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  assert.ok(bounds.scrollWidth <= bounds.clientWidth + 1);
+  await assertNoProviderBrandInPublicCopy(page);
   await context.close();
 });
 

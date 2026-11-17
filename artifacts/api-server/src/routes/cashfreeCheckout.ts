@@ -9,6 +9,7 @@ import {
   CreateShopifyCheckoutQuoteResponse,
   GetShopifyCheckoutPaymentStatusResponse,
   GetShopifyCheckoutPaymentStatusQueryParams,
+  SelectShopifyCheckoutShippingOptionBody,
 } from "@workspace/api-zod";
 import {
   cashfreeCheckoutOrdersTable,
@@ -30,6 +31,7 @@ import {
   checkoutCartFingerprint,
   getShopperQuoteHash,
   getCartDiscountAmount,
+  getCheckoutItemSubtotal,
   getCheckoutItemTotal,
   getCartWeightKg,
   minimalCartSnapshot,
@@ -39,7 +41,7 @@ import {
 } from "../lib/checkoutPricing";
 import {
   bookShiprocketPackage,
-  quoteShiprocketPackage,
+  quoteShiprocketPackageOptions,
   createShiprocketPackage,
   getShiprocketModeForProductTags,
   getConfiguredParcel,
@@ -75,6 +77,7 @@ type CheckoutSnapshot = {
   address: CheckoutAddress;
   cart: ShopifyCartNode;
   providerPackages: ShiprocketQuote[];
+  shippingOptions?: ShiprocketQuote[];
   courierName: string;
   parcelCount: number;
   packageStrategy?: "combined_cart";
@@ -254,6 +257,14 @@ function cashfreeReturnUrl(orderId: string, req: Request): string {
 
 function responseForQuote(row: CheckoutOrderRow) {
   const snapshot = snapshotFromRow(row);
+  const deliveryOptions = (snapshot.shippingOptions?.length
+    ? snapshot.shippingOptions
+    : snapshot.providerPackages.slice(0, 1))
+    .map(({ courierId, amount, currencyCode }) => ({
+      id: courierId,
+      amount,
+      currencyCode,
+    }));
   return CreateShopifyCheckoutQuoteResponse.parse({
     quoteId: row.id,
     expiresAt: row.quoteExpiresAt.toISOString(),
@@ -264,9 +275,9 @@ function responseForQuote(row: CheckoutOrderRow) {
     shippingAmount: row.shippingAmount,
     taxAmount: row.taxAmount,
     totalAmount: row.totalAmount,
-    carrier: "Shiprocket",
-    courierName: snapshot.courierName,
     parcelCount: snapshot.parcelCount,
+    deliveryOptions,
+    selectedDeliveryOptionId: snapshot.providerPackages[0]?.courierId ?? "",
     excludedCharges: snapshot.address.countryCode.toUpperCase() === "IN"
       ? []
       : [
@@ -773,7 +784,7 @@ async function processConfirmedPayment(
 
 function validateCartForCheckout(cart: ShopifyCartNode): void {
   if (!cart.lines.nodes.length || cart.totalQuantity < 1) {
-    throw new ShopifyCheckoutInputError("Your Shopify bag is empty.", 400);
+    throw new ShopifyCheckoutInputError("Your bag is empty.", 400);
   }
   if (cart.totalQuantity > 20) {
     throw new ShopifyCheckoutInputError(
@@ -800,8 +811,15 @@ function validateCartForCheckout(cart: ShopifyCartNode): void {
   }
   if (cart.cost.totalAmount.currencyCode !== "INR") {
     throw new ShopifyCheckoutInputError(
-      "This checkout currently supports INR only. The Shopify cart currency must be INR.",
+      "This checkout currently supports INR only. The bag currency must be INR.",
       422,
+    );
+  }
+  const rejectedDiscount = cart.discountCodes.find((discount) => !discount.applicable);
+  if (rejectedDiscount) {
+    throw new ShopifyCheckoutInputError(
+      `The discount code ${rejectedDiscount.code} no longer applies to this bag. Return to your bag to remove it or choose an eligible offer.`,
+      409,
     );
   }
 }
@@ -1014,8 +1032,18 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       countryName: country.name,
     });
     const providerPackages: ShiprocketQuote[] = [];
+    let shippingOptions: ShiprocketQuote[] = [];
     for (const packageInput of packages) {
-      providerPackages.push(await quoteShiprocketPackage(packageInput));
+      const options = await quoteShiprocketPackageOptions(packageInput);
+      if (!shippingOptions.length) shippingOptions = options;
+      const lowestOption = options[0];
+      if (!lowestOption) {
+        throw new ShopifyCheckoutInputError(
+          "No delivery options are available for this address.",
+          409,
+        );
+      }
+      providerPackages.push(lowestOption);
     }
     const currencyCode = cart.cost.totalAmount.currencyCode;
     if (providerPackages.some((item) => item.currencyCode !== currencyCode)) {
@@ -1038,6 +1066,7 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       address,
       cart: minimalCartSnapshot(cart),
       providerPackages,
+      shippingOptions,
       courierName,
       parcelCount: providerPackages.length,
       packageStrategy: "combined_cart",
@@ -1052,7 +1081,7 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
         cartId: cart.id,
         destinationCountryCode: address.countryCode,
         currencyCode,
-        itemSubtotal: cart.cost.subtotalAmount.amount,
+        itemSubtotal: getCheckoutItemSubtotal(cart),
         discountAmount: getCartDiscountAmount(cart),
         shippingAmount,
         taxAmount,
@@ -1105,6 +1134,98 @@ router.post("/shopify/checkout/quote", async (req, res): Promise<void> => {
       error: "A current shipping quote could not be confirmed. Your bag has not been charged.",
     });
   }
+});
+
+router.post("/shopify/checkout/shipping-option", async (req, res): Promise<void> => {
+  const shopperUserId = requireCheckoutUser(req, res);
+  if (!shopperUserId) return;
+  const parsed = SelectShopifyCheckoutShippingOptionBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Choose an available delivery option." });
+    return;
+  }
+  res.setHeader("Cache-Control", "no-store");
+  const [row] = await db.select()
+    .from(cashfreeCheckoutOrdersTable)
+    .where(eq(cashfreeCheckoutOrdersTable.id, parsed.data.quoteId))
+    .limit(1);
+  if (!row || !await checkoutBelongsToShopper(row, shopperUserId)) {
+    res.status(404).json({ error: "This delivery quote could not be found. Request a fresh quote." });
+    return;
+  }
+  if (row.quoteExpiresAt.getTime() <= Date.now() || row.status !== "quote_ready") {
+    res.status(409).json({ error: "This delivery quote is no longer available. Request a fresh quote." });
+    return;
+  }
+
+  const snapshot = snapshotFromRow(row);
+  const options = snapshot.shippingOptions?.length
+    ? snapshot.shippingOptions
+    : snapshot.providerPackages.slice(0, 1);
+  const selectedOption = options.find((option) =>
+    option.courierId === parsed.data.deliveryOptionId
+  );
+  if (!selectedOption || selectedOption.currencyCode !== row.currencyCode) {
+    res.status(400).json({ error: "That delivery option is no longer available. Choose another option or request a fresh quote." });
+    return;
+  }
+
+  const providerPackages = snapshot.providerPackages.map((item, index) =>
+    index === 0 ? selectedOption : item
+  );
+  const shippingAmount = addMoney(providerPackages.map(({ amount }) => amount));
+  const totalAmount = addMoney([
+    getCheckoutItemTotal(snapshot.cart),
+    shippingAmount,
+  ]);
+  const courierName = [...new Set(providerPackages.map(({ courierName }) => courierName))].join(", ");
+  const updatedSnapshot: CheckoutSnapshot = {
+    ...snapshot,
+    providerPackages,
+    courierName,
+  };
+  const now = new Date();
+  const updated = await db.transaction(async (tx) => {
+    const [updatedRow] = await tx.update(cashfreeCheckoutOrdersTable)
+      .set({
+        shippingAmount,
+        totalAmount,
+        checkoutSnapshot: updatedSnapshot,
+        updatedAt: now,
+      })
+      .where(and(
+        eq(cashfreeCheckoutOrdersTable.id, row.id),
+        eq(cashfreeCheckoutOrdersTable.status, "quote_ready"),
+        gt(cashfreeCheckoutOrdersTable.quoteExpiresAt, now),
+      ))
+      .returning();
+    if (!updatedRow) return null;
+
+    for (const [packageIndex, item] of providerPackages.entries()) {
+      const packageUpdates = await tx.update(checkoutShipmentPackagesTable)
+        .set({
+          courierId: item.courierId,
+          courierName: item.courierName,
+          quotedAmount: item.amount,
+          updatedAt: now,
+        })
+        .where(and(
+          eq(checkoutShipmentPackagesTable.checkoutOrderId, row.id),
+          eq(checkoutShipmentPackagesTable.packageIndex, packageIndex),
+          eq(checkoutShipmentPackagesTable.status, "quoted"),
+        ))
+        .returning();
+      if (packageUpdates.length !== 1) {
+        throw new Error("The quoted delivery option could not be saved for every parcel.");
+      }
+    }
+    return updatedRow;
+  });
+  if (!updated) {
+    res.status(409).json({ error: "This delivery quote is no longer available. Request a fresh quote." });
+    return;
+  }
+  res.json(responseForQuote(updated));
 });
 
 router.post("/shopify/checkout/payment-session", async (req, res): Promise<void> => {

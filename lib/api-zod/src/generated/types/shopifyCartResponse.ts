@@ -7,7 +7,6 @@
  */
 import type { ShopifyCartDiscountCode } from './shopifyCartDiscountCode';
 import type { ShopifyCartLine } from './shopifyCartLine';
-import type { ShopifyCartShippingEstimate } from './shopifyCartShippingEstimate';
 
 export interface ShopifyCartResponse {
   id: string;
@@ -18,9 +17,6 @@ export interface ShopifyCartResponse {
   discountAmount: string;
   totalAmount: string;
   currencyCode: string;
-  shippingEstimate: ShopifyCartShippingEstimate | null;
-  /** @nullable */
-  estimatedTotalAmount: string | null;
   discountCodes: ShopifyCartDiscountCode[];
   lines: ShopifyCartLine[];
 }

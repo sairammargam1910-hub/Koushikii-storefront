@@ -389,7 +389,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
       updateShopifyCartCache(queryClient, cart);
       setCartError("");
       setCartMessage("Added to your bag.");
-      if (variables.intent === "buy_now") setLocation("/Checkout");
+      if (variables.intent === "buy_now") setLocation("/Cart");
     },
     onError: (error) => {
       const data = error && typeof error === "object" && "data" in error
@@ -515,7 +515,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                     }
                   }}
                 >
-                  {addToCart.isPending ? "Preparing checkout…" : "Buy now"}
+                  {addToCart.isPending ? "Adding to your bag…" : "Buy now"}
                 </button>
               </div>
               {cartMessage && (
