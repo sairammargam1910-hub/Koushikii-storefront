@@ -5,6 +5,7 @@ import {
   getMegaMenuFabricOptions,
   getMegaMenuWeaveOptions,
   getRegionalHandloomOptionsForFabric,
+  getShopifyRegionalHandloomCategories,
   matchesShopifyNavigationSelection,
 } from "../src/storefront/shopifyCatalogData.ts";
 
@@ -54,6 +55,20 @@ test("home fabric tiles keep custom categories and omit empty defaults and test 
     "Cotton",
     "Linen",
   ]);
+});
+
+test("homepage regional handloom row lists handloom classifications, not Shopify collection names", () => {
+  const products = [
+    product("narayanpet", { regionalHandloom: "Narayanpet" }),
+    product("gadwal", { regionalHandloom: "Gadwal" }),
+    {
+      ...product("grouped"),
+      collections: [{ id: "collection-1", handle: "cotton", title: "Cotton" }],
+    },
+    product("test", { regionalHandloom: "test tradition" }),
+  ];
+
+  assert.deepEqual(getShopifyRegionalHandloomCategories(products), ["Gadwal", "Narayanpet"]);
 });
 
 test("regional handlooms are derived by selected fabric and deduplicated", () => {

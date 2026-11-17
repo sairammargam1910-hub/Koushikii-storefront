@@ -350,8 +350,8 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
            <ClassificationField label="Colour" field="colour" values={draft.colour} suggestions={classificationSuggestions.colour} onChange={(values) => change("colour", values)} placeholder="Search or add a colour"/>
          </fieldset>
          <fieldset className="admin-product-collections">
-            <legend>Collections</legend>
-            <p className="field-note">Collections group products under “Shop by Collection.” They are separate from Fabric and Weave categories.</p>
+             <legend>Shopify collections (optional)</legend>
+             <p className="field-note">A Shopify collection is a named group of products, such as a curated edit. It is separate from Fabric and Regional Handloom categories; this field does not set a product’s handloom tradition.</p>
            {collectionsLoading&&<p className="field-note" role="status">Loading collections…</p>}
            {collectionsError&&<p className="field-note" role="status">Collections could not be loaded. You can still save this product without assigning one.</p>}
            {!collectionsLoading&&!collections.length&&!collectionsError&&<p className="field-note">No manual collections yet. This product can still be published and will appear in All Products.</p>}
@@ -365,8 +365,8 @@ function ProductModal({ initial, onClose, onSave, busy, error, allowVariantEdits
                 <span><b>{collection.title}</b><small>Product group</small></span>
              </label>)}
            </div>}
-           <label>Create or assign a collection<input maxLength={120} value={draft.newCollectionTitle} onChange={(e)=>change("newCollectionTitle",e.target.value)} placeholder="The Crafts Edit"/></label>
-           <p className="field-note">If the name already exists, this product will be added to that collection. Otherwise Shopify will create it and assign this product.</p>
+            <label>Create or assign a Shopify collection<input maxLength={120} value={draft.newCollectionTitle} onChange={(e)=>change("newCollectionTitle",e.target.value)} placeholder="The Crafts Edit"/></label>
+            <p className="field-note">If the name already exists, this product will be added to that Shopify collection. Otherwise Shopify will create it and assign this product.</p>
          </fieldset>
         <ProductPhotoPicker productId={productId} existingImage={existingImage} disabled={busy} onUploading={setUploading} onPending={setPhotoPending} onImage={(url) => { setPhotoUrl(url); change("imageUrl", ""); }}/>
         <label>Or add a public image URL <span className="label-hint">Optional; existing images stay</span><input type="url" disabled={busy || uploading || photoPending || !!photoUrl} value={draft.imageUrl} onChange={(e) => change("imageUrl", e.target.value)} placeholder="https://…" data-testid="input-product-image-url"/></label>

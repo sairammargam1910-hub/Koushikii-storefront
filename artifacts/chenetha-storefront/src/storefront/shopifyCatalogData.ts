@@ -119,6 +119,12 @@ export function getCustomerNavigationValues(values: string[]) {
   return [...unique.values()].sort((a, b) => a.localeCompare(b));
 }
 
+export function getShopifyRegionalHandloomCategories(products: ShopifyProduct[]) {
+  return getCustomerNavigationValues(
+    products.flatMap((product) => getShopifyAttributeValues(product, "regionalHandloom")),
+  );
+}
+
 export function matchesShopifyFabricCategory(product: ShopifyProduct, selectedFabric: string) {
   const fabrics = getShopifyAttributeValues(product, "fabric");
   if (normalizedTag(selectedFabric) === "others") {
