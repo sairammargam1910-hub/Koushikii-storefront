@@ -118,13 +118,51 @@ const makingStages = [
   {id:"dye",step:"02",note:"Colour",title:"Bring in the colour",copy:"Yarn may be coloured before it is woven. Dye methods and timing differ by material, design and regional practice.",image:"/images/koushikii-home-dye.svg",video:"/images/koushikii-home-dye.mp4",alt:"A short video showing the colouring stage of handloom preparation."},
   {id:"loom",step:"03",note:"Weaving",title:"Weave the cloth",copy:"Warp and weft meet at the handloom. Each pass of the shuttle brings the fabric a little closer to its finished form.",image:"/images/koushikii-home-loom.svg",video:"/images/koushikii-home-loom.mp4",alt:"A short video of a handloom in use."},
 ];
+const loomMotionScriptLoads = new WeakMap<SVGSVGElement, Promise<void>>();
+function loadLoomMotionOnce(svg: SVGSVGElement) {
+ if (loomMotionScriptLoads.has(svg)) return loomMotionScriptLoads.get(svg);
+ const loaded = new Promise<void>((resolve, reject) => {
+  const script = document.createElement("script");
+  script.src = `${import.meta.env.BASE_URL}loom-weaver-motion.js`;
+  script.async = false;
+  script.onload = () => resolve();
+  script.onerror = () => {
+   loomMotionScriptLoads.delete(svg);
+   script.remove();
+   reject(new Error("Could not load the loom motion script."));
+  };
+  document.body.appendChild(script);
+ });
+ loomMotionScriptLoads.set(svg, loaded);
+ return loaded;
+}
 function MakingJourney(){
  const [stage,setStage]=useState(0);
  const [playing,setPlaying]=useState(false);
  const [reducedMotion,setReducedMotion]=useState(false);
  const [replay,setReplay]=useState(0);
+ const [loomSvgMarkup,setLoomSvgMarkup]=useState<string|null>(null);
   const videoRef=useRef<HTMLVideoElement>(null);
+ const loomSceneRef=useRef<HTMLDivElement>(null);
  const current=makingStages[stage];
+
+ useEffect(()=>{
+  let active=true;
+  fetch(`${import.meta.env.BASE_URL}images/koushikii-home-loom-motion.svg`)
+   .then(response=>{
+    if(!response.ok)throw new Error(`Loom SVG request failed: ${response.status}`);
+    return response.text();
+   })
+   .then(markup=>{if(active)setLoomSvgMarkup(markup);})
+   .catch(error=>{if(active)console.error("Could not load the inline loom scene.",error);});
+  return ()=>{active=false;};
+ },[]);
+
+ useEffect(()=>{
+  if(current.id!=="loom")return;
+  const svg=loomSceneRef.current?.querySelector("svg");
+  if(svg)void loadLoomMotionOnce(svg).catch(error=>console.error(error));
+ },[current.id,loomSvgMarkup]);
 
  useEffect(()=>{
   const media=window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -154,9 +192,11 @@ function MakingJourney(){
  const chooseStage=(index:number)=>{setStage((index+makingStages.length)%makingStages.length);setPlaying(false);};
  return <div className={`home-making-journey${playing?" is-playing":""}`} data-replay={replay}>
   <div className="home-making-scene">
-     {playing?
-      <video key={`${current.id}-${replay}`} ref={videoRef} className="home-making-art" src={current.video} poster={current.image} aria-label={current.alt} autoPlay muted playsInline preload="auto" onError={()=>setPlaying(false)}/>:
-      <img key={`${current.id}-${replay}`} className="home-making-art" src={current.image} alt={current.alt} loading="eager"/>}
+     {current.id==="loom"&&loomSvgMarkup?
+      <div key={`loom-${replay}`} ref={loomSceneRef} className="home-making-art home-making-inline-svg" role="img" aria-label={current.alt} dangerouslySetInnerHTML={{__html:loomSvgMarkup}}/>:
+      playing?
+       <video key={`${current.id}-${replay}`} ref={videoRef} className="home-making-art" src={current.video} poster={current.image} aria-label={current.alt} autoPlay muted playsInline preload="auto" onError={()=>setPlaying(false)}/>:
+       <img key={`${current.id}-${replay}`} className="home-making-art" src={current.image} alt={current.alt} loading="eager"/>}
    <div className="home-making-caption"><span className="home-making-caption-mark" aria-hidden="true">✳</span><span>{current.note} · Handloom craft, in three moments</span></div>
    <div className="home-making-scene-index" aria-hidden="true">{current.step}<i>/</i>03</div>
    <div className="home-making-progress" key={`progress-${stage}-${replay}`}><span/></div>
