@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { CreateSiteContentBody } from "../../../lib/api-zod/src/generated/api.ts";
 import {
   getFabricCategoryOptions,
   getMegaMenuFabricOptions,
@@ -69,6 +70,27 @@ test("homepage regional handloom row lists handloom classifications, not Shopify
   ];
 
   assert.deepEqual(getShopifyRegionalHandloomCategories(products), ["Gadwal", "Narayanpet"]);
+});
+
+test("site content API accepts the Shop by Collection thumbnail placement", () => {
+  const result = CreateSiteContentBody.safeParse({
+    kind: "home_image",
+    placement: "regional_handloom_tile",
+    title: "Narayanpet",
+    eyebrow: null,
+    body: null,
+    imageUrl: "/api/site-content/media/00000000-0000-4000-8000-000000000001",
+    mediaUrl: null,
+    altText: null,
+    ctaLabel: null,
+    ctaUrl: null,
+    linkedProductId: null,
+    sortOrder: 0,
+    published: false,
+    approved: false,
+  });
+
+  assert.equal(result.success, true);
 });
 
 test("regional handlooms are derived by selected fabric and deduplicated", () => {

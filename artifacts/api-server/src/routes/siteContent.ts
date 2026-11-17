@@ -67,8 +67,13 @@ function invalidContentMessage(input: {
   if ((input.kind === "hero_slide" || input.kind === "home_image") && !input.imageUrl) {
     return "Upload an image before saving this item.";
   }
-  if (input.kind === "home_image" && input.placement !== "fabric_tile" && input.placement !== "weave_tile") {
-    return "Choose whether this image belongs to Shop by Fabric or Shop by Weave.";
+  if (
+    input.kind === "home_image" &&
+    input.placement !== "fabric_tile" &&
+    input.placement !== "weave_tile" &&
+    input.placement !== "regional_handloom_tile"
+  ) {
+    return "Choose Shop by Fabric, Shop by Weave or Shop by Collection for this image.";
   }
   if (input.kind === "customer_voice" && !input.body?.trim()) {
     return "Add the customer's approved words before saving.";
@@ -139,7 +144,7 @@ async function normalizeMediaUrl(
 async function prepareInput(
   input: {
     kind: "hero_slide" | "home_image" | "customer_voice" | "video_post";
-    placement: "fabric_tile" | "weave_tile" | null;
+    placement: "fabric_tile" | "weave_tile" | "regional_handloom_tile" | null;
     title: string;
     eyebrow: string | null;
     body: string | null;

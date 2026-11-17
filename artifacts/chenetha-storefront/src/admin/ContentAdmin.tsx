@@ -9,12 +9,12 @@ import {
 } from "@workspace/api-client-react";
 import { AdminLayout } from "./Admin";
 import { ContentPreview } from "./ContentPreview";
-import { getFabricCategoryOptions, parseClassificationValues, WEAVE_PRINTS } from "../storefront/shopifyCatalogData";
+import { getCustomerNavigationValues, getFabricCategoryOptions, parseClassificationValues, WEAVE_PRINTS } from "../storefront/shopifyCatalogData";
 import { normalizeWeave } from "../storefront/_shared/catalog-filter";
 import "./ContentAdmin.css";
 
 type Kind = SiteContentInput["kind"];
-type Placement = "fabric_tile" | "weave_tile";
+type Placement = "fabric_tile" | "weave_tile" | "regional_handloom_tile";
 type Draft = SiteContentInput & { placement: Placement | null };
 const emptyDraft = (kind: Kind = "hero_slide"): Draft => ({
   kind, title: "", eyebrow: null, body: null, imageUrl: null, mediaUrl: null,
@@ -67,6 +67,8 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
         ...WEAVE_PRINTS,
         ...(shopify.data?.products || []).flatMap(product => parseClassificationValues(product.craftTechnique).map(normalizeWeave)),
       ])].sort((a, b) => a.localeCompare(b))
+      : draft.placement === "regional_handloom_tile"
+        ? getCustomerNavigationValues((shopify.data?.products || []).flatMap(product => parseClassificationValues(product.regionalHandloom)))
       : [];
   if (draft.title && !homeImageOptions.includes(draft.title)) homeImageOptions.unshift(draft.title);
   useEffect(() => () => localPreviewUrls.current.forEach(URL.revokeObjectURL), []);
@@ -129,7 +131,7 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
     <section className="admin-modal content-editor" role="dialog" aria-modal="true" aria-hidden={previewOpen} aria-labelledby="content-editor-title">
       <header className="modal-head"><div><span className="eyebrow">STOREFRONT CONTENT</span><h2 id="content-editor-title">{item ? "Edit" : "Add"} {labels[kind].replace(/s$/, "").toLowerCase()}</h2></div><button className="icon-button" type="button" disabled={busy} onClick={onClose} aria-label="Close"><X size={18}/></button></header>
       <form className="admin-form" onSubmit={submit}>
-        {kind === "home_image" && <label>Homepage row<select required value={draft.placement || ""} onChange={event => {const placement=(event.target.value||null) as Placement|null;setDraft(current=>({...current,placement,title:""}));}}><option value="">Choose a homepage row</option><option value="fabric_tile">Shop by Fabric</option><option value="weave_tile">Shop by Weave</option></select><span className="field-note">The uploaded image replaces the illustrated placeholder for the selected category after you publish.</span></label>}
+        {kind === "home_image" && <label>Homepage row<select required value={draft.placement || ""} onChange={event => {const placement=(event.target.value||null) as Placement|null;setDraft(current=>({...current,placement,title:""}));}}><option value="">Choose a homepage row</option><option value="fabric_tile">Shop by Fabric</option><option value="weave_tile">Shop by Weave</option><option value="regional_handloom_tile">Shop by Collection</option></select><span className="field-note">The uploaded image replaces the illustrated placeholder for the selected category after you publish.</span></label>}
          {kind === "home_image"
            ? <label>Category<select required value={draft.title} onChange={event => set("title", event.target.value)} disabled={!draft.placement}><option value="">Choose a category</option>{homeImageOptions.map(value => <option key={value} value={value}>{value}</option>)}</select><span className="field-note">Choose the exact tile to update so its image appears in the matching homepage row.</span></label>
            : <label>Title<input required maxLength={180} value={draft.title} onChange={event => set("title", event.target.value)} placeholder="A clear working title"/></label>}
@@ -191,7 +193,7 @@ export function AdminContent() {
     {content.isLoading ? <div className="content-skeleton" aria-label="Loading content"><span/><span/><span/></div> : content.isError ? <div className="content-empty"><CircleAlert size={22}/><h2>Content could not load</h2><p>{readable(content.error)}</p><button className="button button-quiet" onClick={() => void content.refetch()}><RefreshCw size={15}/> Try again</button></div> :
       items.length ? <div className="content-item-list">{items.map(item => <article className="content-row" key={item.id}>
         <div className="content-preview">{item.kind === "video_post" ? item.imageUrl ? <img src={item.imageUrl} alt=""/> : <Film size={22}/> : item.imageUrl ? <img src={item.imageUrl} alt=""/> : <MessageSquareQuote size={22}/>}</div>
-         <div className="content-row-copy"><span className="eyebrow">{item.kind === "home_image" ? ((item as SiteContentItem & {placement?: Placement|null}).placement === "fabric_tile" ? "Shop by Fabric" : "Shop by Weave") : item.eyebrow || labels[item.kind]}</span><h2>{item.title}</h2><p>{item.kind === "customer_voice" ? item.body : item.kind === "video_post" ? item.body || "Video post" : item.altText || item.body || "No additional copy"}</p></div>
+         <div className="content-row-copy"><span className="eyebrow">{item.kind === "home_image" ? item.placement === "fabric_tile" ? "Shop by Fabric" : item.placement === "weave_tile" ? "Shop by Weave" : "Shop by Collection" : item.eyebrow || labels[item.kind]}</span><h2>{item.title}</h2><p>{item.kind === "customer_voice" ? item.body : item.kind === "video_post" ? item.body || "Video post" : item.altText || item.body || "No additional copy"}</p></div>
         <div className="content-row-state"><span className={`status-pill ${item.published ? "status-active" : "status-draft"}`}>{item.published ? "Published" : "Draft"}</span>{item.kind === "customer_voice" && <span className={`status-pill ${item.approved ? "status-active" : "status-draft"}`}>{item.approved ? "Approved" : "Needs approval"}</span>}</div>
         <div className="content-row-actions"><button className="text-button" onClick={() => setEditing(item)}><Pencil size={14}/> Edit</button><button className="text-button danger-text" disabled={remove.isPending} onClick={() => deleteItem(item)}><Trash2 size={14}/> Delete</button></div>
       </article>)}</div> : <div className="content-empty">{icon}<h2>No {labels[kind].toLowerCase()} yet</h2><p>Add a real piece of storefront content when it is ready. Nothing is shown publicly until it is published.</p><button className="button button-primary" onClick={() => setCreating(true)}><Plus size={16}/> Add {labels[kind].replace(/s$/, "").toLowerCase()}</button></div>}

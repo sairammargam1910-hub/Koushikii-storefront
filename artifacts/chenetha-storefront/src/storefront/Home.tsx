@@ -278,12 +278,31 @@ function IndiaWeaves({products}:{products:ShopifyProduct[]}){
   </div></div>
  </div></section>
 }
-export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];placement:"fabric_tile"|"weave_tile"}){
+type HomeTilePlacement = "fabric_tile" | "weave_tile" | "regional_handloom_tile";
+export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {placement:HomeTilePlacement|null})[];placement:HomeTilePlacement}){
   const fallback=base+"Collections";
   const isFabric=placement==="fabric_tile";
-  return <div className={isFabric?"fabric-grid":"taxonomy-link-grid technique-link-grid"}>{items.map(item=><a key={item.id} className={isFabric?"fabric-card":""} href={item.ctaUrl||fallback}>
-   <img className={isFabric?"dynamic-home-tile-image":"dynamic-home-weave-image"} src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
-   {isFabric?<><h3>{item.title}</h3>{item.body&&<p>{item.body}</p>}{item.ctaLabel&&<span className="link">{item.ctaLabel} →</span>}</>:<><span>{item.title}</span><small>Explore pieces →</small></>}
+  const isRegionalHandloom=placement==="regional_handloom_tile";
+  const className=isFabric?"fabric-grid":isRegionalHandloom?"weave-grid":"taxonomy-link-grid technique-link-grid";
+  return <div className={className}>{items.map(item=><a key={item.id} className={isFabric?"fabric-card":""} href={item.ctaUrl||(isRegionalHandloom?`${fallback}?regionalHandloom=${encodeURIComponent(item.title)}`:fallback)}>
+   <img className={isFabric||isRegionalHandloom?"dynamic-home-tile-image":"dynamic-home-weave-image"} src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
+   {isFabric ? (
+     <>
+       <h3>{item.title}</h3>
+       {item.body && <p>{item.body}</p>}
+       {item.ctaLabel && <span className="link">{item.ctaLabel} →</span>}
+     </>
+   ) : isRegionalHandloom ? (
+     <>
+       <h3>{item.title}</h3>
+       <span className="eyebrow" style={{fontSize:9}}>Regional handloom · Explore →</span>
+     </>
+   ) : (
+     <>
+       <span>{item.title}</span>
+       <small>Explore pieces →</small>
+     </>
+   )}
   </a>)}</div>;
 }
 export function Reviews({items}:{items:SiteContentItem[]}){
@@ -353,7 +372,7 @@ export function Home(){
     isNewArrival(product)||(newArrivalsCollection&&product.collections.some(item=>item.handle===newArrivalsCollection.handle)),
   );
   const published=siteContent.data?.items||[];
-  const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];
+  const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:HomeTilePlacement|null})[];
    const fabricNames=getCustomerNavigationValues(getFabricCategoryOptions(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"fabric"))));
   const fabricCards=fabricNames.map(name=>{
    const normalized=name.toLowerCase();
@@ -393,14 +412,15 @@ export function Home(){
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
    <IndiaWeaves products={storefrontProducts}/>
    <Reviews items={voices}/>
-    <section className="section home-weave-section" id="shop-by-collection"><div className="wrap"><div className="section-head"><div><h2>Shop by Regional Handloom</h2><p>Explore published pieces by their handloom tradition.</p></div>{homeCollectionLinks.length>0&&<a href={base+"Collections"} className="link">View all pieces →</a>}</div>
-        {homeCollectionLinks.length?<div className="weave-grid home-horizontal-track" role="region" aria-label="Shop by Regional Handloom" tabIndex={0}>{homeCollectionLinks.map((item,index)=>{
+    <section className="section home-weave-section" id="shop-by-collection"><div className="wrap"><div className="section-head"><div><h2>Shop by Collection</h2><p>Browse regional handlooms such as Narayanpet.</p></div>{homeCollectionLinks.length>0&&<a href={base+"Collections"} className="link">All collections →</a>}</div>
+        {homeCollectionLinks.length?<div className="weave-grid home-horizontal-track" role="region" aria-label="Shop by Collection" tabIndex={0}>{homeCollectionLinks.map((item,index)=>{
           const href=base+"Collections?regionalHandloom="+encodeURIComponent(item.title);
+          const tile=homeTiles.find(entry=>entry.placement==="regional_handloom_tile"&&entry.title.trim().toLowerCase()===item.title.trim().toLowerCase());
           return <a key={item.key} href={href}>
-           <Textile pattern={"s"+(index%6+1)} label={item.title}/>
+           {tile?.imageUrl?<img className="dynamic-home-tile-image" src={tile.imageUrl} alt={tile.altText||item.title} loading="lazy"/>:<Textile pattern={"s"+(index%6+1)} label={item.title}/>}
            <h3>{item.title}</h3><span className="eyebrow" style={{fontSize:9}}>Regional handloom · Explore →</span>
          </a>;
-        })}</div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading regional handlooms…":storefrontCatalog.isError?"We couldn’t load the product list. Try the collections page again shortly.":"Regional handloom categories appear here when published products have a tradition value."}</p>}
+        })}</div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading regional handlooms…":storefrontCatalog.isError?"We couldn’t load the product list. Try the collections page again shortly.":"Real regional handlooms appear here when published products have a tradition value; test and demo values are hidden."}</p>}
    </div></section>
       <section className="section" style={{paddingTop:12}}><div className="wrap home-guide-link"><a href={base+"Collections"}><span className="eyebrow">A companion for choosing</span><h3>Find your thread.</h3><p>Explore our current pieces and narrow the collection by fabric, regional tradition, technique, origin or colour.</p><span className="link">Discover the collection →</span></a><a href={base+"SareeCare"}><span className="eyebrow">A companion for keeping</span><h3>Care for the cloth.</h3><p>Give an everyday cotton and a treasured silk the different kinds of attention they need.</p><span className="link">Read the care notes →</span></a></div></section>
  </Shell>

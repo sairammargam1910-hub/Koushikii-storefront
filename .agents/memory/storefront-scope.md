@@ -140,11 +140,11 @@ Product classifications, search tags and collections serve different purposes. A
 
 **How to apply:** Derive fabric tiles, header links, filters and thumbnail choices from live product fabric values. Explain in the merchant form that Fabric creates a tile, tags are keywords, and collections group products.
 
-The homepage's regional-handloom browse row should list regional handloom classifications only; ordinary Shopify collection memberships belong in the Shopify collections/catalog experience, not mixed into that row.
+The homepage's “Shop by Collection” browse row should list regional handloom classifications only; ordinary Shopify collection memberships belong in the Shopify collections/catalog experience, not mixed into that row.
 
 **Why:** On November 17, 2026, the user clarified that this homepage area should show regional handlooms such as Narayanpet, not general product collection names.
 
-**How to apply:** Build those home links from published products' Regional Handloom / Tradition values only. Keep Shopify collection assignment available as a separate optional product grouping.
+**How to apply:** Build those home links from published products' Regional Handloom / Tradition values only. Keep Shopify collection assignment available as a separate optional product grouping. Use the heading “Shop by Collection” for this row.
 
 Homepage New Arrivals uses the `new arrival` tag. The green Premium Collection panel lists Shopify collections and regional-handloom categories that contain premium items; each link filters to premium products in that category. Premium status comes from the `premium` tag or membership in Shopify's Premium Collection; `featured` is not a premium marker.
 

@@ -2916,7 +2916,7 @@ components:
           enum: [hero_slide, home_image, customer_voice, video_post]
         placement:
           type: ["string", "null"]
-          enum: [fabric_tile, weave_tile, null]
+          enum: [fabric_tile, weave_tile, regional_handloom_tile, null]
         title:
           type: string
         eyebrow:
@@ -2964,7 +2964,7 @@ components:
           enum: [hero_slide, home_image, customer_voice, video_post]
         placement:
           type: ["string", "null"]
-          enum: [fabric_tile, weave_tile, null]
+          enum: [fabric_tile, weave_tile, regional_handloom_tile, null]
         title:
           type: string
           minLength: 1

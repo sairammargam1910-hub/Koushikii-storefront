@@ -15,4 +15,5 @@ export type SiteContentInputPlacement = typeof SiteContentInputPlacement[keyof t
 export const SiteContentInputPlacement = {
   fabric_tile: 'fabric_tile',
   weave_tile: 'weave_tile',
+  regional_handloom_tile: 'regional_handloom_tile',
 } as const;

@@ -11,6 +11,7 @@ export const siteContentKindEnum = pgEnum("site_content_kind", [
 export const siteContentPlacementEnum = pgEnum("site_content_placement", [
   "fabric_tile",
   "weave_tile",
+  "regional_handloom_tile",
 ]);
 
 export const siteContentTable = pgTable("site_content_items", {

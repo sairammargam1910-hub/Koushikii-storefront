@@ -1758,7 +1758,7 @@ export const GetSiteContentResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.uuid(),
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
-  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal('regional_handloom_tile'),zod.literal(null)]).nullable(),
   "title": zod.string(),
   "eyebrow": zod.string().nullable(),
   "body": zod.string().nullable(),
@@ -1806,7 +1806,7 @@ export const createSiteContentBodySortOrderMax = 10000;
 
 export const CreateSiteContentBody = zod.object({
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
-  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal('regional_handloom_tile'),zod.literal(null)]).nullable(),
   "title": zod.string().min(1).max(createSiteContentBodyTitleMax),
   "eyebrow": zod.string().max(createSiteContentBodyEyebrowMax).nullable(),
   "body": zod.string().max(createSiteContentBodyBodyMax).nullable(),
@@ -1824,7 +1824,7 @@ export const CreateSiteContentBody = zod.object({
 export const CreateSiteContentResponse = zod.object({
   "id": zod.uuid(),
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
-  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal('regional_handloom_tile'),zod.literal(null)]).nullable(),
   "title": zod.string(),
   "eyebrow": zod.string().nullable(),
   "body": zod.string().nullable(),
@@ -1850,7 +1850,7 @@ export const GetAdminSiteContentResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.uuid(),
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
-  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal('regional_handloom_tile'),zod.literal(null)]).nullable(),
   "title": zod.string(),
   "eyebrow": zod.string().nullable(),
   "body": zod.string().nullable(),
@@ -1902,7 +1902,7 @@ export const updateSiteContentBodySortOrderMax = 10000;
 
 export const UpdateSiteContentBody = zod.object({
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
-  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal('regional_handloom_tile'),zod.literal(null)]).nullable(),
   "title": zod.string().min(1).max(updateSiteContentBodyTitleMax),
   "eyebrow": zod.string().max(updateSiteContentBodyEyebrowMax).nullable(),
   "body": zod.string().max(updateSiteContentBodyBodyMax).nullable(),
@@ -1920,7 +1920,7 @@ export const UpdateSiteContentBody = zod.object({
 export const UpdateSiteContentResponse = zod.object({
   "id": zod.uuid(),
   "kind": zod.enum(['hero_slide', 'home_image', 'customer_voice', 'video_post']),
-  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal(null)]).nullable(),
+  "placement": zod.union([zod.literal('fabric_tile'),zod.literal('weave_tile'),zod.literal('regional_handloom_tile'),zod.literal(null)]).nullable(),
   "title": zod.string(),
   "eyebrow": zod.string().nullable(),
   "body": zod.string().nullable(),

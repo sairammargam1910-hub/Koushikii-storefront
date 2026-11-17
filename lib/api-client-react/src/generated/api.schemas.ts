@@ -963,6 +963,7 @@ export type SiteContentItemPlacement = typeof SiteContentItemPlacement[keyof typ
 export const SiteContentItemPlacement = {
   fabric_tile: 'fabric_tile',
   weave_tile: 'weave_tile',
+  regional_handloom_tile: 'regional_handloom_tile',
 } as const;
 
 export interface SiteContentItem {
@@ -1017,6 +1018,7 @@ export type SiteContentInputPlacement = typeof SiteContentInputPlacement[keyof t
 export const SiteContentInputPlacement = {
   fabric_tile: 'fabric_tile',
   weave_tile: 'weave_tile',
+  regional_handloom_tile: 'regional_handloom_tile',
 } as const;
 
 export interface SiteContentInput {
