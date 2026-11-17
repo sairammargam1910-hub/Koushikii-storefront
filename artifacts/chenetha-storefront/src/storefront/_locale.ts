@@ -16,7 +16,7 @@ export function readStoreLanguage(): StoreLanguage {
 }
 
 const phrases: Record<string, [string, string]> = {
-  "sustainable ethical timeless": ["నిలకడైనది, నైతికమైనది, కాలాతీతమైనది", "टिकाऊ, नैतिक, कालातीत"],
+  "sustainable · ethical · timeless": ["నిలకడైనది · నైతికమైనది · కాలాతీతమైనది", "टिकाऊ · नैतिक · कालातीत"],
   "Explore the collection": ["సేకరణను చూడండి", "संग्रह देखें"],
   "Heirloom classics": ["తరతరాల వారసత్వ నేతలు", "पीढ़ियों की विरासत"],
   "Shop the edit": ["ఎంపిక చేసిన నేతలను చూడండి", "चुने हुए संग्रह को देखें"],

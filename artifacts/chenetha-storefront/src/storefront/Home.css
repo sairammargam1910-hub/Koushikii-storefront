@@ -54,7 +54,7 @@
 .kq .home-hero-images {
   position: relative;
   isolation: isolate;
-  height: clamp(460px, 49vw, 650px);
+  height: clamp(430px, 46vw, 610px);
   min-height: 0;
   overflow: hidden;
   background: var(--paper);
@@ -63,7 +63,7 @@
 }
 
 .kq .home-hero-images.has-portrait-image {
-  height: clamp(560px, 58vw, 740px);
+  height: clamp(520px, 54vw, 690px);
   background: var(--paper);
 }
 
@@ -262,8 +262,8 @@
 
 @media (max-width: 650px) {
   .kq .home-hero-images {
-    height: min(640px, calc(100svh - 180px));
-    min-height: 540px;
+    height: min(600px, calc(100svh - 210px));
+    min-height: 510px;
   }
 
   .kq .home-hero-image {
@@ -271,8 +271,8 @@
   }
 
   .kq .home-hero-images.has-portrait-image {
-    height: min(640px, calc(100svh - 180px));
-    min-height: 540px;
+    height: min(600px, calc(100svh - 210px));
+    min-height: 510px;
   }
 
   .kq .home-hero-images.has-portrait-image .home-hero-image {

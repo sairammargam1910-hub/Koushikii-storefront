@@ -82,7 +82,7 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
   const cartCount=shopifyCart
     ? (currentCart.data?.totalQuantity ?? shopifyCart.totalQuantity)
     : cart.reduce((sum,item)=>sum+item.qty,0);
- return <><div className="topline">sustainable ethical timeless</div>
+  return <><div className="topline">sustainable · ethical · timeless</div>
  <header className="header"><div className="wrap headrow">
    <button className="iconbtn mobile-menu" data-testid="button-mobile-menu" onClick={()=>setMenu(!menu)} aria-expanded={menu} aria-controls="kq-main-menu" aria-label="Toggle main menu">{menu?<X size={20}/>:<Menu size={20}/>}</button>
    <a className="brand" href="/" onClick={()=>setMenu(false)}><img src="/images/koushikii/wordmark-red.png" alt="Chenetha by Koushikii"/></a>
