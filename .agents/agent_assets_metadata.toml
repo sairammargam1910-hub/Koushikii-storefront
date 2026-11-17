@@ -210,3 +210,73 @@ mtime_ms = 1794890840929
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/63a4d6f5-6549-41b0-84d1-13b9b0b708d9/829c9459-5d40-4932-b5c0-3e0dd27f4646"
 storage_version_token = "1794890880186224"
 content_type = "video/mp4"
+
+[[outputs]]
+id = "2R7oYp5zB5ToQrkqrPxfL"
+uri = "file://generated-artifacts/hero-gradient/desktop-courtyard.png"
+type = "image"
+title = "Hero fade — bright courtyard"
+description = "Desktop preview with the bright courtyard slide and unified cream gradient."
+logical_id = "ac7437cf-c4e3-4591-a877-96e6f0a10587"
+content_hash = "sha256:3f97d9519db997d15aa95171fd44b7ec1ae0f0310f088247b2f467c23d9c7ede"
+size = 765614
+mtime_ms = 1794916793254
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/ac7437cf-c4e3-4591-a877-96e6f0a10587/c7f89a6c-1d78-4e90-b33c-f0f400a0ad67"
+storage_version_token = "1794916896041843"
+content_type = "image/png"
+
+[[outputs]]
+id = "frnwja3EO3FpBAXlPA0W2"
+uri = "file://generated-artifacts/hero-gradient/desktop-weaving.png"
+type = "image"
+title = "Hero fade — darker weaving room"
+description = "Desktop preview with the darker weaving-room slide."
+logical_id = "2b1305b4-4eac-41cb-9210-7aef24589f75"
+content_hash = "sha256:d3be08f3c1a350b77192a292f8920a302a1bb165d1b0700f880690071b6e6ed2"
+size = 680021
+mtime_ms = 1794916794706
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/2b1305b4-4eac-41cb-9210-7aef24589f75/eae304e5-76f3-4ab8-88fe-c481a16c5dd9"
+storage_version_token = "1794916897324932"
+content_type = "image/png"
+
+[[outputs]]
+id = "GNqTWHvgE7djM3-EdBz2h"
+uri = "file://generated-artifacts/hero-gradient/desktop-garden.png"
+type = "image"
+title = "Hero fade — green garden"
+description = "Desktop preview with the garden slide and green saree."
+logical_id = "2d011c8e-249f-425d-8f87-df79a6e47f98"
+content_hash = "sha256:4d24207841072dbc12d61dc41011390c943ace1b589b3cf18a2909c57d6b36d0"
+size = 871726
+mtime_ms = 1794916796034
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/2d011c8e-249f-425d-8f87-df79a6e47f98/08c00a93-5f94-4fe9-a961-801cf3cdf26d"
+storage_version_token = "1794916898581214"
+content_type = "image/png"
+
+[[outputs]]
+id = "LAgZsagb4pMPJ5dRVde1Q"
+uri = "file://generated-artifacts/hero-gradient/desktop-portrait.png"
+type = "image"
+title = "Hero fade — portrait photo"
+description = "Desktop preview using the uploaded portrait hero photo; the gold frame is removed."
+logical_id = "8a1c5cc0-4307-43c8-9cdd-e8c016209d4c"
+content_hash = "sha256:2c8234f85ee2539b1611d341a408c99b31d122a75f2aee066b854561aeff98aa"
+size = 849533
+mtime_ms = 1794916797306
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/8a1c5cc0-4307-43c8-9cdd-e8c016209d4c/78288e21-82ec-4bd0-9897-990180308c09"
+storage_version_token = "1794916899861088"
+content_type = "image/png"
+
+[[outputs]]
+id = "NIc9GF2lvm1b4yTzs0tlu"
+uri = "file://generated-artifacts/hero-gradient/mobile-portrait.png"
+type = "image"
+title = "Hero fade — mobile portrait"
+description = "Mobile preview using the uploaded portrait hero photo."
+logical_id = "ba95be2a-86b8-41c4-bb9e-40cf24a997db"
+content_hash = "sha256:888de305901a154ecad93788909ef858fc48699beafc5e23b93361be6986bdb0"
+size = 300370
+mtime_ms = 1794916805938
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/ba95be2a-86b8-41c4-bb9e-40cf24a997db/e6645111-e57c-4739-a9c3-e15db80a6a02"
+storage_version_token = "1794916901133103"
+content_type = "image/png"
