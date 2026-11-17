@@ -28,3 +28,157 @@ mtime_ms = 1794393828244
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/f9a6097b-5d30-459d-b4fd-24d4fa3d5f19/6bfb8a3b-7468-4d35-bf0a-4a74d027ae84"
 storage_version_token = "1794393880862888"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "DyLXewykss4oKove5ezFu"
+uri = "file://generated-artifacts/loom-scene-standalone.html"
+type = "html"
+title = "Standalone loom scene"
+description = "Self-contained HTML with the exact original loom MP4 embedded and the unchanged animated SVG source included."
+logical_id = "67605b63-24ed-4176-b419-b1de9ecc2863"
+content_hash = "sha256:857e5caa773764bd127b69f2e2105f7465c60e76a94dbb4ef5ac12277fc095ca"
+size = 2705945
+mtime_ms = 1794888478013
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/67605b63-24ed-4176-b419-b1de9ecc2863/67a421fa-2ac1-415f-9ca1-2b60766888b2"
+storage_version_token = "1794888535608836"
+content_type = "text/html"
+
+[[outputs]]
+id = "-nv5uAX0-vtfnk2_nEzWj"
+uri = "file://generated-artifacts/chenetha-craft-scenes-complete-source.html"
+type = "html"
+title = "Complete craft scene source"
+description = "Full source contents and the per-layer animation inventory for loom, yarn, and dye."
+logical_id = "b2c72d11-f607-46bf-a841-60154b0f5c00"
+content_hash = "sha256:3f0e81af46c6e8df4057f174e1cb8d9a130dd4d2c1c75425acf9371013f6d346"
+size = 307618
+mtime_ms = 1794888526089
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b2c72d11-f607-46bf-a841-60154b0f5c00/8ca30a73-f79f-4362-b078-b152cdea2fc1"
+storage_version_token = "1794888536902745"
+content_type = "text/html"
+
+[[outputs]]
+id = "o8iCVjcVxhK153Me4BQLB"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-loom.mp4"
+type = "video"
+title = "Original loom scene video"
+description = "The exact MP4 animation used by the homepage loom scene."
+logical_id = "2521c311-f9c8-458c-907b-f58ef80076d6"
+content_hash = "sha256:e755525d85556772892833f002cb3fa63a11600453a4a7bb53c31bad83f385f8"
+size = 1929877
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/2521c311-f9c8-458c-907b-f58ef80076d6/64d150c3-4059-4b1a-8a17-f4c6b318b68e"
+storage_version_token = "1794888371111372"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "aO4v5_D5uFwspejrVb_Ys"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-yarn.mp4"
+type = "video"
+title = "Original yarn scene video"
+description = "The exact MP4 animation used by the homepage yarn scene."
+logical_id = "1a75a5b8-6dc9-43b3-99ed-bc684dd33cf3"
+content_hash = "sha256:3a68ca72b95a08de3c4ec20ee808da28d01a9446a37fde16f29b688a182290c9"
+size = 1822145
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/1a75a5b8-6dc9-43b3-99ed-bc684dd33cf3/cac9c739-16c4-4c14-ae87-c10d6db96df7"
+storage_version_token = "1794888372733189"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "bZPBpTE12yoFlpj4edI9v"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-dye.mp4"
+type = "video"
+title = "Original dye scene video"
+description = "The exact MP4 animation used by the homepage dye scene."
+logical_id = "47c34b7c-51bd-45f6-a62f-b6c5882d1b3a"
+content_hash = "sha256:7531c1d7d116477f022b0e134f03f2757316b54210435a1f77a46e94c300567c"
+size = 1684065
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/47c34b7c-51bd-45f6-a62f-b6c5882d1b3a/3469f229-c349-4198-99fc-4d98be1edc5e"
+storage_version_token = "1794888374150549"
+content_type = "video/mp4"
+
+[[outputs]]
+id = "4sTbsUr0i9rf4U2Br1374"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-loom.svg"
+type = "image"
+title = "Original loom SVG still"
+description = "The exact existing side-view loom illustration, unchanged."
+logical_id = "2ba76895-9962-4074-923f-f47014e3e15a"
+content_hash = "sha256:0413a33d80ef9fb3f156a7bb32da69d5b3bded468b33c880a639db03f3c43af3"
+size = 56181
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/2ba76895-9962-4074-923f-f47014e3e15a/cd4a1153-1013-491f-819b-8edc8e77a6f8"
+storage_version_token = "1794888407989190"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "hZ0zzu1ckIciNcTt0alj6"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-loom-motion.svg"
+type = "image"
+title = "Original animated loom SVG"
+description = "The existing SVG variant with its single native SMIL weaver-group animation, unchanged."
+logical_id = "1f410788-3e83-47e5-a71d-46f5cec93de9"
+content_hash = "sha256:4734a9e99c6c703772d3fd2092c52b10a7430f0f4470787cb13171a8e277d34c"
+size = 57024
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/1f410788-3e83-47e5-a71d-46f5cec93de9/4cd6436b-2fee-40a9-b0c4-967e346f6de6"
+storage_version_token = "1794888409459834"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "OTCdEutuqXSo9tEyG1Rf2"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-yarn.svg"
+type = "image"
+title = "Original yarn SVG still"
+description = "Exact existing yarn scene SVG, unchanged."
+logical_id = "1c286f5c-26d5-4732-8e2e-481cadfa44b8"
+content_hash = "sha256:dc5b471aa604db18a7e5d2aee74f5a50bd54ec8b89f5144ae00f18b68b8f3a04"
+size = 31018
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/1c286f5c-26d5-4732-8e2e-481cadfa44b8/3eab10c2-cb54-4e0d-bb23-1abac150a32f"
+storage_version_token = "1794888436189759"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "UTNcf0B-f4BDCYVgpq_Xq"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-yarn-motion.svg"
+type = "image"
+title = "Original animated yarn SVG"
+description = "Exact existing yarn motion SVG, unchanged."
+logical_id = "50cb88cc-cf4c-4f5d-a6f2-f51bf84d7e0c"
+content_hash = "sha256:946b60bca0b043d1b78f3b2da3a6a6aa2cfee943335d64c2fd904a155cd5e0b3"
+size = 31589
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/50cb88cc-cf4c-4f5d-a6f2-f51bf84d7e0c/c7b30551-822b-49a6-98a1-624b48d1f32b"
+storage_version_token = "1794888438121125"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "DIcRrJ7NE6xdtgapfmcWS"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-dye.svg"
+type = "image"
+title = "Original dye SVG still"
+description = "Exact existing dye scene SVG, unchanged."
+logical_id = "fe6d9892-3d7f-4edd-8254-ce5186d9a63d"
+content_hash = "sha256:94c583ed688813e73786cb5491c6fe54349755b7e93857419b6b8aa53174d04f"
+size = 29277
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/fe6d9892-3d7f-4edd-8254-ce5186d9a63d/edfb1f84-807c-4520-bf3f-871fb7318afc"
+storage_version_token = "1794888439420462"
+content_type = "image/svg+xml"
+
+[[outputs]]
+id = "VpOKkHNB5bNFS42Gn2kD3"
+uri = "file://artifacts/chenetha-storefront/public/images/koushikii-home-dye-motion.svg"
+type = "image"
+title = "Original animated dye SVG"
+description = "Exact existing dye motion SVG, unchanged."
+logical_id = "3625dbab-f8ba-4dda-aff8-5d11219ade83"
+content_hash = "sha256:517ae532e57f49d310be2eac719a664f9d4f0033f2cf409743c3de24ee28c851"
+size = 29819
+mtime_ms = 1793037255810
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/3625dbab-f8ba-4dda-aff8-5d11219ade83/1b789c48-643e-4853-a879-5fae13a121c4"
+storage_version_token = "1794888440745367"
+content_type = "image/svg+xml"
