@@ -120,16 +120,7 @@
 }
 
 .kq .home-hero-images.has-portrait-image .home-hero-shade {
-  background: linear-gradient(
-    90deg,
-    rgba(247, 241, 230, .99) 0%,
-    rgba(247, 241, 230, .99) 37%,
-    rgba(247, 241, 230, .88) 44%,
-    rgba(247, 241, 230, .66) 51%,
-    rgba(247, 241, 230, .38) 59%,
-    rgba(247, 241, 230, .14) 67%,
-    rgba(247, 241, 230, 0) 76%
-  );
+  background: linear-gradient(90deg, rgba(247, 241, 230, .95) 0%, rgba(247, 241, 230, .94) 34%, rgba(247, 241, 230, .65) 45%, rgba(247, 241, 230, .12) 57%, rgba(247, 241, 230, 0) 66%);
 }
 
 .kq .home-hero-content.wrap {
@@ -305,9 +296,8 @@
   }
 
   .kq .home-hero-images.has-portrait-image .home-hero-shade {
-    background:
-      linear-gradient(90deg, rgba(247, 241, 230, .94) 0%, rgba(247, 241, 230, .78) 40%, rgba(247, 241, 230, .36) 72%, rgba(247, 241, 230, .1) 100%),
-      linear-gradient(0deg, rgba(247, 241, 230, .16), transparent 42%);
+    background: linear-gradient(90deg, rgba(247, 241, 230, .96) 0%, rgba(247, 241, 230, .83) 42%, rgba(247, 241, 230, .4) 73%, rgba(247, 241, 230, .12) 100%),
+      linear-gradient(0deg, rgba(247, 241, 230, .17), transparent 42%);
   }
 
   .kq .home-hero-shade {
