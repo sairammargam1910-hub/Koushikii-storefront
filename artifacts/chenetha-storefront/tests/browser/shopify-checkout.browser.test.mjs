@@ -302,6 +302,7 @@ async function openCart({
   savedCart,
   viewport = { width: 1280, height: 900 },
   mutationDelay = 0,
+  discountAmountOnApply = "125.00",
 }) {
   const context = await browser.newContext({ viewport });
   await context.addInitScript((cart) => localStorage.setItem("kq-shopify-cart", JSON.stringify(cart)), savedCart);
@@ -349,7 +350,7 @@ async function openCart({
       currentCart.lines = currentCart.lines.filter((line) => !body.lineIds.includes(line.id));
     } else if (method === "POST" && request.url().includes("/discount-codes")) {
       currentCart.discountCodes = body.discountCodes.map((code) => ({ code, applicable: true }));
-      currentCart.discountAmount = body.discountCodes.length ? "125.00" : "0.00";
+      currentCart.discountAmount = body.discountCodes.length ? discountAmountOnApply : "0.00";
     }
     refreshTotals();
     await route.fulfill({
@@ -1442,18 +1443,9 @@ test("applies a discount to the bag total without estimating delivery", async ()
 
 test("does not claim coupon savings when Shopify has not allocated a discount", async () => {
   const savedCart = { id: "gid://shopify/Cart/no-savings-cart", totalQuantity: 1 };
-  const { context, page } = await openCart({ savedCart });
-  await page.route("**/api/shopify/cart/discount-codes", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        ...cartResponse,
-        discountAmount: "0.00",
-        totalAmount: "1250.00",
-        discountCodes: [{ code: "NEW26", applicable: true }],
-      }),
-    });
+  const { context, page } = await openCart({
+    savedCart,
+    discountAmountOnApply: "0.00",
   });
 
   await page.getByTestId("input-shopify-discount-code").fill("NEW26");
