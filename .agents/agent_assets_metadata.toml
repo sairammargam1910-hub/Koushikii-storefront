@@ -476,3 +476,17 @@ mtime_ms = 1794920312422
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/4e683823-f195-430f-9a2d-897c4a99dc27/a955b189-4bcf-4540-8584-95b275ef1cec"
 storage_version_token = "1794920401742238"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "2R7IokW9WAoHwEb6z1oZe"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-glow-uploaded.jpg"
+type = "image"
+title = "Mobile hero · tighter text glow"
+description = "Updated preview of the uploaded hero image at 402 × 874."
+logical_id = "ab730f8e-c4b2-483d-9b2c-a113e3223de0"
+content_hash = "sha256:d480a42da1f55b894f40f0d11373220870a42e585f67ba5ad95e91b331e506d4"
+size = 73875
+mtime_ms = 1794920688506
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/ab730f8e-c4b2-483d-9b2c-a113e3223de0/28ce3ba2-7131-4a34-8864-cc3505bba2fe"
+storage_version_token = "1794920717955772"
+content_type = "image/jpeg"
