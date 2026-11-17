@@ -1,0 +1,213 @@
+.kq.reference-hero-preview {
+  --reference-paper: #f5f0e4;
+  --reference-ink: #352a26;
+  --reference-muted: #706056;
+  --reference-red: #b2222b;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(18px, 3.2vw, 46px);
+  background:
+    radial-gradient(ellipse at 11% 83%, rgba(189, 157, 104, .09), transparent 34%),
+    var(--reference-paper);
+  color: var(--reference-ink);
+}
+
+.kq .reference-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(300px, .88fr) minmax(0, 1.05fr);
+  align-items: stretch;
+  width: min(100%, 1080px);
+  height: clamp(480px, 84vh, 620px);
+  padding: 12px;
+  border: 1px solid rgba(173, 139, 78, .65);
+  background: rgba(247, 243, 233, .46);
+  box-shadow: 0 20px 60px rgba(76, 54, 36, .08);
+}
+
+.kq .reference-hero__copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(32px, 5.8vw, 90px);
+  padding-right: clamp(24px, 4vw, 64px);
+  animation: reference-hero-arrive 560ms both;
+}
+
+.kq .reference-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  color: #8e3636;
+  font-family: var(--font-sans, "DM Sans", sans-serif);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.7;
+  letter-spacing: .16em;
+}
+
+.kq .reference-hero__eyebrow::before {
+  flex: 0 0 23px;
+  height: 1px;
+  background: currentColor;
+  content: "";
+}
+
+.kq .reference-hero__copy h1 {
+  margin: 0 0 16px -5px;
+  color: var(--reference-ink);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(60px, 6.2vw, 82px);
+  font-weight: 500;
+  line-height: .82;
+  letter-spacing: -.055em;
+}
+
+.kq .reference-hero__description {
+  max-width: 390px;
+  margin: 0;
+  color: var(--reference-muted);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(20px, 1.9vw, 24px);
+  line-height: 1.2;
+}
+
+.kq .reference-hero__cta {
+  display: inline-flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 22px;
+  border: 1px solid var(--reference-red);
+  border-radius: 2px;
+  background: var(--reference-red);
+  color: #fff8ed;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 17px;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 7px 19px rgba(88, 29, 28, .13);
+  transition: transform 220ms ease, background-color 220ms ease, border-color 220ms ease;
+}
+
+.kq .reference-hero__cta:hover {
+  transform: translateY(-2px);
+  border-color: #841d24;
+  background: #841d24;
+}
+
+.kq .reference-hero__cta svg {
+  transition: transform 220ms ease;
+}
+
+.kq .reference-hero__cta:hover svg {
+  transform: translateX(3px);
+}
+
+.kq .reference-hero__cta:focus-visible {
+  outline: 2px solid #8e3636;
+  outline-offset: 4px;
+}
+
+.kq .reference-hero__portrait {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  background: #dfd1ba;
+}
+
+.kq .reference-hero__portrait::after {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(194, 163, 105, .62);
+  content: "";
+  pointer-events: none;
+}
+
+.kq .reference-hero__portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 20% 63%;
+}
+
+@keyframes reference-hero-arrive {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (min-width: 1500px) {
+  .kq .reference-hero {
+    height: min(72vh, 700px);
+  }
+}
+
+@media (max-width: 760px) {
+  .kq.reference-hero-preview {
+    min-height: 100dvh;
+    padding: 14px;
+  }
+
+  .kq .reference-hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(340px, 54vh);
+    height: min(94dvh, 780px);
+    padding: 8px;
+  }
+
+  .kq .reference-hero__copy {
+    min-height: 285px;
+    padding: 38px clamp(22px, 8vw, 56px) 32px;
+  }
+
+  .kq .reference-hero__copy h1 {
+    margin: 0 0 14px -3px;
+    font-size: clamp(60px, 15vw, 86px);
+  }
+
+  .kq .reference-hero__description {
+    max-width: 340px;
+    font-size: clamp(19px, 5.2vw, 24px);
+  }
+
+  .kq .reference-hero__portrait img {
+    object-position: 50% 48%;
+  }
+
+  .kq .reference-hero__portrait::after {
+    inset: 9px;
+  }
+}
+
+@media (max-width: 420px) {
+  .kq .reference-hero {
+    grid-template-rows: auto minmax(300px, 48vh);
+  }
+
+  .kq .reference-hero__copy {
+    min-height: 270px;
+    padding: 32px 22px 26px;
+  }
+
+  .kq .reference-hero__portrait img {
+    object-position: 51% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kq .reference-hero__copy,
+  .kq .reference-hero__cta,
+  .kq .reference-hero__cta svg {
+    animation: none;
+    transition: none;
+  }
+}
