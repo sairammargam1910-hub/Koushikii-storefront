@@ -1754,6 +1754,14 @@ export const DeactivateShopifyAdminDiscountResponse = zod.object({
  * Returns published homepage slides, images, approved customer voices, and video posts.
  * @summary Get published storefront content
  */
+export const getSiteContentResponseItemsItemFocalPointXMin = 0;
+export const getSiteContentResponseItemsItemFocalPointXMax = 100;
+
+export const getSiteContentResponseItemsItemFocalPointYMin = 0;
+export const getSiteContentResponseItemsItemFocalPointYMax = 100;
+
+
+
 export const GetSiteContentResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.uuid(),
@@ -1765,6 +1773,8 @@ export const GetSiteContentResponse = zod.object({
   "imageUrl": zod.string().nullable(),
   "mediaUrl": zod.string().nullable(),
   "altText": zod.string().nullable(),
+  "focalPointX": zod.int().min(getSiteContentResponseItemsItemFocalPointXMin).max(getSiteContentResponseItemsItemFocalPointXMax).nullable(),
+  "focalPointY": zod.int().min(getSiteContentResponseItemsItemFocalPointYMin).max(getSiteContentResponseItemsItemFocalPointYMax).nullable(),
   "ctaLabel": zod.string().nullable(),
   "ctaUrl": zod.string().nullable(),
   "linkedProductId": zod.string().nullable(),
@@ -1793,6 +1803,12 @@ export const createSiteContentBodyMediaUrlMax = 2048;
 
 export const createSiteContentBodyAltTextMax = 500;
 
+export const createSiteContentBodyFocalPointXMin = 0;
+export const createSiteContentBodyFocalPointXMax = 100;
+
+export const createSiteContentBodyFocalPointYMin = 0;
+export const createSiteContentBodyFocalPointYMax = 100;
+
 export const createSiteContentBodyCtaLabelMax = 80;
 
 export const createSiteContentBodyCtaUrlMax = 2048;
@@ -1813,6 +1829,8 @@ export const CreateSiteContentBody = zod.object({
   "imageUrl": zod.string().max(createSiteContentBodyImageUrlMax).nullable(),
   "mediaUrl": zod.string().max(createSiteContentBodyMediaUrlMax).nullable(),
   "altText": zod.string().max(createSiteContentBodyAltTextMax).nullable(),
+  "focalPointX": zod.int().min(createSiteContentBodyFocalPointXMin).max(createSiteContentBodyFocalPointXMax).nullable(),
+  "focalPointY": zod.int().min(createSiteContentBodyFocalPointYMin).max(createSiteContentBodyFocalPointYMax).nullable(),
   "ctaLabel": zod.string().max(createSiteContentBodyCtaLabelMax).nullable(),
   "ctaUrl": zod.string().max(createSiteContentBodyCtaUrlMax).nullable(),
   "linkedProductId": zod.string().max(createSiteContentBodyLinkedProductIdMax).nullable(),
@@ -1820,6 +1838,14 @@ export const CreateSiteContentBody = zod.object({
   "published": zod.boolean(),
   "approved": zod.boolean()
 })
+
+export const createSiteContentResponseFocalPointXMin = 0;
+export const createSiteContentResponseFocalPointXMax = 100;
+
+export const createSiteContentResponseFocalPointYMin = 0;
+export const createSiteContentResponseFocalPointYMax = 100;
+
+
 
 export const CreateSiteContentResponse = zod.object({
   "id": zod.uuid(),
@@ -1831,6 +1857,8 @@ export const CreateSiteContentResponse = zod.object({
   "imageUrl": zod.string().nullable(),
   "mediaUrl": zod.string().nullable(),
   "altText": zod.string().nullable(),
+  "focalPointX": zod.int().min(createSiteContentResponseFocalPointXMin).max(createSiteContentResponseFocalPointXMax).nullable(),
+  "focalPointY": zod.int().min(createSiteContentResponseFocalPointYMin).max(createSiteContentResponseFocalPointYMax).nullable(),
   "ctaLabel": zod.string().nullable(),
   "ctaUrl": zod.string().nullable(),
   "linkedProductId": zod.string().nullable(),
@@ -1846,6 +1874,14 @@ export const CreateSiteContentResponse = zod.object({
  * Returns published and draft content for the authenticated store owner.
  * @summary Get all storefront content for the merchant
  */
+export const getAdminSiteContentResponseItemsItemFocalPointXMin = 0;
+export const getAdminSiteContentResponseItemsItemFocalPointXMax = 100;
+
+export const getAdminSiteContentResponseItemsItemFocalPointYMin = 0;
+export const getAdminSiteContentResponseItemsItemFocalPointYMax = 100;
+
+
+
 export const GetAdminSiteContentResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.uuid(),
@@ -1857,6 +1893,8 @@ export const GetAdminSiteContentResponse = zod.object({
   "imageUrl": zod.string().nullable(),
   "mediaUrl": zod.string().nullable(),
   "altText": zod.string().nullable(),
+  "focalPointX": zod.int().min(getAdminSiteContentResponseItemsItemFocalPointXMin).max(getAdminSiteContentResponseItemsItemFocalPointXMax).nullable(),
+  "focalPointY": zod.int().min(getAdminSiteContentResponseItemsItemFocalPointYMin).max(getAdminSiteContentResponseItemsItemFocalPointYMax).nullable(),
   "ctaLabel": zod.string().nullable(),
   "ctaUrl": zod.string().nullable(),
   "linkedProductId": zod.string().nullable(),
@@ -1889,6 +1927,12 @@ export const updateSiteContentBodyMediaUrlMax = 2048;
 
 export const updateSiteContentBodyAltTextMax = 500;
 
+export const updateSiteContentBodyFocalPointXMin = 0;
+export const updateSiteContentBodyFocalPointXMax = 100;
+
+export const updateSiteContentBodyFocalPointYMin = 0;
+export const updateSiteContentBodyFocalPointYMax = 100;
+
 export const updateSiteContentBodyCtaLabelMax = 80;
 
 export const updateSiteContentBodyCtaUrlMax = 2048;
@@ -1909,6 +1953,8 @@ export const UpdateSiteContentBody = zod.object({
   "imageUrl": zod.string().max(updateSiteContentBodyImageUrlMax).nullable(),
   "mediaUrl": zod.string().max(updateSiteContentBodyMediaUrlMax).nullable(),
   "altText": zod.string().max(updateSiteContentBodyAltTextMax).nullable(),
+  "focalPointX": zod.int().min(updateSiteContentBodyFocalPointXMin).max(updateSiteContentBodyFocalPointXMax).nullable(),
+  "focalPointY": zod.int().min(updateSiteContentBodyFocalPointYMin).max(updateSiteContentBodyFocalPointYMax).nullable(),
   "ctaLabel": zod.string().max(updateSiteContentBodyCtaLabelMax).nullable(),
   "ctaUrl": zod.string().max(updateSiteContentBodyCtaUrlMax).nullable(),
   "linkedProductId": zod.string().max(updateSiteContentBodyLinkedProductIdMax).nullable(),
@@ -1916,6 +1962,14 @@ export const UpdateSiteContentBody = zod.object({
   "published": zod.boolean(),
   "approved": zod.boolean()
 })
+
+export const updateSiteContentResponseFocalPointXMin = 0;
+export const updateSiteContentResponseFocalPointXMax = 100;
+
+export const updateSiteContentResponseFocalPointYMin = 0;
+export const updateSiteContentResponseFocalPointYMax = 100;
+
+
 
 export const UpdateSiteContentResponse = zod.object({
   "id": zod.uuid(),
@@ -1927,6 +1981,8 @@ export const UpdateSiteContentResponse = zod.object({
   "imageUrl": zod.string().nullable(),
   "mediaUrl": zod.string().nullable(),
   "altText": zod.string().nullable(),
+  "focalPointX": zod.int().min(updateSiteContentResponseFocalPointXMin).max(updateSiteContentResponseFocalPointXMax).nullable(),
+  "focalPointY": zod.int().min(updateSiteContentResponseFocalPointYMin).max(updateSiteContentResponseFocalPointYMax).nullable(),
   "ctaLabel": zod.string().nullable(),
   "ctaUrl": zod.string().nullable(),
   "linkedProductId": zod.string().nullable(),

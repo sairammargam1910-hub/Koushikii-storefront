@@ -2929,6 +2929,14 @@ components:
           type: ["string", "null"]
         altText:
           type: ["string", "null"]
+        focalPointX:
+          type: ["integer", "null"]
+          minimum: 0
+          maximum: 100
+        focalPointY:
+          type: ["integer", "null"]
+          minimum: 0
+          maximum: 100
         ctaLabel:
           type: ["string", "null"]
         ctaUrl:
@@ -2947,7 +2955,7 @@ components:
         updatedAt:
           type: string
           format: date-time
-      required: [id, kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved, createdAt, updatedAt]
+      required: [id, kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, focalPointX, focalPointY, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved, createdAt, updatedAt]
     SiteContentListResponse:
       type: object
       properties:
@@ -2984,6 +2992,14 @@ components:
         altText:
           type: ["string", "null"]
           maxLength: 500
+        focalPointX:
+          type: ["integer", "null"]
+          minimum: 0
+          maximum: 100
+        focalPointY:
+          type: ["integer", "null"]
+          minimum: 0
+          maximum: 100
         ctaLabel:
           type: ["string", "null"]
           maxLength: 80
@@ -3001,7 +3017,7 @@ components:
           type: boolean
         approved:
           type: boolean
-      required: [kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved]
+      required: [kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, focalPointX, focalPointY, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved]
     SiteContentDeleteResponse:
       type: object
       properties:

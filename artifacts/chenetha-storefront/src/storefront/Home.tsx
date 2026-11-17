@@ -102,6 +102,7 @@ export function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
     className="home-hero-image is-active"
     src={imageUrl}
     alt={slide.altText || slide.title}
+    style={slide.focalPointX !== null && slide.focalPointY !== null ? { objectPosition: `${slide.focalPointX}% ${slide.focalPointY}%` } : undefined}
     onLoad={event=>{
      const image=event.currentTarget;
      setPortraitImageUrl(image.naturalHeight>image.naturalWidth*1.04?imageUrl:"");

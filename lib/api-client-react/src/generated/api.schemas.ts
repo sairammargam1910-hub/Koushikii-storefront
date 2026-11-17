@@ -982,6 +982,18 @@ export interface SiteContentItem {
   mediaUrl: string | null;
   /** @nullable */
   altText: string | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  focalPointX: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  focalPointY: number | null;
   /** @nullable */
   ctaLabel: string | null;
   /** @nullable */
@@ -1055,6 +1067,18 @@ export interface SiteContentInput {
      * @nullable
      */
   altText: string | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  focalPointX: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  focalPointY: number | null;
   /**
      * @maxLength 80
      * @nullable

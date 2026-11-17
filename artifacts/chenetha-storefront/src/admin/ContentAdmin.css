@@ -51,6 +51,20 @@
 .content-media-field .field-note{margin:0}
 .content-upload-progress{display:grid;grid-template-columns:minmax(90px,1fr) minmax(90px,2fr) auto;align-items:center;gap:10px;color:#76696d;font-size:10px}
 .content-upload-progress progress{width:100%;accent-color:#9c4650}
+.hero-focal-field{min-width:0;margin:0;padding:13px;border:1px solid #e7dcd4;border-radius:6px;background:#fcf8f2}
+.hero-focal-field legend{padding:0 5px;color:#645258;font-size:11px;font-weight:700}
+.hero-focal-field>.field-note{margin:0 0 12px}
+.hero-focal-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.hero-focal-controls label{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;color:#645258;font-size:10px}
+.hero-focal-controls output{color:#744756;font:600 10px 'Space Mono',monospace}
+.hero-focal-controls input[type=range]{grid-column:1/-1;width:100%;margin:0;accent-color:#9c4650}
+.hero-focal-controls .text-button{grid-column:1/-1;justify-self:start}
+.hero-focal-previews{display:flex;align-items:flex-start;gap:12px;margin-top:14px}
+.hero-focal-previews>div{display:grid;gap:5px;color:#827477;font-size:9px;font-weight:700}
+.hero-focal-preview{overflow:hidden;border:1px solid #ddcfc4;border-radius:4px;background:#eee4d8}
+.hero-focal-preview.desktop{width:180px;height:92px}
+.hero-focal-preview.mobile{width:58px;height:92px}
+.hero-focal-preview img{width:100%;height:100%;object-fit:cover}
 .content-publish{align-self:end;min-height:40px}
 .admin-form select{width:100%;border:1px solid #e7dcd4;border-radius:5px;outline:none;padding:10px 11px;color:#47383e;background:#fffefa;font-size:12px;font-weight:400}
 .admin-form select:focus{border-color:#a87c82;box-shadow:0 0 0 3px rgba(133,85,100,.11)}
@@ -80,5 +94,7 @@
  .content-tabs button{padding:0 9px}
  .content-upload-progress{grid-template-columns:1fr auto}
  .content-upload-progress progress{grid-column:1/-1;grid-row:2}
+ .hero-focal-controls{grid-template-columns:1fr}
+ .hero-focal-controls .text-button{grid-column:1}
 }
 @media(prefers-reduced-motion:reduce){.content-row,.content-skeleton span{animation:none}}

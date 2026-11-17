@@ -42,6 +42,8 @@ function toResponseItem(row: SiteContent) {
     imageUrl: row.imageUrl,
     mediaUrl: row.mediaUrl,
     altText: row.altText,
+    focalPointX: row.focalPointX,
+    focalPointY: row.focalPointY,
     ctaLabel: row.ctaLabel,
     ctaUrl: row.ctaUrl,
     linkedProductId: row.linkedProductId,
@@ -151,6 +153,8 @@ async function prepareInput(
     imageUrl: string | null;
     mediaUrl: string | null;
     altText: string | null;
+    focalPointX: number | null;
+    focalPointY: number | null;
     ctaLabel: string | null;
     ctaUrl: string | null;
     linkedProductId: string | null;

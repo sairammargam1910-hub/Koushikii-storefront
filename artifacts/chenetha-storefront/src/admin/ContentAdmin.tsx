@@ -18,7 +18,7 @@ type Placement = "fabric_tile" | "weave_tile" | "regional_handloom_tile";
 type Draft = SiteContentInput & { placement: Placement | null };
 const emptyDraft = (kind: Kind = "hero_slide"): Draft => ({
   kind, title: "", eyebrow: null, body: null, imageUrl: null, mediaUrl: null,
-  altText: null, ctaLabel: null, ctaUrl: null, linkedProductId: null,
+  altText: null, focalPointX: null, focalPointY: null, ctaLabel: null, ctaUrl: null, linkedProductId: null,
   placement: null, sortOrder: 0, published: false, approved: false,
 });
 const labels: Record<Kind, string> = { hero_slide: "Hero slides", home_image: "Home thumbnails", customer_voice: "Customer voices", video_post: "Video posts" };
@@ -47,6 +47,7 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
   const [draft, setDraft] = useState<Draft>(item ? {
     kind: item.kind, title: item.title, eyebrow: item.eyebrow, body: item.body,
     imageUrl: item.imageUrl, mediaUrl: item.mediaUrl, altText: item.altText,
+    focalPointX: item.focalPointX, focalPointY: item.focalPointY,
     ctaLabel: item.ctaLabel, ctaUrl: item.ctaUrl, linkedProductId: item.linkedProductId,
     placement: (item as SiteContentItem & { placement?: Placement | null }).placement || null,
     sortOrder: item.sortOrder, published: item.published, approved: item.approved,
@@ -100,6 +101,9 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
       localPreviewUrls.current.push(localPreview);
       setPreviews(current => ({ ...current, [field]: localPreview }));
       set(field, signed.assetUrl);
+      if (field === "imageUrl" && kind === "hero_slide") {
+        setDraft(current => ({ ...current, focalPointX: null, focalPointY: null }));
+      }
       setProgress(null);
     } catch (cause) {
       setProgress(null);
@@ -138,8 +142,9 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
         {(kind === "hero_slide" || kind === "video_post") && <label>Eyebrow <span className="label-hint">Optional</span><input maxLength={120} value={draft.eyebrow || ""} onChange={event => set("eyebrow", event.target.value || null)} placeholder="A short introduction"/></label>}
         {kind !== "customer_voice" && kind !== "home_image" && <label>{kind === "video_post" ? "Caption" : "Supporting copy"}<textarea rows={3} maxLength={3000} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="Optional supporting text"/></label>}
         {kind === "customer_voice" && <label>Exact customer-supplied quote<textarea required rows={5} maxLength={3000} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="Paste the approved quote exactly as supplied"/></label>}
-        {kind !== "video_post" ? <MediaField label="Image" url={previews.imageUrl || draft.imageUrl} required={kind === "hero_slide" || kind === "home_image"} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/> :
+        {kind !== "video_post" ? <MediaField label="Image" url={previews.imageUrl || draft.imageUrl} required={kind === "hero_slide" || kind === "home_image"} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if (kind === "hero_slide" && url !== draft.imageUrl) setDraft(current => ({ ...current, focalPointX: null, focalPointY: null })); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/> :
           <><MediaField label="Video file" url={previews.mediaUrl || draft.mediaUrl} required accept="video/mp4,video/webm" video onFile={file => void upload(file, "mediaUrl")} onUrl={url => { set("mediaUrl", url || null); if (!url) setPreviews(current => ({ ...current, mediaUrl: undefined })); }}/><MediaField label="Poster image" url={previews.imageUrl || draft.imageUrl} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/></>}
+        {kind === "hero_slide" && <FocalPointField imageUrl={previews.imageUrl || draft.imageUrl} x={draft.focalPointX} y={draft.focalPointY} onChange={(x, y) => setDraft(current => ({ ...current, focalPointX: x, focalPointY: y }))} onReset={() => setDraft(current => ({ ...current, focalPointX: null, focalPointY: null }))}/>}
         {(kind === "hero_slide" || kind === "home_image") && <label>Image description <span className="label-hint">For accessibility</span><input maxLength={500} value={draft.altText || ""} onChange={event => set("altText", event.target.value || null)} placeholder="Describe the image"/></label>}
         {kind === "hero_slide" && <div className="form-row"><label>Button label<input maxLength={80} value={draft.ctaLabel || ""} onChange={event => set("ctaLabel", event.target.value || null)} placeholder="Explore the collection"/></label><label>Button destination<input maxLength={2048} value={draft.ctaUrl || ""} onChange={event => set("ctaUrl", event.target.value || null)} placeholder="/Collections"/></label></div>}
         {kind === "video_post" && <label>Link to a live Shopify product <span className="label-hint">Optional</span><select value={draft.linkedProductId || ""} onChange={event => set("linkedProductId", event.target.value || null)}><option value="">No linked product</option>{(shopify.data?.products || []).filter(product => product.status === "ACTIVE").map(product => <option key={product.id} value={product.id}>{product.title}</option>)}</select></label>}
@@ -159,6 +164,27 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
      onClose={() => setPreviewOpen(false)}
    />}
   </>;
+}
+
+function FocalPointField({ imageUrl, x, y, onChange, onReset }: { imageUrl: string | null | undefined; x: number | null; y: number | null; onChange: (x: number, y: number) => void; onReset: () => void }) {
+  const hasCustomPosition = x !== null && y !== null;
+  const previewX = x ?? 50;
+  const previewY = y ?? 54;
+  const desktopPreviewPosition = hasCustomPosition ? `${previewX}% ${previewY}%` : "50% 54%";
+  const mobilePreviewPosition = hasCustomPosition ? `${previewX}% ${previewY}%` : "62% 50%";
+  return <fieldset className="hero-focal-field">
+    <legend>Image focal point</legend>
+    <p className="field-note">Adjust where the image is centered when it is cropped. Existing framing stays unchanged until you move a control.</p>
+    <div className="hero-focal-controls">
+      <label>Horizontal position <output>{previewX}%</output><input type="range" min="0" max="100" step="1" value={previewX} onChange={event => onChange(Number(event.target.value), previewY)}/></label>
+      <label>Vertical position <output>{previewY}%</output><input type="range" min="0" max="100" step="1" value={previewY} onChange={event => onChange(previewX, Number(event.target.value))}/></label>
+      {hasCustomPosition && <button className="text-button" type="button" onClick={onReset}>Use current framing</button>}
+    </div>
+    {imageUrl && <div className="hero-focal-previews" aria-label="Focal point crop previews">
+      <div><span>Desktop</span><div className="hero-focal-preview desktop"><img src={imageUrl} alt="" style={{ objectPosition: desktopPreviewPosition }}/></div></div>
+      <div><span>Mobile</span><div className="hero-focal-preview mobile"><img src={imageUrl} alt="" style={{ objectPosition: mobilePreviewPosition }}/></div></div>
+    </div>}
+  </fieldset>;
 }
 
 function MediaField({ label, url, required, accept, video, onFile, onUrl }: { label: string; url: string | null | undefined; required?: boolean; accept: string; video?: boolean; onFile: (file: File) => void; onUrl: (url: string) => void }) {

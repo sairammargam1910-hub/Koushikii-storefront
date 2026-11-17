@@ -43,6 +43,18 @@ export interface SiteContentInput {
      */
   altText: string | null;
   /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  focalPointX: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  focalPointY: number | null;
+  /**
      * @maxLength 80
      * @nullable
      */

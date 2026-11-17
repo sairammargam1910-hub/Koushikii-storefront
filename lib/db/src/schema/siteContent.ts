@@ -24,6 +24,8 @@ export const siteContentTable = pgTable("site_content_items", {
   imageUrl: text("image_url"),
   mediaUrl: text("media_url"),
   altText: text("alt_text"),
+  focalPointX: integer("focal_point_x"),
+  focalPointY: integer("focal_point_y"),
   ctaLabel: text("cta_label"),
   ctaUrl: text("cta_url"),
   linkedProductId: text("linked_product_id"),
