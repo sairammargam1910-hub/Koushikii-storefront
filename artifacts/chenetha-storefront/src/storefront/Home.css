@@ -177,16 +177,14 @@
   align-items: center;
   justify-content: center;
   gap: 11px;
-  min-height: 50px;
+  min-height: 42px;
   margin-top: 22px;
-  padding: 0 24px;
-  border: 1px solid #b22222;
-  border-radius: 3px;
-  background: #b22222;
-  color: #fff8ee;
+  padding: 0 19px;
+  border: 1px solid rgba(71, 45, 44, .55);
+  border-radius: 99px;
+  color: #472d2c;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 17px;
-  box-shadow: 0 7px 20px rgba(88, 29, 28, .14);
+  font-size: 15px;
   transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
 
@@ -196,9 +194,9 @@
 
 .kq .home-hero-cta:hover {
   transform: translateY(-2px);
-  border-color: #851b1b;
-  background: #851b1b;
-  color: #fff8ee;
+  border-color: #922c32;
+  background: #922c32;
+  color: #f7f1e6;
   box-shadow: 0 11px 24px rgba(88, 29, 28, .2);
 }
 
