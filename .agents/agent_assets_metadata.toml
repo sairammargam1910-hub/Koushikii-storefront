@@ -308,3 +308,87 @@ mtime_ms = 1794917141909
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b143eca1-0b08-45fd-b1b3-63cabea777e5/1708be7c-e286-4f51-9938-5b3b994aded7"
 storage_version_token = "1794917178754692"
 content_type = "image/png"
+
+[[outputs]]
+id = "N6t14a8HvITtisloclVf6"
+uri = "file://generated-artifacts/hero-gradient-check/desktop-slide-1.jpg"
+type = "image"
+title = "Desktop hero · Courtyard image"
+description = "Preview at 1440 × 900, carousel image 1 of 3."
+logical_id = "5ee6a95f-6391-486d-bb67-446f3d7c00ce"
+content_hash = "sha256:455f032ade4eb77870b858b6e4409b1cbd6fa6279ef6387dff0a3e88641e30f1"
+size = 176164
+mtime_ms = 1794918952833
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/5ee6a95f-6391-486d-bb67-446f3d7c00ce/e42bf65c-024c-4f35-af3a-2e5d32396aa0"
+storage_version_token = "1794919013806564"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "im8VZUSCIrPntWwAYoI0j"
+uri = "file://generated-artifacts/hero-gradient-check/desktop-slide-2.jpg"
+type = "image"
+title = "Desktop hero · Weaving image"
+description = "Preview at 1440 × 900, carousel image 2 of 3."
+logical_id = "921dace2-14ff-43c0-b0a7-265d65520224"
+content_hash = "sha256:79051634a3ad64249a34384c8fee1fff85f03d5fb2cfa8907aedcf2a473c384c"
+size = 151528
+mtime_ms = 1794918954045
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/921dace2-14ff-43c0-b0a7-265d65520224/ca7a7727-15fd-485c-93bf-64c769558f93"
+storage_version_token = "1794919015171537"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "4GpThL6zui2Z08qkrQKxd"
+uri = "file://generated-artifacts/hero-gradient-check/desktop-slide-3.jpg"
+type = "image"
+title = "Desktop hero · Garden image"
+description = "Preview at 1440 × 900, carousel image 3 of 3."
+logical_id = "b89ca26c-ca0e-44a4-9fbc-ec18a2bde021"
+content_hash = "sha256:ae4bf0cfa0b08c2366fce639f99b6a095518bbb0709313f02608bef87ad77f50"
+size = 194328
+mtime_ms = 1794918955177
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b89ca26c-ca0e-44a4-9fbc-ec18a2bde021/2d583cf6-7a88-46d5-95be-d85e73eb99dc"
+storage_version_token = "1794919016511850"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "Aj1xb2zT8kwQ44mOYXkRp"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-slide-1.jpg"
+type = "image"
+title = "Mobile hero · Courtyard image"
+description = "Preview at 402 × 874, carousel image 1 of 3."
+logical_id = "b3725a85-86c6-4447-929a-21baa1e67c1e"
+content_hash = "sha256:f0b43d483ea6c285b892afbc958275ca438b6c3b400242884e313c5238f4bd5d"
+size = 76759
+mtime_ms = 1794918960389
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b3725a85-86c6-4447-929a-21baa1e67c1e/d50194a5-3130-409e-bb06-5a728b81ccdc"
+storage_version_token = "1794919017864236"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "tNppoyJ_8skw4jRk0J9mD"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-slide-2.jpg"
+type = "image"
+title = "Mobile hero · Weaving image"
+description = "Preview at 402 × 874, carousel image 2 of 3."
+logical_id = "356001de-cdb6-429d-9237-0ad80a2870da"
+content_hash = "sha256:b57580f6ca1ae964b45181b4c4832a925f07ebf8135baa3b57663fb4228d66b1"
+size = 71763
+mtime_ms = 1794918961453
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/356001de-cdb6-429d-9237-0ad80a2870da/654e5cb2-0b79-4629-8e06-9af30346fe1c"
+storage_version_token = "1794919019202038"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "PdqY4vuO9oDa_ZM6eNZ5R"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-slide-3.jpg"
+type = "image"
+title = "Mobile hero · Garden image"
+description = "Preview at 402 × 874, carousel image 3 of 3."
+logical_id = "7d2150a8-2c3a-4170-a3d8-bd72abb029d9"
+content_hash = "sha256:bdb16dc4bdc482d472b5e6f9f164e1ccef18eb7596c5f39c0f0649f6ffabdcb4"
+size = 84115
+mtime_ms = 1794918962557
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/7d2150a8-2c3a-4170-a3d8-bd72abb029d9/97cfe888-e669-4533-bb5b-0432b9c254dd"
+storage_version_token = "1794919020502360"
+content_type = "image/jpeg"
