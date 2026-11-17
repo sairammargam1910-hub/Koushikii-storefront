@@ -160,6 +160,59 @@ test("saved focal positions survive closing and reopening a hero slide", async (
   }
 });
 
+test("a rejected hero save keeps focal positions editable for a successful retry", async () => {
+  const { context, page } = await openEditor();
+  const attemptedBodies = [];
+  await page.route(`**/api/site-content/${fixtureId}`, async (route) => {
+    assert.equal(route.request().method(), "PUT");
+    const body = route.request().postDataJSON();
+    attemptedBodies.push(body);
+
+    if (attemptedBodies.length === 1) {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "The hero update was rejected. Please try again." }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...body,
+        id: fixtureId,
+        createdAt: "2026-11-17T00:00:00.000Z",
+        updatedAt: "2026-11-17T00:01:00.000Z",
+      }),
+    });
+  });
+
+  await setRange(page, "Horizontal position", 37);
+  await setRange(page, "Vertical position", 68);
+  await page.getByRole("button", { name: "Save changes" }).click();
+
+  const error = page.getByRole("alert");
+  await error.waitFor();
+  assert.match(await error.textContent(), /hero update was rejected/i);
+  const sliders = page.locator(".hero-focal-controls input[type='range']");
+  assert.equal(await sliders.nth(0).inputValue(), "37");
+  assert.equal(await sliders.nth(1).inputValue(), "68");
+  assert.equal(await sliders.nth(0).isEnabled(), true);
+  assert.equal(await sliders.nth(1).isEnabled(), true);
+
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await page.getByTestId("hero-editor-closed").waitFor();
+
+  assert.equal(attemptedBodies.length, 2);
+  for (const body of attemptedBodies) {
+    assert.equal(body.focalPointX, 37);
+    assert.equal(body.focalPointY, 68);
+  }
+  await context.close();
+});
+
 test("portrait and landscape crop previews work at desktop and mobile widths", async () => {
   for (const orientation of ["portrait", "landscape"]) {
     for (const mobile of [false, true]) {
