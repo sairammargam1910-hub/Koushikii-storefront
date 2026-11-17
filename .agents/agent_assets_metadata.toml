@@ -182,3 +182,17 @@ mtime_ms = 1793037255810
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/3625dbab-f8ba-4dda-aff8-5d11219ade83/1b789c48-643e-4853-a879-5fae13a121c4"
 storage_version_token = "1794888440745367"
 content_type = "image/svg+xml"
+
+[[outputs]]
+id = "YI09drHZ0CP9A0tg-5wpD"
+uri = "file://generated-artifacts/loom-scene-motion.html"
+type = "html"
+title = "Standalone loom scene with motion"
+description = "The exact inline loom SVG and provided motion script in one self-contained HTML file."
+logical_id = "dc7eba35-1557-4383-ad97-3a0b7cd6781c"
+content_hash = "sha256:91ede2f938ffb2221b1adf11b544c599b49b49d7b1d593329f8de2b9bb874cca"
+size = 68442
+mtime_ms = 1794890461093
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/dc7eba35-1557-4383-ad97-3a0b7cd6781c/7d15bd9a-c881-4a62-903d-90459c759454"
+storage_version_token = "1794890664189549"
+content_type = "text/html"

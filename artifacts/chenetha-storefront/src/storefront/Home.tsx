@@ -120,7 +120,8 @@ const makingStages = [
 ];
 const loomMotionScriptLoads = new WeakMap<SVGSVGElement, Promise<void>>();
 function loadLoomMotionOnce(svg: SVGSVGElement) {
- if (loomMotionScriptLoads.has(svg)) return loomMotionScriptLoads.get(svg);
+ const existing=loomMotionScriptLoads.get(svg);
+ if(existing)return existing;
  const loaded = new Promise<void>((resolve, reject) => {
   const script = document.createElement("script");
   script.src = `${import.meta.env.BASE_URL}loom-weaver-motion.js`;
