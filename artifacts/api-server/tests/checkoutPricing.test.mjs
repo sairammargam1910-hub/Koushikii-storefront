@@ -37,6 +37,7 @@ const cart = {
         subtotalAmount: { amount: "100.00", currencyCode: "INR" },
         totalAmount: { amount: "99.99", currencyCode: "INR" },
       },
+      discountAllocations: [],
        merchandise: {
          id: "gid://shopify/ProductVariant/1",
          availableForSale: true,
@@ -63,6 +64,46 @@ test("checkout item totals use final Shopify line prices without adding a separa
     },
   };
   assert.equal(getCheckoutItemTotal(cartWithoutTaxTotal), "99.99");
+});
+
+test("checkout totals use allocated cart-code savings even when line total has not changed", () => {
+  const { getCartDiscountAmount, getCheckoutItemTotal } = loadModule();
+  const cartWithCartCodeAllocation = {
+    ...cart,
+    lines: {
+      nodes: [{
+        ...cart.lines.nodes[0],
+        cost: {
+          subtotalAmount: { amount: "2000.00", currencyCode: "INR" },
+          totalAmount: { amount: "2000.00", currencyCode: "INR" },
+        },
+        discountAllocations: [{
+          discountedAmount: { amount: "200.00", currencyCode: "INR" },
+          targetType: "LINE_ITEM",
+        }],
+      }],
+    },
+  };
+  assert.equal(getCartDiscountAmount(cartWithCartCodeAllocation), "200.00");
+  assert.equal(getCheckoutItemTotal(cartWithCartCodeAllocation), "1800.00");
+});
+
+test("shipping discount allocations do not reduce merchandise subtotal", () => {
+  const { getCartDiscountAmount, getCheckoutItemTotal } = loadModule();
+  const cartWithShippingAllocation = {
+    ...cart,
+    lines: {
+      nodes: [{
+        ...cart.lines.nodes[0],
+        discountAllocations: [{
+          discountedAmount: { amount: "25.00", currencyCode: "INR" },
+          targetType: "SHIPPING_LINE",
+        }],
+      }],
+    },
+  };
+  assert.equal(getCartDiscountAmount(cartWithShippingAllocation), "0.00");
+  assert.equal(getCheckoutItemTotal(cartWithShippingAllocation), "100.00");
 });
 
 test("per-item parcel values preserve the exact discounted line total", () => {

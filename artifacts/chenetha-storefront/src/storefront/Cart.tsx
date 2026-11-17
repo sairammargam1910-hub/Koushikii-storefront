@@ -436,7 +436,9 @@ function ShopifyBag({
             key={discount.code}
           >
             {discount.applicable
-              ? `Your code ${discount.code} applies to your bag. Your total reflects the savings shown above.`
+              ? Number(cart.discountAmount) > 0
+                ? `Your code ${discount.code} applies to these pieces. You save ${formatShopifyMoney(cart.discountAmount, cart.currencyCode)}.`
+                : `Code ${discount.code} was accepted, but no savings have been applied yet. Eligibility will be confirmed at checkout.`
               : `Code ${discount.code} does not apply to this bag.`}
           </p>
         ))}

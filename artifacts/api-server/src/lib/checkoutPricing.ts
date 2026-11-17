@@ -86,6 +86,19 @@ export function getCartWeightKg(cart: ShopifyCartNode): number | null {
 }
 
 export function getCartDiscountAmount(cart: ShopifyCartNode): string {
+  const hasAllocations = cart.lines.nodes.some(
+    (line) => (line.discountAllocations?.length ?? 0) > 0,
+  );
+  if (hasAllocations) {
+    return addMoney(
+      cart.lines.nodes.flatMap((line) =>
+        (line.discountAllocations ?? [])
+          .filter((allocation) => allocation.targetType === "LINE_ITEM")
+          .map((allocation) => allocation.discountedAmount.amount),
+      ),
+    );
+  }
+
   const pairs = cart.lines.nodes.map((line) => [
     line.cost.subtotalAmount.amount,
     line.cost.totalAmount.amount,
@@ -94,18 +107,26 @@ export function getCartDiscountAmount(cart: ShopifyCartNode): string {
     2,
     ...pairs.flatMap((pair) => pair.map((amount) => amount.split(".")[1]?.length ?? 0)),
   );
-  const discount = pairs.reduce(
-    (total, [subtotal, discounted]) =>
-      total + toMinorUnits(subtotal, scale) - toMinorUnits(discounted, scale),
-    0n,
-  );
+  const discount = pairs.reduce((total, [subtotal, discounted]) => {
+    const difference = toMinorUnits(subtotal, scale) - toMinorUnits(discounted, scale);
+    return total + (difference > 0n ? difference : 0n);
+  }, 0n);
   return fromMinorUnits(discount, scale);
 }
 
 export function getCheckoutItemTotal(cart: ShopifyCartNode): string {
-  return addMoney(
-    cart.lines.nodes.map((line) => line.cost.totalAmount.amount),
+  const subtotal = addMoney(
+    cart.lines.nodes.map((line) => line.cost.subtotalAmount.amount),
   );
+  const discount = getCartDiscountAmount(cart);
+  const scale = Math.max(
+    2,
+    subtotal.split(".")[1]?.length ?? 0,
+    discount.split(".")[1]?.length ?? 0,
+  );
+  const totalMinorUnits =
+    toMinorUnits(subtotal, scale) - toMinorUnits(discount, scale);
+  return fromMinorUnits(totalMinorUnits > 0n ? totalMinorUnits : 0n, scale);
 }
 
 export function getCheckoutItemSubtotal(cart: ShopifyCartNode): string {

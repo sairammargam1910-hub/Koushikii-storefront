@@ -1440,6 +1440,32 @@ test("applies a discount to the bag total without estimating delivery", async ()
   await context.close();
 });
 
+test("does not claim coupon savings when Shopify has not allocated a discount", async () => {
+  const savedCart = { id: "gid://shopify/Cart/no-savings-cart", totalQuantity: 1 };
+  const { context, page } = await openCart({ savedCart });
+  await page.route("**/api/shopify/cart/discount-codes", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...cartResponse,
+        discountAmount: "0.00",
+        totalAmount: "1250.00",
+        discountCodes: [{ code: "NEW26", applicable: true }],
+      }),
+    });
+  });
+
+  await page.getByTestId("input-shopify-discount-code").fill("NEW26");
+  await page.getByTestId("button-apply-shopify-discount").click();
+  const status = page.getByTestId("status-shopify-discount");
+  await status.waitFor();
+  assert.match(await status.innerText(), /no savings have been applied yet/i);
+  assert.match(await status.innerText(), /confirmed at checkout/i);
+  assert.equal(await page.getByTestId("text-shopify-cart-discount").count(), 0);
+  await context.close();
+});
+
 test("explains an invalid coupon and lets the shopper remove it", async () => {
   const savedCart = { id: "gid://shopify/Cart/invalid-discount", totalQuantity: 1 };
   const { context, page } = await openCart({ savedCart });

@@ -56,6 +56,7 @@ function cart(overrides = {}) {
           subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
           totalAmount: { amount: "1250.00", currencyCode: "INR" },
         },
+        discountAllocations: [],
         merchandise: {
           id: variantId,
           title: "Default",
@@ -466,8 +467,8 @@ test("bag totals include merchandise and discounts only, never an unrequested sh
   await harness(async ({ state, getCart }) => {
     state.cartMutationResult.cart = cart({
       cost: {
-        subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
-        totalAmount: { amount: "1500.00", currencyCode: "INR" },
+        subtotalAmount: { amount: "2000.00", currencyCode: "INR" },
+        totalAmount: { amount: "2000.00", currencyCode: "INR" },
       },
       discountCodes: [{ code: "NEW26", applicable: true }],
       lines: {
@@ -475,9 +476,13 @@ test("bag totals include merchandise and discounts only, never an unrequested sh
           id: "gid://shopify/CartLine/line-123",
           quantity: 1,
           cost: {
-            subtotalAmount: { amount: "1250.00", currencyCode: "INR" },
-            totalAmount: { amount: "1125.00", currencyCode: "INR" },
+            subtotalAmount: { amount: "2000.00", currencyCode: "INR" },
+            totalAmount: { amount: "2000.00", currencyCode: "INR" },
           },
+          discountAllocations: [{
+            discountedAmount: { amount: "200.00", currencyCode: "INR" },
+            targetType: "LINE_ITEM",
+          }],
           merchandise: cart().lines.nodes[0].merchandise,
         }],
       },
@@ -485,11 +490,12 @@ test("bag totals include merchandise and discounts only, never an unrequested sh
     const result = await getCart("gid://shopify/Cart/cart-123");
 
     assert.equal(result.status, 200);
-    assert.equal(result.data.subtotalAmount, "1250.00");
-    assert.equal(result.data.discountAmount, "125.00");
-    assert.equal(result.data.totalAmount, "1125.00");
+    assert.equal(result.data.subtotalAmount, "2000.00");
+    assert.equal(result.data.discountAmount, "200.00");
+    assert.equal(result.data.totalAmount, "1800.00");
     assert.equal("shippingEstimate" in result.data, false);
     assert.equal("estimatedTotalAmount" in result.data, false);
+    assert.match(state.calls.at(-1).query, /discountAllocations/);
     assert.doesNotMatch(state.calls.at(-1).query, /deliveryGroups|estimatedCost/);
   });
 });

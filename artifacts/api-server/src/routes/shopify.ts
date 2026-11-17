@@ -12,6 +12,10 @@ import {
   getShopifyCustomerAccountUrl,
   shopifyStorefrontRequest,
 } from "../lib/shopifyStorefrontClient";
+import {
+  getCartDiscountAmount,
+  getCheckoutItemTotal,
+} from "../lib/checkoutPricing";
 import { logger } from "../lib/logger";
 
 type ShopifyImage = {
@@ -96,6 +100,10 @@ export type ShopifyCartNode = {
       id: string;
       quantity: number;
       cost: { subtotalAmount: ShopifyMoney; totalAmount: ShopifyMoney };
+      discountAllocations?: Array<{
+        discountedAmount: ShopifyMoney;
+        targetType: "LINE_ITEM" | "SHIPPING_LINE";
+      }>;
       merchandise: ShopifyCartMerchandise | null;
     }>;
   };
@@ -202,6 +210,10 @@ const CART_FIELDS = `#graphql
     nodes {
       id
       quantity
+      discountAllocations {
+        discountedAmount { amount currencyCode }
+        targetType
+      }
       cost {
         subtotalAmount { amount currencyCode }
         totalAmount { amount currencyCode }
@@ -394,39 +406,6 @@ function getCartMerchandiseSubtotalAmount(cart: ShopifyCartNode): string {
   return formatScaledMoneyAmount(subtotal, scale);
 }
 
-function getCartMerchandiseTotalAmount(cart: ShopifyCartNode): string {
-  const amounts = cart.lines.nodes.map((line) => line.cost.totalAmount.amount);
-  if (amounts.length === 0) return "0.00";
-  const scale = Math.max(
-    0,
-    ...amounts.map((amount) => amount.split(".")[1]?.length ?? 0),
-  );
-  const total = amounts.reduce(
-    (sum, amount) => sum + scaledMoneyAmount(amount, scale),
-    0n,
-  );
-  return formatScaledMoneyAmount(total, scale);
-}
-
-function getCartDiscountAmount(cart: ShopifyCartNode): string {
-  const amounts = cart.lines.nodes.flatMap(({ cost }) => [
-    cost.subtotalAmount.amount,
-    cost.totalAmount.amount,
-  ]);
-  const scale = Math.max(
-    0,
-    ...amounts.map((amount) => amount.split(".")[1]?.length ?? 0),
-  );
-  const discounted = cart.lines.nodes.reduce(
-    (sum, line) =>
-      sum +
-      scaledMoneyAmount(line.cost.subtotalAmount.amount, scale) -
-      scaledMoneyAmount(line.cost.totalAmount.amount, scale),
-    0n,
-  );
-  return formatScaledMoneyAmount(discounted, scale);
-}
-
 function createCheckoutUrl(checkoutUrl: string): string {
   const url = new URL(checkoutUrl);
   if (process.env["SHOPIFY_DEV_STORE_PREVIEW"] === "true") {
@@ -463,7 +442,7 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
     totalQuantity: cart.totalQuantity,
     subtotalAmount: getCartMerchandiseSubtotalAmount(cart),
     discountAmount: getCartDiscountAmount(cart),
-    totalAmount: getCartMerchandiseTotalAmount(cart),
+    totalAmount: getCheckoutItemTotal(cart),
     currencyCode: cart.cost.subtotalAmount.currencyCode,
     discountCodes: cart.discountCodes,
     lines,
