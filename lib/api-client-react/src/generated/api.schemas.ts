@@ -854,6 +854,27 @@ export interface ShopifyAdminDiscount {
   startsAt: string;
   /** @nullable */
   endsAt: string | null;
+  advertiseOnStorefront: boolean;
+}
+
+export interface ShopifyStorefrontPromotion {
+  title: string;
+  code: string;
+  percentage: number;
+  /** @nullable */
+  endsAt: string | null;
+}
+
+export interface ShopifyStorefrontPromotionsResponse {
+  promotions: ShopifyStorefrontPromotion[];
+}
+
+export interface ShopifyAdminDiscountStorefrontInput {
+  advertiseOnStorefront: boolean;
+}
+
+export interface ShopifyAdminDiscountStorefrontResponse {
+  advertiseOnStorefront: boolean;
 }
 
 export interface ShopifyAdminDiscountsResponse {

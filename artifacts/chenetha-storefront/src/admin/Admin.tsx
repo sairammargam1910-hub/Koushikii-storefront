@@ -8,6 +8,7 @@ import {
   getGetShopifyAdminInventoryQueryKey,
   getGetShopifyProductsQueryKey,
   getGetShopifyAdminDiscountsQueryKey,
+  getGetShopifyStorefrontPromotionsQueryKey,
   useGetShopifyAdminInventory,
   useGetShopifyAdminProducts,
   useGetShopifyAdminCollections,
@@ -19,6 +20,7 @@ import {
   useGetShopifyAdminDiscounts,
   useCreateShopifyAdminDiscount,
   useDeactivateShopifyAdminDiscount,
+  useUpdateShopifyAdminDiscountStorefrontVisibility,
   type ShopifyAdminProduct,
   type ShopifyAdminCollection,
   type ShopifyAdminInventoryVariant,
@@ -583,13 +585,23 @@ function DiscountModal({ onClose, onSubmit, busy, error }: { onClose: () => void
   </div>;
 }
 
-function DiscountRow({ discount, onDeactivate, busy }: { discount: ShopifyAdminDiscount; onDeactivate: () => void; busy: boolean }) {
+function DiscountRow({ discount, onDeactivate, onToggleStorefront, busy }: { discount: ShopifyAdminDiscount; onDeactivate: () => void; onToggleStorefront: (advertise: boolean) => void; busy: boolean }) {
   const label = discount.status.toLowerCase();
   return <article className="discount-row" data-testid={`row-discount-${discount.id}`}>
     <div className="discount-mark"><BadgePercent size={19}/></div><div className="discount-info"><b>{discount.title}</b><span className="discount-code" data-testid={`text-discount-code-${discount.id}`}>{discount.code}</span></div>
     <div className="discount-rate" data-testid={`text-discount-percentage-${discount.id}`}>{discount.percentage}% <small>off</small></div>
     <span className={`status-pill status-${label}`} data-testid={`status-discount-${discount.id}`}>{discount.status.charAt(0) + discount.status.slice(1).toLowerCase()}</span>
     <div className="discount-end"><Clock3 size={14}/>{formatDate(discount.endsAt)}</div>
+    <label className="discount-advertise" title="Only advertised active offers appear to shoppers">
+      <input
+        type="checkbox"
+        checked={discount.advertiseOnStorefront}
+        disabled={busy || discount.status === "EXPIRED"}
+        onChange={(event) => onToggleStorefront(event.currentTarget.checked)}
+        data-testid={`input-advertise-discount-${discount.id}`}
+      />
+      <span>Show on storefront</span>
+    </label>
     {discount.status !== "EXPIRED" && <button className="text-button danger-text" disabled={busy} onClick={onDeactivate} data-testid={`button-deactivate-discount-${discount.id}`}>{busy ? "Deactivating…" : "Deactivate"}</button>}
   </article>;
 }
@@ -602,6 +614,7 @@ export function AdminDiscounts() {
   const discounts = useGetShopifyAdminDiscounts();
   const create = useCreateShopifyAdminDiscount();
   const deactivate = useDeactivateShopifyAdminDiscount();
+  const updateStorefrontVisibility = useUpdateShopifyAdminDiscountStorefrontVisibility();
   const list = discounts.data?.discounts || [];
   const createDiscount = (data: DiscountInput) => {
     setFormError("");
@@ -617,15 +630,27 @@ export function AdminDiscounts() {
       onError: (error: Error) => setNotice(error.message || "Could not deactivate this code. Please try again."),
     });
   };
+  const setStorefrontVisibility = (discount: ShopifyAdminDiscount, advertiseOnStorefront: boolean) => {
+    updateStorefrontVisibility.mutate({ discountId: discount.id, data: { advertiseOnStorefront } }, {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetShopifyAdminDiscountsQueryKey() });
+        void queryClient.invalidateQueries({ queryKey: getGetShopifyStorefrontPromotionsQueryKey() });
+        setNotice(advertiseOnStorefront
+          ? `${discount.code} will appear in the storefront offer banner while active.`
+          : `${discount.code} will no longer appear in the storefront offer banner.`);
+      },
+      onError: (error: Error) => setNotice(error.message || "Could not update storefront offer visibility."),
+    });
+  };
   const active = list.filter((discount) => discount.status === "ACTIVE");
   const other = list.filter((discount) => discount.status !== "ACTIVE");
   return <AdminLayout title="Offers & discounts" eyebrow="SALES PROMOTIONS" action={<button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-create-discount"><Plus size={17}/> Create discount</button>}>
-    <div className="discount-intro"><span className="discount-intro-icon"><BadgePercent size={20}/></span><p>Make a little room for a thank-you. Your percentage codes are created in Shopify and ready for customers at checkout.</p></div>
+    <div className="discount-intro"><span className="discount-intro-icon"><BadgePercent size={20}/></span><p>Create percentage codes in Shopify. Turn on “Show on storefront” only for public offers; shoppers can apply them in their bag, where Shopify confirms eligibility and savings.</p></div>
     {notice && <div className={`inline-notice ${notice.startsWith("Could not") ? "notice-error" : ""}`} role="status" data-testid="status-discount-notice"><Check size={16}/>{notice}<button aria-label="Dismiss notice" onClick={() => setNotice("")} data-testid="button-dismiss-discount-notice"><X size={15}/></button></div>}
     {discounts.isLoading ? <LoadingPanel/> : discounts.isError ? <ErrorPanel message={readableError(discounts.error, "We couldn’t reach your Shopify discounts.")} retry={() => void discounts.refetch()}/> :
       list.length ? <div className="discount-sections">
-        {active.length > 0 && <section><div className="section-heading slim-heading"><div><span className="eyebrow">READY TO USE</span><h2>Active codes <span className="heading-count">{active.length}</span></h2></div></div><div className="discount-list">{active.map((discount) => <DiscountRow key={discount.id} discount={discount} busy={deactivate.isPending} onDeactivate={() => deactivateDiscount(discount)}/>)}</div></section>}
-        {other.length > 0 && <section><div className="section-heading slim-heading"><div><span className="eyebrow">PAST & UPCOMING</span><h2>Other codes <span className="heading-count">{other.length}</span></h2></div></div><div className="discount-list subdued-list">{other.map((discount) => <DiscountRow key={discount.id} discount={discount} busy={deactivate.isPending} onDeactivate={() => deactivateDiscount(discount)}/>)}</div></section>}
+        {active.length > 0 && <section><div className="section-heading slim-heading"><div><span className="eyebrow">READY TO USE</span><h2>Active codes <span className="heading-count">{active.length}</span></h2></div></div><div className="discount-list">{active.map((discount) => <DiscountRow key={discount.id} discount={discount} busy={deactivate.isPending || updateStorefrontVisibility.isPending} onToggleStorefront={(advertise) => setStorefrontVisibility(discount, advertise)} onDeactivate={() => deactivateDiscount(discount)}/>)}</div></section>}
+        {other.length > 0 && <section><div className="section-heading slim-heading"><div><span className="eyebrow">PAST & UPCOMING</span><h2>Other codes <span className="heading-count">{other.length}</span></h2></div></div><div className="discount-list subdued-list">{other.map((discount) => <DiscountRow key={discount.id} discount={discount} busy={deactivate.isPending || updateStorefrontVisibility.isPending} onToggleStorefront={(advertise) => setStorefrontVisibility(discount, advertise)} onDeactivate={() => deactivateDiscount(discount)}/>)}</div></section>}
       </div> : <EmptyPanel icon={<BadgePercent size={22}/>} title="No codes just yet" body="Create a percentage code for a festive moment, a returning customer, or a little thank-you." action={<button className="button button-primary" onClick={() => setCreating(true)} data-testid="button-empty-create-discount"><Plus size={16}/> Create first code</button>}/>
     }
     {creating && <DiscountModal onClose={() => setCreating(false)} onSubmit={createDiscount} busy={create.isPending} error={formError}/>}

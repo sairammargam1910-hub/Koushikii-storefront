@@ -9,8 +9,10 @@ import {
 } from "lucide-react";
 import {
   removeShopifyCartLines,
+  getGetShopifyStorefrontPromotionsQueryKey,
   updateShopifyCartDiscountCodes,
   updateShopifyCartLines,
+  useGetShopifyStorefrontPromotions,
   type ShopifyCartResponse,
 } from "@workspace/api-client-react";
 import {
@@ -242,6 +244,7 @@ function ShopifyBag({
   onDiscountCodesChange: (cartId: string, discountCodes: string[]) => void;
 }) {
   const [discountCode, setDiscountCode] = useState("");
+  const promotions = useGetShopifyStorefrontPromotions({ query: { queryKey: getGetShopifyStorefrontPromotionsQueryKey(), staleTime: 60_000 } });
 
   if (isLoading) {
     return <div className="cart-state cart-loading" role="status">
@@ -400,6 +403,26 @@ function ShopifyBag({
             </button>
           </div>
         </form>
+        {promotions.data?.promotions.length ? <div className="cart-public-offers" aria-label="Available store offers">
+          <p>Available offers · choose one to check it against your bag.</p>
+          {promotions.data.promotions.map((offer) => <div className="cart-public-offer" key={offer.code}>
+            <div className="cart-public-offer-copy">
+              <b>{offer.percentage}% off · {offer.title}</b>
+              <span>Code {offer.code}</span>
+            </div>
+            <button
+              type="button"
+              disabled={isApplyingDiscount || isUpdating}
+              onClick={() => {
+                setDiscountCode(offer.code);
+                onDiscountCodesChange(cart.id, [offer.code]);
+              }}
+              data-testid={`button-check-offer-${offer.code}`}
+            >
+              {isApplyingDiscount ? "Checking…" : "Check offer"}
+            </button>
+          </div>)}
+        </div> : null}
         {discountErrorMessage && (
           <p className="notice cart-action-notice" role="alert" data-testid="notice-shopify-discount-error">
             {customerFacingMessage(discountErrorMessage, "This discount code could not be applied. Please check it and try again.")}
@@ -413,7 +436,7 @@ function ShopifyBag({
             key={discount.code}
           >
             {discount.applicable
-              ? `Code ${discount.code} is applied to your bag.`
+              ? `Shopify confirms ${discount.code} applies to your bag. Your total reflects the savings shown above.`
               : `Code ${discount.code} does not apply to this bag.`}
           </p>
         ))}

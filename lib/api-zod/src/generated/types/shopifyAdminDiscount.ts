@@ -16,4 +16,5 @@ export interface ShopifyAdminDiscount {
   startsAt: Date;
   /** @nullable */
   endsAt: Date | null;
+  advertiseOnStorefront: boolean;
 }

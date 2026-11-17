@@ -27,7 +27,12 @@ import {
   CreateShopifyAdminVariantResponse,
   DeleteShopifyAdminVariantParams,
   DeleteShopifyAdminVariantResponse,
+  GetShopifyStorefrontPromotionsResponse,
+  UpdateShopifyAdminDiscountStorefrontVisibilityBody,
+  UpdateShopifyAdminDiscountStorefrontVisibilityResponse,
 } from "@workspace/api-zod";
+import { db, storefrontPromotionsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { requireMerchantAdmin } from "../middlewares/merchantAdminAuth";
 import { invalidateShopifyCatalog } from "./shopify";
 import {
@@ -44,6 +49,10 @@ import {
 import { MAX_IMAGE_BYTES, stageProductImage } from "../lib/shopifyImageUpload";
 
 const router: IRouter = Router();
+let storefrontPromotionCache: {
+  expiresAt: number;
+  promotions: Array<{ title: string; code: string; percentage: number; endsAt: string | null }>;
+} | null = null;
 
 type AdminVariant = {
   id: string;
@@ -1279,6 +1288,69 @@ async function publishToWebsite(publishableIds: string | string[]): Promise<void
 
 router.use("/shopify/admin", requireMerchantAdmin);
 
+router.get("/shopify/storefront/promotions", async (req, res): Promise<void> => {
+  if (storefrontPromotionCache && storefrontPromotionCache.expiresAt > Date.now()) {
+    res.json(GetShopifyStorefrontPromotionsResponse.parse({
+      promotions: storefrontPromotionCache.promotions,
+    }));
+    return;
+  }
+
+  try {
+    const advertised = await db
+      .select({ discountId: storefrontPromotionsTable.discountId })
+      .from(storefrontPromotionsTable);
+    if (advertised.length === 0) {
+      storefrontPromotionCache = { expiresAt: Date.now() + 60_000, promotions: [] };
+      res.json({ promotions: [] });
+      return;
+    }
+
+    const advertisedIds = new Set(advertised.map(({ discountId }) => discountId));
+    const result = await shopifyAdminRequest<{
+      discountNodes: {
+        nodes: Array<{
+          id: string;
+          discount: {
+            title: string;
+            status: "ACTIVE" | "EXPIRED" | "SCHEDULED";
+            startsAt: string;
+            endsAt: string | null;
+            codes: { nodes: Array<{ code: string }> };
+            customerGets: { value: { percentage?: number | null } };
+          } | null;
+        }>;
+      };
+    }>(ADMIN_DISCOUNTS_QUERY);
+    const now = Date.now();
+    const promotions = result.discountNodes.nodes.flatMap(({ id, discount }) => {
+      if (!advertisedIds.has(id) || !discount || discount.status !== "ACTIVE") return [];
+      const startsAt = new Date(discount.startsAt).getTime();
+      const endsAt = discount.endsAt ? new Date(discount.endsAt).getTime() : null;
+      const code = discount.codes.nodes[0]?.code;
+      const percentage = discount.customerGets.value.percentage;
+      if (
+        !code ||
+        percentage == null ||
+        !Number.isFinite(startsAt) ||
+        startsAt > now ||
+        (endsAt !== null && (!Number.isFinite(endsAt) || endsAt <= now))
+      ) return [];
+      return [{
+        title: discount.title,
+        code,
+        percentage: percentage * 100,
+        endsAt: discount.endsAt,
+      }];
+    });
+    storefrontPromotionCache = { expiresAt: Date.now() + 60_000, promotions };
+    res.json(GetShopifyStorefrontPromotionsResponse.parse({ promotions }));
+  } catch (error) {
+    req.log.error({ err: error }, "Public discount offers could not be loaded");
+    res.status(502).json({ error: "Current offers could not be checked. Please try again shortly." });
+  }
+});
+
 // Bound simultaneous in-memory uploads, including body parsing and decoding.
 let activeImageUploads = 0;
 const imageUploadSlot: RequestHandler = (req, res, next) => {
@@ -2131,6 +2203,10 @@ router.get("/shopify/admin/discounts", async (req, res): Promise<void> => {
         }>;
       };
     }>(ADMIN_DISCOUNTS_QUERY);
+    const advertisedRows = await db
+      .select({ discountId: storefrontPromotionsTable.discountId })
+      .from(storefrontPromotionsTable);
+    const advertisedIds = new Set(advertisedRows.map(({ discountId }) => discountId));
 
     res.json(
       GetShopifyAdminDiscountsResponse.parse({
@@ -2148,6 +2224,7 @@ router.get("/shopify/admin/discounts", async (req, res): Promise<void> => {
               percentage: percentage * 100,
               startsAt: discount.startsAt,
               endsAt: discount.endsAt,
+              advertiseOnStorefront: advertisedIds.has(node.id),
             },
           ];
         }),
@@ -2162,6 +2239,47 @@ router.get("/shopify/admin/discounts", async (req, res): Promise<void> => {
     );
   }
 });
+
+router.put(
+  "/shopify/admin/discounts/:discountId/storefront",
+  async (req, res): Promise<void> => {
+    const discountId = Array.isArray(req.params.discountId)
+      ? req.params.discountId[0]
+      : req.params.discountId;
+    if (!discountId || !isShopifyDiscountId(discountId)) {
+      res.status(400).json({ error: "The Shopify discount ID is invalid." });
+      return;
+    }
+    const body = UpdateShopifyAdminDiscountStorefrontVisibilityBody.safeParse(req.body);
+    if (!body.success) {
+      res.status(400).json({ error: "Choose whether this offer should appear on the storefront." });
+      return;
+    }
+
+    try {
+      if (body.data.advertiseOnStorefront) {
+        await db
+          .insert(storefrontPromotionsTable)
+          .values({ discountId })
+          .onConflictDoUpdate({
+            target: storefrontPromotionsTable.discountId,
+            set: { updatedAt: new Date() },
+          });
+      } else {
+        await db
+          .delete(storefrontPromotionsTable)
+          .where(eq(storefrontPromotionsTable.discountId, discountId));
+      }
+      storefrontPromotionCache = null;
+      res.json(UpdateShopifyAdminDiscountStorefrontVisibilityResponse.parse({
+        advertiseOnStorefront: body.data.advertiseOnStorefront,
+      }));
+    } catch (error) {
+      req.log.error({ err: error, discountId }, "Discount storefront visibility could not be updated");
+      res.status(500).json({ error: "This offer’s storefront visibility could not be saved. Please try again." });
+    }
+  },
+);
 
 router.post("/shopify/admin/discounts", async (req, res): Promise<void> => {
   const parsed = CreateShopifyAdminDiscountBody.safeParse(req.body);
@@ -2259,6 +2377,7 @@ router.delete(
         discountCodeDeactivate: { userErrors: ShopifyUserErrors };
       }>(ADMIN_DISCOUNT_DEACTIVATE, { id: discountId });
       assertNoUserErrors(result.discountCodeDeactivate.userErrors);
+      storefrontPromotionCache = null;
       res.json(DeactivateShopifyAdminDiscountResponse.parse({ success: true }));
     } catch (error) {
       respondShopifyError(

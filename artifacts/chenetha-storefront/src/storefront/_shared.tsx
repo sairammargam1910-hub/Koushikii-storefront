@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound, Languages, Instagram, Mail } from "lucide-react";
+import { Search, Heart, ShoppingBag, Menu, X, ArrowRight, Plus, Minus, ChevronRight, Check, ChevronDown, UserRound, Languages, Instagram, Mail, BadgePercent, Copy } from "lucide-react";
 import "./_group.css";
 import "./_logo.css";
 import "./_heritage.css";
@@ -9,7 +9,9 @@ import { languageNames, localizeTree, readStoreLanguage, type StoreLanguage } fr
 import "./_profile.css";
 import "./_storefront-pattern.css";
 import "./_mobile.css";
+import "./StorefrontPromotions.css";
 import { useLocation } from "wouter";
+import { getGetShopifyStorefrontPromotionsQueryKey, useGetShopifyStorefrontPromotions } from "@workspace/api-client-react";
 import { useShopifyCartMeta, useShopifyCart } from "./shopifyCartState";
 import { Show } from "@clerk/react";
 import { useShopperPreferences } from "./ShopperPreferences";
@@ -69,6 +71,7 @@ function LanguageSelect({language,onChange}:{language:StoreLanguage;onChange:(la
 }
 export function Header({language,onLanguageChange}:{language:StoreLanguage;onLanguageChange:(language:StoreLanguage)=>void}){
   const [menu,setMenu]=useState(false),[search,setSearch]=useState(false),[selectedFabric,setSelectedFabric]=useState("");
+   const [copiedOfferCode,setCopiedOfferCode]=useState("");
   const [,setLocation]=useLocation();
  const cart=useStore("kq-cart"),wish=useStore("kq-wish");
   const catalog=useShopifyCatalog();
@@ -79,9 +82,18 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
    const regionalHandlooms=activeFabric?getRegionalHandloomOptionsForFabric(products,activeFabric):[];
   const shopifyCart=useShopifyCartMeta();
   const currentCart=useShopifyCart(shopifyCart?.id);
+   const promotions=useGetShopifyStorefrontPromotions({query:{queryKey:getGetShopifyStorefrontPromotionsQueryKey(),staleTime:60_000}});
   const cartCount=shopifyCart
     ? (currentCart.data?.totalQuantity ?? shopifyCart.totalQuantity)
     : cart.reduce((sum,item)=>sum+item.qty,0);
+   const copyOfferCode=async(code:string)=>{
+     try{
+       await navigator.clipboard.writeText(code);
+       setCopiedOfferCode(code);
+     }catch{
+       setCopiedOfferCode("");
+     }
+   };
   return <><div className="topline">sustainable · ethical · timeless</div>
  <header className="header"><div className="wrap headrow">
    <button className="iconbtn mobile-menu" data-testid="button-mobile-menu" onClick={()=>setMenu(!menu)} aria-expanded={menu} aria-controls="kq-main-menu" aria-label="Toggle main menu">{menu?<X size={20}/>:<Menu size={20}/>}</button>
@@ -131,7 +143,23 @@ export function Header({language,onLanguageChange}:{language:StoreLanguage;onLan
    <WhatsAppHeaderIcon language={language}/>
    <a href={base+"Wishlist"} className="iconbtn optional" data-testid="link-wishlist" aria-label={`Wishlist${wish.length?`, ${wish.length} saved pieces`:""}`}><Heart size={17}/>{wish.length>0&&<span className="count">{wish.length}</span>}</a>
     <a href={base+"Cart"} className="iconbtn" data-testid="link-cart" aria-label={`Shopping bag${cartCount?`, ${cartCount} items`:""}`}><ShoppingBag size={18}/>{cartCount>0&&<span className="count" data-testid="header-cart-count">{cartCount}</span>}</a></div>
-  </div>{search&&<div className="wrap searchline active"><form style={{display:"flex",width:"100%"}} onSubmit={event=>{event.preventDefault();const query=String(new FormData(event.currentTarget).get("q")||"").trim();setLocation(base+"Collections"+(query?"?q="+encodeURIComponent(query):""));setSearch(false)}}><input data-testid="input-header-search" name="q" aria-label="Search textiles" placeholder="Search Ikat, cotton, Kanchipuram…" autoFocus/><button className="btn small" data-testid="button-submit-search">Search</button></form></div>}</header></>
+   </div>{search&&<div className="wrap searchline active"><form style={{display:"flex",width:"100%"}} onSubmit={event=>{event.preventDefault();const query=String(new FormData(event.currentTarget).get("q")||"").trim();setLocation(base+"Collections"+(query?"?q="+encodeURIComponent(query):""));setSearch(false)}}><input data-testid="input-header-search" name="q" aria-label="Search textiles" placeholder="Search Ikat, cotton, Kanchipuram…" autoFocus/><button className="btn small" data-testid="button-submit-search">Search</button></form></div>}</header>
+   {promotions.data?.promotions.length ? <aside className="store-offer-banner" aria-label="Current store offers">
+     <div className="wrap store-offer-inner">
+       <span className="store-offer-label"><BadgePercent size={15} aria-hidden="true"/> A LITTLE THANK-YOU</span>
+       <div className="store-offer-list">
+         {promotions.data.promotions.map((offer) => <div className="store-offer-item" key={offer.code} data-testid={`store-offer-${offer.code}`}>
+           <span><b>{offer.percentage}% off</b> · {offer.title}</span>
+           <span className="store-offer-code">Code <strong>{offer.code}</strong></span>
+           <button type="button" className="store-offer-copy" onClick={()=>void copyOfferCode(offer.code)} aria-label={`Copy offer code ${offer.code}`} data-testid={`button-copy-offer-${offer.code}`}>
+             {copiedOfferCode===offer.code ? <Check size={13}/> : <Copy size={13}/>}
+             {copiedOfferCode===offer.code ? "Copied" : "Copy code"}
+           </button>
+         </div>)}
+       </div>
+       <span className="store-offer-note">Apply in your bag to check eligibility.</span>
+     </div>
+   </aside> : null}</>
 }
 export function Footer(){
  return <footer className="footer"><TempleBorder/><div className="wrap"><div className="home-footer-reimagined">

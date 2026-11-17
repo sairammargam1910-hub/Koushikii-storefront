@@ -698,6 +698,20 @@ export const UpdateShopifyCartDiscountCodesResponse = zod.object({
 
 
 /**
+ * Returns only offers the merchant explicitly marked for storefront display and Shopify currently reports as active.
+ * @summary List publicly advertised active discount offers
+ */
+export const GetShopifyStorefrontPromotionsResponse = zod.object({
+  "promotions": zod.array(zod.object({
+  "title": zod.string(),
+  "code": zod.string(),
+  "percentage": zod.number(),
+  "endsAt": zod.coerce.date().nullable()
+}))
+})
+
+
+/**
  * Sends shopper-entered contact details and a one-time delivery address to Shopify before secure hosted payment.
  * @summary Prepare a Shopify cart with buyer details
  */
@@ -1691,7 +1705,8 @@ export const GetShopifyAdminDiscountsResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'EXPIRED', 'SCHEDULED']),
   "percentage": zod.number(),
   "startsAt": zod.coerce.date(),
-  "endsAt": zod.coerce.date().nullable()
+  "endsAt": zod.coerce.date().nullable(),
+  "advertiseOnStorefront": zod.boolean()
 }))
 })
 
@@ -1728,7 +1743,8 @@ export const CreateShopifyAdminDiscountResponse = zod.object({
   "status": zod.enum(['ACTIVE', 'EXPIRED', 'SCHEDULED']),
   "percentage": zod.number(),
   "startsAt": zod.coerce.date(),
-  "endsAt": zod.coerce.date().nullable()
+  "endsAt": zod.coerce.date().nullable(),
+  "advertiseOnStorefront": zod.boolean()
 })
 })
 
@@ -1747,6 +1763,26 @@ export const DeactivateShopifyAdminDiscountParams = zod.object({
 
 export const DeactivateShopifyAdminDiscountResponse = zod.object({
   "success": zod.boolean()
+})
+
+
+/**
+ * @summary Set whether a discount should appear in the storefront
+ */
+export const updateShopifyAdminDiscountStorefrontVisibilityPathDiscountIdMax = 200;
+
+
+
+export const UpdateShopifyAdminDiscountStorefrontVisibilityParams = zod.object({
+  "discountId": zod.coerce.string().min(1).max(updateShopifyAdminDiscountStorefrontVisibilityPathDiscountIdMax)
+})
+
+export const UpdateShopifyAdminDiscountStorefrontVisibilityBody = zod.object({
+  "advertiseOnStorefront": zod.boolean()
+})
+
+export const UpdateShopifyAdminDiscountStorefrontVisibilityResponse = zod.object({
+  "advertiseOnStorefront": zod.boolean()
 })
 
 

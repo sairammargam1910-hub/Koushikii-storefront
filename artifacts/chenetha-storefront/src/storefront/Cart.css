@@ -317,6 +317,10 @@
   border-color: var(--cart-brand-red);
 }
 
+.kq .cart-public-offers {
+  margin-top: 10px;
+}
+
 .kq .cart-action-notice {
   margin: 12px 0;
   border-left: 2px solid var(--cart-brand-red);

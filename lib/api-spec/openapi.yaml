@@ -544,6 +544,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /shopify/storefront/promotions:
+    get:
+      operationId: getShopifyStorefrontPromotions
+      tags: [shopify]
+      summary: List publicly advertised active discount offers
+      description: Returns only offers the merchant explicitly marked for storefront display and Shopify currently reports as active.
+      responses:
+        "200":
+          description: Publicly advertised discount offers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyStorefrontPromotionsResponse"
+        "502":
+          description: Shopify could not verify active offers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/cart/buyer-identity:
     post:
       operationId: updateShopifyCartBuyerIdentity
@@ -1478,6 +1497,40 @@ paths:
                 $ref: "#/components/schemas/ApiError"
         "502":
           description: Shopify discount could not be deactivated
+  /shopify/admin/discounts/{discountId}/storefront:
+    parameters:
+      - name: discountId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 200
+    put:
+      operationId: updateShopifyAdminDiscountStorefrontVisibility
+      tags: [shopify]
+      summary: Set whether a discount should appear in the storefront
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyAdminDiscountStorefrontInput"
+      responses:
+        "200":
+          description: Discount storefront visibility updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyAdminDiscountStorefrontResponse"
+        "400":
+          description: Discount visibility input is invalid
+        "401":
+          description: Sign-in required
+        "403":
+          description: Store owner access required
+        "502":
+          description: Discount visibility could not be updated
           content:
             application/json:
               schema:
@@ -2779,7 +2832,42 @@ components:
         endsAt:
           type: ["string", "null"]
           format: date-time
-      required: [id, title, code, status, percentage, startsAt, endsAt]
+        advertiseOnStorefront:
+          type: boolean
+      required: [id, title, code, status, percentage, startsAt, endsAt, advertiseOnStorefront]
+    ShopifyStorefrontPromotion:
+      type: object
+      properties:
+        title:
+          type: string
+        code:
+          type: string
+        percentage:
+          type: number
+        endsAt:
+          type: ["string", "null"]
+          format: date-time
+      required: [title, code, percentage, endsAt]
+    ShopifyStorefrontPromotionsResponse:
+      type: object
+      properties:
+        promotions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopifyStorefrontPromotion"
+      required: [promotions]
+    ShopifyAdminDiscountStorefrontInput:
+      type: object
+      properties:
+        advertiseOnStorefront:
+          type: boolean
+      required: [advertiseOnStorefront]
+    ShopifyAdminDiscountStorefrontResponse:
+      type: object
+      properties:
+        advertiseOnStorefront:
+          type: boolean
+      required: [advertiseOnStorefront]
     ShopifyAdminDiscountsResponse:
       type: object
       properties:
