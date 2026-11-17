@@ -71,9 +71,12 @@ function StaticHomeHeroCarousel(){
 }
 export function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
  const [active,setActive]=useState(0);
+ const [portraitImageUrl,setPortraitImageUrl]=useState("");
  useEffect(()=>{if(slides.length<2)return;const timer=window.setInterval(()=>setActive(index=>(index+1)%slides.length),6000);return()=>window.clearInterval(timer)},[slides.length]);
  const activeIndex=active%slides.length;
  const slide=slides[activeIndex];
+ const imageUrl=slide.imageUrl || "";
+ const hasPortraitImage=portraitImageUrl===imageUrl;
  const touchStart=useRef<{x:number;y:number}|null>(null);
  const swipeClickGuard=useRef(0);
  const go=(direction:number)=>setActive(index=>(index+direction+slides.length)%slides.length);
@@ -88,14 +91,23 @@ export function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
   go(deltaX<0?1:-1);
  };
  return <section className="heritage-hero home-hero-carousel" aria-label="Featured handloom collection" onClickCapture={event=>{if(Date.now()<swipeClickGuard.current){event.preventDefault();event.stopPropagation();swipeClickGuard.current=0}}}>
-  <div className="home-hero-images"
+  <div className={`home-hero-images${hasPortraitImage?" has-portrait-image":""}`}
    onPointerDown={event=>{if(event.isPrimary&&event.pointerType!=="touch")touchStart.current={x:event.clientX,y:event.clientY}}}
    onPointerUp={event=>{if(event.pointerType!=="touch")finishSwipe({x:event.clientX,y:event.clientY})}}
    onPointerCancel={event=>{if(event.pointerType!=="touch")touchStart.current=null}}
    onTouchStart={event=>{if(event.touches.length!==1){touchStart.current=null;return}const touch=event.touches[0];touchStart.current={x:touch.clientX,y:touch.clientY}}}
    onTouchEnd={event=>{const touch=event.changedTouches[0];if(touch)finishSwipe({x:touch.clientX,y:touch.clientY})}}
    onTouchCancel={()=>{touchStart.current=null}}
-  ><img className="home-hero-image is-active" src={slide.imageUrl || ""} alt={slide.altText || slide.title}/><div className="home-hero-shade" aria-hidden="true"/>
+   ><img
+    className="home-hero-image is-active"
+    src={imageUrl}
+    alt={slide.altText || slide.title}
+    onLoad={event=>{
+     const image=event.currentTarget;
+     setPortraitImageUrl(image.naturalHeight>image.naturalWidth*1.04?imageUrl:"");
+    }}
+    onError={()=>setPortraitImageUrl("")}
+   /><div className="home-hero-shade" aria-hidden="true"/>
    <div className="home-hero-content wrap"><div className="home-hero-copy" key={slide.id} role="group" aria-roledescription="slide" aria-label={`${active+1} of ${slides.length}`}>
     {slide.eyebrow && <span className="eyebrow">{slide.eyebrow}</span>}<h1>{slide.title}</h1>{slide.body && <p>{slide.body}</p>}
     {slide.ctaLabel && slide.ctaUrl && <a className="home-hero-cta" href={slide.ctaUrl}>{slide.ctaLabel}<ArrowRight size={15}/></a>}
