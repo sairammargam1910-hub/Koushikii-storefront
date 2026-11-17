@@ -82,11 +82,12 @@
 }
 
 .kq .home-hero-images.has-portrait-image .home-hero-image {
-  right: clamp(24px, 4vw, 56px);
+  right: 0;
   left: auto;
-  width: min(54%, 760px);
-  object-fit: contain;
-  object-position: center right;
+  width: 66%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center 50%;
   transform: none;
   transition: opacity 850ms ease;
 }
@@ -280,7 +281,7 @@
     width: 100%;
     object-fit: cover;
     object-position: center center;
-    transform: scale(1.01);
+    transform: none;
   }
 
   .kq .home-hero-shade {

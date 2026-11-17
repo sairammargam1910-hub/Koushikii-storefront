@@ -392,3 +392,87 @@ mtime_ms = 1794918962557
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/7d2150a8-2c3a-4170-a3d8-bd72abb029d9/97cfe888-e669-4533-bb5b-0432b9c254dd"
 storage_version_token = "1794919020502360"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "QOMX22lqxSq2NzkQ0nrp6"
+uri = "file://generated-artifacts/hero-gradient-check/desktop-live-hero.jpg"
+type = "image"
+title = "Desktop · Uploaded hero"
+description = "Full-bleed portrait slide at 1440 × 900; uses its saved crop setting."
+logical_id = "be98ffa5-0dab-493e-b702-279507515748"
+content_hash = "sha256:da4ae2057db95e158944060a1efcef18259867f4de42d2952ade686e7fa867d5"
+size = 206898
+mtime_ms = 1794920302926
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/be98ffa5-0dab-493e-b702-279507515748/efab7cac-a173-4417-a019-12998869954b"
+storage_version_token = "1794920395167880"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "Q-5qkLK8Z1N358KQjSYnj"
+uri = "file://generated-artifacts/hero-gradient-check/desktop-weaving.jpg"
+type = "image"
+title = "Desktop · Weaving slide"
+description = "Carousel slide 2 at 1440 × 900."
+logical_id = "87bc1fb9-caab-4dfe-b312-cafe185776e6"
+content_hash = "sha256:3984142d79b597fb9ec33690c0fd6fea96ffb5448b056ffeb7fb29c0924c3a43"
+size = 155935
+mtime_ms = 1794920303570
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/87bc1fb9-caab-4dfe-b312-cafe185776e6/3ab03b51-975a-47a6-bd64-06b39d687e4a"
+storage_version_token = "1794920396485448"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "_mNmGaLUmAt2PpJK0RmoC"
+uri = "file://generated-artifacts/hero-gradient-check/desktop-garden.jpg"
+type = "image"
+title = "Desktop · Garden slide"
+description = "Carousel slide 3 at 1440 × 900."
+logical_id = "6f95f4d9-6cbc-4ad1-8e1f-e5d698bd7627"
+content_hash = "sha256:2d920e1f858e474a304bce9708de766046535fbab5940a29711a34dc226f0149"
+size = 204584
+mtime_ms = 1794920304146
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/6f95f4d9-6cbc-4ad1-8e1f-e5d698bd7627/cad602c7-1cc9-44ea-b605-c71f5e8002b3"
+storage_version_token = "1794920397810887"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "M7VeEco3_kKujyX51cKaN"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-live-hero.jpg"
+type = "image"
+title = "Mobile · Uploaded hero"
+description = "Full-bleed portrait slide at 402 × 874; uses its saved crop setting."
+logical_id = "c9caec40-7c92-432c-9f64-715a9ec06922"
+content_hash = "sha256:b75ab4373d37b709b5e87ab6cfdc7a6fb58f714ba59046d77c087d7065529d92"
+size = 73194
+mtime_ms = 1794920311342
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/c9caec40-7c92-432c-9f64-715a9ec06922/897977c4-2178-4ace-b9ec-3dc845fced17"
+storage_version_token = "1794920399136661"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "A0uWjj9hzftjlq1Ps7pDP"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-weaving.jpg"
+type = "image"
+title = "Mobile · Weaving slide"
+description = "Carousel slide 2 at 402 × 874."
+logical_id = "32be78bd-26dd-4842-b5e9-b36993ca12c7"
+content_hash = "sha256:99f8c65a18510fff1cddc4a689744f6b90294ac3fe6893b4cb3ff5d11be8110b"
+size = 69302
+mtime_ms = 1794920311866
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/32be78bd-26dd-4842-b5e9-b36993ca12c7/311f51ae-52ae-45dd-8344-4a9454b539e2"
+storage_version_token = "1794920400417313"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "Pw_8xefG6UfaHcqwqTyni"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-garden.jpg"
+type = "image"
+title = "Mobile · Garden slide"
+description = "Carousel slide 3 at 402 × 874."
+logical_id = "4e683823-f195-430f-9a2d-897c4a99dc27"
+content_hash = "sha256:e7bac65c9cd6607e6079ff49e9cfb57c461d81615e586b9ff65b992413752e6b"
+size = 79012
+mtime_ms = 1794920312422
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/4e683823-f195-430f-9a2d-897c4a99dc27/a955b189-4bcf-4540-8584-95b275ef1cec"
+storage_version_token = "1794920401742238"
+content_type = "image/jpeg"
