@@ -490,3 +490,17 @@ mtime_ms = 1794920688506
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/ab730f8e-c4b2-483d-9b2c-a113e3223de0/28ce3ba2-7131-4a34-8864-cc3505bba2fe"
 storage_version_token = "1794920717955772"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "5IWrpIwcjMUxLmod7aSZJ"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-left-only-1.jpg"
+type = "image"
+title = "Mobile hero · left-edge gradient"
+description = "Updated 402 × 874 preview using the uploaded hero slide."
+logical_id = "9f427c50-148f-4211-b46e-7476e4ef9d39"
+content_hash = "sha256:b4325ee3c34b32b9219dc6fd7a8dafb46189398d3c0f1db90f8b788516bfedd5"
+size = 75854
+mtime_ms = 1794920934813
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/9f427c50-148f-4211-b46e-7476e4ef9d39/65a2de68-7cb2-4a3f-ba57-7d03ce500ac4"
+storage_version_token = "1794921005520491"
+content_type = "image/jpeg"
