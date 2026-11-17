@@ -35,8 +35,8 @@ const product: ShopifyAdminProduct = {
   }],
 };
 
-const heroItem = (orientation: string, focalPointX: number | null = null, focalPointY: number | null = null): SiteContentItem => ({
-  id: "00000000-0000-4000-8000-000000000130",
+const heroItem = (orientation: string, focalPointX: number | null = null, focalPointY: number | null = null, id = "00000000-0000-4000-8000-000000000130"): SiteContentItem => ({
+  id,
   kind: "hero_slide",
   placement: null,
   title: "Focal point browser fixture",
@@ -77,6 +77,14 @@ function HeroPreviewFixture({ orientation, x, y }: { orientation: string; x: num
   return <div className="kq"><PublishedHero slides={[heroItem(orientation, x, y)]}/></div>;
 }
 
+function HeroCarouselFixture() {
+  const slides = [
+    heroItem("landscape", 12, 28, "00000000-0000-4000-8000-000000000131"),
+    heroItem("portrait", 76, 83, "00000000-0000-4000-8000-000000000132"),
+  ];
+  return <div className="kq"><PublishedHero slides={slides}/></div>;
+}
+
 function Fixture() {
   const [closed, setClosed] = useState(false);
   const params = new URLSearchParams(window.location.search);
@@ -88,6 +96,7 @@ function Fixture() {
     x={Number(params.get("x") ?? 50)}
     y={Number(params.get("y") ?? 54)}
   />;
+  if (screen === "hero-carousel") return <HeroCarouselFixture/>;
   if (screen === "home-image-editor") return closed
     ? <p data-testid="home-image-editor-closed">Home image editor closed</p>
     : <main className="merchant-app"><ContentEditor kind="home_image" onClose={() => setClosed(true)}/></main>;

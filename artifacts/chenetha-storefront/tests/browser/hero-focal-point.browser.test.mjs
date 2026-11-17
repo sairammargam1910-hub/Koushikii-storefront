@@ -210,6 +210,53 @@ test("published hero applies the saved focal point for portrait and landscape sl
   }
 });
 
+test("manual and timed carousel changes keep each slide's focal point on desktop and mobile", async () => {
+  for (const mobile of [false, true]) {
+    const context = await browser.newContext({
+      viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 },
+      isMobile: mobile,
+      hasTouch: mobile,
+    });
+    const page = await context.newPage();
+    await page.clock.install();
+    await page.goto(`${origin}/tests/browser/fixture.html?screen=hero-carousel`);
+    await waitForHeroImage(page);
+
+    const image = page.locator(".home-hero-image");
+    assert.match(await image.getAttribute("src"), /hero-landscape\.svg$/);
+    assert.equal(await image.evaluate((element) => getComputedStyle(element).objectPosition), "12% 28%");
+    assert.equal(await page.getByRole("button", { name: "Show slide 1" }).getAttribute("aria-pressed"), "true");
+
+    await page.getByRole("button", { name: "Show slide 2" }).click();
+    await page.waitForFunction(() => {
+      const activeImage = document.querySelector(".home-hero-image.is-active");
+      return activeImage instanceof HTMLImageElement && activeImage.src.endsWith("/hero-portrait.svg")
+        && getComputedStyle(activeImage).objectPosition === "76% 83%";
+    });
+    assert.equal(await page.locator(".home-hero-images").evaluate((element) => element.classList.contains("has-portrait-image")), true);
+    assert.equal(await page.getByRole("button", { name: "Show slide 2" }).getAttribute("aria-pressed"), "true");
+
+    await page.clock.fastForward(6000);
+    await page.waitForFunction(() => {
+      const activeImage = document.querySelector(".home-hero-image.is-active");
+      return activeImage instanceof HTMLImageElement && activeImage.src.endsWith("/hero-landscape.svg")
+        && getComputedStyle(activeImage).objectPosition === "12% 28%";
+    });
+    assert.equal(await page.locator(".home-hero-images").evaluate((element) => element.classList.contains("has-portrait-image")), false);
+    assert.equal(await page.getByRole("button", { name: "Show slide 1" }).getAttribute("aria-pressed"), "true");
+
+    await page.clock.fastForward(6000);
+    await page.waitForFunction(() => {
+      const activeImage = document.querySelector(".home-hero-image.is-active");
+      return activeImage instanceof HTMLImageElement && activeImage.src.endsWith("/hero-portrait.svg")
+        && getComputedStyle(activeImage).objectPosition === "76% 83%";
+    });
+    assert.equal(await page.locator(".home-hero-images").evaluate((element) => element.classList.contains("has-portrait-image")), true);
+    await assertNoHorizontalOverflow(page, mobile ? 390 : 1280);
+    await context.close();
+  }
+});
+
 test("replacing a hero image clears its focal point until a new one is selected", async () => {
   const { context, page } = await openEditor({ orientation: "portrait", mobile: true });
   await page.evaluate((key) => {
