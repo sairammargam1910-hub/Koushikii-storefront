@@ -504,3 +504,17 @@ mtime_ms = 1794920934813
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/9f427c50-148f-4211-b46e-7476e4ef9d39/65a2de68-7cb2-4a3f-ba57-7d03ce500ac4"
 storage_version_token = "1794921005520491"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "os8p0KnBMO8224cd1obTp"
+uri = "file://generated-artifacts/hero-gradient-check/mobile-paper-matched.jpg"
+type = "image"
+title = "Mobile hero · background-matched fade"
+description = "Preview with the mobile gradient derived from the storefront paper color."
+logical_id = "db27ad20-a0c3-4f96-ae21-4b59ab1f6a7c"
+content_hash = "sha256:60d4599e1902012499fce0b6fa45e8af7bd50ebfff72632d850ee94178d54604"
+size = 75708
+mtime_ms = 1794921814594
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/db27ad20-a0c3-4f96-ae21-4b59ab1f6a7c/0ce3c84d-8fd6-47a1-b99b-ad3148fdd0ae"
+storage_version_token = "1794921846783231"
+content_type = "image/jpeg"

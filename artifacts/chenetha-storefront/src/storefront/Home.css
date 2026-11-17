@@ -289,11 +289,11 @@
       90deg,
       var(--paper) 0%,
       var(--paper) 12%,
-      rgba(247, 241, 230, .92) 20%,
-      rgba(247, 241, 230, .68) 32%,
-      rgba(247, 241, 230, .38) 44%,
-      rgba(247, 241, 230, .12) 54%,
-      rgba(247, 241, 230, 0) 60%
+      color-mix(in srgb, var(--paper) 92%, transparent) 20%,
+      color-mix(in srgb, var(--paper) 68%, transparent) 32%,
+      color-mix(in srgb, var(--paper) 38%, transparent) 44%,
+      color-mix(in srgb, var(--paper) 12%, transparent) 54%,
+      transparent 60%
     );
   }
 
