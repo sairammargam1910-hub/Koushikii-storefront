@@ -16,7 +16,7 @@ import { useShopperPreferences } from "./ShopperPreferences";
 import { customerFacingMessage } from "./customerFacingMessage";
 import type { CatalogFilters } from "./_shared/catalog-filter";
 import { normalizeRegion } from "./_shared/catalog-filter";
-import { getAvailableShopifyCollections, getShopifyAttribute, getShopifyAttributeValues, getShopifyTagValue } from "./shopifyCatalogData";
+import { getAvailableShopifyCollections, getShopifyAttribute, getShopifyAttributeValues, getShopifyTagValue, isCustomerNavigationValue, matchesShopifyNavigationSelection } from "./shopifyCatalogData";
 import {
   getShopifyProductRecommendations,
   getShopifyProductSummary,
@@ -83,7 +83,7 @@ export function getPremiumCollections(products: ShopifyProduct[]) {
   function addProduct(title: string, product: ShopifyProduct) {
     const cleanedTitle = title.trim();
     const normalizedTitle = normalizedTag(cleanedTitle);
-    if (!normalizedTitle || normalizedTitle === "premium-collection") return;
+    if (!normalizedTitle || normalizedTitle === "premium-collection" || !isCustomerNavigationValue(cleanedTitle)) return;
     const existing = collections.get(normalizedTitle);
     if (existing) {
       if (!existing.premiumProducts.some((item) => item.id === product.id)) {
@@ -165,11 +165,11 @@ export function filterShopifyProducts(
       ].join(" ").toLowerCase();
 
       if (query && !searchable.includes(query)) return false;
-      if (selectedFabrics.length && !selectedFabrics.some((selected) =>
-        fabrics.some((value) => normalizedTag(value) === normalizedTag(selected)),
-      )) return false;
-      if (selectedRegional.length && !regionalHandlooms.some((value) => selectedRegional.includes(value.toLowerCase()))) return false;
-      if (selectedWeaves.length && !weaves.some((value) => selectedWeaves.includes(value.toLowerCase()))) return false;
+      if (!matchesShopifyNavigationSelection(product, {
+        fabrics: selectedFabrics,
+        regionalHandlooms: selectedRegional,
+        weaves: selectedWeaves,
+      })) return false;
       if (selectedProductTypes.length && !selectedProductTypes.includes(product.productType.trim().toLowerCase())) return false;
       if (selectedRegions.length && !regions.some((value) => selectedRegions.includes(normalizeRegion(value)))) return false;
       if (selectedColours.length && !colours.some((value) => selectedColours.includes(value.trim().toLowerCase()))) return false;

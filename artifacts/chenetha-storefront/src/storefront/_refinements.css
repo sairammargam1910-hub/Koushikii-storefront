@@ -33,7 +33,7 @@
 .kq .head-actions .optional{display:inline-flex}
 .kq .mobile-menu{display:none}
 .kq .collection-nav>summary{display:flex;align-items:center;gap:5px;padding:12px 0}
-.kq .mega-menu{left:-36px;width:min(1040px,calc(100vw - 48px));grid-template-columns:1.25fr .7fr 1fr;gap:28px;padding:26px;background:#fbf6ed}
+.kq .mega-menu{left:50%;transform:translateX(-50%);width:min(860px,calc(100vw - 48px));grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:28px;padding:26px;background:#fbf6ed}
 .kq .mega-menu strong{font-size:24px}
 .kq .mega-menu a{font-size:12px}
 .kq .menu-dynamic-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px}
@@ -41,6 +41,15 @@
 .kq .mega-menu>div{min-width:0}
 .kq .mega-menu>div+div{border-left:1px solid var(--line);padding-left:22px}
 .kq .mega-menu .menu-dynamic-links{max-height:55dvh;overflow:auto}
+.kq .mega-menu .menu-fabric-trigger{display:flex;align-items:center;justify-content:space-between;width:100%;padding:4px 0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.kq .mega-menu .menu-fabric-trigger[aria-pressed=true]{color:var(--red);font-weight:600}
+.kq .mega-menu .menu-fabric-trigger svg{flex:none;transition:transform .18s ease}
+.kq .mega-menu .menu-fabric-trigger[aria-pressed=true] svg{transform:rotate(90deg)}
+.kq .mega-menu .menu-regional-panel{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.kq .mega-menu .menu-regional-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:6px;color:var(--muted);font-size:11px;font-weight:600}
+.kq .mega-menu .menu-regional-heading a{color:var(--red);white-space:nowrap}
+.kq .mega-menu .menu-empty-state,.kq .mega-menu-state{margin:8px 0;color:var(--muted);font-size:11px;line-height:1.5}
+.kq .mega-menu-state{grid-column:1/-1;margin:0}
 .kq .searchline input{width:100%;min-width:0}
 @media(max-width:1120px){
  .kq .headrow{position:relative;grid-template-columns:48px minmax(130px,1fr) auto;height:78px;gap:12px}
@@ -50,7 +59,8 @@
  .kq .nav.open{display:flex}
  .kq .nav>a,.kq .collection-nav>summary{padding:12px 2px;font-size:13px}
  .kq .collection-nav{width:100%}
- .kq .mega-menu{position:static;width:100%;margin:4px 0 12px;box-shadow:none}
+  .kq .mega-menu{position:static;left:auto;transform:none;width:100%;grid-template-columns:1fr;margin:4px 0 12px;box-shadow:none}
+  .kq .mega-menu>div+div{border-left:0;border-top:1px solid var(--line);padding:16px 0 0}
  .kq .head-actions{gap:7px}
  .kq .head-actions .optional{display:none}
 }

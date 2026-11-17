@@ -1,0 +1,115 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  getFabricCategoryOptions,
+  getMegaMenuFabricOptions,
+  getMegaMenuWeaveOptions,
+  getRegionalHandloomOptionsForFabric,
+  matchesShopifyNavigationSelection,
+} from "../src/storefront/shopifyCatalogData.ts";
+
+function product(id, { fabric = "", regionalHandloom = "", weave = "" } = {}) {
+  return {
+    id: `gid://shopify/Product/${id}`,
+    title: `Published textile ${id}`,
+    description: "",
+    productType: "Saree",
+    tags: [],
+    attributes: {
+      fabric: fabric || null,
+      regionalHandloom: regionalHandloom || null,
+      craftTechnique: weave || null,
+      region: null,
+      colour: null,
+      blouseAvailability: "not_specified",
+    },
+    collections: [],
+    images: [],
+    variants: [],
+  };
+}
+
+test("mega-menu fabrics only include non-empty standard categories and Others", () => {
+  const products = [
+    product("cotton", { fabric: "Cotton" }),
+    product("silk", { fabric: "Silk" }),
+    product("blend", { fabric: "Cotton-Silk" }),
+    product("linen", { fabric: "Linen" }),
+    product("test", { fabric: "test fabric" }),
+  ];
+
+  assert.deepEqual(getMegaMenuFabricOptions(products), [
+    "Cotton",
+    "Silk",
+    "Cotton-Silk",
+    "Others",
+  ]);
+  assert.deepEqual(getMegaMenuFabricOptions([product("cotton", { fabric: "Cotton" })]), [
+    "Cotton",
+  ]);
+});
+
+test("home fabric tiles keep custom categories and omit empty defaults and test values", () => {
+  assert.deepEqual(getFabricCategoryOptions(["Cotton", "Linen", "test fabric"]), [
+    "Cotton",
+    "Linen",
+  ]);
+});
+
+test("regional handlooms are derived by selected fabric and deduplicated", () => {
+  const products = [
+    product("cotton-1", { fabric: "Cotton", regionalHandloom: "Narayanpet" }),
+    product("cotton-2", { fabric: "Cotton", regionalHandloom: '["Narayanpet","Gadwal"]' }),
+    product("silk", { fabric: "Silk", regionalHandloom: "Narayanpet" }),
+    product("other", { fabric: "Linen", regionalHandloom: "Kota Cottons" }),
+    product("test", { fabric: "Cotton", regionalHandloom: "test tradition" }),
+  ];
+
+  assert.deepEqual(getRegionalHandloomOptionsForFabric(products, "Cotton"), [
+    "Gadwal",
+    "Narayanpet",
+  ]);
+  assert.deepEqual(getRegionalHandloomOptionsForFabric(products, "Silk"), ["Narayanpet"]);
+  assert.deepEqual(getRegionalHandloomOptionsForFabric(products, "Others"), ["Kota Cottons"]);
+});
+
+test("weave choices require published products, use the requested order, and hide test values", () => {
+  const products = [
+    product("jamdani", { weave: "Jamdani" }),
+    product("ikat", { weave: "Ikat" }),
+    product("ajrakh", { weave: "Ajrakh" }),
+    product("test", { weave: "test print" }),
+    product("unused", { weave: "Kanchipuram" }),
+  ];
+
+  assert.deepEqual(getMegaMenuWeaveOptions(products), ["Ajrakh", "Ikkat", "Jamdani"]);
+});
+
+test("combined fabric and regional filters use AND while weave browsing stays independent", () => {
+  const cottonNarayanpet = product("cotton-narayanpet", {
+    fabric: "Cotton",
+    regionalHandloom: "Narayanpet",
+  });
+  const silkNarayanpet = product("silk-narayanpet", {
+    fabric: "Silk",
+    regionalHandloom: "Narayanpet",
+  });
+  const linenKota = product("linen-kota", {
+    fabric: "Linen",
+    regionalHandloom: "Kota Cottons",
+  });
+  const cottonIkat = product("cotton-ikat", { fabric: "Cotton", weave: "Ikat" });
+
+  const cottonNarayanpetSelection = { fabrics: ["Cotton"], regionalHandlooms: ["Narayanpet"] };
+  assert.equal(matchesShopifyNavigationSelection(cottonNarayanpet, cottonNarayanpetSelection), true);
+  assert.equal(matchesShopifyNavigationSelection(silkNarayanpet, cottonNarayanpetSelection), false);
+  assert.equal(matchesShopifyNavigationSelection(linenKota, {
+    fabrics: ["Others"],
+    regionalHandlooms: ["Kota Cottons"],
+  }), true);
+  assert.equal(matchesShopifyNavigationSelection(cottonIkat, { weaves: ["Ikkat"] }), true);
+  assert.equal(matchesShopifyNavigationSelection(cottonIkat, {
+    fabrics: ["Silk"],
+    weaves: ["Ikkat"],
+  }), false);
+});

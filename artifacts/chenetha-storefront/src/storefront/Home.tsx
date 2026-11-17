@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, base } from "./_shared";
 import { getAvailableShopifyCollections, getPremiumCollections, getShopifyAttribute, isNewArrival, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
-import { getFabricCategoryOptions, getShopifyAttributeValues, REGIONAL_HANDLOOMS, WEAVE_PRINTS } from "./shopifyCatalogData";
+import { getCustomerNavigationValues, getFabricCategoryOptions, getShopifyAttributeValues } from "./shopifyCatalogData";
 import { stateNames, statePaths, stateWeaves } from "./_reference";
 import { useGetSiteContent, getGetSiteContentQueryKey, type SiteContentItem } from "@workspace/api-client-react";
 import type { ShopifyProduct } from "@workspace/api-client-react";
@@ -357,17 +357,14 @@ export function Home(){
   );
   const published=siteContent.data?.items||[];
   const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:"fabric_tile"|"weave_tile"|null})[];
-  const fabricNames=getFabricCategoryOptions(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"fabric")));
+   const fabricNames=getCustomerNavigationValues(getFabricCategoryOptions(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"fabric"))));
   const fabricCards=fabricNames.map(name=>{
    const normalized=name.toLowerCase();
     const pattern=name==="Cotton"?"cotton":name==="Silk"?"silk":name==="Cotton-Silk"?"cotton-silk":name==="Others"?"blends":"cotton";
     const tile=homeTiles.find(item=>item.placement==="fabric_tile"&&item.title.trim().toLowerCase()===normalized);
     return {name,pattern,tile};
   });
-  const regionalHandlooms=Array.from(new Set([
-    ...REGIONAL_HANDLOOMS,
-    ...storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"regionalHandloom")),
-  ])).sort((a,b)=>a.localeCompare(b));
+   const regionalHandlooms=getCustomerNavigationValues(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"regionalHandloom")));
   const collectionTitles=new Set(availableCollections.map(collection=>homeCollectionKey(collection.title)));
   const homeCollectionLinks=[
     ...availableCollections.map(collection=>({key:`collection:${collection.handle}`,title:collection.title,kind:"collection" as const,handle:collection.handle})),
@@ -375,10 +372,7 @@ export function Home(){
       .filter(name=>!collectionTitles.has(homeCollectionKey(name)))
       .map(name=>({key:`regional:${name}`,title:name,kind:"regional" as const})),
   ];
-  const weavePrints=Array.from(new Set([
-    ...WEAVE_PRINTS,
-    ...storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"weave")),
-  ])).sort((a,b)=>a.localeCompare(b));
+   const weavePrints=getCustomerNavigationValues(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"weave")));
   const collectionTile=(title:string)=>{
     const normalized=title.trim().toLowerCase();
     return homeTiles.find(item=>

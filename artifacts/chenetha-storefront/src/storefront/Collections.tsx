@@ -11,7 +11,7 @@ import {
   ShopifyProductGrid,
   useShopifyCatalog,
 } from "./ShopifyCatalog";
-import { getShopifyAttributeValues, getShopifyFabricValues } from "./shopifyCatalogData";
+import { getMegaMenuFabricOptions, getShopifyAttributeValues, getShopifyFabricValues } from "./shopifyCatalogData";
 import "./ShopifyCatalog.css";
 
 type FilterKey = "fabrics" | "regionalHandlooms" | "weaves" | "productTypes" | "regions" | "colours";
@@ -111,7 +111,10 @@ export function Collections() {
     setPremiumCategory(readPremiumCategory());
   }, [search]);
 
-  const fabricOptions = useMemo(() => getShopifyFabricValues(liveProducts), [liveProducts]);
+  const fabricOptions = useMemo(() => {
+    const values = getShopifyFabricValues(liveProducts);
+    return getMegaMenuFabricOptions(liveProducts).includes("Others") ? unique([...values, "Others"]) : values;
+  }, [liveProducts]);
   const options: Record<FilterKey, string[]> = {
     fabrics: fabricOptions,
     regionalHandlooms: unique(liveProducts.flatMap((product) => getShopifyAttributeValues(product, "regionalHandloom"))),

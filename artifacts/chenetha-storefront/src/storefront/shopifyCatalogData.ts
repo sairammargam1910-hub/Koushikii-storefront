@@ -26,6 +26,8 @@ export const WEAVE_PRINTS = [
 ];
 
 const STANDARD_FABRIC_CATEGORIES = ["Cotton", "Silk", "Cotton-Silk"] as const;
+const MEGA_MENU_WEAVES = ["Ajrakh", "Bagru", "Bandhani", "Ikkat", "Jamdani"] as const;
+const STANDARD_FABRIC_KEYS = new Set(STANDARD_FABRIC_CATEGORIES.map(normalizedTag));
 
 export const cottonWeaves = REGIONAL_HANDLOOMS;
 
@@ -83,6 +85,7 @@ export function getShopifyFabricValues(products: ShopifyProduct[]): string[] {
 export function getFabricCategoryOptions(values: string[]): string[] {
   const observed = new Map<string, string>();
   for (const value of values) {
+    if (!isCustomerNavigationValue(value)) continue;
     const canonical = canonicalFabric(value);
     const key = normalizedTag(canonical);
     if (key && !observed.has(key)) observed.set(key, canonical);
@@ -95,10 +98,78 @@ export function getFabricCategoryOptions(values: string[]): string[] {
     .sort((a, b) => a.localeCompare(b));
 
   return [
-    ...STANDARD_FABRIC_CATEGORIES,
+    ...STANDARD_FABRIC_CATEGORIES.filter((value) => observed.has(normalizedTag(value))),
     ...custom,
     ...(observed.has("others") ? ["Others"] : []),
   ];
+}
+
+export function isCustomerNavigationValue(value: string) {
+  const cleaned = value.trim();
+  return Boolean(cleaned) && !/\b(?:test|placeholder|demo|sample)\b/i.test(cleaned);
+}
+
+export function getCustomerNavigationValues(values: string[]) {
+  const unique = new Map<string, string>();
+  for (const value of values) {
+    const cleaned = value.trim();
+    const key = normalizedTag(cleaned);
+    if (isCustomerNavigationValue(cleaned) && key && !unique.has(key)) unique.set(key, cleaned);
+  }
+  return [...unique.values()].sort((a, b) => a.localeCompare(b));
+}
+
+export function matchesShopifyFabricCategory(product: ShopifyProduct, selectedFabric: string) {
+  const fabrics = getShopifyAttributeValues(product, "fabric");
+  if (normalizedTag(selectedFabric) === "others") {
+    return fabrics.some((value) => !STANDARD_FABRIC_KEYS.has(normalizedTag(canonicalFabric(value))));
+  }
+  const selected = normalizedTag(canonicalFabric(selectedFabric));
+  return fabrics.some((value) => normalizedTag(canonicalFabric(value)) === selected);
+}
+
+export function getMegaMenuFabricOptions(products: ShopifyProduct[]) {
+  const values = getShopifyFabricValues(products).filter(isCustomerNavigationValue);
+  const available = new Set(values.map(normalizedTag));
+  return [
+    ...STANDARD_FABRIC_CATEGORIES.filter((value) => available.has(normalizedTag(value))),
+    ...(values.some((value) => !STANDARD_FABRIC_KEYS.has(normalizedTag(canonicalFabric(value))))
+      ? ["Others"]
+      : []),
+  ];
+}
+
+export function getRegionalHandloomOptionsForFabric(products: ShopifyProduct[], fabric: string) {
+  return getCustomerNavigationValues(
+    products
+      .filter((product) => matchesShopifyFabricCategory(product, fabric))
+      .flatMap((product) => getShopifyAttributeValues(product, "regionalHandloom")),
+  );
+}
+
+export function getMegaMenuWeaveOptions(products: ShopifyProduct[]) {
+  const available = new Set(
+    getCustomerNavigationValues(products.flatMap((product) => getShopifyAttributeValues(product, "weave")))
+      .map(normalizedTag),
+  );
+  return MEGA_MENU_WEAVES.filter((value) => available.has(normalizedTag(value)));
+}
+
+export function matchesShopifyNavigationSelection(
+  product: ShopifyProduct,
+  selection: { fabrics?: string[]; regionalHandlooms?: string[]; weaves?: string[] },
+) {
+  const fabrics = selection.fabrics ?? [];
+  const handlooms = selection.regionalHandlooms ?? [];
+  const weaves = selection.weaves ?? [];
+  const productHandlooms = getShopifyAttributeValues(product, "regionalHandloom").map(normalizedTag);
+  const productWeaves = getShopifyAttributeValues(product, "weave").map(normalizedTag);
+
+  return (
+    (!fabrics.length || fabrics.some((fabric) => matchesShopifyFabricCategory(product, fabric))) &&
+    (!handlooms.length || handlooms.some((value) => productHandlooms.includes(normalizedTag(value)))) &&
+    (!weaves.length || weaves.some((value) => productWeaves.includes(normalizedTag(value))))
+  );
 }
 
 const weaveTags = new Map(
@@ -203,7 +274,7 @@ export function getAvailableShopifyCollections(products: ShopifyProduct[]) {
   const collections = new Map<string, { id: string; handle: string; title: string }>();
   for (const product of products) {
     for (const collection of product.collections ?? []) {
-      if (!collection.handle || collection.handle === "frontpage") continue;
+      if (!collection.handle || collection.handle === "frontpage" || !isCustomerNavigationValue(collection.title)) continue;
       collections.set(collection.handle, collection);
     }
   }
