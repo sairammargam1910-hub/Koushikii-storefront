@@ -3,9 +3,12 @@ import assert from "node:assert/strict";
 import { CreateSiteContentBody } from "../../../lib/api-zod/src/generated/api.ts";
 import {
   getFabricCategoryOptions,
+  getCustomerNavigationValues,
   getMegaMenuFabricOptions,
   getMegaMenuWeaveOptions,
   getRegionalHandloomOptionsForFabric,
+  getShopifyClassificationValues,
+  getShopifyFabricValues,
   getShopifyRegionalHandloomCategories,
   matchesShopifyNavigationSelection,
 } from "../src/storefront/shopifyCatalogData.ts";
@@ -56,6 +59,27 @@ test("home fabric tiles keep custom categories and omit empty defaults and test 
     "Cotton",
     "Linen",
   ]);
+});
+
+test("customer filters and product editor suggestions omit test and demo classifications", () => {
+  const products = [
+    product("cotton", { fabric: "Cotton", regionalHandloom: "Narayanpet", weave: "Ikat" }),
+    product("bad-values", {
+      fabric: "test fabric",
+      regionalHandloom: "test tradition",
+      weave: "demo print",
+    }),
+    product("placeholder", {
+      fabric: "placeholder silk",
+      regionalHandloom: "sample region",
+      weave: "placeholder weave",
+    }),
+  ];
+
+  assert.deepEqual(getShopifyFabricValues(products), ["Cotton"]);
+  assert.deepEqual(getShopifyClassificationValues(products, "regionalHandloom"), ["Narayanpet"]);
+  assert.deepEqual(getShopifyClassificationValues(products, "weave"), ["Ikkat"]);
+  assert.deepEqual(getCustomerNavigationValues(["Telangana", "test region", "demo colour"]), ["Telangana"]);
 });
 
 test("homepage regional handloom row lists handloom classifications, not Shopify collection names", () => {

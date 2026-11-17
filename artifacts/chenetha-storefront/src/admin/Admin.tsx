@@ -34,6 +34,7 @@ import "./Admin.css";
 import { ProductPhotoPicker } from "./ProductPhotoPicker";
 import { VariantEditor } from "./VariantEditor";
 import {
+  isCustomerNavigationValue,
   parseClassificationValues,
   serializeClassificationValues,
   REGIONAL_HANDLOOMS,
@@ -82,7 +83,7 @@ function formatDate(value: string | null) {
 }
 
 function uniqueValues(values: string[]) {
-  return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  return [...new Set(values.map((value) => value.trim()).filter(isCustomerNavigationValue))].sort((a, b) => a.localeCompare(b));
 }
 
 function readableError(error: unknown, fallback: string) {

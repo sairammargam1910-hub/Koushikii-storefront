@@ -76,7 +76,7 @@ export function getShopifyFabricValues(products: ShopifyProduct[]): string[] {
     for (const value of getShopifyAttributeValues(product, "fabric")) {
       const canonical = canonicalFabric(value);
       const key = normalizedTag(canonical);
-      if (key && !values.has(key)) values.set(key, canonical);
+      if (isCustomerNavigationValue(canonical) && key && !values.has(key)) values.set(key, canonical);
     }
   }
   return [...values.values()].sort((a, b) => a.localeCompare(b));
@@ -119,10 +119,14 @@ export function getCustomerNavigationValues(values: string[]) {
   return [...unique.values()].sort((a, b) => a.localeCompare(b));
 }
 
-export function getShopifyRegionalHandloomCategories(products: ShopifyProduct[]) {
+export function getShopifyClassificationValues(products: ShopifyProduct[], key: string) {
   return getCustomerNavigationValues(
-    products.flatMap((product) => getShopifyAttributeValues(product, "regionalHandloom")),
+    products.flatMap((product) => getShopifyAttributeValues(product, key)),
   );
+}
+
+export function getShopifyRegionalHandloomCategories(products: ShopifyProduct[]) {
+  return getShopifyClassificationValues(products, "regionalHandloom");
 }
 
 export function matchesShopifyFabricCategory(product: ShopifyProduct, selectedFabric: string) {
