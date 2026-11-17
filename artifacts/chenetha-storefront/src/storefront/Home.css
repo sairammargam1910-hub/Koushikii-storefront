@@ -120,7 +120,7 @@
 }
 
 .kq .home-hero-images.has-portrait-image .home-hero-shade {
-  background: linear-gradient(90deg, rgba(247, 241, 230, .95) 0%, rgba(247, 241, 230, .94) 34%, rgba(247, 241, 230, .65) 45%, rgba(247, 241, 230, .12) 57%, rgba(247, 241, 230, 0) 66%);
+  background: linear-gradient(90deg, #f7f1e6 0%, #f7f1e6 38%, rgba(247, 241, 230, .34) 44%, rgba(247, 241, 230, .12) 49%, rgba(247, 241, 230, .03) 53%, rgba(247, 241, 230, 0) 58%);
 }
 
 .kq .home-hero-content.wrap {
