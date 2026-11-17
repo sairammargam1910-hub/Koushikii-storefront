@@ -196,3 +196,17 @@ mtime_ms = 1794890461093
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/dc7eba35-1557-4383-ad97-3a0b7cd6781c/7d15bd9a-c881-4a62-903d-90459c759454"
 storage_version_token = "1794890664189549"
 content_type = "text/html"
+
+[[outputs]]
+id = "YBvYLpEJ9Zl8XjdofIxUK"
+uri = "file://generated-artifacts/loom-scene-motion.mp4"
+type = "video"
+title = "Loom scene motion MP4"
+description = "12.8-second silent video, 1350 × 690 at 30 fps, rendered from the existing SVG and exact provided motion script."
+logical_id = "63a4d6f5-6549-41b0-84d1-13b9b0b708d9"
+content_hash = "sha256:91d55d5869994a399acb5a6c8e0324d7b1c33b5151d29c0c70870b9cc6fb9325"
+size = 1486724
+mtime_ms = 1794890840929
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/63a4d6f5-6549-41b0-84d1-13b9b0b708d9/829c9459-5d40-4932-b5c0-3e0dd27f4646"
+storage_version_token = "1794890880186224"
+content_type = "video/mp4"
