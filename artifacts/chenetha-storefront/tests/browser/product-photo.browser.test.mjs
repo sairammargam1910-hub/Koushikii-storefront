@@ -623,8 +623,10 @@ test("fabric and collection choices load from the public Shopify catalog", async
   const rowSelect = page.locator(".admin-form select").nth(0);
   const categorySelect = page.locator(".admin-form select").nth(1);
   await rowSelect.selectOption("fabric_tile");
+  await categorySelect.locator('option[value="Cotton"]').waitFor({ state: "attached" });
   await categorySelect.selectOption("Cotton");
   await rowSelect.selectOption("regional_handloom_tile");
+  await categorySelect.locator('option[value="Narayanpet"]').waitFor({ state: "attached" });
   await categorySelect.selectOption("Narayanpet");
   assert.equal(await categorySelect.inputValue(), "Narayanpet");
   await context.close();
