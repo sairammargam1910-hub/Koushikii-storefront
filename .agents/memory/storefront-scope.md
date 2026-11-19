@@ -104,12 +104,6 @@ The client's designated patented brand red is `#B22222`; use it consistently whe
 
 **How to apply:** Prefer the shared red token and use `#B22222` for red brand accents and surfaces across storefront pages.
 
-Keep the homepage hero image prominent on mobile; do not expand the cream text fade until it washes out most of the photo.
-
-**Why:** On November 19, 2026, the user rejected a mobile contrast adjustment that made the hero image look heavily bleached.
-
-**How to apply:** Preserve the existing mobile fade unless the user requests a stronger overlay. If contrast needs improvement, prefer restrained changes and inspect the photo at the requested phone widths before keeping them.
-
 Shoppers should be able to browse the storefront and manage a guest bag without signing in. Require Clerk sign-in when starting checkout or using Buy Now, and for private order/profile pages. Preserve the guest Shopify cart through the sign-in return; do not create a separate account-cart merge without an explicit product decision.
 
 **Why:** The user requested a guest-first storefront because Shopify's shipping and payment setup is not the desired flow; checkout and private account data still need shopper authentication.
