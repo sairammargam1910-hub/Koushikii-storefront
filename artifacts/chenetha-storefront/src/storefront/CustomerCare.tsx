@@ -5,7 +5,7 @@ const faqs = [
  {group:"Choosing a saree",questions:[
   ["How can I check the colour and quality before buying?","All our photos show the actual saree, not a sample. Colours may still look slightly different depending on your screen and lighting. To see the fabric, texture and drape more closely, watch the saree on our video page, or request a live video call before you buy."],
   ["Does every saree include a blouse piece?","Do not assume so. Check the full length, width and blouse-piece details for the specific product. Length options in this preview are illustrative and are not a confirmed tailoring service."],
-  ["Does a variation prove a piece is handwoven?","No. Small variations can arise in handmade cloth, but are not proof of handloom production, fibre purity or origin. Those claims need reliable product information and, where relevant, supporting evidence."],
+  ["ARE SMALL IRREGULARITIES IN A HANDWOVEN SAREE NORMAL?","Yes. Handwoven sarees are made by people, not machines. Small variations such as an extra thread, slight unevenness, or texture that looks different when you hold the saree up to the light are signs of the weaver’s hand. They are part of what makes each piece one of a kind.\n\nThese are different from defects such as holes, cuts or tears. If your saree arrives with any of these, please contact us."],
  ]},
  {group:"Orders & delivery",questions:[
    ["How do I ask about a catalogue piece?","Use the WhatsApp enquiry review from your bag. The message is only a draft until you choose to send it. The brand must confirm the piece’s availability and final pricing directly."],
@@ -24,7 +24,7 @@ export function CustomerCare() {
  return <Shell>
   <PageHero eyebrow="Customer care" title="Everything you need to know." subtitle="Answers on fabrics, orders, shipping and returns. Looking for washing and storage tips? See our Care Guide."/>
   <main className="wrap content">
-   <div className="care-support-layout"><section>{faqs.map(group=><section key={group.group}><h2>{group.group}</h2>{group.questions.map(([question,answer])=><details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</section>)}</section>
+   <div className="care-support-layout"><section>{faqs.map(group=><section key={group.group}><h2>{group.group}</h2>{group.questions.map(([question,answer])=><details key={question}><summary>{question}</summary>{answer.split("\n\n").map((paragraph,index)=><p key={index}>{paragraph}</p>)}</details>)}</section>)}</section>
      <aside><div className="guide-note"><span className="eyebrow">Find the right place</span><h3>A little direction.</h3><nav className="support-links" aria-label="Customer support resources">{[["Orders","Order information"],["SareeCare","Saree care by fabric"],["Collections","Explore fabrics & weaves"],["Contact","Contact the brand"]].map(([path,label])=><a key={path} href={base+path}>{label}<ArrowRight size={14}/></a>)}</nav></div>
      <div className="guide-note" style={{marginTop:24}}><span className="eyebrow">Purchase terms</span><h3>Ask before proceeding.</h3><ol className="support-process"><li>Confirm availability and final pricing for the exact product.</li><li>Confirm delivery terms, timing and any applicable charges.</li><li>Ask the brand about cancellation, returns or exchange policies.</li><li>Follow only instructions confirmed directly by the brand.</li></ol></div></aside>
    </div>
