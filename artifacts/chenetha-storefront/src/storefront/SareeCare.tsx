@@ -21,12 +21,12 @@ const care = [
   ["Ironing","Iron on the reverse on low heat, with a clean cotton cloth on top. Do not spray water or steam directly onto the saree or zari."],
   ["Storing","Fold loosely and store in a dry, shady cupboard."],
  ],caution:"If you spill something, don’t rub it or use home remedies like lemon, salt or vinegar. Gently blot with a clean, dry cloth and take it to a dry cleaner."},
- {name:"Wool & fine blends",swatch:"s6",title:"Soft fibres, gentle habits.",intro:"For woollen dupattas, fine wool and other delicate blends, avoid treating a catalogue name as a full fibre specification.",rules:[
-  ["Know what you have","Follow the supplied composition and label. Pashmina refers to a fine cashmere fibre, not a weave or a care guarantee. Our sample catalogue is not a fibre certification."],
-  ["Rest between wears","Air flat in the shade. Avoid stretching the edges or leaving a heavy piece on a hanger. Gentle handling helps reduce friction and surface pilling."],
-  ["Cleaning and drying","Use a specialist if the label requires it or you are unsure. Only hand wash if expressly permitted, without temperature changes or agitation; dry flat and supported."],
-  ["Put away clean and dry","Use a breathable cover in a dry cupboard. Inspect stored textiles regularly. Keep moth-control products and fragrances from direct contact with the cloth."],
- ],caution:"Do not pull at pills or use a household razor on a fine textile. Ask a specialist about suitable surface care."},
+ {name:"Wool & other blends",swatch:"s6",title:"Soft fibres, gentle care.",intro:"Wool and blended fabrics are delicate. Always check the care label first.",rules:[
+  ["After wearing","Air it flat in the shade. Don’t leave heavy pieces on a hanger."],
+  ["When it needs cleaning","Dry clean only, unless the label says otherwise. Do not soak, rub or wring."],
+  ["Drying","Dry in the shade, away from direct sunlight."],
+  ["Storing","Store clean and fully dry. Keep moth repellents away from the fabric."],
+ ],caution:"Small fuzz balls are normal with wool. Don’t pull them or use a razor."},
 ];
 
 export function SareeCare() {
