@@ -252,10 +252,10 @@ export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {pl
        {item.ctaLabel && <span className="link">{item.ctaLabel} →</span>}
      </>
    ) : isRegionalHandloom ? (
-     <>
-       <h3>{item.title}</h3>
-       <span className="eyebrow" style={{fontSize:9}}>Regional handloom · Explore →</span>
-     </>
+      <>
+        <h3>{item.title}</h3>
+        <span className="eyebrow" style={{fontSize:9}}>Handloom · Shop now →</span>
+      </>
    ) : (
      <>
        <span>{item.title}</span>
@@ -372,13 +372,13 @@ export function Home(){
    <section className="section" id="making-process" style={{scrollMarginTop:110}}><div className="wrap"><div className="section-head"><div><span className="eyebrow">From yarn to cloth</span><h2>The making lifecycle</h2><p>Follow three illustrative stages, from preparing yarn to the handloom. The sequence and methods vary across fibres, regions and makers.</p></div></div><MakingJourney/></div></section>
    <IndiaWeaves products={storefrontProducts}/>
    <Reviews items={voices}/>
-    <section className="section home-weave-section" id="shop-by-collection"><div className="wrap"><div className="section-head"><div><h2>Shop by Collection</h2><p>Browse regional handlooms such as Narayanpet.</p></div>{homeCollectionLinks.length>0&&<a href={base+"Collections"} className="link">All collections →</a>}</div>
+    <section className="section home-weave-section" id="shop-by-collection"><div className="wrap"><div className="section-head"><div><h2>Shop by Collection</h2><p>Explore regional weaves from across India.</p></div>{homeCollectionLinks.length>0&&<a href={base+"Collections"} className="link">All collections →</a>}</div>
         {homeCollectionLinks.length?<div className="weave-grid home-horizontal-track" role="region" aria-label="Shop by Collection" tabIndex={0}>{homeCollectionLinks.map((item,index)=>{
           const href=base+"Collections?regionalHandloom="+encodeURIComponent(item.title);
           const tile=homeTiles.find(entry=>entry.placement==="regional_handloom_tile"&&entry.title.trim().toLowerCase()===item.title.trim().toLowerCase());
           return <a key={item.key} href={href}>
            {tile?.imageUrl?<img className="dynamic-home-tile-image" src={tile.imageUrl} alt={tile.altText||item.title} loading="lazy"/>:<Textile pattern={"s"+(index%6+1)} label={item.title}/>}
-           <h3>{item.title}</h3><span className="eyebrow" style={{fontSize:9}}>Regional handloom · Explore →</span>
+           <h3>{item.title}</h3><span className="eyebrow" style={{fontSize:9}}>Handloom · Shop now →</span>
          </a>;
         })}</div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading regional handlooms…":storefrontCatalog.isError?"We couldn’t load the product list. Try the collections page again shortly.":"Real regional handlooms appear here when published products have a tradition value; test and demo values are hidden."}</p>}
    </div></section>

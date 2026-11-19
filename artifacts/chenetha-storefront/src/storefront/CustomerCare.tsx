@@ -8,7 +8,6 @@ const faqs = [
   ["ARE SMALL IRREGULARITIES IN A HANDWOVEN SAREE NORMAL?","Yes. Handwoven sarees are made by people, not machines. Small variations such as an extra thread, slight unevenness, or texture that looks different when you hold the saree up to the light are signs of the weaver’s hand. They are part of what makes each piece one of a kind.\n\nThese are different from defects such as holes, cuts or tears. If your saree arrives with any of these, please contact us."],
  ]},
  {group:"Orders & delivery",questions:[
-   ["How do I ask about a catalogue piece?","Use the WhatsApp enquiry review from your bag. The message is only a draft until you choose to send it. The brand must confirm the piece’s availability and final pricing directly."],
   ["Where do you deliver, and how much does it cost?","Delivery locations, dispatch windows and shipping charges are not set in this preview. A PIN-code check validates format only. Before making a real purchase, confirm the merchant’s delivery availability, charges and timing."],
    ["How do I track an order?","Sign in to your Chenetha account and open Your orders to see order and delivery updates. Orders appear when the email used at checkout matches a verified email on your account. If an update has not appeared yet, try refreshing the order page."],
  ]},
