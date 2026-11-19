@@ -9,7 +9,7 @@ const faqs = [
  ]},
  {group:"Orders & delivery",questions:[
   ["Where do you deliver, and how much does it cost?","Delivery locations, dispatch windows and shipping charges are not set in this preview. A PIN-code check validates format only. Before making a real purchase, confirm the merchant’s delivery availability, charges and timing."],
-   ["How do I track an order?","Sign in to your Chenetha account and open Your orders to see order and delivery updates. Orders appear when the email used at checkout matches a verified email on your account. If an update has not appeared yet, try refreshing the order page."],
+   ["HOW DO I TRACK MY ORDER?","Create an account first. It’s the easiest way to keep track of your orders.\n\nOnce you’ve signed in, go to Your Orders to see order and delivery updates. Use the same email address at checkout as the one on your account. Otherwise your order won’t show up.\n\nYou’ll also get a tracking link by email or WhatsApp once your order ships."],
  ]},
  {group:"Returns & support",questions:[
   ["Can I return or exchange a saree?","This preview does not establish return or exchange eligibility, deadlines, exclusions, cancellation terms or refund timing. Before a real purchase, read the merchant’s published terms for the specific product. Do not send a textile anywhere on the basis of this preview."],
