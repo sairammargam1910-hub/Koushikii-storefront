@@ -9,8 +9,9 @@ import {
 } from "@workspace/api-client-react";
 import { AdminLayout } from "./Admin";
 import { ContentPreview } from "./ContentPreview";
-import { getCustomerNavigationValues, getFabricCategoryOptions, parseClassificationValues, WEAVE_PRINTS } from "../storefront/shopifyCatalogData";
+import { getCustomerNavigationValues, getFabricCategoryOptions, getShopifyAttributeValues, parseClassificationValues, WEAVE_PRINTS } from "../storefront/shopifyCatalogData";
 import { normalizeWeave } from "../storefront/_shared/catalog-filter";
+import { useShopifyCatalog } from "../storefront/shopifyCatalogQuery";
 import "./ContentAdmin.css";
 
 type Kind = SiteContentInput["kind"];
@@ -52,6 +53,7 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
   const update = useUpdateSiteContent();
   const requestUpload = useRequestSiteContentUpload();
   const shopify = useGetShopifyAdminProducts();
+  const storefrontCatalog = useShopifyCatalog();
   const [targetItem, setTargetItem] = useState<SiteContentItem | undefined>(item);
   const [draft, setDraft] = useState<Draft>(item ? draftFromItem(item) : emptyDraft(kind));
   const [error, setError] = useState("");
@@ -64,14 +66,21 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
   const busy = create.isPending || update.isPending || requestUpload.isPending || !!progress;
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft(current => ({ ...current, [key]: value }));
   const homeImageOptions = draft.placement === "fabric_tile"
-    ? getFabricCategoryOptions((shopify.data?.products || []).flatMap(product => parseClassificationValues(product.fabric)))
+    ? getFabricCategoryOptions([
+      ...(shopify.data?.products || []).flatMap(product => parseClassificationValues(product.fabric)),
+      ...(storefrontCatalog.data?.products || []).flatMap(product => getShopifyAttributeValues(product, "fabric")),
+    ])
     : draft.placement === "weave_tile"
       ? [...new Set([
         ...WEAVE_PRINTS,
         ...(shopify.data?.products || []).flatMap(product => parseClassificationValues(product.craftTechnique).map(normalizeWeave)),
+        ...(storefrontCatalog.data?.products || []).flatMap(product => getShopifyAttributeValues(product, "weave").map(normalizeWeave)),
       ])].sort((a, b) => a.localeCompare(b))
       : draft.placement === "regional_handloom_tile"
-        ? getCustomerNavigationValues((shopify.data?.products || []).flatMap(product => parseClassificationValues(product.regionalHandloom)))
+        ? getCustomerNavigationValues([
+          ...(shopify.data?.products || []).flatMap(product => parseClassificationValues(product.regionalHandloom)),
+          ...(storefrontCatalog.data?.products || []).flatMap(product => getShopifyAttributeValues(product, "regionalHandloom")),
+        ])
       : [];
   const availableHomeImageOptions = [...new Set([
     ...homeImageOptions,
@@ -162,7 +171,7 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
       <form className="admin-form" onSubmit={submit}>
          {kind === "home_image" && <label>Homepage row<select required value={draft.placement || ""} onChange={event => {const placement=(event.target.value||null) as Placement|null;if(!item)setTargetItem(undefined);setDraft(current=>({...current,placement,title:""}));}}><option value="">Choose a homepage row</option><option value="fabric_tile">Shop by Fabric</option><option value="weave_tile">Shop by Weave</option><option value="regional_handloom_tile">Shop by Collection</option></select><span className="field-note">Fabric and weave descriptions can be added without an image. Collection tiles still require an image.</span></label>}
          {kind === "home_image"
-            ? <label>Category<select required value={draft.title} onChange={event => chooseHomeCategory(event.target.value)} disabled={!draft.placement}><option value="">Choose a category</option>{availableHomeImageOptions.map(value => {const exists=existingItems.some(existing=>existing.kind==="home_image"&&existing.placement===draft.placement&&existing.title.trim().toLowerCase()===value.trim().toLowerCase());return <option key={value} value={value}>{value}{exists?" · edit existing":""}</option>;})}</select><span className="field-note">Existing categories are selectable and load their current content for editing.</span></label>
+            ? <label>Category<select required value={draft.title} onChange={event => chooseHomeCategory(event.target.value)} disabled={!draft.placement || availableHomeImageOptions.length === 0}><option value="">Choose a category</option>{availableHomeImageOptions.map(value => {const exists=existingItems.some(existing=>existing.kind==="home_image"&&existing.placement===draft.placement&&existing.title.trim().toLowerCase()===value.trim().toLowerCase());return <option key={value} value={value}>{value}{exists?" · edit existing":""}</option>;})}</select><span className="field-note" data-testid="category-options-status">{availableHomeImageOptions.length ? "Existing categories are selectable and load their current content for editing." : shopify.isLoading || storefrontCatalog.isLoading ? "Loading categories from published products…" : "No categories found for this row. Check that products are published with this category."}</span>{draft.placement && availableHomeImageOptions.length === 0 && !shopify.isLoading && !storefrontCatalog.isLoading && <button className="text-button" type="button" onClick={() => { void shopify.refetch(); void storefrontCatalog.refetch(); }}>Retry loading categories</button>}</label>
            : <label>Title<input required maxLength={180} value={draft.title} onChange={event => set("title", event.target.value)} placeholder="A clear working title"/></label>}
         {(kind === "hero_slide" || kind === "video_post") && <label>Eyebrow <span className="label-hint">Optional</span><input maxLength={120} value={draft.eyebrow || ""} onChange={event => set("eyebrow", event.target.value || null)} placeholder="A short introduction"/></label>}
          {kind === "home_image" && (draft.placement === "fabric_tile" || draft.placement === "weave_tile") && <label>Category description <span className="label-hint">Optional</span><textarea data-testid="input-category-description" rows={3} maxLength={500} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="e.g. Light, breathable sarees for every day."/><span className="field-note">Shown below this fabric or weave name on the homepage.</span></label>}

@@ -557,6 +557,79 @@ test("existing fabric categories remain selectable and save as edits", async () 
   await context.close();
 });
 
+test("fabric and collection choices load from the public Shopify catalog", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  await page.route("**/api/shopify/admin/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      currencyCode: "INR",
+      products: [{
+        id: "gid://shopify/Product/cotton-narayanpet",
+        title: "Cotton Narayanpet saree",
+        handle: "cotton-narayanpet-saree",
+        description: "",
+        productType: "Saree",
+        status: "ACTIVE",
+        tags: [],
+        fabric: "",
+        regionalHandloom: "",
+        blouseAvailability: "not_specified",
+        craftTechnique: "",
+        region: "",
+        colour: "",
+        collectionIds: [],
+        imageUrl: null,
+        variants: [],
+        options: [],
+      }],
+    }),
+  }));
+  await page.route("**/api/shopify/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      products: [{
+        id: "gid://shopify/Product/cotton-narayanpet",
+        handle: "cotton-narayanpet-saree",
+        title: "Cotton Narayanpet saree",
+        description: "",
+        productType: "Saree",
+        tags: [],
+        attributes: {
+          fabric: "Cotton",
+          regionalHandloom: "Narayanpet",
+          craftTechnique: "Ikkat",
+          region: "Telangana",
+          colour: "Red",
+          blouseAvailability: "not_specified",
+        },
+        collections: [],
+        images: [],
+        variants: [],
+      }],
+      totalPublishedProducts: 1,
+      truncated: false,
+    }),
+  }));
+  await page.route("**/api/site-content", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ items: [] }),
+  }));
+  await page.goto(`${origin}/tests/browser/fixture.html?screen=home-image-editor`);
+  await page.getByRole("dialog").waitFor();
+  const rowSelect = page.locator(".admin-form select").nth(0);
+  const categorySelect = page.locator(".admin-form select").nth(1);
+  await rowSelect.selectOption("fabric_tile");
+  await categorySelect.selectOption("Cotton");
+  await rowSelect.selectOption("regional_handloom_tile");
+  await categorySelect.selectOption("Narayanpet");
+  assert.equal(await categorySelect.inputValue(), "Narayanpet");
+  await context.close();
+});
+
 test("merchant can publish without a collection and later assign a Shopify collection", async () => {
   const created = await openForm();
   const createMutations = await mockCreateOrUpdate(created.page);
