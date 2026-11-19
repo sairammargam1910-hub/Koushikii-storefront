@@ -15,12 +15,12 @@ const care = [
   ["Ironing","Iron on the reverse on low heat, with a clean cotton cloth on top. Do not spray water or steam directly onto silk or zari."],
   ["Storing","Fold loosely and wrap in a soft cotton cloth or muslin. Store in a dry, shady cupboard. Refold it every few months, and don’t keep heavy silks on a hanger for long."],
  ],caution:"If you spill something, don’t rub it or use home remedies like lemon, salt or vinegar. Gently blot with a clean, dry cloth and take it to a dry cleaner."},
- {name:"Cotton-silk",swatch:"cotton-silk",title:"Let the silk set the pace.",intro:"A blend is not a single recipe. Fibre proportions, zari, dye and construction all influence how the cloth should be cared for.",rules:[
-  ["Start with composition","Check the fibre details and care label rather than treating a cotton-silk blend as ordinary cotton. If the composition or instructions are missing, ask before washing."],
-  ["Clean conservatively","Do not soak or machine wash unless the specific label allows it. For a delicate or contrasting blend, discuss suitable cleaning with a professional."],
-  ["Avoid friction","Remove jewellery that could catch before folding. Never wring or brush the surface; handle woven motifs and loose yarns gently."],
-  ["Store without strain","Air after wearing and fold in a breathable cover. Use a low, label-approved pressing temperature on the reverse with a protective cloth."],
- ],caution:"The fibre name alone cannot establish a safe wash method. A border or embellishment may require more cautious care than the body."},
+ {name:"Cotton-silk",swatch:"cotton-silk",title:"Care for cotton-silk as you would silk.",intro:"Cotton-silk may look like cotton, but it needs the same gentle care as silk. Always keep the care label with your saree.",rules:[
+  ["After wearing","Air it in a clean, shady place until it is completely dry. Never put away a damp saree."],
+  ["When it needs cleaning","Dry clean only, unless the label says otherwise. Do not soak or machine wash. Tell your dry cleaner about any zari, stains or contrasting colours."],
+  ["Ironing","Iron on the reverse on low heat, with a clean cotton cloth on top. Do not spray water or steam directly onto the saree or zari."],
+  ["Storing","Fold loosely and store in a dry, shady cupboard."],
+ ],caution:"If you spill something, don’t rub it or use home remedies like lemon, salt or vinegar. Gently blot with a clean, dry cloth and take it to a dry cleaner."},
  {name:"Wool & fine blends",swatch:"s6",title:"Soft fibres, gentle habits.",intro:"For woollen dupattas, fine wool and other delicate blends, avoid treating a catalogue name as a full fibre specification.",rules:[
   ["Know what you have","Follow the supplied composition and label. Pashmina refers to a fine cashmere fibre, not a weave or a care guarantee. Our sample catalogue is not a fibre certification."],
   ["Rest between wears","Air flat in the shade. Avoid stretching the edges or leaving a heavy piece on a hanger. Gentle handling helps reduce friction and surface pilling."],
