@@ -4,20 +4,20 @@ import "./OurStory.css";
 
 const values = [
   [
-    "Respect for skill",
-    "The knowledge in preparing yarn, planning colour, setting the warp and weaving deserves recognition.",
+    "Pure fibre",
+    "Natural yarns only, with no synthetic blends. Pure fibre breathes, lasts, and feels the way a saree should.",
   ],
   [
-    "Regional knowledge",
-    "Each textile tradition has its own language. We share it with context, without flattening the differences between places.",
+    "Respect for the weaver",
+    "Many of our pieces are woven by artisans we work with directly. Their skill deserves recognition and a fair share.",
   ],
   [
     "Honest details",
-    "We distinguish what is known about fibre, construction and origin, and avoid claims that cannot be supported.",
+    "Every piece is clearly labelled with its fibre, weave and origin. If we can’t verify something, we won’t claim it.",
   ],
   [
-    "Longer wear",
-    "Thoughtful storage and care can help a saree remain part of a wardrobe. Follow the guidance for the piece you own.",
+    "Fair prices",
+    "Authentic, pure-fibre sarees shouldn’t come with a crazy price tag. Sheer passion, not profit margins, sets our prices.",
   ],
 ];
 
@@ -95,8 +95,8 @@ export function OurStory() {
         <div className="wrap">
           <div className="section-head">
             <div>
-              <h2>What we hope each textile carries</h2>
-              <p>A point of view rooted in respect, clarity and everyday use.</p>
+              <h2>What every Koushikii saree carries</h2>
+              <p>Four promises we stand by, from the fibre to the final fold.</p>
             </div>
           </div>
           <div className="promise-grid">
@@ -108,9 +108,6 @@ export function OurStory() {
               </article>
             ))}
           </div>
-          <p className="story-disclaimer">
-            Design preview · No verified maker partnerships, certifications or origin claims are implied.
-          </p>
         </div>
       </section>
 
