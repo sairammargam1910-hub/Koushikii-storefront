@@ -2,24 +2,6 @@ import { ArrowRight } from "lucide-react";
 import { Shell, PageHero, base } from "./_shared";
 import "./OurStory.css";
 
-const principles = [
-  [
-    "01",
-    "Listen to craft",
-    "Regional traditions hold living knowledge. Share makers' stories with permission, context and credit.",
-  ],
-  [
-    "02",
-    "Describe with care",
-    "Fibre, construction, technique and place are different details. Clear product information helps customers choose with understanding.",
-  ],
-  [
-    "03",
-    "Wear and care",
-    "Choose a drape for your life, then follow the care guidance for that particular cloth.",
-  ],
-];
-
 const values = [
   [
     "Respect for skill",
@@ -77,27 +59,34 @@ export function OurStory() {
             <span className="eyebrow">The thought behind Chenetha</span>
             <h3>Look beyond the finished drape.</h3>
             <p>
-              This client-supplied clip follows one weaver at a handloom, working with a bright
-              patterned textile. It offers a glimpse of one practice—not a template for every region,
-              material or maker.
+              Every weave has a story; ours began with family. What started as a heartfelt family
+              conversation grew into a labour of love dedicated to celebrating India’s rich textile
+              heritage.
             </p>
             <p>
-              Respect for weavers starts with honest storytelling. We aim to make regional craft
-              easier to discover, share product details clearly, and let makers' words be heard when
-              their stories are shared with permission. A familiar weave name is a starting point,
-              not proof of origin.
+              Somewhere between busy careers and a not-so-secret saree obsession, four cousins found
+              a dream worth wearing.
             </p>
-            <div className="milestones">
-              {principles.map(([number, title, copy]) => (
-                <div className="milestone" key={number}>
-                  <b>{number}</b>
-                  <div>
-                    <h3>{title}</h3>
-                    <p>{copy}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p>
+              <strong>Pure thread is our whole personality.</strong>{" "}
+              We believe true beauty lies in the purity of the thread. That’s why every saree at
+              Koushikii is made from natural fibres.
+            </p>
+            <p><strong>Not mass-produced. Master-woven.</strong></p>
+            <p>
+              When you choose Koushikii Handlooms, you’re not just wearing a saree. You’re draping
+              living history, supporting artisans, and making a sustainable choice.
+            </p>
+            <p>
+              Let’s be honest: authentic handloom without a crazy price tag is hard to find. We work
+              directly with artisans and run on sheer passion, not profit margins. So you get the
+              real thing at a fair price.
+            </p>
+            <p>
+              <strong>Pure threads. Stunning designs. Honest prices.</strong>
+              <br />
+              <strong>Welcome to Koushikii.</strong>
+            </p>
           </div>
         </div>
       </section>
