@@ -3,12 +3,12 @@ import { ArrowRight } from "lucide-react";
 import { Shell, PageHero, base } from "./_shared";
 
 const care = [
- {name:"Cotton",swatch:"cotton",title:"For the cottons you live in.",intro:"An everyday cotton can soften with wear. Its dye, finish and border still deserve individual attention.",rules:[
-  ["Before washing","Read the piece’s own label. New, dark or contrasting colours may release dye; keep them separate. A fine cotton with zari or delicate motifs may need professional care."],
-  ["If hand washing is allowed","Use cool water and a small amount of mild, pH-neutral detergent. Wash gently and briefly; do not soak, scrub or twist. Avoid bleach and colour-fixing home remedies."],
-  ["Dry in the shade","Support the wet cloth, press out water gently in a clean towel and dry away from direct sunlight. Do not leave a contrasting border folded against the body while wet."],
-  ["Press with attention","Use the temperature on the label. Press on the reverse, with a clean protective cloth over borders and motifs. Avoid pulling at a loose yarn or trimming it yourself."],
- ],caution:"Do not assume every cotton is washable. The most delicate yarn, dye, embellishment or border determines the care."},
+ {name:"Cotton",swatch:"cotton",title:"For the cottons you live in.",intro:"Everyday cotton softens with wear, but its dye, finish and border still need care.",rules:[
+  ["Before washing","Check your saree’s care label first. Dark or contrasting colours may bleed, so wash them separately. A fine cotton with zari or delicate motifs may need dry cleaning."],
+  ["If hand-washing is allowed","Use cool water and a small amount of mild detergent. Wash gently and briefly; do not soak, scrub or twist. Avoid bleach and home remedies like salt or vinegar."],
+  ["Dry in the shade","Dry in the shade, away from direct sunlight. Do not leave a contrasting border folded against the main fabric while wet."],
+  ["Iron with care","Iron on the reverse with a clean cloth over borders and motifs. Don’t pull or trim loose threads. Ask us instead."],
+ ],caution:"Not every cotton saree is washable. If it has zari, embroidery or a contrasting border, care for it more gently."},
  {name:"Silk",swatch:"silk",title:"A little more care for silk.",intro:"Silk, zari and contrast borders can respond differently to water and heat. Keep the label with the saree.",rules:[
   ["After wearing","Air in a shaded, clean space until completely dry. Allow perspiration to evaporate before putting it away; never store a damp saree."],
   ["When it needs cleaning","Unless the label specifically permits another method, ask a textile-experienced professional about dry cleaning. Point out zari, stains, delicate motifs and contrast colours."],
