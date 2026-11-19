@@ -33,7 +33,7 @@ export function SareeCare() {
  const [selected, setSelected] = useState(0);
  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
  return <Shell>
-  <PageHero eyebrow="The keeping of cloth · Saree care" title="Wear it. Air it. Keep it well." subtitle="Practical habits for sarees and dupattas, from the everyday cotton to the silk brought out for a special day."/>
+  <PageHero eyebrow="Saree care guide" title="Good care. Lasting drapes." subtitle="Simple care tips for your sarees and dupattas, from everyday cotton to your special-occasion silk."/>
   <main className="wrap content">
     <section className="guide-intro"><div><span className="eyebrow">Care begins with knowing the fabric</span><h2>One wardrobe.<br/>Many kinds of care.</h2><p className="muted">A Kanchipuram silk and a Chettinad cotton don’t need the same care. Even pieces from the same tradition can differ. Check the fibre, colour and border, and above all, follow the care label on your saree.</p></div><aside className="guide-note"><span className="eyebrow">The label comes first</span><h3>A guide, not a rulebook.</h3><p>These are general care tips, not instructions for a specific product. Always follow your saree’s care label. If it’s missing, ask us before cleaning.</p><a href={base+"Contact"} className="link guide-contact-link">Ask us about your saree <ArrowRight size={12} aria-hidden="true"/></a></aside></section>
    <div className="care-tabs" role="tablist" aria-label="Care by fabric">{care.map((tab,i)=><button key={tab.name} ref={el=>{tabs.current[i]=el}} id={"care-tab-"+i} role="tab" aria-selected={selected===i} aria-controls={"care-panel-"+i} tabIndex={selected===i?0:-1} onClick={()=>setSelected(i)} onKeyDown={e=>{
