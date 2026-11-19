@@ -295,17 +295,6 @@
     max-width: 400px;
   }
 
-  .kq .home-hero-copy {
-    width: min(100%, 360px);
-    padding: 18px 18px 20px;
-    border: 1px solid color-mix(in srgb, var(--gold) 58%, transparent);
-    border-radius: 3px;
-    background: color-mix(in srgb, var(--paper) 92%, transparent);
-    box-shadow: 0 8px 24px rgba(48, 37, 34, .1);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
-  }
-
   .kq .home-hero-copy h1 {
     font-size: clamp(54px, 14vw, 72px);
   }

@@ -31,8 +31,8 @@ export function OurStory() {
       />
 
       <section className="section">
-        <div className="wrap story-origin story-origin-improved">
-          <div className="story-origin-media">
+        <div className="wrap story-origin">
+          <div>
             <h2>A moment at the loom</h2>
             <figure className="story-illustration story-media">
               <video
@@ -55,7 +55,7 @@ export function OurStory() {
             </figure>
           </div>
 
-          <div className="story-origin-copy story-origin-copy-improved">
+          <div className="story-origin-copy">
             <span className="eyebrow">The thought behind Chenetha</span>
             <h3>Look beyond the finished drape.</h3>
             <p>
