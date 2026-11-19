@@ -13,6 +13,9 @@ import "./Home.css";
 function Textile({pattern,label}:{pattern:string;label:string}){
  return <span className={"textile "+pattern} role="img" aria-label={label+" — illustrative textile pattern"}/>;
 }
+function categoryDescriptionTestId(section:string,name:string){
+ return `text-${section}-description-${name.toLowerCase().replace(/[^a-z0-9]+/g,"-")}`;
+}
 export function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
  const [active,setActive]=useState(0);
  useEffect(()=>{if(slides.length<2)return;const timer=window.setInterval(()=>setActive(index=>(index+1)%slides.length),6000);return()=>window.clearInterval(timer)},[slides.length]);
@@ -238,8 +241,10 @@ export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {pl
   const isFabric=placement==="fabric_tile";
   const isRegionalHandloom=placement==="regional_handloom_tile";
   const className=isFabric?"fabric-grid":isRegionalHandloom?"weave-grid":"taxonomy-link-grid technique-link-grid";
-  return <div className={className}>{items.map(item=><a key={item.id} className={isFabric?"fabric-card":""} href={item.ctaUrl||(isRegionalHandloom?`${fallback}?regionalHandloom=${encodeURIComponent(item.title)}`:fallback)}>
-   <img className={isFabric||isRegionalHandloom?"dynamic-home-tile-image":"dynamic-home-weave-image"} src={item.imageUrl||""} alt={item.altText||item.title} loading="lazy"/>
+  return <div className={className}>{items.map((item,index)=><a key={item.id} className={isFabric?"fabric-card":""} href={item.ctaUrl||(isRegionalHandloom?`${fallback}?regionalHandloom=${encodeURIComponent(item.title)}`:fallback)}>
+   {item.imageUrl
+     ? <img className={isFabric||isRegionalHandloom?"dynamic-home-tile-image":"dynamic-home-weave-image"} src={item.imageUrl} alt={item.altText||item.title} loading="lazy"/>
+     : <Textile pattern={isFabric?(item.title==="Silk"?"silk":item.title==="Cotton-Silk"?"cotton-silk":item.title==="Others"?"blends":"cotton"):`s${(index%6)+1}`} label={item.title}/>}
    {isFabric ? (
      <>
        <h3>{item.title}</h3>
@@ -254,6 +259,7 @@ export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {pl
    ) : (
      <>
        <span>{item.title}</span>
+        {item.body?.trim()&&<p className="home-weave-description">{item.body.trim()}</p>}
        <small>Explore pieces →</small>
      </>
    )}
@@ -326,7 +332,7 @@ export function Home(){
     isNewArrival(product)||(newArrivalsCollection&&product.collections.some(item=>item.handle===newArrivalsCollection.handle)),
   );
   const published=siteContent.data?.items||[];
-  const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published&&item.imageUrl) as (SiteContentItem & {placement:HomeTilePlacement|null})[];
+  const homeTiles=published.filter(item=>item.kind==="home_image"&&item.published) as (SiteContentItem & {placement:HomeTilePlacement|null})[];
    const fabricNames=getCustomerNavigationValues(getFabricCategoryOptions(storefrontProducts.flatMap(product=>getShopifyAttributeValues(product,"fabric"))));
   const fabricCards=fabricNames.map(name=>{
    const normalized=name.toLowerCase();
@@ -345,7 +351,7 @@ export function Home(){
       {fabricCards.length?<div className="fabric-grid home-horizontal-track" role="region" aria-label="Shop by Fabric" tabIndex={0}>
        {fabricCards.map(item=><a className="fabric-card" key={item.name} href={base+"Collections?fabric="+encodeURIComponent(item.name)}>
          {item.tile?.imageUrl?<img className="dynamic-home-tile-image" src={item.tile.imageUrl} alt={item.tile.altText||item.name} loading="lazy"/>:<Textile pattern={item.pattern} label={item.name}/>}
-        <h3>{item.name}</h3><p>{item.name==="Others"?"Explore other materials and blended fabrics.":`Explore published pieces made with ${item.name.toLowerCase()}.`}</p><span className="link">Shop {item.name} →</span>
+         <h3>{item.name}</h3><p data-testid={categoryDescriptionTestId("home-fabric",item.name)}>{item.tile?.body?.trim()||(item.name==="Others"?"Explore other materials and blended fabrics.":`Explore published pieces made with ${item.name.toLowerCase()}.`)}</p><span className="link">Shop {item.name} →</span>
        </a>)}
        </div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading available fabrics…":storefrontCatalog.isError?"We couldn’t load the product list. Try the collections page again shortly.":"Fabric categories appear when published products have a fabric value."}</p>}
   </div></section>
@@ -356,7 +362,7 @@ export function Home(){
        const tile=homeTiles.find(item=>item.placement==="weave_tile"&&item.title.trim().toLowerCase()===name.trim().toLowerCase());
        return <a key={name} href={base+"Collections?weave="+encodeURIComponent(name)}>
         {tile?.imageUrl?<img className="dynamic-home-weave-image" src={tile.imageUrl} alt={tile.altText||name} loading="lazy"/>:<Textile pattern={"s"+((index+2)%6+1)} label={name}/>}
-        <span>{name}</span><small>Explore pieces →</small>
+         <span>{name}</span>{tile?.body?.trim()&&<p className="home-weave-description" data-testid={categoryDescriptionTestId("home-weave",name)}>{tile.body.trim()}</p>}<small>Explore pieces →</small>
        </a>;
      })}
     </div>

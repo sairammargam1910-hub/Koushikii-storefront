@@ -431,6 +431,71 @@ test("merchant can upload and publish a matching Shop by Weave tile image", asyn
   await context.close();
 });
 
+test("merchant can publish fabric or weave descriptions without an image", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const savedItems = [];
+  await page.route("**/api/shopify/admin/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      currencyCode: "INR",
+      products: [{
+        id: "gid://shopify/Product/category-copy",
+        title: "Cotton and Ikkat pieces",
+        handle: "cotton-ikkat-pieces",
+        description: "",
+        productType: "Saree",
+        status: "ACTIVE",
+        tags: [],
+        fabric: "Cotton",
+        regionalHandloom: "",
+        craftTechnique: '["Ikkat"]',
+        region: "",
+        colour: "",
+        collectionIds: [],
+        imageUrl: null,
+        variants: [],
+        options: [],
+      }],
+    }),
+  }));
+  await page.route("**/api/site-content", async (route) => {
+    if (route.request().method() !== "POST") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
+    }
+    const body = route.request().postDataJSON();
+    savedItems.push(body);
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...body,
+        id: "cotton-category-copy",
+        createdAt: "2026-11-19T00:00:00.000Z",
+        updatedAt: "2026-11-19T00:00:00.000Z",
+      }),
+    });
+  });
+  await page.goto(`${origin}/tests/browser/fixture.html?screen=home-image-editor`);
+  await page.getByRole("dialog").waitFor();
+  await page.locator(".admin-form select").nth(0).selectOption("fabric_tile");
+  await page.locator(".admin-form select").nth(1).selectOption("Cotton");
+  await page.getByRole("textbox", { name: /Category description/ }).fill("Light, breathable sarees for every day.");
+  await page.getByRole("checkbox", { name: /Publish/ }).check();
+  await page.getByRole("button", { name: "Save content" }).click();
+  await page.getByTestId("home-image-editor-closed").waitFor();
+
+  assert.equal(savedItems.length, 1);
+  assert.equal(savedItems[0].kind, "home_image");
+  assert.equal(savedItems[0].placement, "fabric_tile");
+  assert.equal(savedItems[0].title, "Cotton");
+  assert.equal(savedItems[0].body, "Light, breathable sarees for every day.");
+  assert.equal(savedItems[0].imageUrl, null, "an image must not be required for category copy");
+  assert.equal(savedItems[0].published, true);
+  await context.close();
+});
+
 test("merchant can publish without a collection and later assign a Shopify collection", async () => {
   const created = await openForm();
   const createMutations = await mockCreateOrUpdate(created.page);

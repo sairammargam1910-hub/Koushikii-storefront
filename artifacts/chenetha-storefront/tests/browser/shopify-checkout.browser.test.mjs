@@ -1033,6 +1033,69 @@ test("a Shopify catalog failure never substitutes the sample catalog", async () 
   await context.close();
 });
 
+test("homepage shows authored fabric and weave descriptions without images", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const product = {
+    ...productResponse.products[0],
+    attributes: {
+      ...productResponse.products[0].attributes,
+      fabric: '["Cotton","Silk"]',
+      craftTechnique: "Ikkat",
+    },
+  };
+  await page.route("**/api/shopify/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ products: [product] }),
+  }));
+  await page.route("**/api/site-content", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      items: [
+        {
+          id: "cotton-description",
+          kind: "home_image",
+          placement: "fabric_tile",
+          title: "Cotton",
+          body: "Light, breathable sarees for every day.",
+          imageUrl: null,
+          published: true,
+          sortOrder: 0,
+        },
+        {
+          id: "ikkat-description",
+          kind: "home_image",
+          placement: "weave_tile",
+          title: "Ikkat",
+          body: "Hand-dyed motifs, made to move.",
+          imageUrl: null,
+          published: true,
+          sortOrder: 0,
+        },
+      ],
+    }),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=home`);
+  const fabricDescription = page.getByTestId("text-home-fabric-description-cotton");
+  const weaveDescription = page.getByTestId("text-home-weave-description-ikkat");
+  await fabricDescription.getByText("Light, breathable sarees for every day.", { exact: true }).waitFor();
+  await weaveDescription.getByText("Hand-dyed motifs, made to move.", { exact: true }).waitFor();
+
+  const cottonTile = page.locator(".home-fabric-section .fabric-card").filter({
+    has: page.getByRole("heading", { name: "Cotton", exact: true }),
+  });
+  const ikkatTile = page.locator(".home-technique-section .taxonomy-link-grid > a").filter({
+    hasText: "Hand-dyed motifs, made to move.",
+  });
+  assert.equal(await cottonTile.locator("img").count(), 0);
+  assert.equal(await cottonTile.locator(".textile").count(), 1, "the fabric placeholder remains when only copy is published");
+  assert.equal(await ikkatTile.locator("img").count(), 0);
+  assert.equal(await ikkatTile.locator(".textile").count(), 1, "the weave placeholder remains when only copy is published");
+  await context.close();
+});
+
 test("The Crafts Edit tile uses its assigned Shopify collection and adapts on mobile", async () => {
   const tileProduct = {
     ...productResponse.products[0],

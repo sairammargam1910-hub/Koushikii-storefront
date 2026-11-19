@@ -12,7 +12,7 @@ import {
   UpdateSiteContentResponse,
 } from "@workspace/api-zod";
 import { db, siteContentTable, type SiteContent } from "@workspace/db";
-import { and, asc, eq, or } from "drizzle-orm";
+import { and, asc, eq, or, sql } from "drizzle-orm";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { pipeline } from "node:stream/promises";
 import { requireMerchantAdmin } from "../middlewares/merchantAdminAuth";
@@ -66,8 +66,13 @@ function invalidContentMessage(input: {
   published: boolean;
   approved: boolean;
 }) {
-  if ((input.kind === "hero_slide" || input.kind === "home_image") && !input.imageUrl) {
-    return "Upload an image before saving this item.";
+  if (
+    (input.kind === "hero_slide" || (input.kind === "home_image" && input.placement === "regional_handloom_tile")) &&
+    !input.imageUrl
+  ) {
+    return input.kind === "hero_slide"
+      ? "Upload an image before saving this hero slide."
+      : "Upload an image before saving a Shop by Collection tile.";
   }
   if (
     input.kind === "home_image" &&
@@ -246,6 +251,16 @@ router.post("/site-content", requireMerchantAdmin, async (req, res) => {
   const ownerId = getAuth(req).userId;
   if (!ownerId) return res.status(401).json({ error: "Sign in with a merchant account to continue." });
   try {
+    if (parsed.data.kind === "home_image" && parsed.data.placement) {
+      const [existing] = await db.select({ id: siteContentTable.id }).from(siteContentTable).where(and(
+        eq(siteContentTable.kind, "home_image"),
+        eq(siteContentTable.placement, parsed.data.placement),
+        sql`lower(${siteContentTable.title}) = ${parsed.data.title.trim().toLowerCase()}`,
+      ));
+      if (existing) {
+        return res.status(409).json({ error: "This category already has content. Edit its existing entry instead." });
+      }
+    }
     const input = await prepareInput(parsed.data, ownerId);
     const [row] = await db.insert(siteContentTable).values(input).returning();
     return res.status(201).json(CreateSiteContentResponse.parse(toResponseItem(row)));

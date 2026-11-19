@@ -21,7 +21,7 @@ const emptyDraft = (kind: Kind = "hero_slide"): Draft => ({
   altText: null, focalPointX: null, focalPointY: null, ctaLabel: null, ctaUrl: null, linkedProductId: null,
   placement: null, sortOrder: 0, published: false, approved: false,
 });
-const labels: Record<Kind, string> = { hero_slide: "Hero slides", home_image: "Home thumbnails", customer_voice: "Customer voices", video_post: "Video posts" };
+const labels: Record<Kind, string> = { hero_slide: "Hero slides", home_image: "Home category content", customer_voice: "Customer voices", video_post: "Video posts" };
 const acceptedImage = ["image/jpeg", "image/png", "image/webp"];
 const acceptedVideo = ["video/mp4", "video/webm"];
 const readable = (error: unknown) => error instanceof Error ? error.message.replace(/^HTTP \d+ [^:]*:\s*/, "") : "Please try again.";
@@ -38,7 +38,7 @@ function uploadFile(file: File, uploadUrl: string, onProgress: (value: number) =
   });
 }
 
-export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem; kind: Kind; onClose: () => void }) {
+export function ContentEditor({ item, kind, onClose, existingItems = [] }: { item?: SiteContentItem; kind: Kind; onClose: () => void; existingItems?: SiteContentItem[] }) {
   const client = useQueryClient();
   const create = useCreateSiteContent();
   const update = useUpdateSiteContent();
@@ -71,7 +71,13 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
       : draft.placement === "regional_handloom_tile"
         ? getCustomerNavigationValues((shopify.data?.products || []).flatMap(product => parseClassificationValues(product.regionalHandloom)))
       : [];
-  if (draft.title && !homeImageOptions.includes(draft.title)) homeImageOptions.unshift(draft.title);
+  const availableHomeImageOptions = homeImageOptions.filter(value => !existingItems.some(existing =>
+    existing.kind === "home_image" &&
+    existing.placement === draft.placement &&
+    existing.id !== item?.id &&
+    existing.title.trim().toLowerCase() === value.trim().toLowerCase(),
+  ));
+  if (draft.title && !availableHomeImageOptions.includes(draft.title)) availableHomeImageOptions.unshift(draft.title);
   useEffect(() => () => localPreviewUrls.current.forEach(URL.revokeObjectURL), []);
   useEffect(() => {
     if (previewOpen) {
@@ -113,7 +119,7 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setError("");
-    if ((kind === "hero_slide" || kind === "home_image") && !draft.imageUrl) return setError("Upload an image before saving.");
+    if ((kind === "hero_slide" || (kind === "home_image" && draft.placement === "regional_handloom_tile")) && !draft.imageUrl) return setError("Upload an image before saving.");
     if (kind === "home_image" && !draft.placement) return setError("Choose a homepage placement for this image.");
     if (kind === "video_post" && !draft.mediaUrl) return setError("Upload an MP4 or WebM video before saving.");
     if (kind === "customer_voice" && draft.published && !draft.approved) return setError("Approve the exact supplied quote before publishing it.");
@@ -135,14 +141,15 @@ export function ContentEditor({ item, kind, onClose }: { item?: SiteContentItem;
     <section className="admin-modal content-editor" role="dialog" aria-modal="true" aria-hidden={previewOpen} aria-labelledby="content-editor-title">
       <header className="modal-head"><div><span className="eyebrow">STOREFRONT CONTENT</span><h2 id="content-editor-title">{item ? "Edit" : "Add"} {labels[kind].replace(/s$/, "").toLowerCase()}</h2></div><button className="icon-button" type="button" disabled={busy} onClick={onClose} aria-label="Close"><X size={18}/></button></header>
       <form className="admin-form" onSubmit={submit}>
-        {kind === "home_image" && <label>Homepage row<select required value={draft.placement || ""} onChange={event => {const placement=(event.target.value||null) as Placement|null;setDraft(current=>({...current,placement,title:""}));}}><option value="">Choose a homepage row</option><option value="fabric_tile">Shop by Fabric</option><option value="weave_tile">Shop by Weave</option><option value="regional_handloom_tile">Shop by Collection</option></select><span className="field-note">The uploaded image replaces the illustrated placeholder for the selected category after you publish.</span></label>}
+         {kind === "home_image" && <label>Homepage row<select required value={draft.placement || ""} onChange={event => {const placement=(event.target.value||null) as Placement|null;setDraft(current=>({...current,placement,title:""}));}}><option value="">Choose a homepage row</option><option value="fabric_tile">Shop by Fabric</option><option value="weave_tile">Shop by Weave</option><option value="regional_handloom_tile">Shop by Collection</option></select><span className="field-note">Fabric and weave descriptions can be added without an image. Collection tiles still require an image.</span></label>}
          {kind === "home_image"
-           ? <label>Category<select required value={draft.title} onChange={event => set("title", event.target.value)} disabled={!draft.placement}><option value="">Choose a category</option>{homeImageOptions.map(value => <option key={value} value={value}>{value}</option>)}</select><span className="field-note">Choose the exact tile to update so its image appears in the matching homepage row.</span></label>
+            ? <label>Category<select required value={draft.title} onChange={event => set("title", event.target.value)} disabled={!draft.placement}><option value="">Choose a category</option>{availableHomeImageOptions.map(value => <option key={value} value={value}>{value}</option>)}</select><span className="field-note">Choose a fabric or weave from published products. Existing categories are available to edit in the list.</span></label>
            : <label>Title<input required maxLength={180} value={draft.title} onChange={event => set("title", event.target.value)} placeholder="A clear working title"/></label>}
         {(kind === "hero_slide" || kind === "video_post") && <label>Eyebrow <span className="label-hint">Optional</span><input maxLength={120} value={draft.eyebrow || ""} onChange={event => set("eyebrow", event.target.value || null)} placeholder="A short introduction"/></label>}
-        {kind !== "customer_voice" && kind !== "home_image" && <label>{kind === "video_post" ? "Caption" : "Supporting copy"}<textarea rows={3} maxLength={3000} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="Optional supporting text"/></label>}
+         {kind === "home_image" && (draft.placement === "fabric_tile" || draft.placement === "weave_tile") && <label>Category description <span className="label-hint">Optional</span><textarea data-testid="input-category-description" rows={3} maxLength={500} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="e.g. Light, breathable sarees for every day."/><span className="field-note">Shown below this fabric or weave name on the homepage.</span></label>}
+         {(kind === "hero_slide" || kind === "video_post") && <label>{kind === "video_post" ? "Caption" : "Supporting copy"}<textarea rows={3} maxLength={3000} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="Optional supporting text"/></label>}
         {kind === "customer_voice" && <label>Exact customer-supplied quote<textarea required rows={5} maxLength={3000} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="Paste the approved quote exactly as supplied"/></label>}
-        {kind !== "video_post" ? <MediaField label="Image" url={previews.imageUrl || draft.imageUrl} required={kind === "hero_slide" || kind === "home_image"} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if (kind === "hero_slide" && url !== draft.imageUrl) setDraft(current => ({ ...current, focalPointX: null, focalPointY: null })); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/> :
+         {kind !== "video_post" ? <MediaField label="Image" url={previews.imageUrl || draft.imageUrl} required={kind === "hero_slide" || (kind === "home_image" && draft.placement === "regional_handloom_tile")} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if (kind === "hero_slide" && url !== draft.imageUrl) setDraft(current => ({ ...current, focalPointX: null, focalPointY: null })); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/> :
           <><MediaField label="Video file" url={previews.mediaUrl || draft.mediaUrl} required accept="video/mp4,video/webm" video onFile={file => void upload(file, "mediaUrl")} onUrl={url => { set("mediaUrl", url || null); if (!url) setPreviews(current => ({ ...current, mediaUrl: undefined })); }}/><MediaField label="Poster image" url={previews.imageUrl || draft.imageUrl} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/></>}
         {kind === "hero_slide" && <FocalPointField imageUrl={previews.imageUrl || draft.imageUrl} x={draft.focalPointX} y={draft.focalPointY} onChange={(x, y) => setDraft(current => ({ ...current, focalPointX: x, focalPointY: y }))} onReset={() => setDraft(current => ({ ...current, focalPointX: null, focalPointY: null }))}/>}
         {(kind === "hero_slide" || kind === "home_image") && <label>Image description <span className="label-hint">For accessibility</span><input maxLength={500} value={draft.altText || ""} onChange={event => set("altText", event.target.value || null)} placeholder="Describe the image"/></label>}
@@ -213,16 +220,16 @@ export function AdminContent() {
   };
   const icon = kind === "hero_slide" ? <ImagePlus size={19}/> : kind === "home_image" ? <ImagePlus size={19}/> : kind === "customer_voice" ? <MessageSquareQuote size={19}/> : <Film size={19}/>;
   return <AdminLayout title="Storefront content" eyebrow="THE PUBLIC STOREFRONT" action={<button className="button button-primary" onClick={() => setCreating(true)}><Plus size={16}/> Add {labels[kind].replace(/s$/, "").toLowerCase()}</button>}>
-    <div className="content-intro"><div className="content-intro-mark">{icon}</div><div><b>Shape what shoppers see.</b><p>Manage the published stories, images and video across the storefront. Drafts remain private to this workroom.</p></div></div>
+     <div className="content-intro"><div className="content-intro-mark">{icon}</div><div><b>Shape what shoppers see.</b><p>Manage published stories, category descriptions, images and video across the storefront. Drafts remain private to this workroom.</p></div></div>
     <div className="content-tabs" role="tablist" aria-label="Content type">{(Object.keys(labels) as Kind[]).map(value => <button key={value} role="tab" aria-selected={kind === value} className={kind === value ? "active" : ""} onClick={() => setKind(value)}>{labels[value]}<span>{content.data?.items.filter(item => item.kind === value).length ?? "—"}</span></button>)}</div>
     {notice && <div className="inline-notice notice-error" role="status"><CircleAlert size={16}/>{notice}<button aria-label="Dismiss" onClick={() => setNotice("")}><X size={15}/></button></div>}
     {content.isLoading ? <div className="content-skeleton" aria-label="Loading content"><span/><span/><span/></div> : content.isError ? <div className="content-empty"><CircleAlert size={22}/><h2>Content could not load</h2><p>{readable(content.error)}</p><button className="button button-quiet" onClick={() => void content.refetch()}><RefreshCw size={15}/> Try again</button></div> :
       items.length ? <div className="content-item-list">{items.map(item => <article className="content-row" key={item.id}>
         <div className="content-preview">{item.kind === "video_post" ? item.imageUrl ? <img src={item.imageUrl} alt=""/> : <Film size={22}/> : item.imageUrl ? <img src={item.imageUrl} alt=""/> : <MessageSquareQuote size={22}/>}</div>
-         <div className="content-row-copy"><span className="eyebrow">{item.kind === "home_image" ? item.placement === "fabric_tile" ? "Shop by Fabric" : item.placement === "weave_tile" ? "Shop by Weave" : "Shop by Collection" : item.eyebrow || labels[item.kind]}</span><h2>{item.title}</h2><p>{item.kind === "customer_voice" ? item.body : item.kind === "video_post" ? item.body || "Video post" : item.altText || item.body || "No additional copy"}</p></div>
+          <div className="content-row-copy"><span className="eyebrow">{item.kind === "home_image" ? item.placement === "fabric_tile" ? "Shop by Fabric" : item.placement === "weave_tile" ? "Shop by Weave" : "Shop by Collection" : item.eyebrow || labels[item.kind]}</span><h2>{item.title}</h2><p>{item.kind === "customer_voice" ? item.body : item.kind === "video_post" ? item.body || "Video post" : item.body || item.altText || "No category description yet"}</p></div>
         <div className="content-row-state"><span className={`status-pill ${item.published ? "status-active" : "status-draft"}`}>{item.published ? "Published" : "Draft"}</span>{item.kind === "customer_voice" && <span className={`status-pill ${item.approved ? "status-active" : "status-draft"}`}>{item.approved ? "Approved" : "Needs approval"}</span>}</div>
         <div className="content-row-actions"><button className="text-button" onClick={() => setEditing(item)}><Pencil size={14}/> Edit</button><button className="text-button danger-text" disabled={remove.isPending} onClick={() => deleteItem(item)}><Trash2 size={14}/> Delete</button></div>
       </article>)}</div> : <div className="content-empty">{icon}<h2>No {labels[kind].toLowerCase()} yet</h2><p>Add a real piece of storefront content when it is ready. Nothing is shown publicly until it is published.</p><button className="button button-primary" onClick={() => setCreating(true)}><Plus size={16}/> Add {labels[kind].replace(/s$/, "").toLowerCase()}</button></div>}
-    {(creating || editing) && <ContentEditor key={editing?.id || kind} item={editing || undefined} kind={editing?.kind || kind} onClose={() => { setCreating(false); setEditing(null); }}/>}
+     {(creating || editing) && <ContentEditor key={editing?.id || kind} item={editing || undefined} kind={editing?.kind || kind} existingItems={content.data?.items || []} onClose={() => { setCreating(false); setEditing(null); }}/>}
   </AdminLayout>;
 }
