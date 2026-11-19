@@ -260,7 +260,7 @@ export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {pl
      <>
        <span>{item.title}</span>
         {item.body?.trim()&&<p className="home-weave-description">{item.body.trim()}</p>}
-       <small>Explore pieces →</small>
+        <small>Shop {item.title} →</small>
      </>
    )}
   </a>)}</div>;
@@ -356,13 +356,13 @@ export function Home(){
        </div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading available fabrics…":storefrontCatalog.isError?"We couldn’t load the product list. Try the collections page again shortly.":"Fabric categories appear when published products have a fabric value."}</p>}
   </div></section>
    <section className="section home-technique-section" id="shop-by-weave"><div className="wrap">
-    <div className="section-head"><div><h2>Shop by Weave</h2><p>Explore weaving traditions across regions and materials.</p></div></div>
+    <div className="section-head"><div><h2>Shop by Weave</h2><p>Discover handwoven traditions from across India.</p></div></div>
     <div className="taxonomy-link-grid technique-link-grid home-horizontal-track" role="region" aria-label="Shop by Weave" tabIndex={0}>
      {weavePrints.map((name,index)=>{
        const tile=homeTiles.find(item=>item.placement==="weave_tile"&&item.title.trim().toLowerCase()===name.trim().toLowerCase());
        return <a key={name} href={base+"Collections?weave="+encodeURIComponent(name)}>
         {tile?.imageUrl?<img className="dynamic-home-weave-image" src={tile.imageUrl} alt={tile.altText||name} loading="lazy"/>:<Textile pattern={"s"+((index+2)%6+1)} label={name}/>}
-         <span>{name}</span>{tile?.body?.trim()&&<p className="home-weave-description" data-testid={categoryDescriptionTestId("home-weave",name)}>{tile.body.trim()}</p>}<small>Explore pieces →</small>
+         <span>{name}</span>{tile?.body?.trim()&&<p className="home-weave-description" data-testid={categoryDescriptionTestId("home-weave",name)}>{tile.body.trim()}</p>}<small>Shop {name} →</small>
        </a>;
      })}
     </div>

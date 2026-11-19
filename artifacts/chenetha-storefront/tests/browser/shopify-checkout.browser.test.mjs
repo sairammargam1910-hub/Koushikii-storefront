@@ -1078,6 +1078,7 @@ test("homepage shows authored fabric and weave descriptions without images", asy
     }),
   }));
   await page.goto(`${origin}${fixtureUrl}?screen=home`);
+  await page.getByText("Discover handwoven traditions from across India.", { exact: true }).waitFor();
   const fabricDescription = page.getByTestId("text-home-fabric-description-cotton");
   const weaveDescription = page.getByTestId("text-home-weave-description-ikkat");
   await fabricDescription.getByText("Light, breathable sarees for every day.", { exact: true }).waitFor();
@@ -1093,6 +1094,7 @@ test("homepage shows authored fabric and weave descriptions without images", asy
   assert.equal(await cottonTile.locator(".textile").count(), 1, "the fabric placeholder remains when only copy is published");
   assert.equal(await ikkatTile.locator("img").count(), 0);
   assert.equal(await ikkatTile.locator(".textile").count(), 1, "the weave placeholder remains when only copy is published");
+  assert.equal(await ikkatTile.locator("small").innerText(), "SHOP IKKAT →");
   await context.close();
 });
 
