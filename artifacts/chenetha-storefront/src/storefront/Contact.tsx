@@ -16,7 +16,7 @@ export function Contact() {
     ].filter(Boolean).join("\n");
     window.open(whatsappOrderUrl(message), "_blank", "noopener,noreferrer");
   };
-  return <Shell><PageHero eyebrow="A note to Chenetha" title="Begin with a question." subtitle="About a border, a fabric, a piece you are considering. A useful conversation starts with the small details."/>
+  return <Shell><PageHero eyebrow="Get in touch" title="Let’s talk sarees." subtitle="Wondering about a fabric, a border or the perfect saree for an occasion? Just ask. We reply to every message personally."/>
     <main className="wrap content"><div className="two-col"><section>
       <div className="guide-warning" style={{marginTop:0,marginBottom:24}}><strong>WhatsApp enquiry.</strong> Submitting opens WhatsApp with a prepared draft to the client-supplied business number. Review the draft and choose whether to send it.</div>
       <form className="form panel" onSubmit={submit} data-testid="form-contact-enquiry">
