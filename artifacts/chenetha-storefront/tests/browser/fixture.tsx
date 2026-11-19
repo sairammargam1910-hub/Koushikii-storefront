@@ -56,6 +56,27 @@ const heroItem = (orientation: string, focalPointX: number | null = null, focalP
   createdAt: "2026-11-17T00:00:00.000Z",
   updatedAt: "2026-11-17T00:00:00.000Z",
 });
+const existingHomeImage: SiteContentItem = {
+  id: "existing-cotton-home-image",
+  kind: "home_image",
+  placement: "fabric_tile",
+  title: "Cotton",
+  eyebrow: null,
+  body: null,
+  imageUrl: "https://cdn.example.test/cotton-tile.webp",
+  mediaUrl: null,
+  altText: "Cotton weave",
+  focalPointX: null,
+  focalPointY: null,
+  ctaLabel: null,
+  ctaUrl: null,
+  linkedProductId: null,
+  sortOrder: 0,
+  published: true,
+  approved: false,
+  createdAt: "2026-11-19T00:00:00.000Z",
+  updatedAt: "2026-11-19T00:00:00.000Z",
+};
 
 function HeroEditorFixture({ orientation }: { orientation: string }) {
   const [closed, setClosed] = useState(false);
@@ -99,7 +120,7 @@ function Fixture() {
   if (screen === "hero-carousel") return <HeroCarouselFixture/>;
   if (screen === "home-image-editor") return closed
     ? <p data-testid="home-image-editor-closed">Home image editor closed</p>
-    : <main className="merchant-app"><ContentEditor kind="home_image" onClose={() => setClosed(true)}/></main>;
+    : <main className="merchant-app"><ContentEditor kind="home_image" existingItems={params.get("existing") === "1" ? [existingHomeImage] : []} onClose={() => setClosed(true)}/></main>;
   if (screen === "product") return <ShopifyProductRoute handle="fixture-saree" />;
   if (screen === "cart") return <Cart />;
   if (screen === "checkout") return <Checkout />;

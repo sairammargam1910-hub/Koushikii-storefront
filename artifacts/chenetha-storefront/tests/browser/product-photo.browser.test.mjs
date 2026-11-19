@@ -496,6 +496,67 @@ test("merchant can publish fabric or weave descriptions without an image", async
   await context.close();
 });
 
+test("existing fabric categories remain selectable and save as edits", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  let updatedItem;
+  await page.route("**/api/shopify/admin/products", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      currencyCode: "INR",
+      products: [{
+        id: "gid://shopify/Product/cotton",
+        title: "Cotton saree",
+        handle: "cotton-saree",
+        description: "",
+        productType: "Saree",
+        status: "ACTIVE",
+        tags: [],
+        fabric: "Cotton",
+        regionalHandloom: "",
+        blouseAvailability: "not_specified",
+        craftTechnique: "",
+        region: "",
+        colour: "",
+        collectionIds: [],
+        imageUrl: null,
+        variants: [],
+        options: [],
+      }],
+    }),
+  }));
+  await page.route("**/api/site-content/existing-cotton-home-image", async (route) => {
+    assert.equal(route.request().method(), "PUT");
+    updatedItem = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...updatedItem,
+        id: "existing-cotton-home-image",
+        createdAt: "2026-11-19T00:00:00.000Z",
+        updatedAt: "2026-11-19T00:01:00.000Z",
+      }),
+    });
+  });
+  await page.goto(`${origin}/tests/browser/fixture.html?screen=home-image-editor&existing=1`);
+  await page.getByRole("dialog").waitFor();
+  await page.locator(".admin-form select").nth(0).selectOption("fabric_tile");
+  await page.locator(".admin-form select").nth(1).selectOption("Cotton");
+  await page.getByRole("heading", { name: "Edit home category content" }).waitFor();
+  await page.getByTestId("input-category-description").fill("Soft, breathable cotton for warm days.");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await page.getByTestId("home-image-editor-closed").waitFor();
+
+  assert.ok(updatedItem, "choosing an existing category should update its current content item");
+  assert.equal(updatedItem.title, "Cotton");
+  assert.equal(updatedItem.placement, "fabric_tile");
+  assert.equal(updatedItem.body, "Soft, breathable cotton for warm days.");
+  assert.equal(updatedItem.imageUrl, "https://cdn.example.test/cotton-tile.webp");
+  await context.close();
+});
+
 test("merchant can publish without a collection and later assign a Shopify collection", async () => {
   const created = await openForm();
   const createMutations = await mockCreateOrUpdate(created.page);

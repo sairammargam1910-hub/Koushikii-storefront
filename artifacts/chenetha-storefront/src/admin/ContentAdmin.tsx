@@ -21,6 +21,14 @@ const emptyDraft = (kind: Kind = "hero_slide"): Draft => ({
   altText: null, focalPointX: null, focalPointY: null, ctaLabel: null, ctaUrl: null, linkedProductId: null,
   placement: null, sortOrder: 0, published: false, approved: false,
 });
+const draftFromItem = (item: SiteContentItem): Draft => ({
+  kind: item.kind, title: item.title, eyebrow: item.eyebrow, body: item.body,
+  imageUrl: item.imageUrl, mediaUrl: item.mediaUrl, altText: item.altText,
+  focalPointX: item.focalPointX, focalPointY: item.focalPointY,
+  ctaLabel: item.ctaLabel, ctaUrl: item.ctaUrl, linkedProductId: item.linkedProductId,
+  placement: (item as SiteContentItem & { placement?: Placement | null }).placement || null,
+  sortOrder: item.sortOrder, published: item.published, approved: item.approved,
+});
 const labels: Record<Kind, string> = { hero_slide: "Hero slides", home_image: "Home category content", customer_voice: "Customer voices", video_post: "Video posts" };
 const acceptedImage = ["image/jpeg", "image/png", "image/webp"];
 const acceptedVideo = ["video/mp4", "video/webm"];
@@ -44,14 +52,8 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
   const update = useUpdateSiteContent();
   const requestUpload = useRequestSiteContentUpload();
   const shopify = useGetShopifyAdminProducts();
-  const [draft, setDraft] = useState<Draft>(item ? {
-    kind: item.kind, title: item.title, eyebrow: item.eyebrow, body: item.body,
-    imageUrl: item.imageUrl, mediaUrl: item.mediaUrl, altText: item.altText,
-    focalPointX: item.focalPointX, focalPointY: item.focalPointY,
-    ctaLabel: item.ctaLabel, ctaUrl: item.ctaUrl, linkedProductId: item.linkedProductId,
-    placement: (item as SiteContentItem & { placement?: Placement | null }).placement || null,
-    sortOrder: item.sortOrder, published: item.published, approved: item.approved,
-  } : emptyDraft(kind));
+  const [targetItem, setTargetItem] = useState<SiteContentItem | undefined>(item);
+  const [draft, setDraft] = useState<Draft>(item ? draftFromItem(item) : emptyDraft(kind));
   const [error, setError] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [progress, setProgress] = useState<{ label: string; value: number } | null>(null);
@@ -71,13 +73,30 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
       : draft.placement === "regional_handloom_tile"
         ? getCustomerNavigationValues((shopify.data?.products || []).flatMap(product => parseClassificationValues(product.regionalHandloom)))
       : [];
-  const availableHomeImageOptions = homeImageOptions.filter(value => !existingItems.some(existing =>
-    existing.kind === "home_image" &&
-    existing.placement === draft.placement &&
-    existing.id !== item?.id &&
-    existing.title.trim().toLowerCase() === value.trim().toLowerCase(),
-  ));
+  const availableHomeImageOptions = [...new Set([
+    ...homeImageOptions,
+    ...existingItems
+      .filter(existing => existing.kind === "home_image" && existing.placement === draft.placement)
+      .map(existing => existing.title.trim())
+      .filter(Boolean),
+  ])].sort((a, b) => a.localeCompare(b));
   if (draft.title && !availableHomeImageOptions.includes(draft.title)) availableHomeImageOptions.unshift(draft.title);
+  const chooseHomeCategory = (title: string) => {
+    const existing = existingItems.find(candidate =>
+      candidate.kind === "home_image" &&
+      candidate.placement === draft.placement &&
+      candidate.title.trim().toLowerCase() === title.trim().toLowerCase(),
+    );
+    setError("");
+    if (existing) {
+      setTargetItem(existing);
+      setDraft(draftFromItem(existing));
+      setPreviews({});
+      return;
+    }
+    if (!item) setTargetItem(undefined);
+    setDraft(current => ({ ...current, title }));
+  };
   useEffect(() => () => localPreviewUrls.current.forEach(URL.revokeObjectURL), []);
   useEffect(() => {
     if (previewOpen) {
@@ -133,17 +152,17 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
       },
       onError: (cause: Error) => setError(readable(cause)),
     };
-    if (item) update.mutate({ id: item.id, data: payload }, options);
+    if (targetItem) update.mutate({ id: targetItem.id, data: payload }, options);
     else create.mutate({ data: payload }, options);
   };
   return <>
    <div className="modal-backdrop content-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
     <section className="admin-modal content-editor" role="dialog" aria-modal="true" aria-hidden={previewOpen} aria-labelledby="content-editor-title">
-      <header className="modal-head"><div><span className="eyebrow">STOREFRONT CONTENT</span><h2 id="content-editor-title">{item ? "Edit" : "Add"} {labels[kind].replace(/s$/, "").toLowerCase()}</h2></div><button className="icon-button" type="button" disabled={busy} onClick={onClose} aria-label="Close"><X size={18}/></button></header>
+      <header className="modal-head"><div><span className="eyebrow">STOREFRONT CONTENT</span><h2 id="content-editor-title">{targetItem ? "Edit" : "Add"} {labels[kind].replace(/s$/, "").toLowerCase()}</h2></div><button className="icon-button" type="button" disabled={busy} onClick={onClose} aria-label="Close"><X size={18}/></button></header>
       <form className="admin-form" onSubmit={submit}>
-         {kind === "home_image" && <label>Homepage row<select required value={draft.placement || ""} onChange={event => {const placement=(event.target.value||null) as Placement|null;setDraft(current=>({...current,placement,title:""}));}}><option value="">Choose a homepage row</option><option value="fabric_tile">Shop by Fabric</option><option value="weave_tile">Shop by Weave</option><option value="regional_handloom_tile">Shop by Collection</option></select><span className="field-note">Fabric and weave descriptions can be added without an image. Collection tiles still require an image.</span></label>}
+         {kind === "home_image" && <label>Homepage row<select required value={draft.placement || ""} onChange={event => {const placement=(event.target.value||null) as Placement|null;if(!item)setTargetItem(undefined);setDraft(current=>({...current,placement,title:""}));}}><option value="">Choose a homepage row</option><option value="fabric_tile">Shop by Fabric</option><option value="weave_tile">Shop by Weave</option><option value="regional_handloom_tile">Shop by Collection</option></select><span className="field-note">Fabric and weave descriptions can be added without an image. Collection tiles still require an image.</span></label>}
          {kind === "home_image"
-            ? <label>Category<select required value={draft.title} onChange={event => set("title", event.target.value)} disabled={!draft.placement}><option value="">Choose a category</option>{availableHomeImageOptions.map(value => <option key={value} value={value}>{value}</option>)}</select><span className="field-note">Choose a fabric or weave from published products. Existing categories are available to edit in the list.</span></label>
+            ? <label>Category<select required value={draft.title} onChange={event => chooseHomeCategory(event.target.value)} disabled={!draft.placement}><option value="">Choose a category</option>{availableHomeImageOptions.map(value => {const exists=existingItems.some(existing=>existing.kind==="home_image"&&existing.placement===draft.placement&&existing.title.trim().toLowerCase()===value.trim().toLowerCase());return <option key={value} value={value}>{value}{exists?" · edit existing":""}</option>;})}</select><span className="field-note">Existing categories are selectable and load their current content for editing.</span></label>
            : <label>Title<input required maxLength={180} value={draft.title} onChange={event => set("title", event.target.value)} placeholder="A clear working title"/></label>}
         {(kind === "hero_slide" || kind === "video_post") && <label>Eyebrow <span className="label-hint">Optional</span><input maxLength={120} value={draft.eyebrow || ""} onChange={event => set("eyebrow", event.target.value || null)} placeholder="A short introduction"/></label>}
          {kind === "home_image" && (draft.placement === "fabric_tile" || draft.placement === "weave_tile") && <label>Category description <span className="label-hint">Optional</span><textarea data-testid="input-category-description" rows={3} maxLength={500} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="e.g. Light, breathable sarees for every day."/><span className="field-note">Shown below this fabric or weave name on the homepage.</span></label>}
@@ -159,7 +178,7 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
         <div className="form-row"><label>Display order<input type="number" min="0" max="10000" value={draft.sortOrder} onChange={event => set("sortOrder", Number(event.target.value))}/></label><label className="check-line content-publish"><input type="checkbox" checked={draft.published} onChange={event => set("published", event.target.checked)}/><span><b>Publish</b><small>Visible on the public storefront.</small></span></label></div>
         {progress && <div className="content-upload-progress" role="status"><span>{progress.label}</span><progress max="100" value={progress.value}/><b>{progress.value}%</b></div>}
         {error && <p className="form-error" role="alert">{error}</p>}
-         <div className="modal-actions content-editor-actions"><button ref={previewTriggerRef} className="button button-quiet" type="button" disabled={busy} onClick={() => setPreviewOpen(true)}><Eye size={15}/> Preview</button><span className="content-editor-actions-spacer"/><button className="button button-quiet" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="button button-primary" type="submit" disabled={busy || !draft.title.trim()}>{busy ? "Working…" : item ? "Save changes" : "Save content"}</button></div>
+        <div className="modal-actions content-editor-actions"><button ref={previewTriggerRef} className="button button-quiet" type="button" disabled={busy} onClick={() => setPreviewOpen(true)}><Eye size={15}/> Preview</button><span className="content-editor-actions-spacer"/><button className="button button-quiet" type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="button button-primary" type="submit" disabled={busy || !draft.title.trim()}>{busy ? "Working…" : targetItem ? "Save changes" : "Save content"}</button></div>
       </form>
     </section>
    </div>
