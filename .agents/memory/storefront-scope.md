@@ -151,3 +151,9 @@ Homepage New Arrivals uses the `new arrival` tag. The green Premium Collection p
 **Why:** On November 12, 2026, the user clarified that the green homepage area should show browse categories, not individual featured products, and specifically expected a premium product's regional tradition to appear even without Shopify collection membership.
 
 **How to apply:** Normalize premium tags case-insensitively; also treat membership in the explicit Premium Collection as premium status. Keep the panel hidden when no browseable Shopify collection or regional-handloom category contains a premium item, and preserve premium-only filtering when a tile is opened.
+
+For homepage hero redesigns, show a visual mockup first and wait for the user's approval before integrating it into the storefront.
+
+**Why:** On November 17, 2026, the user explicitly asked to review the hero design before it was built.
+
+**How to apply:** Keep the existing hero image and copy unless the user requests changes. Present the relevant responsive mockup, and do not replace the live hero until the user approves the design.
