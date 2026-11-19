@@ -1,7 +1,10 @@
 import { ArrowRight } from "lucide-react";
 import { Shell, PageHero, base } from "./_shared";
 
-const faqs = [
+type FaqAnswer = string | { intro: string; steps: string[]; closing: string };
+type FaqItem = [question: string, answer: FaqAnswer];
+
+const faqs: { group: string; questions: FaqItem[] }[] = [
  {group:"Choosing a saree",questions:[
   ["How can I check the colour and quality before buying?","All our photos show the actual saree, not a sample. Colours may still look slightly different depending on your screen and lighting. To see the fabric, texture and drape more closely, watch the saree on our video page, or request a live video call before you buy."],
   ["Does every saree include a blouse piece?","Not always. Each product page shows whether a blouse piece is included, along with the saree’s length and width."],
@@ -12,10 +15,18 @@ const faqs = [
    ["HOW DO I TRACK MY ORDER?","Create an account first. It’s the easiest way to keep track of your orders.\n\nOnce you’ve signed in, go to Your Orders to see order and delivery updates. Use the same email address at checkout as the one on your account. Otherwise your order won’t show up.\n\nYou’ll also get a tracking link by email or WhatsApp once your order ships."],
  ]},
  {group:"Returns & support",questions:[
-  ["Can I return or exchange a saree?","This preview does not establish return or exchange eligibility, deadlines, exclusions, cancellation terms or refund timing. Before a real purchase, read the merchant’s published terms for the specific product. Do not send a textile anywhere on the basis of this preview."],
-   ["What should I confirm before proceeding?","Confirm the exact product, availability, final price, any taxes and shipping charges, delivery details, cancellation terms and return or exchange conditions directly with the brand. The displayed catalogue prices are samples."],
-  ["What should I do if a delivery is damaged or incorrect?","For a live purchase, keep the packaging and take clear photographs of the outer parcel, label and item. Contact the seller with the order number and description before washing, altering or returning the piece. Confirmed support details will be added before launch."],
-    ["How do I contact the brand?","The Contact page prepares a message for the supplied Chenetha by Koushikii WhatsApp number. Review and send it in WhatsApp; this website does not claim to receive or process the message."],
+   ["CAN I RETURN OR EXCHANGE A SAREE?","You can return a saree within 4 days of delivery, as long as the tags and original folds are intact. We do not offer exchanges.\n\nTo start a return, message us on WhatsApp or go to Your Orders in your account.\n\nYour refund will be started once we receive and check the returned saree. Return shipping charges will be deducted from the refund.\n\nEvery saree is quality-checked before packing. Please check all product details, including fabric, length, blouse piece and colour, before you buy."],
+   ["WILL THE COLOUR LOOK EXACTLY LIKE THE PHOTO?","Colours may look slightly different because of camera lighting and screen settings. This is not a defect. If you’re unsure, watch the saree on our video page or request a video call before buying."],
+   ["WHAT IF MY SAREE ARRIVES DAMAGED?",{
+    intro:"We offer a refund for major defects such as holes, cuts or colour defects. To make a claim:",
+    steps:[
+     "Record an unboxing video from the moment you open the parcel until you’ve fully checked the saree.",
+     "Send the full video, with no edits or cuts, to our registered WhatsApp number.",
+     "Once we verify the defect, we’ll start your refund."
+    ],
+    closing:"Without an unboxing video, we can’t accept a damage claim."
+   }],
+   ["HOW DO I CONTACT KOUSHIKII?","Message us on WhatsApp at 7981614119, or use the Contact page. We’re happy to help with any questions about a saree, an order or delivery."],
  ]},
 ];
 
@@ -23,7 +34,7 @@ export function CustomerCare() {
  return <Shell>
   <PageHero eyebrow="Customer care" title="Everything you need to know." subtitle="Answers on fabrics, orders, shipping and returns. Looking for washing and storage tips? See our Care Guide."/>
   <main className="wrap content">
-   <div className="care-support-layout"><section>{faqs.map(group=><section key={group.group}><h2>{group.group}</h2>{group.questions.map(([question,answer])=><details key={question}><summary>{question}</summary>{answer.split("\n\n").map((paragraph,index)=><p key={index}>{paragraph}</p>)}</details>)}</section>)}</section>
+   <div className="care-support-layout"><section>{faqs.map(group=><section key={group.group}><h2>{group.group}</h2>{group.questions.map(([question,answer])=><details key={question}><summary>{question}</summary>{typeof answer==="string"?answer.split("\n\n").map((paragraph,index)=><p key={index}>{paragraph}</p>):<><p>{answer.intro}</p><ol>{answer.steps.map((step,index)=><li key={index}>{step}</li>)}</ol><p>{answer.closing}</p></>}</details>)}</section>)}</section>
      <aside><div className="guide-note"><span className="eyebrow">Find the right place</span><h3>A little direction.</h3><nav className="support-links" aria-label="Customer support resources">{[["Orders","Order information"],["SareeCare","Saree care by fabric"],["Collections","Explore fabrics & weaves"],["Contact","Contact the brand"]].map(([path,label])=><a key={path} href={base+path}>{label}<ArrowRight size={14}/></a>)}</nav></div>
      <div className="guide-note" style={{marginTop:24}}><span className="eyebrow">Purchase terms</span><h3>Ask before proceeding.</h3><ol className="support-process"><li>Confirm availability and final pricing for the exact product.</li><li>Confirm delivery terms, timing and any applicable charges.</li><li>Ask the brand about cancellation, returns or exchange policies.</li><li>Follow only instructions confirmed directly by the brand.</li></ol></div></aside>
    </div>
