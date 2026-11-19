@@ -8,7 +8,7 @@ const faqs = [
   ["ARE SMALL IRREGULARITIES IN A HANDWOVEN SAREE NORMAL?","Yes. Handwoven sarees are made by people, not machines. Small variations such as an extra thread, slight unevenness, or texture that looks different when you hold the saree up to the light are signs of the weaver’s hand. They are part of what makes each piece one of a kind.\n\nThese are different from defects such as holes, cuts or tears. If your saree arrives with any of these, please contact us."],
  ]},
  {group:"Orders & delivery",questions:[
-  ["Where do you deliver, and how much does it cost?","Delivery locations, dispatch windows and shipping charges are not set in this preview. A PIN-code check validates format only. Before making a real purchase, confirm the merchant’s delivery availability, charges and timing."],
+   ["WHERE DO YOU DELIVER, AND HOW MUCH DOES IT COST?","We deliver across India and internationally. Shipping charges depend on the courier service and your location: within the same city, elsewhere in India, or abroad.\n\nOnce your order ships, we’ll send a tracking link to your registered email or WhatsApp number. To make sure you receive updates, please create an account with your full details.\n\nFor smooth, hassle-free delivery, always enter your complete address and the correct PIN code."],
    ["HOW DO I TRACK MY ORDER?","Create an account first. It’s the easiest way to keep track of your orders.\n\nOnce you’ve signed in, go to Your Orders to see order and delivery updates. Use the same email address at checkout as the one on your account. Otherwise your order won’t show up.\n\nYou’ll also get a tracking link by email or WhatsApp once your order ships."],
  ]},
  {group:"Returns & support",questions:[
