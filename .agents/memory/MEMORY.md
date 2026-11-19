@@ -1,4 +1,4 @@
-- [Storefront scope](storefront-scope.md) — client-led handloom storefront, logo palette, language needs, hero preview approvals, and careful handling of customer reviews.
+- [Storefront scope](storefront-scope.md) — client-led handloom storefront, logo palette, language needs, and careful handling of customer reviews.
 - [Shiprocket HSN](shiprocket-hsn.md) — HSN 5007 is confirmed for the representative saree only; verify customs codes for other products.
 - [Shiprocket webhooks](shiprocket-webhooks.md) — Shiprocket sends the configured webhook security token in `x-api-key`; use a provider-neutral callback URL.
 - [Shipment booking safety](shipment-booking-safety.md) — unresolved product eligibility requires a hold and final approval; quotes and invoices do not prove carrier acceptance.
