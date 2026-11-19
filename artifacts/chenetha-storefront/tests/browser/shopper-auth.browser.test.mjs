@@ -119,6 +119,23 @@ test("shopper account shows email/password entry and recovery guidance", async (
   }
 });
 
+test("shopper order history returns to Orders after sign-in", async () => {
+  const page = await browser.newPage();
+  try {
+    await page.goto(`${origin}/Orders`);
+    await page.getByText("Welcome back", { exact: true }).waitFor();
+    const currentUrl = new URL(page.url());
+    assert.equal(currentUrl.pathname, "/sign-in");
+    const destination = currentUrl.searchParams.get("redirect_url");
+    assert.ok(destination, "the order page should provide a sign-in return destination");
+    const resolved = new URL(destination, currentUrl.origin);
+    assert.equal(resolved.origin, currentUrl.origin);
+    assert.equal(resolved.pathname, "/Orders");
+  } finally {
+    await page.close();
+  }
+});
+
 test("guests can browse and keep their bag, while checkout and profile require sign-in", async () => {
   const page = await browser.newPage();
   try {

@@ -2,12 +2,79 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ProductForm } from "../../src/admin/Admin";
-import type { ShopifyAdminProduct, SiteContentItem } from "@workspace/api-client-react";
+import type { ShopifyAdminProduct, ShopifyOrderSummary, SiteContentItem } from "@workspace/api-client-react";
 import { ShopifyProductRoute } from "../../src/storefront/ShopifyCatalog";
 import { Cart } from "../../src/storefront/Cart";
 import { Checkout } from "../../src/storefront/Checkout";
 import { ContentEditor } from "../../src/admin/ContentAdmin";
 import { PublishedHero } from "../../src/storefront/Home";
+import { OrdersPageContent } from "../../src/storefront/Orders";
+
+const orderSummary = (orderRef: string, name: string): ShopifyOrderSummary => ({
+  orderRef,
+  name,
+  createdAt: "2026-11-18T12:00:00.000Z",
+  processedAt: null,
+  financialStatus: "PAID",
+  fulfillmentStatus: "IN_TRANSIT",
+  totalAmount: "18400.00",
+  currencyCode: "INR",
+  lineItems: [
+    {
+      id: `${orderRef}-line-1`,
+      title: "Narayanpet Cotton Saree",
+      variantTitle: "Maroon / 6.2 m",
+      sku: "NAR-MAR-01",
+      quantity: 1,
+      unitPrice: "14500.00",
+      totalPrice: "14500.00",
+      currencyCode: "INR",
+      image: { url: "/tests/browser/media/hero-portrait.svg", altText: "Maroon handloom saree" },
+    },
+    {
+      id: `${orderRef}-line-2`,
+      title: "Handwoven stole",
+      variantTitle: null,
+      sku: "STL-01",
+      quantity: 2,
+      unitPrice: "1950.00",
+      totalPrice: "3900.00",
+      currencyCode: "INR",
+      image: null,
+    },
+  ],
+});
+
+function OrdersFixture() {
+  const params = new URLSearchParams(window.location.search);
+  const state = params.get("state") || "orders";
+  const [pageCursors, setPageCursors] = useState<Array<string | undefined>>([undefined]);
+  const [retryCount, setRetryCount] = useState(0);
+  const isLoaded = state !== "not-loaded";
+  const isSignedIn = state !== "signed-out";
+  const response = state === "orders"
+    ? {
+        orders: [pageCursors.length === 1 ? orderSummary("fixture-order-1001", "#1001") : orderSummary("fixture-order-0998", "#0998")],
+        nextCursor: pageCursors.length === 1 ? "older-page-cursor" : null,
+      }
+    : { orders: [], nextCursor: null };
+
+  return <div className="kq">
+    <OrdersPageContent
+      isLoaded={isLoaded}
+      isSignedIn={isSignedIn}
+      signInHref="/sign-in?redirect_url=%2FOrders%3Ffrom%3Dfixture"
+      pageCursors={pageCursors}
+      setPageCursors={setPageCursors}
+      response={response}
+      isLoading={state === "loading"}
+      isError={state === "error"}
+      isFetching={false}
+      refetch={() => setRetryCount((count) => count + 1)}
+    />
+    <output data-testid="fixture-retry-count" hidden>{retryCount}</output>
+  </div>;
+}
 
 const product: ShopifyAdminProduct = {
   id: "gid://shopify/Product/browser-fixture",
@@ -111,6 +178,7 @@ function Fixture() {
   const params = new URLSearchParams(window.location.search);
   const editing = params.get("edit") === "1";
   const screen = params.get("screen");
+  if (screen === "orders") return <OrdersFixture/>;
   if (screen === "hero-editor") return <HeroEditorFixture orientation={params.get("orientation") || "landscape"}/>;
   if (screen === "hero-preview") return <HeroPreviewFixture
     orientation={params.get("orientation") || "landscape"}

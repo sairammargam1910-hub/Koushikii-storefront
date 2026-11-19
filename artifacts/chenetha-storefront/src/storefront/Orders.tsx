@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { ArrowRight, ChevronLeft, ChevronRight, PackageCheck, RefreshCw } from "lucide-react";
 import {
   getGetShopifyOrdersQueryKey,
+  type ShopifyOrdersResponse,
   useGetShopifyOrders,
 } from "@workspace/api-client-react";
 import { Shell, PageHero, base } from "./_shared";
@@ -27,30 +28,40 @@ function statusLabel(value: string | null | undefined) {
 }
 
 function OrderSkeleton() {
-  return <div className="orders-skeleton" aria-label="Loading your orders" data-testid="skeleton-orders">
+  return <div className="orders-skeleton" role="status" aria-label="Loading your orders" data-testid="skeleton-orders">
     <div className="order-skeleton-card"><i/><i/><i/></div>
     <div className="order-skeleton-card"><i/><i/><i/></div>
   </div>;
 }
 
-export function Orders() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const [location, setLocation] = useLocation();
-  const [pageCursors, setPageCursors] = useState<Array<string | undefined>>([undefined]);
-  const cursor = pageCursors[pageCursors.length - 1];
-  const signInHref = `${base}sign-in?redirect_url=${encodeURIComponent(location)}`;
-  const params = cursor ? { after: cursor } : undefined;
-  const ordersQuery = useGetShopifyOrders(params, {
-    query: { enabled: Boolean(isLoaded && isSignedIn), queryKey: getGetShopifyOrdersQueryKey(params) },
-  });
-  const response = ordersQuery.data;
+export type OrdersPageContentProps = {
+  isLoaded: boolean;
+  isSignedIn: boolean;
+  signInHref: string;
+  pageCursors: Array<string | undefined>;
+  setPageCursors: Dispatch<SetStateAction<Array<string | undefined>>>;
+  response?: ShopifyOrdersResponse;
+  isLoading: boolean;
+  isError: boolean;
+  isFetching: boolean;
+  refetch: () => unknown;
+};
+
+export function OrdersPageContent({
+  isLoaded,
+  isSignedIn,
+  signInHref,
+  pageCursors,
+  setPageCursors,
+  response,
+  isLoading,
+  isError,
+  isFetching,
+  refetch,
+}: OrdersPageContentProps) {
   const orders = response?.orders ?? [];
 
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) setLocation(signInHref);
-  }, [isLoaded, isSignedIn, setLocation, signInHref]);
-
-  return <Shell>
+  return <>
     <PageHero eyebrow="A little care, all the way home" title="Your orders, in one place." subtitle="Payment confirmation and delivery progress, gathered here with care."/>
     <main className="wrap content orders-page">
       {!isLoaded ? <OrderSkeleton/> : !isSignedIn ? (
@@ -61,11 +72,11 @@ export function Orders() {
           <p>Your order history is kept private and matched to a verified email on your account.</p>
           <a className="btn" data-testid="link-orders-sign-in" href={signInHref}>Sign in to continue <ArrowRight size={15}/></a>
         </section>
-      ) : ordersQuery.isLoading ? <OrderSkeleton/> : ordersQuery.isError ? (
+      ) : isLoading ? <OrderSkeleton/> : isError ? (
         <section className="orders-message" role="alert" data-testid="error-orders">
           <span className="eyebrow">A small pause</span><h2>We couldn’t bring your orders in just now.</h2>
           <p>Your account is safe. Please try again in a moment.</p>
-          <button className="orders-button" type="button" onClick={() => void ordersQuery.refetch()} data-testid="button-retry-orders"><RefreshCw size={15}/> Try again</button>
+          <button className="orders-button" type="button" onClick={() => void refetch()} data-testid="button-retry-orders"><RefreshCw size={15}/> Try again</button>
         </section>
       ) : orders.length === 0 ? (
         <section className="orders-empty" data-testid="empty-order-history">
@@ -78,9 +89,9 @@ export function Orders() {
       ) : (
         <>
           <div className="orders-heading">
-            <div><span className="eyebrow">Your Chenetha order book</span><h2>Made with care. On its way to you.</h2></div>
-            <button className="orders-refresh" type="button" onClick={() => void ordersQuery.refetch()} disabled={ordersQuery.isFetching} data-testid="button-refresh-orders">
-              <RefreshCw size={15} className={ordersQuery.isFetching ? "is-spinning" : ""}/><span>{ordersQuery.isFetching ? "Checking…" : "Refresh"}</span>
+            <div className="orders-heading-copy"><span className="eyebrow">Your Chenetha order book</span><h2>Made with care. On its way to you.</h2><p>Each order, gathered in one place.</p></div>
+            <button className="orders-refresh" type="button" onClick={() => void refetch()} disabled={isFetching} data-testid="button-refresh-orders">
+              <RefreshCw size={15} className={isFetching ? "is-spinning" : ""}/><span>{isFetching ? "Checking…" : "Refresh"}</span>
             </button>
           </div>
           <div className="order-list" data-testid="list-orders">
@@ -89,29 +100,32 @@ export function Orders() {
               return <article className="order-card" key={order.orderRef} data-testid={`card-order-${order.orderRef}`}>
                 <div className="order-card-top">
                   <div className="order-card-date"><span>ORDER PLACED</span><strong data-testid={`text-order-date-${order.orderRef}`}>{formatDate(order.createdAt)}</strong></div>
-                  <div className="order-card-number"><span>ORDER</span><strong data-testid={`text-order-name-${order.orderRef}`}>{order.name}</strong></div>
-                  <div className="order-card-total"><span>TOTAL</span><strong data-testid={`text-order-total-${order.orderRef}`}>{formatMoney(order.totalAmount, order.currencyCode)}</strong></div>
+                  <div className="order-card-number"><span>ORDER REFERENCE</span><strong data-testid={`text-order-name-${order.orderRef}`}>{order.name}</strong></div>
+                  <div className="order-card-total"><span>ORDER TOTAL</span><strong data-testid={`text-order-total-${order.orderRef}`}>{formatMoney(order.totalAmount, order.currencyCode)}</strong></div>
                 </div>
                 <div className="order-card-body">
                   {item?.image?.url ? <img src={item.image.url} alt={item.image.altText || item.title} className="order-thumb" data-testid={`img-order-${order.orderRef}`}/> : <div className="order-thumb order-thumb-fallback" aria-hidden="true"><span>CK</span></div>}
-                  <div className="order-item-summary">
+                  <div className="order-item-summary" role="group" aria-label="First item and order quantity">
+                    <span className="order-item-kicker">IN THIS ORDER</span>
                     <h3 data-testid={`text-order-item-${order.orderRef}`}>{item?.title ?? "Handloom piece"}{order.lineItems.length > 1 && <span className="order-more-items"> + {order.lineItems.length - 1} more</span>}</h3>
                     {item?.variantTitle && item.variantTitle !== "Default Title" && <p>{item.variantTitle}</p>}
                     <p>{order.lineItems.reduce((sum, line) => sum + line.quantity, 0)} {order.lineItems.reduce((sum, line) => sum + line.quantity, 0) === 1 ? "piece" : "pieces"}</p>
                   </div>
-                  <div className="order-statuses">
+                  <div className="order-statuses" role="group" aria-label="Payment and delivery status">
+                    <span className="order-status-label">PAYMENT</span>
                     <span className={`order-status ${order.financialStatus.toLowerCase() === "paid" ? "is-confirmed" : ""}`} data-testid={`status-payment-${order.orderRef}`}><i/>{statusLabel(order.financialStatus)}</span>
+                    <span className="order-status-label order-delivery-label">DELIVERY</span>
                     <span className="order-status" data-testid={`status-fulfillment-${order.orderRef}`}><i/>{order.financialStatus.toUpperCase() === "PAID" ? statusLabel(order.fulfillmentStatus) : "Not shipped"}</span>
                   </div>
-                  <a className="order-view-link" href={`${base}Orders/${encodeURIComponent(order.orderRef)}`} data-testid={`link-order-details-${order.orderRef}`}>View order <ArrowRight size={15}/></a>
+                  <a className="order-view-link" href={`${base}Orders/${encodeURIComponent(order.orderRef)}`} aria-label={`View details for order ${order.name}`} data-testid={`link-order-details-${order.orderRef}`}><span>Order details</span><ArrowRight size={15}/></a>
                 </div>
               </article>;
             })}
           </div>
           <div className="orders-pagination">
-            <button type="button" disabled={pageCursors.length <= 1 || ordersQuery.isFetching} onClick={() => setPageCursors((current) => current.slice(0, -1))} data-testid="button-previous-orders"><ChevronLeft size={15}/> Newer orders</button>
+            <button type="button" disabled={pageCursors.length <= 1 || isFetching} onClick={() => setPageCursors((current) => current.slice(0, -1))} data-testid="button-previous-orders"><ChevronLeft size={15}/> Newer orders</button>
             <span data-testid="text-orders-page">Page {pageCursors.length} · {orders.length} {orders.length === 1 ? "order" : "orders"}</span>
-            <button type="button" disabled={!response?.nextCursor || ordersQuery.isFetching} onClick={() => {
+            <button type="button" disabled={!response?.nextCursor || isFetching} onClick={() => {
               if (response?.nextCursor) setPageCursors((current) => [...current, response.nextCursor!]);
             }} data-testid="button-next-orders">Older orders <ChevronRight size={15}/></button>
           </div>
@@ -119,5 +133,36 @@ export function Orders() {
       )}
       <aside className="orders-reassurance" data-testid="note-orders-privacy"><span className="orders-reassurance-mark" aria-hidden="true"/><p>Orders appear here when the checkout email matches a verified email on your Chenetha account.</p><a href={base+"CustomerCare"}>Need a hand? <ArrowRight size={13}/></a></aside>
     </main>
+  </>;
+}
+
+export function Orders() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const [location, setLocation] = useLocation();
+  const [pageCursors, setPageCursors] = useState<Array<string | undefined>>([undefined]);
+  const cursor = pageCursors[pageCursors.length - 1];
+  const signInHref = `${base}sign-in?redirect_url=${encodeURIComponent(location)}`;
+  const params = cursor ? { after: cursor } : undefined;
+  const ordersQuery = useGetShopifyOrders(params, {
+    query: { enabled: Boolean(isLoaded && isSignedIn), queryKey: getGetShopifyOrdersQueryKey(params) },
+  });
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) setLocation(signInHref);
+  }, [isLoaded, isSignedIn, setLocation, signInHref]);
+
+  return <Shell>
+    <OrdersPageContent
+      isLoaded={isLoaded}
+      isSignedIn={Boolean(isSignedIn)}
+      signInHref={signInHref}
+      pageCursors={pageCursors}
+      setPageCursors={setPageCursors}
+      response={ordersQuery.data}
+      isLoading={ordersQuery.isLoading}
+      isError={ordersQuery.isError}
+      isFetching={ordersQuery.isFetching}
+      refetch={ordersQuery.refetch}
+    />
   </Shell>;
 }
