@@ -50,13 +50,13 @@ export function SareeCare() {
     <div className="care-rules">{item.rules.map(([title,copy],i)=><article className="care-rule" key={title}><span className="eyebrow">0{i+1} / {item.name}</span><h3 style={{marginTop:8}}>{title}</h3><p>{copy}</p></article>)}</div>
     <div className="guide-warning"><strong>A note of caution.</strong> {item.caution}</div>
    </section>)}
-   <section><span className="eyebrow">From wearing to putting away</span><h2>A small after-wear ritual.</h2><ol className="care-routine">
-    <li><h3>Give it air</h3><p>Unfold after wearing. Let the cloth rest in the shade, away from kitchen fumes, damp and direct sunlight.</p></li>
-    <li><h3>Look before you fold</h3><p>Check the hem and pallu for marks or snagged threads. Blot a fresh spill without rubbing; do not wait to ask for advice on a stain.</p></li>
-    <li><h3>Ease the folds</h3><p>Fold gently along the length without forcing a sharp crease through a heavy border. Change fold positions from time to time.</p></li>
-    <li><h3>Make a little room</h3><p>Use a clean, breathable cover. Avoid overcrowding, plastic sealed around damp cloth, and jewellery or pins stored inside the folds.</p></li>
+    <section><span className="eyebrow">From wearing to putting away</span><h2>A simple after-wear routine.</h2><ol className="care-routine">
+     <li><h3>Air it out</h3><p>Unfold your saree after wearing and let it air in the shade.</p></li>
+     <li><h3>Check before folding</h3><p>Look for stains or pulled threads. Blot spills gently without rubbing, and ask us about stains early.</p></li>
+     <li><h3>Fold gently</h3><p>Fold loosely, without pressing hard creases into heavy borders. Change the folds from time to time.</p></li>
+     <li><h3>Store well</h3><p>Store in a dry cupboard. Never store a damp saree in plastic.</p></li>
    </ol></section>
-   <section className="related-guide"><div><span className="eyebrow">Find your next thread</span><h3>Read the border. Explore the cloth.</h3><p>Browse the sample collection by fibre, regional tradition or the way you wear it. Always check the care instructions for the individual piece.</p></div><a className="btn gold" href={base+"Collections"}>Explore the collections <ArrowRight size={14}/></a></section>
+    <section className="related-guide"><div><span className="eyebrow">Find your next saree</span><h3>Find the weave that’s yours.</h3><p>Browse by fibre, region or occasion. Each piece comes with its own care guide.</p></div><a className="btn gold" href={base+"Collections"}>Shop the collection <ArrowRight size={14}/></a></section>
   </main>
  </Shell>;
 }
