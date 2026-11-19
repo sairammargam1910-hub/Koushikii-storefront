@@ -115,16 +115,16 @@ export function OurStory() {
         <div className="wrap">
           <div className="story-end">
             <span className="eyebrow" style={{ color: "#e3bf71" }}>
-              Keep the thread moving
+              PURE FIBRE. FAIR PRICES.
             </span>
-            <h2>Find a piece worth keeping</h2>
-            <p>Explore the collection, then learn how to care for the cloth you choose.</p>
+            <h2>Find a saree worth keeping</h2>
+            <p>Shop natural-fibre sarees and learn to care for them.</p>
             <div className="actions">
               <a className="btn gold" href={base + "Collections"}>
-                Shop Collections <ArrowRight size={14} />
+                Shop sarees <ArrowRight size={14} />
               </a>
               <a className="btn pale" href={base + "SareeCare"}>
-                Care for your cloth
+                Care guide
               </a>
             </div>
           </div>
