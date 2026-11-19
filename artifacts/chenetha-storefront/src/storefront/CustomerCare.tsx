@@ -4,7 +4,7 @@ import { Shell, PageHero, base } from "./_shared";
 const faqs = [
  {group:"Choosing a saree",questions:[
   ["How can I check the colour and quality before buying?","All our photos show the actual saree, not a sample. Colours may still look slightly different depending on your screen and lighting. To see the fabric, texture and drape more closely, watch the saree on our video page, or request a live video call before you buy."],
-  ["Does every saree include a blouse piece?","Do not assume so. Check the full length, width and blouse-piece details for the specific product. Length options in this preview are illustrative and are not a confirmed tailoring service."],
+  ["Does every saree include a blouse piece?","Not always. Each product page shows whether a blouse piece is included, along with the saree’s length and width."],
   ["ARE SMALL IRREGULARITIES IN A HANDWOVEN SAREE NORMAL?","Yes. Handwoven sarees are made by people, not machines. Small variations such as an extra thread, slight unevenness, or texture that looks different when you hold the saree up to the light are signs of the weaver’s hand. They are part of what makes each piece one of a kind.\n\nThese are different from defects such as holes, cuts or tears. If your saree arrives with any of these, please contact us."],
  ]},
  {group:"Orders & delivery",questions:[
