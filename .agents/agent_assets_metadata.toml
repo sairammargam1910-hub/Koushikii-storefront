@@ -518,3 +518,45 @@ mtime_ms = 1794921814594
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/db27ad20-a0c3-4f96-ae21-4b59ab1f6a7c/0ce3c84d-8fd6-47a1-b99b-ad3148fdd0ae"
 storage_version_token = "1794921846783231"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "rhDbz3meS4e1er6XDv7t-"
+uri = "file://generated-artifacts/mobile-hero-heirlooms.png"
+type = "image"
+title = "Mobile hero — Heirlooms"
+description = "Preview screenshot at 402px wide, using the published Heirlooms slide."
+logical_id = "126d57c1-26b7-4d96-8106-a6466dc8c74d"
+content_hash = "sha256:c33d995b1c75ab8b4976db515dd4ddb63b241d290c4ab638676461811106474e"
+size = 197166
+mtime_ms = 1795078446623
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/126d57c1-26b7-4d96-8106-a6466dc8c74d/cd06c37b-9b71-4193-8f85-1f159fb22f8f"
+storage_version_token = "1795078783620405"
+content_type = "image/png"
+
+[[outputs]]
+id = "2kAng3tZsNomPEsmuTMft"
+uri = "file://generated-artifacts/mobile-hero-dhaage.png"
+type = "image"
+title = "Mobile hero — DHAAGE"
+description = "Preview screenshot at 402px wide, using the published DHAAGE slide."
+logical_id = "41656f33-bbb3-4487-9e50-1388d066be39"
+content_hash = "sha256:41b35559d3820ea46ac1f9f2170dba62293fcd25f3856c84e48ecff9d65f85ca"
+size = 200196
+mtime_ms = 1795078447763
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/41656f33-bbb3-4487-9e50-1388d066be39/93212d42-b606-442f-9df8-2bae4d249e99"
+storage_version_token = "1795078784986392"
+content_type = "image/png"
+
+[[outputs]]
+id = "eYMj8TZP5llNusqrRQO1N"
+uri = "file://generated-artifacts/mobile-hero-wear-the-change.png"
+type = "image"
+title = "Mobile hero — Wear the Change"
+description = "Preview screenshot at 402px wide, checking the longer heading and description."
+logical_id = "60a8eb5a-d877-45d8-b987-a29a96356f44"
+content_hash = "sha256:18560c10058b1e1f07298229f79caff69a44868560a82a6534ac5a71672b8bf3"
+size = 176556
+mtime_ms = 1795078448919
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/60a8eb5a-d877-45d8-b987-a29a96356f44/e8e2025d-5cd1-4757-af1f-809ac5c7baea"
+storage_version_token = "1795078786285990"
+content_type = "image/png"
