@@ -22,7 +22,7 @@ const faqs = [
 
 export function CustomerCare() {
  return <Shell>
-  <PageHero eyebrow="Customer care" title="A clear answer, before you choose." subtitle="Questions about cloth, orders and what happens next. Care instructions now have their own dedicated guide."/>
+  <PageHero eyebrow="Customer care" title="Everything you need to know." subtitle="Answers on fabrics, orders, shipping and returns. Looking for washing and storage tips? See our Care Guide."/>
   <main className="wrap content">
    <div className="care-support-layout"><section>{faqs.map(group=><section key={group.group}><h2>{group.group}</h2>{group.questions.map(([question,answer])=><details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</section>)}</section>
      <aside><div className="guide-note"><span className="eyebrow">Find the right place</span><h3>A little direction.</h3><nav className="support-links" aria-label="Customer support resources">{[["Orders","Order information"],["SareeCare","Saree care by fabric"],["Collections","Explore fabrics & weaves"],["Contact","Contact the brand"]].map(([path,label])=><a key={path} href={base+path}>{label}<ArrowRight size={14}/></a>)}</nav></div>
