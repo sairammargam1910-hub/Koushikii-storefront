@@ -9,12 +9,12 @@ const care = [
   ["Dry in the shade","Dry in the shade, away from direct sunlight. Do not leave a contrasting border folded against the main fabric while wet."],
   ["Iron with care","Iron on the reverse with a clean cloth over borders and motifs. Don’t pull or trim loose threads. Ask us instead."],
  ],caution:"Not every cotton saree is washable. If it has zari, embroidery or a contrasting border, care for it more gently."},
- {name:"Silk",swatch:"silk",title:"A little more care for silk.",intro:"Silk, zari and contrast borders can respond differently to water and heat. Keep the label with the saree.",rules:[
-  ["After wearing","Air in a shaded, clean space until completely dry. Allow perspiration to evaporate before putting it away; never store a damp saree."],
-  ["When it needs cleaning","Unless the label specifically permits another method, ask a textile-experienced professional about dry cleaning. Point out zari, stains, delicate motifs and contrast colours."],
-  ["Pressing the surface","Use the label’s silk setting and a clean pressing cloth, working on the reverse. Keep heat low and avoid spraying water or steam directly onto silk or metallic thread."],
-  ["Between occasions","Fold loosely in clean, undyed cotton or appropriate acid-free tissue. Store in a dry, shaded cupboard; change the fold lines occasionally and avoid hanging a heavy silk for long periods."],
- ],caution:"Do not rub a spill or try lemon, salt, vinegar or perfume as a treatment. Blot gently with a clean dry cloth and seek professional advice."},
+ {name:"Silk",swatch:"silk",title:"A little more care for silk.",intro:"Silk, zari and contrasting borders can react to water and heat. Always keep the care label with your saree.",rules:[
+  ["After wearing","Air it in a clean, shady place until it is completely dry. Never put away a damp saree."],
+  ["When it needs cleaning","Dry clean only, unless the label says otherwise. Tell your dry cleaner about any zari, stains or contrasting colours."],
+  ["Ironing","Iron on the reverse on low heat, with a clean cotton cloth on top. Do not spray water or steam directly onto silk or zari."],
+  ["Storing","Fold loosely and wrap in a soft cotton cloth or muslin. Store in a dry, shady cupboard. Refold it every few months, and don’t keep heavy silks on a hanger for long."],
+ ],caution:"If you spill something, don’t rub it or use home remedies like lemon, salt or vinegar. Gently blot with a clean, dry cloth and take it to a dry cleaner."},
  {name:"Cotton-silk",swatch:"cotton-silk",title:"Let the silk set the pace.",intro:"A blend is not a single recipe. Fibre proportions, zari, dye and construction all influence how the cloth should be cared for.",rules:[
   ["Start with composition","Check the fibre details and care label rather than treating a cotton-silk blend as ordinary cotton. If the composition or instructions are missing, ask before washing."],
   ["Clean conservatively","Do not soak or machine wash unless the specific label allows it. For a delicate or contrasting blend, discuss suitable cleaning with a professional."],
