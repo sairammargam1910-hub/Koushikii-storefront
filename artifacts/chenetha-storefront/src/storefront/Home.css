@@ -1014,6 +1014,52 @@
   grid-auto-columns: clamp(190px, 19vw, 245px);
 }
 
+.kq .home-technique-section .home-horizontal-track {
+  grid-auto-columns: clamp(340px, 38vw, 440px);
+  gap: 20px;
+}
+
+.kq .home-technique-section .taxonomy-link-grid > a {
+  grid-template-columns: 100px minmax(0, 1fr);
+  grid-template-rows: min-content min-content min-content;
+  column-gap: 18px;
+  row-gap: 5px;
+  align-content: center;
+  align-items: start;
+  min-height: 176px;
+  padding: 18px 20px;
+}
+
+.kq .home-technique-section .taxonomy-link-grid > a > .textile,
+.kq .home-technique-section .taxonomy-link-grid > a > .dynamic-home-weave-image {
+  grid-row: 1 / -1;
+  width: 100px;
+  height: 112px;
+}
+
+.kq .home-technique-section .taxonomy-link-grid > a > span:not(.textile) {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  font-size: 23px;
+}
+
+.kq .home-technique-section .taxonomy-link-grid > a > .home-weave-description {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.kq .home-technique-section .taxonomy-link-grid > a > small {
+  grid-column: 2;
+  align-self: start;
+  margin-top: 6px;
+  color: var(--red);
+}
+
 @media (max-width: 767px) {
   .kq .dynamic-home-weave-image {
     width: 52px;
@@ -1032,6 +1078,31 @@
 
   .kq .home-weave-section .home-horizontal-track {
     grid-auto-columns: 82vw;
+  }
+
+  .kq .home-technique-section .home-horizontal-track {
+    grid-auto-columns: min(86vw, 420px);
+  }
+
+  .kq .home-technique-section .taxonomy-link-grid > a {
+    grid-template-columns: 76px minmax(0, 1fr);
+    min-height: 148px;
+    padding: 14px;
+    column-gap: 14px;
+  }
+
+  .kq .home-technique-section .taxonomy-link-grid > a > .textile,
+  .kq .home-technique-section .taxonomy-link-grid > a > .dynamic-home-weave-image {
+    width: 76px;
+    height: 88px;
+  }
+
+  .kq .home-technique-section .taxonomy-link-grid > a > span:not(.textile) {
+    font-size: 20px;
+  }
+
+  .kq .home-technique-section .taxonomy-link-grid > a > .home-weave-description {
+    font-size: 11px;
   }
 }
 
