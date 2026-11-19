@@ -13,62 +13,6 @@ import "./Home.css";
 function Textile({pattern,label}:{pattern:string;label:string}){
  return <span className={"textile "+pattern} role="img" aria-label={label+" — illustrative textile pattern"}/>;
 }
-const homeHeroSlides = [
-  {image:"/images/chenetha-home-hero-courtyard.png", alt:"Rose and vermilion Kanjeevaram silk saree in a sunlit South Indian courtyard", eyebrow:"THE LIVING ART OF HANDLOOM", title:<>Chronicles<br/>of weaves.</>, copy:"Discover the quiet beauty of South Indian handlooms.", cta:"Explore the collection", href:base+"Collections"},
-  {image:"/images/chenetha-home-hero-weaving.png", alt:"Midnight-indigo handloom with a fine gold border in a weaving atelier", eyebrow:"A THREAD WORTH FOLLOWING", title:<>Woven by hand.<br/>Kept for years.</>, copy:"Find a weave with colour, character and a story of its own.", cta:"Heirloom classics", href:base+"Collections"},
-  {image:"/images/chenetha-home-hero-garden.png", alt:"Bottle-green silk saree with an antique-gold border in a heritage garden", eyebrow:"COLOUR FROM THE LOOM", title:<>A little gold.<br/>A lot of soul.</>, copy:"Meet considered handlooms for days both special and everyday.", cta:"Shop the edit", href:base+"Collections"}
-];
-function StaticHomeHeroCarousel(){
- const [active,setActive]=useState(0);
- const [playing,setPlaying]=useState(true);
- const touchStart=useRef<{x:number;y:number}|null>(null);
- const swipeClickGuard=useRef(0);
- useEffect(()=>{
-  if(!playing)return;
-  const timer=window.setInterval(()=>setActive(index=>(index+1)%homeHeroSlides.length),6000);
-  return()=>window.clearInterval(timer);
- },[playing]);
- const go=(direction:number)=>setActive(index=>(index+direction+homeHeroSlides.length)%homeHeroSlides.length);
- const finishSwipe=(end:{x:number;y:number})=>{
-  const start=touchStart.current;
-  touchStart.current=null;
-  if(!start)return;
-  const deltaX=end.x-start.x;
-  const deltaY=end.y-start.y;
-  if(Math.abs(deltaX)<45||Math.abs(deltaX)<=Math.abs(deltaY))return;
-  swipeClickGuard.current=Date.now()+450;
-  go(deltaX<0?1:-1);
- };
-  return <section
-   className="heritage-hero home-hero-carousel"
-   aria-label="Featured handloom collection"
-   onClickCapture={event=>{if(Date.now()<swipeClickGuard.current){event.preventDefault();event.stopPropagation();swipeClickGuard.current=0}}}
-  >
-   <div
-    className="home-hero-images"
-    onPointerDown={event=>{if(event.isPrimary&&event.pointerType!=="touch")touchStart.current={x:event.clientX,y:event.clientY}}}
-    onPointerUp={event=>{if(event.pointerType!=="touch")finishSwipe({x:event.clientX,y:event.clientY})}}
-    onPointerCancel={event=>{if(event.pointerType!=="touch")touchStart.current=null}}
-    onTouchStart={event=>{if(event.touches.length!==1){touchStart.current=null;return}const touch=event.touches[0];touchStart.current={x:touch.clientX,y:touch.clientY}}}
-    onTouchEnd={event=>{const touch=event.changedTouches[0];if(touch)finishSwipe({x:touch.clientX,y:touch.clientY})}}
-    onTouchCancel={()=>{touchStart.current=null}}
-   >
-   {homeHeroSlides.map((slide,index)=><img key={slide.image} className={`home-hero-image${active===index?" is-active":""}`} src={slide.image} alt="" aria-hidden="true" fetchPriority={index===0?"high":"auto"}/>)}
-   <div className="home-hero-shade" aria-hidden="true"/>
-   <div className="home-hero-content wrap">
-    <div className="home-hero-copy" key={active} role="group" aria-roledescription="slide" aria-label={`${active+1} of ${homeHeroSlides.length}: ${homeHeroSlides[active].eyebrow}`}>
-     <span className="eyebrow">{homeHeroSlides[active].eyebrow}</span>
-     <h1>{homeHeroSlides[active].title}</h1>
-     <p>{homeHeroSlides[active].copy}</p>
-     <a className="home-hero-cta" href={homeHeroSlides[active].href}>{homeHeroSlides[active].cta}<ArrowRight size={15}/></a>
-    </div>
-    <div className="home-hero-controls" role="group" aria-label="Featured collection slides">
-     {homeHeroSlides.map((slide,index)=><button key={slide.image} type="button" className={`home-hero-dot${active===index?" is-active":""}`} aria-label={`Show slide ${index+1}: ${slide.eyebrow}`} aria-pressed={active===index} onClick={()=>setActive(index)}/>)}
-    </div>
-   </div>
-  </div>
- </section>
-}
 export function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
  const [active,setActive]=useState(0);
  useEffect(()=>{if(slides.length<2)return;const timer=window.setInterval(()=>setActive(index=>(index+1)%slides.length),6000);return()=>window.clearInterval(timer)},[slides.length]);
@@ -117,7 +61,8 @@ export function PublishedHero({ slides }: { slides: SiteContentItem[] }) {
 function HomeHeroCarousel(){
  const content=useGetSiteContent({query:{queryKey:getGetSiteContentQueryKey(),staleTime:60_000}});
  const slides=(content.data?.items||[]).filter(item=>item.kind==="hero_slide"&&item.published&&item.imageUrl).sort((a,b)=>a.sortOrder-b.sortOrder);
- return slides.length?<PublishedHero slides={slides}/>:<StaticHomeHeroCarousel/>;
+  if(content.isLoading)return <section className="heritage-hero home-hero-carousel home-hero-loading" aria-label="Featured handloom collection" aria-busy="true"/>;
+  return slides.length?<PublishedHero slides={slides}/>:null;
 }
 const makingStages = [
   {id:"yarn",step:"01",note:"Preparation",title:"Prepare the yarn",copy:"Yarn is wound onto bobbins in preparation for the loom. The tools and sequence vary between fibres and weaving communities.",image:"/images/koushikii-home-yarn.svg",video:"/images/koushikii-home-yarn.mp4",alt:"A short video of yarn preparation for handloom weaving."},

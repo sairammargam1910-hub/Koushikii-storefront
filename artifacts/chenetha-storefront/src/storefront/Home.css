@@ -51,6 +51,11 @@
   color: var(--ink);
 }
 
+.kq .home-hero-loading {
+  height: clamp(430px, 46vw, 610px);
+  background: var(--paper);
+}
+
 .kq .home-hero-images {
   position: relative;
   isolation: isolate;
@@ -244,6 +249,11 @@
 }
 
 @media (max-width: 650px) {
+  .kq .home-hero-loading {
+    height: min(600px, calc(100svh - 210px));
+    min-height: 510px;
+  }
+
   .kq .home-hero-images {
     height: min(600px, calc(100svh - 210px));
     min-height: 510px;
