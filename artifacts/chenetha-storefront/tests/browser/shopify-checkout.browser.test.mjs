@@ -272,6 +272,13 @@ test("customer care explains the damaged-saree claim process", async () => {
   await context.close();
 });
 
+test("customer care answers blouse-stitching enquiries", async () => {
+  const { context, page } = await openCustomerCare(4);
+  await page.getByText("DO YOU OFFER BLOUSE STITCHING?", { exact: true }).click();
+  await page.getByText("Yes, we can customise your blouse to your requirements. Message us on WhatsApp at 7981614119 to get started.", { exact: true }).waitFor();
+  await context.close();
+});
+
 test("shows live blouse details and ranked, purchasable related products", async () => {
   const current = {
     ...productResponse.products[0],
