@@ -12,6 +12,8 @@
     "test:checkout-browser": "node --test --test-concurrency=1 tests/browser/shopify-checkout.browser.test.mjs",
     "test:auth-browser": "node --test --test-concurrency=1 tests/browser/shopper-auth.browser.test.mjs",
     "test:video-browser": "node --test --test-concurrency=1 tests/browser/video-feed.browser.test.mjs",
+    "test:our-story-localization": "node --experimental-strip-types --test tests/ourStoryTranslations.test.mjs",
+    "test:our-story-localization-browser": "node --test --test-concurrency=1 tests/browser/our-story-localization.browser.test.mjs",
     "test:orders-browser": "node --test --test-concurrency=1 tests/browser/orders-page.browser.test.mjs",
     "test:mega-menu-navigation": "node --experimental-strip-types --test tests/megaMenuNavigation.test.mjs",
     "test:product-recommendations": "node --experimental-strip-types --test tests/productRecommendations.test.mjs",
