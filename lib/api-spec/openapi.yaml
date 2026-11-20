@@ -1995,6 +1995,8 @@ components:
           type: string
         title:
           type: string
+        sku:
+          type: ["string", "null"]
         availableForSale:
           type: boolean
         price:
@@ -2014,6 +2016,8 @@ components:
         handle:
           type: string
         title:
+          type: string
+        description:
           type: string
       required: [id, handle, title]
     ShopifyProductAttributes:

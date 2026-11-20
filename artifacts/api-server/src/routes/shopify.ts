@@ -27,6 +27,7 @@ type ShopifyImage = {
 type ShopifyVariant = {
   id: string;
   title: string;
+  sku: string | null;
   availableForSale: boolean;
   price: { amount: string; currencyCode: string };
   selectedOptions: Array<{ name: string; value: string }>;
@@ -47,7 +48,7 @@ type ShopifyProduct = {
   region: { value: string } | null;
   colour: { value: string } | null;
   productDetails: { value: string } | null;
-  collections: { nodes: Array<{ id: string; handle: string; title: string }> };
+  collections: { nodes: Array<{ id: string; handle: string; title: string; description: string }> };
   images: { nodes: ShopifyImage[] };
   variants: { nodes: ShopifyVariant[] };
 };
@@ -176,7 +177,7 @@ const SHOPIFY_PRODUCTS_QUERY = `#graphql
         colour: metafield(namespace: "chenetha", key: "colour") { value }
         productDetails: metafield(namespace: "chenetha", key: "product_details") { value }
         collections(first: 50) {
-          nodes { id handle title }
+          nodes { id handle title description }
         }
         images(first: 6) {
           nodes { url altText }
@@ -185,6 +186,7 @@ const SHOPIFY_PRODUCTS_QUERY = `#graphql
           nodes {
             id
             title
+            sku
             availableForSale
             price { amount currencyCode }
             selectedOptions { name value }
@@ -748,11 +750,15 @@ router.get("/shopify/products", async (_req, res) => {
           blouseAvailability: normalizeBlouseAvailability(product.blouseAvailability?.value),
         },
         productDetails: parseShopifyProductDetails(product.productDetails?.value),
-        collections: product.collections.nodes,
+        collections: product.collections.nodes.map((collection) => ({
+          ...collection,
+          description: collection.description ?? "",
+        })),
         images: product.images.nodes,
         variants: product.variants.nodes.map((variant) => ({
           id: variant.id,
           title: variant.title,
+          sku: variant.sku ?? null,
           availableForSale: variant.availableForSale,
           price: variant.price.amount,
           currencyCode: variant.price.currencyCode,

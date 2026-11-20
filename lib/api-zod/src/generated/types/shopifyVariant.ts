@@ -10,6 +10,8 @@ import type { ShopifyOption } from './shopifyOption';
 export interface ShopifyVariant {
   id: string;
   title: string;
+  /** @nullable */
+  sku?: string | null;
   availableForSale: boolean;
   price: string;
   currencyCode: string;

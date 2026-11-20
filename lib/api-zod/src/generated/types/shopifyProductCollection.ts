@@ -10,4 +10,5 @@ export interface ShopifyProductCollection {
   id: string;
   handle: string;
   title: string;
+  description?: string;
 }

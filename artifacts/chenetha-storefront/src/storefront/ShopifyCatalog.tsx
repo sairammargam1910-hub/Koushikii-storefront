@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, ChevronRight, Heart, ZoomIn, X } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Heart, ZoomIn, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   addShopifyCartLine,
@@ -364,6 +364,9 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   const zoomTriggerRef = useRef<HTMLButtonElement>(null);
   const zoomCloseRef = useRef<HTMLButtonElement>(null);
   const zoomDialogRef = useRef<HTMLElement>(null);
+  const detailsTriggerRef = useRef<HTMLButtonElement>(null);
+  const detailsCloseRef = useRef<HTMLButtonElement>(null);
+  const detailsDialogRef = useRef<HTMLElement>(null);
   const wishlist = useStore("kq-wish");
   const { toggleWishlist, loading: wishlistLoading, error: wishlistErrorFromHook } = useShopperPreferences();
   const [wishlistError, setWishlistError] = useState(false);
@@ -473,6 +476,36 @@ function ShopifyProductDetail({ product, catalogProducts }: {
       zoomTriggerRef.current?.focus();
     };
   }, [zoomOpen, product.images.length]);
+  useEffect(() => {
+    if (!detailOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    detailsCloseRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setDetailOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !detailsDialogRef.current) return;
+      const focusable = [...detailsDialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]")];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      detailsTriggerRef.current?.focus();
+    };
+  }, [detailOpen]);
   const handleWishlist = async () => {
     setWishlistError(false);
     try {
@@ -555,18 +588,18 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                 <strong>{blouseAvailabilityText}</strong>
               </div>
             )}
-            {productDetailRows.length > 0 && <section className={`shopify-details-block${detailOpen ? " is-open" : ""}`} data-testid="section-product-details">
-              <button className="shopify-details-toggle" type="button" aria-expanded={detailOpen}
-                aria-controls="shopify-details-content" onClick={() => setDetailOpen((open) => !open)}>
-                <span><small>THE TEXTILE</small><strong>Piece details</strong></span>
-                <span aria-hidden="true">{detailOpen ? "−" : "+"}</span>
-              </button>
-              <div id="shopify-details-content" className="shopify-details-content">
-                <dl>
-                  {productDetailRows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
-                </dl>
-              </div>
-            </section>}
+            <button
+              ref={detailsTriggerRef}
+              className="shopify-details-trigger"
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={detailOpen}
+              aria-controls="shopify-product-details-drawer"
+              data-testid="button-open-product-details"
+              onClick={() => setDetailOpen(true)}
+            >
+              <span>View product details</span><ArrowRight size={16} aria-hidden="true"/>
+            </button>
             {product.variants.length > 0 && hasVariantChoice && (
               <label className="shopify-variant-select">
                 {product.variants.length > 1 ? "Choose an option" : "Selected option"}
@@ -666,6 +699,50 @@ function ShopifyProductDetail({ product, catalogProducts }: {
           </section>
         )}
       </main>
+      {detailOpen && <div className="shopify-details-backdrop" role="presentation" onMouseDown={(event) => {
+        if (event.target === event.currentTarget) setDetailOpen(false);
+      }}>
+        <aside
+          ref={detailsDialogRef}
+          id="shopify-product-details-drawer"
+          className="shopify-details-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="shopify-product-details-title"
+          data-testid="dialog-product-details"
+        >
+          <button
+            ref={detailsCloseRef}
+            type="button"
+            className="shopify-details-close"
+            aria-label="Close product details"
+            onClick={() => setDetailOpen(false)}
+          >
+            <X size={20}/>
+          </button>
+          <div className="shopify-details-drawer-header">
+            <span className="eyebrow">PRODUCT DETAILS</span>
+            <h2 id="shopify-product-details-title">{product.title}</h2>
+            {variant?.sku?.trim() && <p className="shopify-details-sku">SKU · {variant.sku.trim()}</p>}
+            {product.description.trim() && <p>{productSummary}</p>}
+          </div>
+          {collection && <section className="shopify-details-collection" aria-label="Product collection">
+            <span>This product is from the collection</span>
+            <strong>{collection.title}</strong>
+            {collection.description?.trim() && <p>{getShopifyProductSummary(collection.description)}</p>}
+            <a href={`${base}Collections?collection=${encodeURIComponent(collection.handle)}`}>
+              View the collection <ArrowRight size={14} aria-hidden="true"/>
+            </a>
+          </section>}
+          {productDetailRows.length > 0
+            ? <ul className="shopify-details-list">
+                {productDetailRows.map(([label, value]) => (
+                  <li key={label}><strong>{label}:</strong> {value}</li>
+                ))}
+              </ul>
+            : <p className="shopify-details-empty">Product-specific specifications have not been added yet.</p>}
+        </aside>
+      </div>}
       {zoomOpen && image && <div className="shopify-zoom-backdrop" role="presentation" onMouseDown={(event) => {
         if (event.target === event.currentTarget) setZoomOpen(false);
       }}>

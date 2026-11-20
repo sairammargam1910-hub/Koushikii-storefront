@@ -66,7 +66,8 @@ export const GetShopifyProductsResponse = zod.object({
   "collections": zod.array(zod.object({
   "id": zod.string(),
   "handle": zod.string(),
-  "title": zod.string()
+  "title": zod.string(),
+  "description": zod.string().optional()
 })),
   "images": zod.array(zod.object({
   "url": zod.url(),
@@ -75,6 +76,7 @@ export const GetShopifyProductsResponse = zod.object({
   "variants": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
+  "sku": zod.string().nullish(),
   "availableForSale": zod.boolean(),
   "price": zod.string(),
   "currencyCode": zod.string(),

@@ -323,6 +323,8 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
       assert.match(query, /query ChenethaProducts/);
       assert.match(query, /blouseAvailability:\s*metafield\(namespace: "chenetha", key: "blouse_availability"\)\s*\{ value \}/);
       assert.match(query, /productDetails:\s*metafield\(namespace: "chenetha", key: "product_details"\)\s*\{ value \}/);
+      assert.match(query, /nodes\s*\{\s*id handle title description\s*\}/);
+      assert.match(query, /sku/);
       const publishedProduct = state.product && state.published.has(productId)
         ? {
             ...structuredClone(state.product),
@@ -331,6 +333,7 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
               nodes: state.product.variants.nodes.map((variant) => ({
                 id: variant.id,
                 title: variant.title,
+                sku: variant.sku ?? null,
                 availableForSale: true,
                 price: { amount: variant.price, currencyCode: "INR" },
                 selectedOptions: variant.selectedOptions,
@@ -428,6 +431,7 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
   const unassigned = await allProducts.json();
   assert.deepEqual(unassigned.products.map(({ id }) => id), [productId]);
   assert.deepEqual(unassigned.products[0].collections, []);
+  assert.equal(unassigned.products[0].variants[0].sku, null);
   assert.equal(unassigned.products[0].attributes.blouseAvailability, "included");
   assert.deepEqual(unassigned.products[0].productDetails, productDetails);
 
@@ -487,5 +491,6 @@ test("publishes an unassigned non-saree product, then adds it to a newly created
   const catalogAfterAssignment = await fetch(`${base}/shopify/products`);
   const assigned = await catalogAfterAssignment.json();
   assert.deepEqual(assigned.products[0].collections.map(({ handle }) => handle), ["the-crafts-edit"]);
+  assert.equal(assigned.products[0].collections[0].description, "");
   assert.equal(assigned.products[0].attributes.fabric, "Cotton");
 });

@@ -307,6 +307,12 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     ...productResponse.products[0],
     title: "Narayanpet handloom saree",
     images: [image("#8b2d36"), image("#c2a36d")],
+    collections: [{
+      id: "gid://shopify/Collection/narayanpet",
+      handle: "narayanpet",
+      title: "Narayanpet",
+      description: "Checks and bold borders woven by artisans in Telangana.",
+    }],
     attributes: {
       fabric: "Cotton",
       regionalHandloom: "Narayanpet",
@@ -326,24 +332,49 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     },
     variants: [
       { ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/unavailable", title: "Unavailable", availableForSale: false },
-      { ...productResponse.products[0].variants[0], id: variantId, title: "Ready to wear", availableForSale: true },
+      { ...productResponse.products[0].variants[0], id: variantId, title: "Ready to wear", sku: "NK-01", availableForSale: true },
     ],
   };
   const { context, page } = await openProduct({ catalog: { products: [product] } });
-  assert.equal(await page.getByTestId("section-product-details").count(), 1);
-  await page.getByTestId("section-product-details").getByRole("button", { name: /Piece details/ }).click();
+  assert.equal(await page.getByTestId("button-open-product-details").count(), 1);
+  await page.getByTestId("button-open-product-details").click();
+  const detailsDrawer = page.getByTestId("dialog-product-details");
+  await detailsDrawer.waitFor();
   await page.getByText("100% cotton").waitFor();
   await page.getByText("Small geometric motifs").waitFor();
+  await detailsDrawer.getByRole("link", { name: /View the collection/ }).waitFor();
+  await detailsDrawer.getByText("SKU · NK-01", { exact: true }).waitFor();
+  await detailsDrawer.getByText("Checks and bold borders woven by artisans in Telangana.").waitFor();
+  assert.match(
+    await detailsDrawer.getByRole("link", { name: /View the collection/ }).getAttribute("href"),
+    /Collections\?collection=narayanpet$/,
+  );
   assert.equal(await page.getByText("0.8 metres").count(), 1);
   assert.equal(await page.getByText("Gentle hand wash separately.").count(), 1);
-  const detailCopy = await page.getByTestId("section-product-details").innerText();
-  assert.match(detailCopy, /MATERIAL\s+Cotton/);
-  assert.match(detailCopy, /REGIONAL HANDLOOM \/ TRADITION\s+Narayanpet/);
-  assert.match(detailCopy, /REGION OF ORIGIN\s+Telangana/);
-  assert.match(detailCopy, /BLOUSE AVAILABILITY\s+Blouse Piece Included/);
-  assert.doesNotMatch(detailCopy, /Saree length/);
+  const detailCopy = await detailsDrawer.innerText();
+  assert.match(detailCopy, /Material:\s+Cotton/);
+  assert.match(detailCopy, /Regional handloom \/ tradition:\s+Narayanpet/);
+  assert.match(detailCopy, /Region of origin:\s+Telangana/);
+  assert.match(detailCopy, /Blouse availability:\s+Blouse Piece Included/);
+  assert.doesNotMatch(detailCopy, /Saree length:/);
   assert.equal(await page.getByText("Pure", { exact: true }).count(), 0);
   assert.equal(await page.locator(".shopify-attribute-strip dd").allTextContents().then((items) => items.includes("")), false);
+  await page.keyboard.press("Escape");
+  assert.equal(await page.getByTestId("dialog-product-details").count(), 0);
+
+  const mobile = await openProduct({ catalog: { products: [product] }, viewport: { width: 390, height: 844 } });
+  await mobile.page.getByTestId("button-open-product-details").click();
+  const mobileDrawer = mobile.page.getByTestId("dialog-product-details");
+  await mobileDrawer.waitFor();
+  const mobileDrawerLayout = await mobile.page.evaluate(() => ({
+    drawerWidth: document.querySelector("[data-testid='dialog-product-details']")?.getBoundingClientRect().width ?? 0,
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: document.documentElement.clientWidth,
+  }));
+  assert.ok(mobileDrawerLayout.drawerWidth <= mobileDrawerLayout.viewportWidth + 1, "details drawer should fit the mobile viewport");
+  assert.ok(mobileDrawerLayout.documentWidth <= mobileDrawerLayout.viewportWidth + 1, "details drawer should not cause horizontal page overflow");
+  await mobile.page.getByRole("button", { name: "Close product details" }).click();
+  await mobile.context.close();
 
   await page.getByRole("button", { name: "Show product photo 2 of 2" }).click();
   await page.getByRole("button", { name: "Enlarge product photo 2 of 2" }).waitFor();
@@ -360,10 +391,15 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("kq-wish") || "[]").length), 1);
   await context.close();
 
-  const missing = { ...product, productDetails: undefined, attributes: { ...product.attributes, fabric: null, regionalHandloom: null, craftTechnique: null, region: null, colour: null, blouseAvailability: null } };
+  const missing = { ...product, collections: [], productDetails: undefined, attributes: { ...product.attributes, fabric: null, regionalHandloom: null, craftTechnique: null, region: null, colour: null, blouseAvailability: null } };
   const blank = await openProduct({ catalog: { products: [missing] } });
-  assert.equal(await blank.page.getByTestId("section-product-details").count(), 0);
+  await blank.page.getByTestId("button-open-product-details").click();
+  await blank.page.getByTestId("dialog-product-details").waitFor();
+  await blank.page.getByText("Product-specific specifications have not been added yet.").waitFor();
+  assert.equal(await blank.page.locator(".shopify-details-list").count(), 0);
+  assert.equal(await blank.page.locator(".shopify-details-collection").count(), 0);
   assert.equal(await blank.page.locator(".shopify-attribute-strip").count(), 0);
+  await blank.page.getByRole("button", { name: "Close product details" }).click();
   await blank.context.close();
 });
 

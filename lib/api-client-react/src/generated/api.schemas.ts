@@ -131,6 +131,8 @@ export interface ShopifyOption {
 export interface ShopifyVariant {
   id: string;
   title: string;
+  /** @nullable */
+  sku?: string | null;
   availableForSale: boolean;
   price: string;
   currencyCode: string;
@@ -141,6 +143,7 @@ export interface ShopifyProductCollection {
   id: string;
   handle: string;
   title: string;
+  description?: string;
 }
 
 export type ShopifyProductAttributesBlouseAvailability = typeof ShopifyProductAttributesBlouseAvailability[keyof typeof ShopifyProductAttributesBlouseAvailability];
