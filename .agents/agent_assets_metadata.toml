@@ -574,3 +574,17 @@ mtime_ms = 1795195947527
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/e0d077d2-0653-4eec-b347-ce2605baa10f/dc2a764a-b187-4c9a-8cf0-9c1c778c6580"
 storage_version_token = "1795195983206910"
 content_type = "text/html"
+
+[[outputs]]
+id = "P1ktQxBAN2T652jvO8unt"
+uri = "file://generated-artifacts/chenetha-project-quotation-2026-11-20.pdf"
+type = "pdf"
+title = "Chenetha project quotation (PDF)"
+description = "One-page PDF with the itemized ₹50,000 project breakdown, ₹2,000 support/returns line, ₹700 Shiprocket costs, ₹10,000 paid and ₹42,700 remaining."
+logical_id = "36a4df69-89b0-4415-86ee-91608113e2ae"
+content_hash = "sha256:e502a8c060694f20fc992a409fc347801f87a6259499660deb37c72699410dd7"
+size = 8774
+mtime_ms = 1795196205333
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/36a4df69-89b0-4415-86ee-91608113e2ae/36338a92-d4a1-4c99-bbe0-184f2f6790af"
+storage_version_token = "1795196229764772"
+content_type = "application/pdf"
