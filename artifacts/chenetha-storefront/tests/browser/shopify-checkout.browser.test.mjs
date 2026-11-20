@@ -234,7 +234,7 @@ test("product trust banner uses the configured return window", async () => {
   await noReturns.context.close();
 });
 
-test("admin can save a return window and the customer-care answer follows it", async () => {
+test("admin can save a return window while customer care shows the requested policy", async () => {
   const admin = await openReturnSettingsForm();
   const input = admin.page.getByTestId("input-return-window-days");
   await input.waitFor();
@@ -251,13 +251,14 @@ test("admin can save a return window and the customer-care answer follows it", a
   assert.equal(admin.getStoredDays(), 0);
   await admin.context.close();
 
+  const returnAnswer = "We do not accept returns or exchanges at the moment. Every saree is quality-checked before packing. Please review the product details, including the fabric, length, blouse piece and colour, before placing your order. If you’d like to confirm any details before buying, message us on WhatsApp at 7981614119.";
   const care = await openCustomerCare(7);
   await care.page.getByText("CAN I RETURN OR EXCHANGE A SAREE?", { exact: true }).click();
-  await care.page.getByText(/You can return a saree within 7 days of delivery/).waitFor();
+  await care.page.getByText(returnAnswer, { exact: true }).waitFor();
   await care.context.close();
   const noReturnCare = await openCustomerCare(0);
   await noReturnCare.page.getByText("CAN I RETURN OR EXCHANGE A SAREE?", { exact: true }).click();
-  await noReturnCare.page.getByText("Returns and exchanges are not currently offered.").waitFor();
+  await noReturnCare.page.getByText(returnAnswer, { exact: true }).waitFor();
   await noReturnCare.context.close();
 });
 

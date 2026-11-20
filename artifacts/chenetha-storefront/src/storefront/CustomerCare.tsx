@@ -1,11 +1,10 @@
 import { ArrowRight } from "lucide-react";
-import { useGetStorefrontSettings } from "@workspace/api-client-react";
 import { Shell, PageHero, base } from "./_shared";
 
 type FaqAnswer = string | { intro: string; steps: string[]; closing: string };
 type FaqItem = [question: string, answer: FaqAnswer];
 
-const buildFaqs = (returnAnswer: string): { group: string; questions: FaqItem[] }[] => [
+const buildFaqs = (): { group: string; questions: FaqItem[] }[] => [
  {group:"Choosing a saree",questions:[
   ["How can I check the colour and quality before buying?","All our photos show the actual saree, not a sample. Colours may still look slightly different depending on your screen and lighting. To see the fabric, texture and drape more closely, watch the saree on our video page, or request a live video call before you buy."],
   ["Does every saree include a blouse piece?","Not always. Each product page shows whether a blouse piece is included, along with the saree’s length and width."],
@@ -16,7 +15,7 @@ const buildFaqs = (returnAnswer: string): { group: string; questions: FaqItem[] 
    ["HOW DO I TRACK MY ORDER?","Create an account first. It’s the easiest way to keep track of your orders.\n\nOnce you’ve signed in, go to Your Orders to see order and delivery updates. Use the same email address at checkout as the one on your account. Otherwise your order won’t show up.\n\nYou’ll also get a tracking link by email or WhatsApp once your order ships."],
  ]},
  {group:"Returns & support",questions:[
-    ["CAN I RETURN OR EXCHANGE A SAREE?",returnAnswer],
+     ["CAN I RETURN OR EXCHANGE A SAREE?","We do not accept returns or exchanges at the moment. Every saree is quality-checked before packing. Please review the product details, including the fabric, length, blouse piece and colour, before placing your order. If you’d like to confirm any details before buying, message us on WhatsApp at 7981614119."],
    ["WILL THE COLOUR LOOK EXACTLY LIKE THE PHOTO?","Colours may look slightly different because of camera lighting and screen settings. This is not a defect. If you’re unsure, watch the saree on our video page or request a video call before buying."],
    ["WHAT IF MY SAREE ARRIVES DAMAGED?",{
     intro:"We offer a refund for major defects such as holes, cuts or colour defects. To make a claim:",
@@ -32,14 +31,7 @@ const buildFaqs = (returnAnswer: string): { group: string; questions: FaqItem[] 
 ];
 
 export function CustomerCare() {
- const settings = useGetStorefrontSettings();
- const returnDays = settings.data?.returnWindowDays;
- const returnAnswer = returnDays == null
-   ? "Please contact us to confirm the current return window before buying. We do not offer exchanges.\n\nEvery saree is quality-checked before packing. Please check all product details, including fabric, length, blouse piece and colour, before you buy."
-   : returnDays === 0
-     ? "Returns and exchanges are not currently offered.\n\nEvery saree is quality-checked before packing. Please check all product details, including fabric, length, blouse piece and colour, before you buy."
-     : `You can return a saree within ${returnDays} ${returnDays === 1 ? "day" : "days"} of delivery, as long as the tags and original folds are intact. We do not offer exchanges.\n\nTo start a return, message us on WhatsApp or go to Your Orders in your account.\n\nYour refund will be started once we receive and check the returned saree. Return shipping charges will be deducted from the refund.\n\nEvery saree is quality-checked before packing. Please check all product details, including fabric, length, blouse piece and colour, before you buy.`;
- const faqs = buildFaqs(returnAnswer);
+  const faqs = buildFaqs();
  return <Shell>
   <PageHero eyebrow="Customer care" title="Everything you need to know." subtitle="Answers on fabrics, orders, shipping and returns. Looking for washing and storage tips? See our Care Guide."/>
   <main className="wrap content">
