@@ -470,8 +470,34 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   assert.ok(zoomBounds);
   await page.mouse.move(zoomBounds.x + 12, zoomBounds.y + 12);
   await page.mouse.wheel(0, -120);
-  await page.waitForFunction(() => document.querySelector("[data-testid='product-image-zoom-level']")?.textContent === "125%");
-  assert.equal(await zoomLevel.innerText(), "125%");
+  await page.waitForFunction(() => document.querySelector("[data-testid='product-image-zoom-level']")?.textContent === "120%");
+  assert.equal(await zoomLevel.innerText(), "120%");
+  await page.getByRole("button", { name: "Reset zoom" }).click();
+  assert.equal(await zoomLevel.innerText(), "100%");
+  await page.mouse.dblclick(zoomBounds.x + 12, zoomBounds.y + 12);
+  assert.equal(await zoomLevel.innerText(), "200%");
+  await page.getByRole("button", { name: "Reset zoom" }).click();
+  assert.equal(await zoomLevel.innerText(), "100%");
+  await zoomViewport.evaluate((viewport) => {
+    const rect = viewport.getBoundingClientRect();
+    Object.defineProperty(viewport, "setPointerCapture", { value: () => {}, configurable: true });
+    const sendPointer = (type, pointerId, clientX) => viewport.dispatchEvent(new PointerEvent(type, {
+      pointerId,
+      pointerType: "touch",
+      clientX,
+      clientY: rect.top + rect.height / 2,
+      button: 0,
+      bubbles: true,
+      cancelable: true,
+    }));
+    const center = rect.left + rect.width / 2;
+    sendPointer("pointerdown", 11, center - 50);
+    sendPointer("pointerdown", 12, center + 50);
+    sendPointer("pointermove", 12, center + 100);
+    sendPointer("pointerup", 11, center - 50);
+    sendPointer("pointerup", 12, center + 100);
+  });
+  assert.equal(await zoomLevel.innerText(), "150%");
   await page.getByRole("button", { name: "Reset zoom" }).click();
   assert.equal(await zoomLevel.innerText(), "100%");
   await page.keyboard.press("Escape");
