@@ -1,0 +1,37 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
+@import "../koushikii/_group.css";
+
+.chenetha-product-polish {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.chenetha-product-polish .product-breadcrumb {
+  display: flex;
+  gap: 10px;
+  padding: 23px 0 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.chenetha-product-polish .product-breadcrumb a {
+  color: var(--red);
+}
+
+.chenetha-product-polish .shopify-product-detail {
+  align-items: start;
+}
+
+.chenetha-product-polish .shopify-trust-banner {
+  margin-top: 18px;
+}
+
+.chenetha-product-polish .shopify-quantity-label .qty button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.chenetha-product-polish .shopify-details-backdrop {
+  z-index: 1000;
+}
