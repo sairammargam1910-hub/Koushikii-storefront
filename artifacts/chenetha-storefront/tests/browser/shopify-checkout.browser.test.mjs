@@ -262,6 +262,16 @@ test("admin can save a return window while customer care shows the requested pol
   await noReturnCare.context.close();
 });
 
+test("customer care explains the damaged-saree claim process", async () => {
+  const { context, page } = await openCustomerCare(4);
+  await page.getByText("WHAT IF MY SAREE ARRIVES DAMAGED?", { exact: true }).click();
+  await page.getByText("We thoroughly quality-check every saree before shipping. If your saree arrives damaged or you notice a defect, please submit your claim on WhatsApp at 7981614119 within 4 days of delivery.", { exact: true }).waitFor();
+  const bullets = page.locator("details:has(summary:text-is('WHAT IF MY SAREE ARRIVES DAMAGED?')) ul li");
+  assert.equal(await bullets.count(), 3);
+  await page.getByText("We’ll review the video and check the saree’s original condition and folds before getting in touch about any applicable remedy.", { exact: true }).waitFor();
+  await context.close();
+});
+
 test("shows live blouse details and ranked, purchasable related products", async () => {
   const current = {
     ...productResponse.products[0],
