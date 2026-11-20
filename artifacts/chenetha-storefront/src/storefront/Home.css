@@ -1133,3 +1133,224 @@
   }
 }
 
+/* Mobile homepage: give the hero its own image frame and place the copy
+   directly below it, so long admin-entered text never competes with the saree. */
+@media (max-width: 650px) {
+  .kq:has(.home-fabric-section) .home-hero-loading {
+    height: clamp(250px, 45svh, 390px);
+    min-height: 0;
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-images {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: 0;
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-images::before {
+    grid-column: 1;
+    grid-row: 1;
+    height: clamp(250px, 45svh, 390px);
+    background: var(--paper);
+    content: "";
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-image {
+    top: 0;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    z-index: 0;
+    width: 100%;
+    height: clamp(250px, 45svh, 390px);
+    object-fit: cover;
+    object-position: 62% center;
+    transform: none;
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-shade {
+    display: none;
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-content.wrap {
+    position: relative;
+    grid-column: 1;
+    grid-row: 2;
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 22px 18px 54px;
+    background: var(--paper);
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-copy {
+    max-width: 580px;
+    margin: 0 auto;
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-copy h1 {
+    max-width: 100%;
+    margin: 12px 0 10px;
+    font-size: clamp(38px, 10vw, 54px);
+    line-height: 1;
+    letter-spacing: -.035em;
+    overflow-wrap: anywhere;
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-copy p {
+    max-width: 42ch;
+    font-size: clamp(18px, 5vw, 21px);
+    line-height: 1.28;
+    overflow-wrap: anywhere;
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-cta {
+    min-height: 44px;
+    margin-top: 15px;
+  }
+
+  .kq:has(.home-fabric-section) .home-hero-controls {
+    right: 18px;
+    bottom: 10px;
+    left: auto;
+    transform: none;
+  }
+
+  /* Keep the mobile masthead compact without removing navigation actions. */
+  .kq:has(.home-fabric-section) > .topline {
+    min-height: 22px;
+    padding: 4px 10px;
+    font-size: 7.5px;
+    line-height: 1.2;
+  }
+
+  .kq:has(.home-fabric-section) .headrow {
+    grid-template-rows: 42px 34px;
+    height: auto;
+    min-height: 80px;
+    gap: 0 6px;
+    padding-block: 3px;
+  }
+
+  .kq:has(.home-fabric-section) .mobile-menu {
+    width: 34px;
+    height: 34px;
+  }
+
+  .kq:has(.home-fabric-section) .brand {
+    width: clamp(112px, 37vw, 140px);
+    height: 40px;
+    min-width: 0;
+    flex: none;
+  }
+
+  .kq:has(.home-fabric-section) .brand img {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .kq:has(.home-fabric-section) .head-actions {
+    min-width: 0;
+    height: 34px;
+    justify-content: center;
+    gap: clamp(3px, 1vw, 6px);
+  }
+
+  .kq:has(.home-fabric-section) .language-switcher {
+    min-height: 30px;
+    height: 30px;
+    gap: 3px;
+    padding: 0 4px;
+  }
+
+  .kq:has(.home-fabric-section) .language-switcher select {
+    width: clamp(64px, 20vw, 76px);
+    max-width: clamp(64px, 20vw, 76px);
+    font-size: 10px;
+  }
+
+  .kq:has(.home-fabric-section) .head-actions .text-action,
+  .kq:has(.home-fabric-section) .head-actions .header-whatsapp,
+  .kq:has(.home-fabric-section) .head-actions > .iconbtn {
+    width: 30px;
+    min-width: 30px;
+    height: 32px;
+    flex: 0 0 30px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .kq:has(.home-fabric-section) .head-actions .text-action svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  /* Keep the offer, code and eligibility note to two compact lines. */
+  .kq:has(.home-fabric-section) .store-offer-inner {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 4px 8px;
+    width: calc(100% - 24px);
+    min-height: 0;
+    padding-block: 6px;
+  }
+
+  .kq:has(.home-fabric-section) .store-offer-label {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 7.5px;
+  }
+
+  .kq:has(.home-fabric-section) .store-offer-note {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    padding: 0;
+    font-size: 8px;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .kq:has(.home-fabric-section) .store-offer-list {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-width: 0;
+    order: 0;
+  }
+
+  .kq:has(.home-fabric-section) .store-offer-item {
+    flex: 0 0 auto;
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .kq:has(.home-fabric-section) .store-offer-item > span:first-child {
+    max-width: 42vw;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .kq:has(.home-fabric-section) .headrow {
+    gap: 0 4px;
+  }
+
+  .kq:has(.home-fabric-section) .head-actions .text-action,
+  .kq:has(.home-fabric-section) .head-actions .header-whatsapp,
+  .kq:has(.home-fabric-section) .head-actions > .iconbtn {
+    width: 28px;
+    min-width: 28px;
+    flex-basis: 28px;
+  }
+}
+
