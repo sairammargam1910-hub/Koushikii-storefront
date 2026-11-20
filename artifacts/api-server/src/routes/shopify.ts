@@ -12,6 +12,7 @@ import {
   getShopifyCustomerAccountUrl,
   shopifyStorefrontRequest,
 } from "../lib/shopifyStorefrontClient";
+import { shopifyAdminRequest } from "../lib/shopifyAdminClient";
 import { parseShopifyProductDetails } from "../lib/shopifyProductDetails";
 import {
   getCartDiscountAmount,
@@ -135,6 +136,17 @@ type ShopifyVariantForCart = {
   availableForSale: boolean;
   quantityAvailable: number | null;
   product: { title: string; description: string; tags: string[] } | null;
+};
+
+type ShopifyAdminVariantInventory = {
+  id: string;
+  inventoryQuantity: number | null;
+  inventoryPolicy: "DENY" | "CONTINUE";
+  inventoryItem: { tracked: boolean } | null;
+};
+
+type ShopifyAdminVariantInventoryPage = {
+  nodes: Array<ShopifyAdminVariantInventory | null>;
 };
 
 type ShopifyCartApiResponse = {
@@ -372,6 +384,19 @@ const SHOPIFY_VARIANT_FOR_CART = `#graphql
   }
 `;
 
+const SHOPIFY_VARIANT_INVENTORY = `#graphql
+  query ShopifyVariantInventory($ids: [ID!]!) {
+    nodes(ids: $ids) {
+      ... on ProductVariant {
+        id
+        inventoryQuantity
+        inventoryPolicy
+        inventoryItem { tracked }
+      }
+    }
+  }
+`;
+
 const CATALOG_CACHE_TTL_MS = 60_000;
 let cachedCatalog:
   | {
@@ -380,6 +405,25 @@ let cachedCatalog:
       expiresAt: number;
     }
   | undefined;
+
+async function getShopifyVariantInventory(variantIds: string[]) {
+  const inventoryByVariantId = new Map<string, number | null>();
+  const uniqueIds = [...new Set(variantIds)];
+  for (let index = 0; index < uniqueIds.length; index += 200) {
+    const result = await shopifyAdminRequest<ShopifyAdminVariantInventoryPage>(
+      SHOPIFY_VARIANT_INVENTORY,
+      { ids: uniqueIds.slice(index, index + 200) },
+    );
+    for (const variant of result.nodes) {
+      if (!variant) continue;
+      const quantityAvailable = variant.inventoryItem?.tracked && variant.inventoryPolicy === "DENY"
+        ? variant.inventoryQuantity == null ? null : Math.max(0, variant.inventoryQuantity)
+        : null;
+      inventoryByVariantId.set(variant.id, quantityAvailable);
+    }
+  }
+  return inventoryByVariantId;
+}
 
 export function invalidateShopifyCatalog(): void {
   cachedCatalog = undefined;
@@ -434,7 +478,10 @@ function createCheckoutUrl(checkoutUrl: string): string {
   return url.toString();
 }
 
-function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
+async function mapShopifyCart(cart: ShopifyCartNode): Promise<ShopifyCartApiResponse> {
+  const inventoryByVariantId = await getShopifyVariantInventory(
+    cart.lines.nodes.flatMap((line) => line.merchandise?.id ? [line.merchandise.id] : []),
+  );
   const lines = cart.lines.nodes.map((line) => {
     const merchandise = line.merchandise;
     const product = merchandise?.product;
@@ -446,7 +493,9 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
       productTitle: product?.title ?? "Unavailable product",
       variantTitle: merchandise?.title ?? "Unavailable option",
       quantity: line.quantity,
-      quantityAvailable: merchandise?.quantityAvailable ?? null,
+      quantityAvailable: merchandise?.id && inventoryByVariantId.has(merchandise.id)
+        ? inventoryByVariantId.get(merchandise.id) ?? null
+        : merchandise?.quantityAvailable ?? null,
       unitPrice: merchandise?.price.amount ?? "0",
       currencyCode: merchandise?.price.currencyCode ?? cart.cost.subtotalAmount.currencyCode,
       availableForSale: merchandise?.availableForSale ?? false,
@@ -699,6 +748,10 @@ async function validatePurchasableVariant(variantId: string) {
   if (!variant.availableForSale) {
     return { error: "This product option is currently unavailable." };
   }
+  const inventoryByVariantId = await getShopifyVariantInventory([variant.id]);
+  if (inventoryByVariantId.has(variant.id)) {
+    variant.quantityAvailable = inventoryByVariantId.get(variant.id) ?? null;
+  }
   return { variant };
 }
 
@@ -723,6 +776,17 @@ async function getStorefrontCatalog() {
       throw new Error("Shopify returned an invalid product catalog cursor.");
     }
     if (after) seenCursors.add(after);
+  }
+
+  const inventoryByVariantId = await getShopifyVariantInventory(
+    allProducts.flatMap((product) => product.variants.nodes.map((variant) => variant.id)),
+  );
+  for (const product of allProducts) {
+    for (const variant of product.variants.nodes) {
+      if (inventoryByVariantId.has(variant.id)) {
+        variant.quantityAvailable = inventoryByVariantId.get(variant.id) ?? null;
+      }
+    }
   }
 
   const catalog = {
@@ -820,7 +884,7 @@ router.get("/shopify/cart", async (req, res): Promise<void> => {
       return;
     }
     res.setHeader("Cache-Control", "no-store");
-    res.json(mapShopifyCart(cart));
+    res.json(await mapShopifyCart(cart));
   } catch (error) {
     if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart could not be loaded");
@@ -855,7 +919,6 @@ router.post("/shopify/cart", async (req, res): Promise<void> => {
       .reduce((total, line) => total + line.quantity, 0) ?? 0;
     if (
       purchasable.variant.quantityAvailable != null &&
-      purchasable.variant.quantityAvailable > 0 &&
       existingVariantQuantity + body.data.quantity > purchasable.variant.quantityAvailable
     ) {
       const remaining = Math.max(0, purchasable.variant.quantityAvailable - existingVariantQuantity);
@@ -893,7 +956,7 @@ router.post("/shopify/cart", async (req, res): Promise<void> => {
       return;
     }
     res.setHeader("Cache-Control", "no-store");
-    res.json(mapShopifyCart(result.cart));
+    res.json(await mapShopifyCart(result.cart));
   } catch (error) {
     if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart line could not be added");
@@ -924,7 +987,7 @@ router.patch("/shopify/cart", async (req, res): Promise<void> => {
       return;
     }
     res.setHeader("Cache-Control", "no-store");
-    res.json(mapShopifyCart(result.cartLinesUpdate.cart));
+    res.json(await mapShopifyCart(result.cartLinesUpdate.cart));
   } catch (error) {
     if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart quantities could not be updated");
@@ -955,7 +1018,7 @@ router.post("/shopify/cart/remove-lines", async (req, res): Promise<void> => {
       return;
     }
     res.setHeader("Cache-Control", "no-store");
-    res.json(mapShopifyCart(result.cartLinesRemove.cart));
+    res.json(await mapShopifyCart(result.cartLinesRemove.cart));
   } catch (error) {
     if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart lines could not be removed");
@@ -987,7 +1050,7 @@ router.post("/shopify/cart/discount-codes", async (req, res): Promise<void> => {
       return;
     }
     res.setHeader("Cache-Control", "no-store");
-    res.json(mapShopifyCart(result.cartDiscountCodesUpdate.cart));
+    res.json(await mapShopifyCart(result.cartDiscountCodesUpdate.cart));
   } catch (error) {
     if (respondToCartError(res, error)) return;
     logger.error({ err: error }, "Shopify cart discount codes could not be updated");
@@ -1004,7 +1067,7 @@ router.post("/shopify/cart/buyer-identity", async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "no-store");
   try {
     const updatedCart = await prepareShopifyCheckoutCart(body.data);
-    res.json(mapShopifyCart(updatedCart));
+    res.json(await mapShopifyCart(updatedCart));
   } catch (error) {
     if (error instanceof ShopifyCheckoutInputError) {
       res.status(error.statusCode).json({ error: error.message });

@@ -18,6 +18,10 @@ const compiled = await build({
         path: "storefront-client",
         namespace: "test",
       }));
+      builder.onResolve({ filter: /shopifyAdminClient$/ }, () => ({
+        path: "admin-client",
+        namespace: "test",
+      }));
       builder.onResolve({ filter: /logger$/ }, () => ({
         path: "logger",
         namespace: "test",
@@ -28,6 +32,7 @@ const compiled = await build({
             "export const shopifyStorefrontRequest = (...args) => storefrontRequest(...args);",
             "export const getShopifyCustomerAccountUrl = async () => 'https://chenetha.myshopify.com/account';",
           ].join("\n"),
+          "admin-client": "export const shopifyAdminRequest = (...args) => adminRequest(...args);",
           logger: "export const logger = { error() {} };",
         }[path],
       }));
@@ -95,10 +100,17 @@ async function harness(run, { useDevStorePreview = false } = {}) {
       product: { title: "Kanchipuram saree", description: "Handwoven silk", tags: ["saree"] },
     },
     calls: [],
+    adminCalls: [],
+    adminVariants: new Map([[variantId, {
+      id: variantId,
+      inventoryQuantity: 1,
+      inventoryPolicy: "DENY",
+      inventoryItem: { tracked: true },
+    }]]),
     cartMutationResult: { cart: cart(), userErrors: [] },
   };
   const module = { exports: {} };
-  new Function("require", "module", "exports", "storefrontRequest", compiled.outputFiles[0].text)(
+  new Function("require", "module", "exports", "storefrontRequest", "adminRequest", compiled.outputFiles[0].text)(
     createRequire(import.meta.url),
     module,
     module.exports,
@@ -145,6 +157,13 @@ async function harness(run, { useDevStorePreview = false } = {}) {
         return { cartDeliveryAddressesReplace: state.cartMutationResult };
       }
       throw new Error(`Unexpected Shopify query: ${query}`);
+    },
+    async (query, variables) => {
+      state.adminCalls.push({ query, variables });
+      if (query.includes("query ShopifyVariantInventory")) {
+        return { nodes: variables.ids.map((id) => state.adminVariants.get(id) ?? null) };
+      }
+      throw new Error(`Unexpected Shopify Admin query: ${query}`);
     },
   );
 
@@ -329,6 +348,25 @@ test("rejects product quantities above live stock, including stock already in th
     assert.equal(alreadyInBag.status, 400);
     assert.match(alreadyInBag.data.error, /already at its available quantity/);
     assert.equal(state.calls.some(({ query }) => query.includes("mutation AddShopifyCartLines")), false);
+  });
+});
+
+test("uses tracked Admin inventory when Storefront quantityAvailable understates stock", async () => {
+  await harness(async ({ state, post }) => {
+    state.adminVariants.set(variantId, {
+      id: variantId,
+      inventoryQuantity: 10,
+      inventoryPolicy: "DENY",
+      inventoryItem: { tracked: true },
+    });
+
+    const result = await post({ merchandiseId: variantId, quantity: 10 });
+
+    assert.equal(result.status, 200);
+    assert.equal(result.data.lines[0].quantityAvailable, 10);
+    const mutation = state.calls.find(({ query }) => query.includes("mutation CreateShopifyCart"));
+    assert.equal(mutation.variables.quantity, 10);
+    assert.ok(state.adminCalls.some(({ query }) => query.includes("inventoryQuantity")));
   });
 });
 

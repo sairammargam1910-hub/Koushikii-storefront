@@ -326,7 +326,7 @@ function ShopifyBag({
               <div className="cart-quantity">
                 <Qty
                   value={line.quantity}
-                  max={line.quantityAvailable != null && line.quantityAvailable > 0 ? line.quantityAvailable : undefined}
+                  max={line.quantityAvailable != null ? Math.max(1, line.quantityAvailable) : undefined}
                   disabled={isUpdating}
                   onChange={(quantity) => onQuantityChange(line.id, quantity)}
                   onRemove={() => onRemoveLine(line.id)}

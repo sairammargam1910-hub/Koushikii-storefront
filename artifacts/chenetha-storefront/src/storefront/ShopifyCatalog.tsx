@@ -397,7 +397,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
   const currentVariantCartQuantity = currentCart.data?.lines.find((line) => line.merchandiseId === variant?.id)?.quantity ?? 0;
   const isCheckingCurrentCart = Boolean(cartMeta?.id && currentCart.isLoading);
-  const quantityAvailableToAdd = variant?.quantityAvailable != null && variant.quantityAvailable > 0
+  const quantityAvailableToAdd = variant?.quantityAvailable != null
     ? Math.max(0, variant.quantityAvailable - currentVariantCartQuantity)
     : undefined;
   const quantityControlMax = quantityAvailableToAdd == null ? undefined : Math.max(1, quantityAvailableToAdd);

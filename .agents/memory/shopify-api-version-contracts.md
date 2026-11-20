@@ -32,11 +32,11 @@ For Shopify Admin API 2026-04, `Order.fulfillments` is a plain list, not a conne
 
 **How to apply:** Map the field directly as an array and verify nested order queries against the connected store's pinned API version.
 
-For Storefront inventory limits, treat positive `quantityAvailable` as a cap; zero alone does not mean unavailable when `availableForSale` is true.
+For storefront quantity caps, use tracked Shopify Admin inventory when `inventoryPolicy` is `DENY`; Storefront `quantityAvailable` can underreport that stock.
 
-**Why:** Shopify can allow selling at zero or leave inventory untracked, so applying a hard zero cap would contradict the product's sale status.
+**Why:** A live variant showed 10 available units in Admin but only 1 through Storefront, while `availableForSale` was true. Untracked inventory and `CONTINUE` policy also mean zero is not necessarily a hard limit.
 
-**How to apply:** Use positive available quantities for selector and cart limits, account for quantities already in the cart, and keep Shopify's cart mutation as the final authority.
+**How to apply:** For tracked `DENY` variants, cap selectors and cart additions using Admin `inventoryQuantity` minus quantities already in the cart. Return no client cap for untracked or `CONTINUE` items, and keep Shopify's cart mutation as the final authority.
 
 Verify the store domain before using a Shopify connector for operational checks; the `shopify-store` and `shopify` connections can point to different stores.
 
