@@ -16,3 +16,4 @@
 - [Shopify product details](shopify-product-details.md) — keep verified per-piece details in a separate public JSON metafield and hide blank fields.
 - [Git push verification](git-push-verification.md) — an internal mirror push can succeed remotely before a local tracking-ref safety error; verify before retrying.
 - [Shopify discount totals](shopify-discount-totals.md) — order-level coupons can leave line costs unchanged; include cart allocations and keep paid-line totals consistent.
+- [Neon branch separation](neon-preview-branch.md) — Replit preview uses a separate Neon dev branch; keep preview schema changes off live main unless authorized.
