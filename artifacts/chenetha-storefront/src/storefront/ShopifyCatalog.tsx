@@ -403,6 +403,18 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   const quantityControlMax = quantityAvailableToAdd == null ? undefined : Math.max(1, quantityAvailableToAdd);
   const canAddRequestedQuantity = quantityAvailableToAdd == null ||
     (quantityAvailableToAdd > 0 && quantity <= quantityAvailableToAdd);
+  const productStockLabel = variant?.quantityAvailable == null
+    ? null
+    : variant.quantityAvailable > 0
+      ? `${variant.quantityAvailable} ${variant.quantityAvailable === 1 ? "piece" : "pieces"} in stock.`
+      : "Out of stock.";
+  const bagStockLabel = currentVariantCartQuantity > 0
+    ? `${currentVariantCartQuantity} ${currentVariantCartQuantity === 1 ? "piece" : "pieces"} already in your bag; ${
+        quantityAvailableToAdd != null && quantityAvailableToAdd > 0
+          ? `${quantityAvailableToAdd} more can be added.`
+          : "no additional quantity can be added."
+      }`
+    : "";
   const price = variant ? formatShopifyMoney(variant.price, variant.currencyCode) : "";
   const recommendations = useMemo(
     () => getShopifyProductRecommendations(product, catalogProducts),
@@ -812,12 +824,12 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                 Quantity
                 <Qty value={quantity} max={quantityControlMax} disabled={!canPurchase || isCheckingCurrentCart} onChange={setQuantity} />
                 {isCheckingCurrentCart
-                  ? <span className="shopify-stock-note" role="status">Checking your current bag…</span>
-                  : quantityAvailableToAdd != null && (
+                  ? <span className="shopify-stock-note" role="status">
+                      {productStockLabel ? `${productStockLabel} Checking your current bag…` : "Checking your current bag…"}
+                    </span>
+                  : productStockLabel && (
                     <span className="shopify-stock-note" data-testid="text-available-quantity">
-                      {quantityAvailableToAdd > 0
-                        ? `${quantityAvailableToAdd} ${quantityAvailableToAdd === 1 ? "piece is" : "pieces are"} available to add.`
-                        : "No additional quantity is available for this option."}
+                      {productStockLabel}{bagStockLabel ? ` ${bagStockLabel}` : ""}
                     </span>
                   )}
               </label>

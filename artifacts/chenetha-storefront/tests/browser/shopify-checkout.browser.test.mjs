@@ -162,6 +162,7 @@ after(async () => {
 
 async function openProduct({
   savedCart,
+  cart,
   catalog = productResponse,
   returnSettings = { returnWindowDays: 4 },
   viewport = { width: 1280, height: 900 },
@@ -186,6 +187,13 @@ async function openProduct({
     contentType: "application/json",
     body: JSON.stringify(returnSettings),
   }));
+  if (cart) {
+    await page.route("**/api/shopify/cart**", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(cart),
+    }));
+  }
   await page.goto(`${origin}${fixtureUrl}?screen=product`);
   await page.getByTestId("button-add-shopify-to-cart").waitFor({ timeout: 5000 });
   return { context, page, getDocumentNavigationCount: () => documentNavigations };
@@ -446,7 +454,7 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   const { context, page } = await openProduct({ catalog: { products: [product] } });
   assert.equal(await page.getByTestId("text-quantity").innerText(), "1");
   assert.equal(await page.getByTestId("button-increase-quantity").isDisabled(), true);
-  assert.match(await page.getByTestId("text-available-quantity").innerText(), /1 piece is available to add/);
+  assert.match(await page.getByTestId("text-available-quantity").innerText(), /1 piece in stock/);
   assert.equal(await page.getByTestId("button-open-product-details").count(), 1);
   await page.getByTestId("button-open-product-details").click();
   const detailsDrawer = page.getByTestId("dialog-product-details");
@@ -555,6 +563,39 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   assert.equal(await blank.page.locator(".shopify-attribute-strip").count(), 0);
   await blank.page.getByRole("button", { name: "Close product details" }).click();
   await blank.context.close();
+});
+
+test("shows product stock separately from bag quantity and keeps Buy now full width on mobile", async () => {
+  const savedCart = { id: "gid://shopify/Cart/stock-display", totalQuantity: 2 };
+  const cart = {
+    ...cartResponse,
+    id: savedCart.id,
+    totalQuantity: 2,
+    lines: [{ ...cartResponse.lines[0], quantity: 2 }],
+  };
+  const { context, page } = await openProduct({
+    savedCart,
+    cart,
+    viewport: { width: 390, height: 844 },
+  });
+
+  assert.equal(
+    await page.getByTestId("text-available-quantity").innerText(),
+    "5 pieces in stock. 2 pieces already in your bag; 3 more can be added.",
+  );
+  const buyNow = page.getByTestId("button-buy-shopify-now");
+  await buyNow.waitFor();
+  const actionWidths = await buyNow.evaluate((button) => ({
+    button: button.getBoundingClientRect().width,
+    actions: button.parentElement.getBoundingClientRect().width,
+  }));
+  assert.ok(Math.abs(actionWidths.button - actionWidths.actions) < 1, "Buy now should span the full mobile action width");
+
+  await page.getByTestId("button-increase-quantity").click();
+  await page.getByTestId("button-increase-quantity").click();
+  assert.equal(await page.getByTestId("text-quantity").innerText(), "3");
+  assert.equal(await page.getByTestId("button-increase-quantity").isDisabled(), true);
+  await context.close();
 });
 
 test("renders multiple product colours as separate list items", async () => {

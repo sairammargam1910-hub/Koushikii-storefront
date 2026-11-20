@@ -233,7 +233,7 @@
   background:#fffaf2
 }
 .kq .shopify-stock-note{grid-column:1/-1;grid-row:2}
-.kq .shopify-buy-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kq .shopify-buy-actions{grid-template-columns:minmax(0,1fr);gap:8px}
 .kq .shopify-buy-actions .btn:first-child{grid-column:1/-1;min-height:49px}
 .kq .shopify-buy-actions .shopify-wishlist-button,
 .kq .shopify-buy-actions .shopify-buy-now{min-height:43px;padding-inline:10px;font-size:10px}
