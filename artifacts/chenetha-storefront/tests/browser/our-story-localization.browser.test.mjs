@@ -67,7 +67,7 @@ after(async () => {
   }
 });
 
-test("Our Story switches between Telugu, Hindi, and approved English copy", async () => {
+test("Our Story language persists after reload and returning from another page", async () => {
   const page = await browser.newPage();
   try {
     await page.goto(`${origin}/OurStory`);
@@ -77,23 +77,56 @@ test("Our Story switches between Telugu, Hindi, and approved English copy", asyn
     const familyParagraph = page.locator(".story-origin-copy p").first();
     const fibreParagraph = page.locator(".story-origin-copy p").nth(2);
 
-    await language.selectOption("te");
-    await title.getByText("ప్రతి దారంలో ఒక కథ", { exact: true }).waitFor();
-    assert.match(await caption.textContent(), /క్లయింట్ అందించిన దృశ్యం/);
-    assert.match(await familyParagraph.textContent(), /మా కథ కుటుంబంతో మొదలైంది/);
-    assert.match(await fibreParagraph.textContent(), /నిజమైన అందం దారపు స్వచ్ఛతలోనే ఉందని మేము నమ్ముతాము/);
+    const translations = {
+      en: {
+        title: "A story in every thread",
+        caption: /Client-supplied footage · One weaving moment/,
+        family: /Every weave has a story; ours began with family/,
+        fibre: /We believe true beauty lies in the purity of the thread/,
+      },
+      te: {
+        title: "ప్రతి దారంలో ఒక కథ",
+        caption: /క్లయింట్ అందించిన దృశ్యం/,
+        family: /మా కథ కుటుంబంతో మొదలైంది/,
+        fibre: /నిజమైన అందం దారపు స్వచ్ఛతలోనే ఉందని మేము నమ్ముతాము/,
+      },
+      hi: {
+        title: "हर धागे में एक कहानी",
+        caption: /क्लाइंट द्वारा दिया गया वीडियो/,
+        family: /हमारी शुरुआत परिवार से हुई/,
+        fibre: /हम मानते हैं कि असली सुंदरता धागे की शुद्धता में है/,
+      },
+    };
+    const expectStoryLanguage = async (selectedLanguage) => {
+      const expected = translations[selectedLanguage];
+      await language.waitFor({ state: "visible" });
+      await page.waitForFunction(
+        (value) => document.querySelector(".kq")?.getAttribute("data-lang") === value,
+        selectedLanguage,
+      );
+      assert.equal(await language.inputValue(), selectedLanguage);
+      await title.getByText(expected.title, { exact: true }).waitFor();
+      assert.match(await caption.textContent(), expected.caption);
+      assert.match(await familyParagraph.textContent(), expected.family);
+      assert.match(await fibreParagraph.textContent(), expected.fibre);
+    };
 
-    await language.selectOption("hi");
-    await title.getByText("हर धागे में एक कहानी", { exact: true }).waitFor();
-    assert.match(await caption.textContent(), /क्लाइंट द्वारा दिया गया वीडियो/);
-    assert.match(await familyParagraph.textContent(), /हमारी शुरुआत परिवार से हुई/);
-    assert.match(await fibreParagraph.textContent(), /हम मानते हैं कि असली सुंदरता धागे की शुद्धता में है/);
+    for (const selectedLanguage of ["te", "hi"]) {
+      await language.selectOption(selectedLanguage);
+      await expectStoryLanguage(selectedLanguage);
+
+      await page.reload();
+      await expectStoryLanguage(selectedLanguage);
+
+      await page.locator('a[href="/Collections"]').first().click();
+      await page.waitForURL(`${origin}/Collections`);
+      await page.locator('a[href="/OurStory"]').first().click();
+      await page.waitForURL(`${origin}/OurStory`);
+      await expectStoryLanguage(selectedLanguage);
+    }
 
     await language.selectOption("en");
-    await title.getByText("A story in every thread", { exact: true }).waitFor();
-    assert.match(await caption.textContent(), /Client-supplied footage · One weaving moment/);
-    assert.match(await familyParagraph.textContent(), /Every weave has a story; ours began with family/);
-    assert.match(await fibreParagraph.textContent(), /We believe true beauty lies in the purity of the thread/);
+    await expectStoryLanguage("en");
   } finally {
     await page.close();
   }
