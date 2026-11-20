@@ -691,22 +691,22 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                 Price and availability are confirmed before payment; delivery is quoted at checkout.
               </p>
             )}
+            <section className="shopify-trust-banner" aria-label="Store promises" data-testid="banner-product-trust">
+              <div className="shopify-trust-item" data-testid="text-trust-return-window">
+                <RotateCcw size={27} aria-hidden="true"/>
+                <strong>{returnLabel}</strong>
+              </div>
+              <div className="shopify-trust-item">
+                <BadgeCheck size={27} aria-hidden="true"/>
+                <strong>Quality checked</strong>
+              </div>
+              <div className="shopify-trust-item">
+                <LockKeyhole size={27} aria-hidden="true"/>
+                <strong>Secure payments</strong>
+              </div>
+            </section>
           </section>
         </div>
-        <section className="shopify-trust-banner" aria-label="Store promises" data-testid="banner-product-trust">
-          <div className="shopify-trust-item" data-testid="text-trust-return-window">
-            <RotateCcw size={27} aria-hidden="true"/>
-            <strong>{returnLabel}</strong>
-          </div>
-          <div className="shopify-trust-item">
-            <BadgeCheck size={27} aria-hidden="true"/>
-            <strong>Quality checked</strong>
-          </div>
-          <div className="shopify-trust-item">
-            <LockKeyhole size={27} aria-hidden="true"/>
-            <strong>Secure payments</strong>
-          </div>
-        </section>
         {recommendations.length > 0 && (
           <section
             className="shopify-related-section"
