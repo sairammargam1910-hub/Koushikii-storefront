@@ -61,6 +61,7 @@ function cart(overrides = {}) {
           id: variantId,
           title: "Default",
           availableForSale: true,
+          quantityAvailable: 1,
           price: { amount: "1250.00", currencyCode: "INR" },
           selectedOptions: [{ name: "Title", value: "Default" }],
           product: {
@@ -90,6 +91,7 @@ async function harness(run, { useDevStorePreview = false } = {}) {
     variant: {
       id: variantId,
       availableForSale: true,
+      quantityAvailable: 1,
       product: { title: "Kanchipuram saree", description: "Handwoven silk", tags: ["saree"] },
     },
     calls: [],
@@ -304,6 +306,29 @@ test("forwards Shopify cart user errors and returns Shopify's checkout URL on su
     assert.equal(successful.data.checkoutUrl, checkoutUrl);
     assert.equal(successful.data.id, "gid://shopify/Cart/cart-123");
     assert.equal(successful.data.totalAmount, "1250.00");
+  });
+});
+
+test("rejects product quantities above live stock, including stock already in the bag", async () => {
+  await harness(async ({ state, post }) => {
+    const tooMany = await post({ merchandiseId: variantId, quantity: 2 });
+    assert.equal(tooMany.status, 400);
+    assert.match(tooMany.data.error, /Only 1 additional piece is available/);
+    assert.equal(state.calls.some(({ query }) => query.includes("mutation CreateShopifyCart")), false);
+
+    const available = await post({ merchandiseId: variantId, quantity: 1 });
+    assert.equal(available.status, 200);
+    const validationQuery = state.calls.find(({ query }) => query.includes("ShopifyVariantForCart"))?.query ?? "";
+    assert.match(validationQuery, /quantityAvailable/);
+
+    const alreadyInBag = await post({
+      cartId: "gid://shopify/Cart/cart-123",
+      merchandiseId: variantId,
+      quantity: 1,
+    });
+    assert.equal(alreadyInBag.status, 400);
+    assert.match(alreadyInBag.data.error, /already at its available quantity/);
+    assert.equal(state.calls.some(({ query }) => query.includes("mutation AddShopifyCartLines")), false);
   });
 });
 

@@ -13,6 +13,11 @@ export interface ShopifyVariant {
   /** @nullable */
   sku?: string | null;
   availableForSale: boolean;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  quantityAvailable: number | null;
   price: string;
   currencyCode: string;
   selectedOptions: ShopifyOption[];

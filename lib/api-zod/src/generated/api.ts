@@ -35,6 +35,8 @@ export const getShopifyProductsResponseProductsItemProductDetailsWashCareInstruc
 
 export const getShopifyProductsResponseProductsItemProductDetailsAdditionalInformationMax = 5000;
 
+export const getShopifyProductsResponseProductsItemVariantsItemQuantityAvailableMin = 0;
+
 
 
 export const GetShopifyProductsResponse = zod.object({
@@ -78,6 +80,7 @@ export const GetShopifyProductsResponse = zod.object({
   "title": zod.string(),
   "sku": zod.string().nullish(),
   "availableForSale": zod.boolean(),
+  "quantityAvailable": zod.int().min(getShopifyProductsResponseProductsItemVariantsItemQuantityAvailableMin).nullable(),
   "price": zod.string(),
   "currencyCode": zod.string(),
   "selectedOptions": zod.array(zod.object({
@@ -460,6 +463,10 @@ export const GetShopifyCartQueryParams = zod.object({
   "cartId": zod.coerce.string().min(1).max(getShopifyCartQueryCartIdMax)
 })
 
+export const getShopifyCartResponseLinesItemQuantityAvailableMin = 0;
+
+
+
 export const GetShopifyCartResponse = zod.object({
   "id": zod.string(),
   "checkoutUrl": zod.url().nullable(),
@@ -479,6 +486,7 @@ export const GetShopifyCartResponse = zod.object({
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
   "quantity": zod.int(),
+  "quantityAvailable": zod.int().min(getShopifyCartResponseLinesItemQuantityAvailableMin).nullable(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
@@ -509,6 +517,10 @@ export const AddShopifyCartLineBody = zod.object({
   "quantity": zod.int().min(1).max(addShopifyCartLineBodyQuantityMax)
 })
 
+export const addShopifyCartLineResponseLinesItemQuantityAvailableMin = 0;
+
+
+
 export const AddShopifyCartLineResponse = zod.object({
   "id": zod.string(),
   "checkoutUrl": zod.url().nullable(),
@@ -528,6 +540,7 @@ export const AddShopifyCartLineResponse = zod.object({
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
   "quantity": zod.int(),
+  "quantityAvailable": zod.int().min(addShopifyCartLineResponseLinesItemQuantityAvailableMin).nullable(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
@@ -562,6 +575,10 @@ export const UpdateShopifyCartLinesBody = zod.object({
 })).min(1).max(updateShopifyCartLinesBodyLinesMax)
 })
 
+export const updateShopifyCartLinesResponseLinesItemQuantityAvailableMin = 0;
+
+
+
 export const UpdateShopifyCartLinesResponse = zod.object({
   "id": zod.string(),
   "checkoutUrl": zod.url().nullable(),
@@ -581,6 +598,7 @@ export const UpdateShopifyCartLinesResponse = zod.object({
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
   "quantity": zod.int(),
+  "quantityAvailable": zod.int().min(updateShopifyCartLinesResponseLinesItemQuantityAvailableMin).nullable(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
@@ -610,6 +628,10 @@ export const RemoveShopifyCartLinesBody = zod.object({
   "lineIds": zod.array(zod.string().min(1).max(removeShopifyCartLinesBodyLineIdsItemMax)).min(1).max(removeShopifyCartLinesBodyLineIdsMax)
 })
 
+export const removeShopifyCartLinesResponseLinesItemQuantityAvailableMin = 0;
+
+
+
 export const RemoveShopifyCartLinesResponse = zod.object({
   "id": zod.string(),
   "checkoutUrl": zod.url().nullable(),
@@ -629,6 +651,7 @@ export const RemoveShopifyCartLinesResponse = zod.object({
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
   "quantity": zod.int(),
+  "quantityAvailable": zod.int().min(removeShopifyCartLinesResponseLinesItemQuantityAvailableMin).nullable(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
@@ -658,6 +681,10 @@ export const UpdateShopifyCartDiscountCodesBody = zod.object({
   "discountCodes": zod.array(zod.string().min(1).max(updateShopifyCartDiscountCodesBodyDiscountCodesItemMax)).max(updateShopifyCartDiscountCodesBodyDiscountCodesMax)
 })
 
+export const updateShopifyCartDiscountCodesResponseLinesItemQuantityAvailableMin = 0;
+
+
+
 export const UpdateShopifyCartDiscountCodesResponse = zod.object({
   "id": zod.string(),
   "checkoutUrl": zod.url().nullable(),
@@ -677,6 +704,7 @@ export const UpdateShopifyCartDiscountCodesResponse = zod.object({
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
   "quantity": zod.int(),
+  "quantityAvailable": zod.int().min(updateShopifyCartDiscountCodesResponseLinesItemQuantityAvailableMin).nullable(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),
@@ -780,6 +808,10 @@ export const UpdateShopifyCartBuyerIdentityBody = zod.object({
 })
 })
 
+export const updateShopifyCartBuyerIdentityResponseLinesItemQuantityAvailableMin = 0;
+
+
+
 export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
   "id": zod.string(),
   "checkoutUrl": zod.url().nullable(),
@@ -799,6 +831,7 @@ export const UpdateShopifyCartBuyerIdentityResponse = zod.object({
   "productTitle": zod.string(),
   "variantTitle": zod.string(),
   "quantity": zod.int(),
+  "quantityAvailable": zod.int().min(updateShopifyCartBuyerIdentityResponseLinesItemQuantityAvailableMin).nullable(),
   "unitPrice": zod.string(),
   "currencyCode": zod.string(),
   "availableForSale": zod.boolean(),

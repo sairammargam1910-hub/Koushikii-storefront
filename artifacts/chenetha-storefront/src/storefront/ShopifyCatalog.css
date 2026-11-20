@@ -144,6 +144,7 @@
 .kq .shopify-placement-note{margin:12px 0 0;color:var(--muted);font-size:10px;line-height:1.6}
 .kq .shopify-buy-controls{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:end;margin:22px 0}
 .kq .shopify-buy-controls .shopify-quantity-label{display:grid;gap:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.kq .shopify-stock-note{font-size:10px;line-height:1.45;letter-spacing:0;text-transform:none;font-weight:400;color:var(--muted)}
 .kq .shopify-buy-actions{display:grid;gap:8px;min-width:0}
 .kq .shopify-buy-actions .btn{min-height:44px;width:100%;justify-content:center}
 .kq .shopify-buy-actions .shopify-buy-now{border:1px solid var(--red);background:transparent;color:var(--red)}

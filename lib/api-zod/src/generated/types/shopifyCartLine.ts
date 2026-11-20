@@ -14,6 +14,11 @@ export interface ShopifyCartLine {
   productTitle: string;
   variantTitle: string;
   quantity: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  quantityAvailable: number | null;
   unitPrice: string;
   currencyCode: string;
   availableForSale: boolean;

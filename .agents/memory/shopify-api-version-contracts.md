@@ -32,6 +32,12 @@ For Shopify Admin API 2026-04, `Order.fulfillments` is a plain list, not a conne
 
 **How to apply:** Map the field directly as an array and verify nested order queries against the connected store's pinned API version.
 
+For Storefront inventory limits, treat positive `quantityAvailable` as a cap; zero alone does not mean unavailable when `availableForSale` is true.
+
+**Why:** Shopify can allow selling at zero or leave inventory untracked, so applying a hard zero cap would contradict the product's sale status.
+
+**How to apply:** Use positive available quantities for selector and cart limits, account for quantities already in the cart, and keep Shopify's cart mutation as the final authority.
+
 Verify the store domain before using a Shopify connector for operational checks; the `shopify-store` and `shopify` connections can point to different stores.
 
 **Why:** The code's `shopify-store` connection pointed at a different shop during live checkout verification, while the separate `shopify` connection matched the checkout store.

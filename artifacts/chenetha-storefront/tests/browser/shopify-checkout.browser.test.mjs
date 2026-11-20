@@ -23,6 +23,7 @@ const productResponse = {
       id: variantId,
       title: "Default Title",
       availableForSale: true,
+      quantityAvailable: 5,
       price: "1250.00",
       currencyCode: "INR",
       selectedOptions: [{ name: "Title", value: "Default Title" }],
@@ -87,6 +88,7 @@ const cartResponse = {
     productTitle: "Kanchipuram silk saree",
     variantTitle: "Default Title",
     quantity: 1,
+    quantityAvailable: null,
     unitPrice: "1250.00",
     currencyCode: "INR",
     availableForSale: true,
@@ -407,11 +409,14 @@ test("renders only known piece details, supports gallery selection, wishlist, an
       additionalInformation: "Slight colour variation may occur due to screen settings.",
     },
     variants: [
-      { ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/unavailable", title: "Unavailable", availableForSale: false },
-      { ...productResponse.products[0].variants[0], id: variantId, title: "Ready to wear", sku: "NK-01", availableForSale: true },
+      { ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/unavailable", title: "Unavailable", availableForSale: false, quantityAvailable: 0 },
+      { ...productResponse.products[0].variants[0], id: variantId, title: "Ready to wear", sku: "NK-01", availableForSale: true, quantityAvailable: 1 },
     ],
   };
   const { context, page } = await openProduct({ catalog: { products: [product] } });
+  assert.equal(await page.getByTestId("text-quantity").innerText(), "1");
+  assert.equal(await page.getByTestId("button-increase-quantity").isDisabled(), true);
+  assert.match(await page.getByTestId("text-available-quantity").innerText(), /1 piece is available to add/);
   assert.equal(await page.getByTestId("button-open-product-details").count(), 1);
   await page.getByTestId("button-open-product-details").click();
   const detailsDrawer = page.getByTestId("dialog-product-details");
