@@ -203,6 +203,15 @@ body:has(.merchant-app, .auth-gate, .clerk-screen) {
 .discount-intro { display: flex; align-items: center; gap: 13px; padding: 15px 18px; margin-bottom: 23px; border-radius: 7px; background: #f3eadc; border: 1px solid #e9dbc7; }
 .discount-intro-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #fff8ea; color: #9a7446; flex: 0 0 36px; }
 .discount-intro p { margin: 0; color: #786b66; font-size: 11px; line-height: 1.6; }
+.store-policy-card { width: min(100%, 720px); display: grid; gap: 22px; padding: 25px; border: 1px solid var(--admin-line); border-radius: 9px; background: rgba(255,253,249,.82); box-shadow: 0 8px 22px rgba(70,49,50,.035); }
+.store-policy-card h2 { margin: 7px 0 6px; color: #47343d; font: 700 20px Manrope, sans-serif; letter-spacing: -.035em; }
+.store-policy-card > div > p { max-width: 530px; margin: 0; color: var(--admin-muted); font-size: 12px; line-height: 1.65; }
+.store-policy-form { max-width: 440px; padding-top: 0; }
+.store-policy-form input { max-width: 180px; }
+.store-policy-preview { display: grid; gap: 7px; padding: 14px; border: 1px solid #e9dfd3; border-radius: 7px; background: #f8f2e8; }
+.store-policy-preview span { color: #8b7777; font: 700 9px 'Space Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+.store-policy-preview strong { color: #4b1238; font-size: 13px; }
+.store-policy-saved { display: flex; align-items: center; gap: 7px; margin: 0; color: #4f7553; font-size: 12px; font-weight: 600; }
 .discount-sections { display: grid; gap: 28px; }
 .slim-heading { margin-bottom: 12px; }
 .slim-heading h2 { font-size: 16px; }

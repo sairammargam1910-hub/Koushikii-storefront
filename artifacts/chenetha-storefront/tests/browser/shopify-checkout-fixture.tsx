@@ -13,6 +13,8 @@ import { ShopifyProductRoute } from "../../src/storefront/ShopifyCatalog";
 import { Cart } from "../../src/storefront/Cart";
 import { Checkout } from "../../src/storefront/Checkout";
 import { Confirmation } from "../../src/storefront/Confirmation";
+import { CustomerCare } from "../../src/storefront/CustomerCare";
+import { StorefrontReturnSettingsForm } from "../../src/admin/StorefrontSettings";
 import { ShipmentTrackingProgress } from "../../src/storefront/ShipmentTrackingProgress";
 import type { ShopifyOrderTrackingShipment } from "@workspace/api-client-react";
 import "../../src/index.css";
@@ -28,6 +30,8 @@ function Fixture() {
   const [location] = useLocation();
   const screen = new URLSearchParams(window.location.search).get("screen")
     ?? (location.toLowerCase() === "/cart" ? "cart" : null);
+  if (screen === "return-settings") return <main className="merchant-app"><StorefrontReturnSettingsForm/></main>;
+  if (screen === "customer-care") return <CustomerCare />;
   if (screen === "shipment-progress") {
     const paymentConfirmed = new URLSearchParams(window.location.search).get("paid") !== "0";
     const shipment: ShopifyOrderTrackingShipment = {

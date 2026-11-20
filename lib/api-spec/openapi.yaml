@@ -563,6 +563,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /storefront-settings:
+    get:
+      operationId: getStorefrontSettings
+      tags: [storefront-settings]
+      summary: Get public storefront return settings
+      description: Returns the current return window used by the product trust banner and customer-care page.
+      responses:
+        "200":
+          description: Storefront return settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorefrontReturnSettings"
+    put:
+      operationId: updateStorefrontSettings
+      tags: [storefront-settings]
+      summary: Update storefront return settings
+      description: Sets the store-wide return window for the product trust banner and customer-care page.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StorefrontReturnSettingsInput"
+      responses:
+        "200":
+          description: Updated storefront return settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorefrontReturnSettings"
+        "400":
+          description: Return window is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Store owner access required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /shopify/cart/buyer-identity:
     post:
       operationId: updateShopifyCartBuyerIdentity
@@ -3123,6 +3172,22 @@ components:
           type: string
           format: date-time
       required: [id, kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, focalPointX, focalPointY, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved, createdAt, updatedAt]
+    StorefrontReturnSettings:
+      type: object
+      properties:
+        returnWindowDays:
+          type: integer
+          minimum: 0
+          maximum: 30
+      required: [returnWindowDays]
+    StorefrontReturnSettingsInput:
+      type: object
+      properties:
+        returnWindowDays:
+          type: integer
+          minimum: 0
+          maximum: 30
+      required: [returnWindowDays]
     SiteContentListResponse:
       type: object
       properties:

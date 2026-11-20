@@ -704,6 +704,43 @@ export const GetShopifyStorefrontPromotionsResponse = zod.object({
 
 
 /**
+ * Returns the current return window used by the product trust banner and customer-care page.
+ * @summary Get public storefront return settings
+ */
+export const getStorefrontSettingsResponseReturnWindowDaysMin = 0;
+export const getStorefrontSettingsResponseReturnWindowDaysMax = 30;
+
+
+
+export const GetStorefrontSettingsResponse = zod.object({
+  "returnWindowDays": zod.int().min(getStorefrontSettingsResponseReturnWindowDaysMin).max(getStorefrontSettingsResponseReturnWindowDaysMax)
+})
+
+
+/**
+ * Sets the store-wide return window for the product trust banner and customer-care page.
+ * @summary Update storefront return settings
+ */
+export const updateStorefrontSettingsBodyReturnWindowDaysMin = 0;
+export const updateStorefrontSettingsBodyReturnWindowDaysMax = 30;
+
+
+
+export const UpdateStorefrontSettingsBody = zod.object({
+  "returnWindowDays": zod.int().min(updateStorefrontSettingsBodyReturnWindowDaysMin).max(updateStorefrontSettingsBodyReturnWindowDaysMax)
+})
+
+export const updateStorefrontSettingsResponseReturnWindowDaysMin = 0;
+export const updateStorefrontSettingsResponseReturnWindowDaysMax = 30;
+
+
+
+export const UpdateStorefrontSettingsResponse = zod.object({
+  "returnWindowDays": zod.int().min(updateStorefrontSettingsResponseReturnWindowDaysMin).max(updateStorefrontSettingsResponseReturnWindowDaysMax)
+})
+
+
+/**
  * Sends shopper-entered contact details and a one-time delivery address to Shopify before secure hosted payment.
  * @summary Prepare a Shopify cart with buyer details
  */

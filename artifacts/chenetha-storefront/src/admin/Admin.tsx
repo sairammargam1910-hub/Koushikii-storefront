@@ -31,7 +31,7 @@ import { useClerk } from "@clerk/react";
 import {
   ArrowDownRight, ArrowRight, BadgePercent, Box, Check, CircleAlert, Images,
   Clock3, ExternalLink, Layers3, LoaderCircle, MapPin, PackagePlus, Plus, RefreshCw,
-  Search, Tag, X,
+  Search, Settings, Tag, X,
 } from "lucide-react";
 import "./Admin.css";
 import { ProductPhotoPicker } from "./ProductPhotoPicker";
@@ -130,6 +130,9 @@ export function AdminLayout({ children, title, eyebrow, action }: { children: Re
         </Link>
         <Link href="/admin/content" className={location === "/admin/content" ? "nav-item active" : "nav-item"} data-testid="link-admin-content">
           <Images size={18}/><span>Storefront content</span>
+        </Link>
+        <Link href="/admin/settings" className={location === "/admin/settings" ? "nav-item active" : "nav-item"} data-testid="link-admin-settings">
+          <Settings size={18}/><span>Store settings</span>
         </Link>
       </nav>
       <div className="sidebar-note">

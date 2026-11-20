@@ -1050,6 +1050,22 @@ export interface SiteContentItem {
   updatedAt: string;
 }
 
+export interface StorefrontReturnSettings {
+  /**
+     * @minimum 0
+     * @maximum 30
+     */
+  returnWindowDays: number;
+}
+
+export interface StorefrontReturnSettingsInput {
+  /**
+     * @minimum 0
+     * @maximum 30
+     */
+  returnWindowDays: number;
+}
+
 export interface SiteContentListResponse {
   items: SiteContentItem[];
 }

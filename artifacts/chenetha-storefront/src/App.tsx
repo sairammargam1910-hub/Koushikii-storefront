@@ -25,6 +25,7 @@ import { Orders } from "./storefront/Orders";
 import { OrderDetail } from "./storefront/OrderDetail";
 import { Videos } from "./storefront/Videos";
 import { AdminDashboard, AdminDiscounts, AdminProducts, AdminSignInPrompt } from "./admin/Admin";
+import { AdminSettings } from "./admin/StorefrontSettings";
 import { AdminContent } from "./admin/ContentAdmin";
 import { ShopperPreferencesProvider } from "./storefront/ShopperPreferences";
 import { ScrollRestoration } from "./storefront/RouteEffects";
@@ -94,6 +95,7 @@ const pageTitles: Record<string,string> = {
   "/Profile": "Your details", "/Orders": "Your orders", "/Videos": "Videos",
   "/admin": "Merchant workroom", "/admin/products": "Manage products",
   "/admin/discounts": "Manage discounts", "/admin/content": "Storefront content", "/sign-in": "Account sign in",
+  "/admin/settings": "Store settings",
   "/sign-up": "Create an account",
 };
 
@@ -187,6 +189,7 @@ function Router() {
         <Route path="/admin/products"><ProtectedAdmin page={<AdminProducts/>}/></Route>
         <Route path="/admin/discounts"><ProtectedAdmin page={<AdminDiscounts/>}/></Route>
         <Route path="/admin/content"><ProtectedAdmin page={<AdminContent/>}/></Route>
+        <Route path="/admin/settings"><ProtectedAdmin page={<AdminSettings/>}/></Route>
           <Route path="/" component={Home}/>
         <Route path="/Home" component={Home}/>
         <Route path="/Collections" component={Collections}/>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowRight, ChevronLeft, ChevronRight, Heart, ZoomIn, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, ChevronLeft, ChevronRight, Heart, LockKeyhole, RotateCcw, ZoomIn, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   addShopifyCartLine,
@@ -9,6 +9,7 @@ import {
   type ShopifyCartAddInput,
   type ShopifyCartResponse,
   type ShopifyProduct,
+  useGetStorefrontSettings,
   updateShopifyCartLines,
 } from "@workspace/api-client-react";
 import { base, Empty, Qty, Shell, useStore } from "./_shared";
@@ -351,6 +352,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   product: ShopifyProduct;
   catalogProducts: ShopifyProduct[];
 }) {
+  const returnSettings = useGetStorefrontSettings();
   const [imageIndex, setImageIndex] = useState(0);
   const [variantId, setVariantId] = useState(
     product.variants.find(isShopifyVariantPurchasable)?.id ?? product.variants[0]?.id ?? "",
@@ -388,6 +390,14 @@ function ShopifyProductDetail({ product, catalogProducts }: {
     : blouseAvailability === "not_included"
       ? "Blouse Piece Not Included"
       : "";
+  const returnDays = returnSettings.data?.returnWindowDays;
+  const returnLabel = returnDays == null
+    ? "Return terms"
+    : returnDays === 0
+      ? "No returns"
+      : returnDays === 1
+        ? "1-day return"
+        : `${returnDays}-day returns`;
   const clean = (value?: string | null) => value?.trim() ?? "";
   const sareeLength = clean(product.productDetails?.sareeLength);
   const blousePieceLength = clean(product.productDetails?.blousePieceLength);
@@ -683,6 +693,20 @@ function ShopifyProductDetail({ product, catalogProducts }: {
             )}
           </section>
         </div>
+        <section className="shopify-trust-banner" aria-label="Store promises" data-testid="banner-product-trust">
+          <div className="shopify-trust-item" data-testid="text-trust-return-window">
+            <RotateCcw size={27} aria-hidden="true"/>
+            <strong>{returnLabel}</strong>
+          </div>
+          <div className="shopify-trust-item">
+            <BadgeCheck size={27} aria-hidden="true"/>
+            <strong>Quality checked</strong>
+          </div>
+          <div className="shopify-trust-item">
+            <LockKeyhole size={27} aria-hidden="true"/>
+            <strong>Secure payments</strong>
+          </div>
+        </section>
         {recommendations.length > 0 && (
           <section
             className="shopify-related-section"

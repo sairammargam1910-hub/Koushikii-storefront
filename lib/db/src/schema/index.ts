@@ -19,4 +19,5 @@
 
 export * from "./siteContent";
 export * from "./storefrontPromotions";
+export * from "./storefrontReturnSettings";
 export * from "./cashfreeCheckout";

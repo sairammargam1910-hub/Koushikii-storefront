@@ -161,6 +161,7 @@ after(async () => {
 async function openProduct({
   savedCart,
   catalog = productResponse,
+  returnSettings = { returnWindowDays: 4 },
   viewport = { width: 1280, height: 900 },
 } = {}) {
   const context = await browser.newContext({ viewport });
@@ -178,10 +179,80 @@ async function openProduct({
     contentType: "application/json",
     body: JSON.stringify(catalog),
   }));
+  await page.route("**/api/storefront-settings", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(returnSettings),
+  }));
   await page.goto(`${origin}${fixtureUrl}?screen=product`);
   await page.getByTestId("button-add-shopify-to-cart").waitFor({ timeout: 5000 });
   return { context, page, getDocumentNavigationCount: () => documentNavigations };
 }
+
+async function openReturnSettingsForm(initialDays = 4) {
+  const context = await browser.newContext({ viewport: { width: 1024, height: 800 } });
+  const page = await context.newPage();
+  let storedDays = initialDays;
+  await page.route("**/api/storefront-settings", async (route) => {
+    if (route.request().method() === "PUT") storedDays = route.request().postDataJSON().returnWindowDays;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ returnWindowDays: storedDays }),
+    });
+  });
+  await page.goto(`${origin}${fixtureUrl}?screen=return-settings`);
+  await page.getByTestId("panel-store-return-settings").waitFor();
+  return { context, page, getStoredDays: () => storedDays };
+}
+
+async function openCustomerCare(returnWindowDays) {
+  const context = await browser.newContext({ viewport: { width: 1024, height: 800 } });
+  const page = await context.newPage();
+  await page.route("**/api/storefront-settings", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ returnWindowDays }),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=customer-care`);
+  return { context, page };
+}
+
+test("product trust banner uses the configured return window", async () => {
+  const { context, page } = await openProduct({ returnSettings: { returnWindowDays: 7 } });
+  const banner = page.getByTestId("banner-product-trust");
+  await banner.getByText("7-day returns").waitFor();
+  await banner.getByText("Quality checked").waitFor();
+  await banner.getByText("Secure payments").waitFor();
+  assert.equal(await banner.locator(".shopify-trust-item").count(), 3);
+  await context.close();
+
+  const noReturns = await openProduct({ returnSettings: { returnWindowDays: 0 } });
+  await noReturns.page.getByTestId("text-trust-return-window").getByText("No returns").waitFor();
+  await noReturns.context.close();
+});
+
+test("admin can save a return window and the customer-care answer follows it", async () => {
+  const admin = await openReturnSettingsForm();
+  const input = admin.page.getByTestId("input-return-window-days");
+  await input.waitFor();
+  assert.equal(await input.inputValue(), "4");
+  await input.fill("0");
+  await admin.page.getByTestId("text-return-banner-preview").getByText("No returns").waitFor();
+  await admin.page.getByTestId("button-save-return-window").click();
+  await admin.page.getByTestId("text-return-settings-saved").waitFor();
+  assert.equal(admin.getStoredDays(), 0);
+  await admin.context.close();
+
+  const care = await openCustomerCare(7);
+  await care.page.getByText("CAN I RETURN OR EXCHANGE A SAREE?", { exact: true }).click();
+  await care.page.getByText(/You can return a saree within 7 days of delivery/).waitFor();
+  await care.context.close();
+  const noReturnCare = await openCustomerCare(0);
+  await noReturnCare.page.getByText("CAN I RETURN OR EXCHANGE A SAREE?", { exact: true }).click();
+  await noReturnCare.page.getByText("Returns and exchanges are not currently offered.").waitFor();
+  await noReturnCare.context.close();
+});
 
 test("shows live blouse details and ranked, purchasable related products", async () => {
   const current = {

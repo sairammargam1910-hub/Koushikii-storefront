@@ -118,3 +118,5 @@ export * from './siteContentListResponse';
 export * from './siteContentUploadInput';
 export * from './siteContentUploadInputContentType';
 export * from './siteContentUploadResponse';
+export * from './storefrontReturnSettings';
+export * from './storefrontReturnSettingsInput';

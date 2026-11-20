@@ -75,7 +75,9 @@ import type {
   SiteContentItem,
   SiteContentListResponse,
   SiteContentUploadInput,
-  SiteContentUploadResponse
+  SiteContentUploadResponse,
+  StorefrontReturnSettings,
+  StorefrontReturnSettingsInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1506,6 +1508,173 @@ export function useGetShopifyStorefrontPromotions<TData = Awaited<ReturnType<typ
 
 
 
+
+export const getGetStorefrontSettingsUrl = () => {
+
+
+
+
+  return `/api/storefront-settings`
+}
+
+/**
+ * Returns the current return window used by the product trust banner and customer-care page.
+ * @summary Get public storefront return settings
+ */
+export const getStorefrontSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<StorefrontReturnSettings> => {
+
+  return customFetch<StorefrontReturnSettings>(getGetStorefrontSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStorefrontSettingsQueryKey = () => {
+    return [
+    `/api/storefront-settings`
+    ] as const;
+    }
+
+
+export const getGetStorefrontSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getStorefrontSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorefrontSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStorefrontSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStorefrontSettings>>> = ({ signal }) => getStorefrontSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStorefrontSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStorefrontSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getStorefrontSettings>>>
+export type GetStorefrontSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get public storefront return settings
+ */
+
+export function useGetStorefrontSettings<TData = Awaited<ReturnType<typeof getStorefrontSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorefrontSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStorefrontSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateStorefrontSettingsUrl = () => {
+
+
+
+
+  return `/api/storefront-settings`
+}
+
+/**
+ * Sets the store-wide return window for the product trust banner and customer-care page.
+ * @summary Update storefront return settings
+ */
+export const updateStorefrontSettings = async (storefrontReturnSettingsInput: StorefrontReturnSettingsInput, options?: Parameters<typeof customFetch>[1]): Promise<StorefrontReturnSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<StorefrontReturnSettings>(getUpdateStorefrontSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(storefrontReturnSettingsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateStorefrontSettingsMutationKey = () => ['updateStorefrontSettings'] as const;
+
+export const getUpdateStorefrontSettingsMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStorefrontSettings>>, TError,UpdateStorefrontSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateStorefrontSettings>>, TError,UpdateStorefrontSettingsMutationVariables, TContext> => {
+
+const mutationKey = getUpdateStorefrontSettingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStorefrontSettings>>, UpdateStorefrontSettingsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateStorefrontSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateStorefrontSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateStorefrontSettings>>>
+    export type UpdateStorefrontSettingsMutationBody = BodyType<StorefrontReturnSettingsInput>
+    export type UpdateStorefrontSettingsMutationError = ErrorType<ApiError>
+    export type UpdateStorefrontSettingsMutationVariables = {data: BodyType<StorefrontReturnSettingsInput>}
+
+    /**
+ * @summary Update storefront return settings
+ */
+export const useUpdateStorefrontSettings = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStorefrontSettings>>, TError,UpdateStorefrontSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateStorefrontSettings>>,
+        TError,
+        UpdateStorefrontSettingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateStorefrontSettingsMutationOptions(options));
+    }
 
 export const getUpdateShopifyCartBuyerIdentityUrl = () => {
 

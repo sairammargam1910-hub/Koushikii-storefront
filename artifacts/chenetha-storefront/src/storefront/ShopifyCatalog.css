@@ -164,3 +164,8 @@
   .kq .shopify-cart-row>a>img,.kq .shopify-cart-row .shopify-cart-no-image{width:74px;height:95px}
   .kq .shopify-cart-line-total{grid-column:2;min-width:0;text-align:left}
 }
+.kq .shopify-trust-banner{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:30px 0 16px;padding:14px 0;border:1px solid #e8dfd4;border-radius:24px;background:#fbf8f2}
+.kq .shopify-trust-item{display:grid;justify-items:center;align-content:center;gap:10px;min-width:0;padding:8px 12px;color:#4b1238;text-align:center}
+.kq .shopify-trust-item+.shopify-trust-item{border-left:1px solid #e8dfd4}
+.kq .shopify-trust-item strong{max-width:130px;color:#34252d;font-size:clamp(12px,1.5vw,16px);font-weight:700;line-height:1.25}
+@media(max-width:520px){.kq .shopify-trust-banner{margin-top:22px;padding:10px 0;border-radius:18px}.kq .shopify-trust-item{gap:7px;padding:8px 6px}.kq .shopify-trust-item svg{width:22px;height:22px}.kq .shopify-trust-item strong{font-size:11px}}

@@ -6,6 +6,7 @@ import shopperRouter from "./shopper";
 import siteContentRouter from "./siteContent";
 import cashfreeCheckoutRouter from "./cashfreeCheckout";
 import shopperOrdersRouter from "./shopperOrders";
+import storefrontSettingsRouter from "./storefrontSettings";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(shopifyAdminRouter);
 router.use(shopperRouter);
 router.use(shopperOrdersRouter);
 router.use(siteContentRouter);
+router.use(storefrontSettingsRouter);
 
 export default router;
