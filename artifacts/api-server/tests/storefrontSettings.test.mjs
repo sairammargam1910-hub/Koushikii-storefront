@@ -96,10 +96,18 @@ test("public return settings default to four days and authorized admin updates a
   const invalidResponse = await fetch(base, {
     method: "PUT",
     headers: { "Content-Type": "application/json", "x-test-admin": "yes" },
-    body: JSON.stringify({ returnWindowDays: 31 }),
+    body: JSON.stringify({ returnWindowDays: 2147483648 }),
   });
   assert.equal(invalidResponse.status, 400);
   assert.equal(store.value, null);
+
+  const customResponse = await fetch(base, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "x-test-admin": "yes" },
+    body: JSON.stringify({ returnWindowDays: 45 }),
+  });
+  assert.equal(customResponse.status, 200);
+  assert.deepEqual(await customResponse.json(), { returnWindowDays: 45 });
 
   const updateResponse = await fetch(base, {
     method: "PUT",

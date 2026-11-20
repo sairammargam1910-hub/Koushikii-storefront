@@ -1053,7 +1053,7 @@ export interface SiteContentItem {
 export interface StorefrontReturnSettings {
   /**
      * @minimum 0
-     * @maximum 30
+     * @maximum 2147483647
      */
   returnWindowDays: number;
 }
@@ -1061,7 +1061,7 @@ export interface StorefrontReturnSettings {
 export interface StorefrontReturnSettingsInput {
   /**
      * @minimum 0
-     * @maximum 30
+     * @maximum 2147483647
      */
   returnWindowDays: number;
 }

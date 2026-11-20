@@ -65,6 +65,8 @@
 .kq .shopify-attribute-strip>div{min-width:0;padding:10px 12px 10px 0}
 .kq .shopify-attribute-strip dt,.kq .shopify-details-content dt{color:var(--muted);font-size:10px;letter-spacing:.11em;text-transform:uppercase}
 .kq .shopify-attribute-strip dd{margin:4px 0 0;color:var(--ink);font-family:var(--font-display,'Cormorant Garamond',Georgia,serif);font-size:19px;line-height:1.15}
+.kq .shopify-colour-values{display:grid;gap:2px;margin:5px 0 0;padding-left:17px;font-family:var(--font-body,'Inter',Arial,sans-serif);font-size:13px;line-height:1.4}
+.kq .shopify-colour-values li::marker{color:var(--red)}
 .kq .shopify-detail-price{margin:10px 0 5px}
 .kq .shopify-availability{display:flex;align-items:center;gap:8px;margin:4px 0 16px;color:var(--muted);font-size:12px}
 .kq .shopify-availability-dot{width:8px;height:8px;border-radius:50%;background:#a77d5c}

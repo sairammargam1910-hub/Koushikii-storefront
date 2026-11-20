@@ -9,7 +9,7 @@
 export interface StorefrontReturnSettings {
   /**
      * @minimum 0
-     * @maximum 30
+     * @maximum 2147483647
      */
   returnWindowDays: number;
 }

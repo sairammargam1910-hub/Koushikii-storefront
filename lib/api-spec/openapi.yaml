@@ -3178,7 +3178,7 @@ components:
         returnWindowDays:
           type: integer
           minimum: 0
-          maximum: 30
+          maximum: 2147483647
       required: [returnWindowDays]
     StorefrontReturnSettingsInput:
       type: object
@@ -3186,7 +3186,7 @@ components:
         returnWindowDays:
           type: integer
           minimum: 0
-          maximum: 30
+          maximum: 2147483647
       required: [returnWindowDays]
     SiteContentListResponse:
       type: object

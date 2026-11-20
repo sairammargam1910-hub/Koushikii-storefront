@@ -708,7 +708,7 @@ export const GetShopifyStorefrontPromotionsResponse = zod.object({
  * @summary Get public storefront return settings
  */
 export const getStorefrontSettingsResponseReturnWindowDaysMin = 0;
-export const getStorefrontSettingsResponseReturnWindowDaysMax = 30;
+export const getStorefrontSettingsResponseReturnWindowDaysMax = 2147483647;
 
 
 
@@ -722,7 +722,7 @@ export const GetStorefrontSettingsResponse = zod.object({
  * @summary Update storefront return settings
  */
 export const updateStorefrontSettingsBodyReturnWindowDaysMin = 0;
-export const updateStorefrontSettingsBodyReturnWindowDaysMax = 30;
+export const updateStorefrontSettingsBodyReturnWindowDaysMax = 2147483647;
 
 
 
@@ -731,7 +731,7 @@ export const UpdateStorefrontSettingsBody = zod.object({
 })
 
 export const updateStorefrontSettingsResponseReturnWindowDaysMin = 0;
-export const updateStorefrontSettingsResponseReturnWindowDaysMax = 30;
+export const updateStorefrontSettingsResponseReturnWindowDaysMax = 2147483647;
 
 
 

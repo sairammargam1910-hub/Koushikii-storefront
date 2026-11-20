@@ -237,6 +237,11 @@ test("admin can save a return window and the customer-care answer follows it", a
   const input = admin.page.getByTestId("input-return-window-days");
   await input.waitFor();
   assert.equal(await input.inputValue(), "4");
+  await input.fill("45");
+  await admin.page.getByTestId("text-return-banner-preview").getByText("45-day returns").waitFor();
+  await admin.page.getByTestId("button-save-return-window").click();
+  await admin.page.getByTestId("text-return-settings-saved").waitFor();
+  assert.equal(admin.getStoredDays(), 45);
   await input.fill("0");
   await admin.page.getByTestId("text-return-banner-preview").getByText("No returns").waitFor();
   await admin.page.getByTestId("button-save-return-window").click();
@@ -473,6 +478,24 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   assert.equal(await blank.page.locator(".shopify-attribute-strip").count(), 0);
   await blank.page.getByRole("button", { name: "Close product details" }).click();
   await blank.context.close();
+});
+
+test("renders multiple product colours as separate list items", async () => {
+  const catalog = {
+    products: [{
+      ...productResponse.products[0],
+      attributes: {
+        ...productResponse.products[0].attributes,
+        colour: '["Olive green","Green"]',
+      },
+    }],
+  };
+  const { context, page } = await openProduct({ catalog });
+  const colourList = page.locator(".shopify-colour-values");
+  await colourList.waitFor();
+  assert.deepEqual(await colourList.locator("li").allTextContents(), ["Olive green", "Green"]);
+  assert.doesNotMatch(await page.locator(".shopify-attribute-strip").innerText(), /\["Olive green"/);
+  await context.close();
 });
 
 async function openCart({

@@ -9,7 +9,7 @@ import { ArrowRight, Check, LoaderCircle, RefreshCw } from "lucide-react";
 import { AdminLayout } from "./Admin";
 
 const MIN_RETURN_DAYS = 0;
-const MAX_RETURN_DAYS = 30;
+const MAX_RETURN_DAYS = 2_147_483_647;
 
 function returnBannerLabel(value: string) {
   if (value === "0") return "No returns";
@@ -36,7 +36,7 @@ export function StorefrontReturnSettingsForm() {
     setSaved("");
     const returnWindowDays = Number(days);
     if (!Number.isInteger(returnWindowDays) || returnWindowDays < MIN_RETURN_DAYS || returnWindowDays > MAX_RETURN_DAYS) {
-      setError(`Choose a whole number from ${MIN_RETURN_DAYS} to ${MAX_RETURN_DAYS}.`);
+      setError("Enter a non-negative whole number of days.");
       return;
     }
 
@@ -77,7 +77,7 @@ export function StorefrontReturnSettingsForm() {
           onChange={(event) => { setDays(event.target.value); setError(""); setSaved(""); }}
         />
       </label>
-      <p className="field-note">Use 0 when returns are not offered. Maximum: 30 days.</p>
+       <p className="field-note">Enter the return window that fits your policy. Use 0 when returns are not offered.</p>
       <div className="store-policy-preview" data-testid="text-return-banner-preview">
         <span>Product banner preview</span>
         <strong>{returnBannerLabel(days)} · Quality checked · Secure payments</strong>

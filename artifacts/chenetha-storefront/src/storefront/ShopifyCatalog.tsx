@@ -384,6 +384,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   );
   const productSummary = getShopifyProductSummary(product.description) ||
     "More details about this piece will be added soon.";
+  const colourValues = getShopifyAttributeValues(product, "colour");
   const blouseAvailability = product.attributes?.blouseAvailability;
   const blouseAvailabilityText = blouseAvailability === "included"
     ? "Blouse Piece Included"
@@ -417,7 +418,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
     ["Weave / print", clean(product.attributes?.craftTechnique)],
     ["Regional tradition", clean(product.attributes?.regionalHandloom)],
     ["Region", clean(product.attributes?.region)],
-    ["Colour", clean(product.attributes?.colour)],
+    ["Colour", colourValues.join(", ")],
   ].filter(([, value]) => value);
   const collection = product.collections?.find((item) => item.handle && item.handle !== "frontpage");
   const demo = isDemoProduct(product);
@@ -580,7 +581,12 @@ function ShopifyProductDetail({ product, catalogProducts }: {
               <p>{productSummary}</p>
             </div>
             {attributeRows.length > 0 && <dl className="shopify-attribute-strip" aria-label="Textile attributes">
-              {attributeRows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+              {attributeRows.map(([label, value]) => <div key={label}>
+                <dt>{label}</dt>
+                {label === "Colour"
+                  ? <dd><ul className="shopify-colour-values">{colourValues.map((colour) => <li key={colour}>{colour}</li>)}</ul></dd>
+                  : <dd>{value}</dd>}
+              </div>)}
             </dl>}
             <span className="price shopify-detail-price">
               {demo ? "Demo price · " : ""}
