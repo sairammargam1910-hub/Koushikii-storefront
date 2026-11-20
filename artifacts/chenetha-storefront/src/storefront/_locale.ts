@@ -47,6 +47,9 @@ const phrases: Record<string, [string, string]> = {
   "Available": ["అందుబాటులో ఉంది", "उपलब्ध"],
   "Currently unavailable": ["ప్రస్తుతం అందుబాటులో లేదు", "अभी उपलब्ध नहीं"],
   "Out of stock": ["స్టాక్‌లో లేదు", "स्टॉक में नहीं है"],
+  "Out of stock.": ["స్టాక్‌లో లేదు.", "स्टॉक में नहीं है।"],
+  "Buy now": ["ఇప్పుడే కొనండి", "अभी खरीदें"],
+  "Checking your current bag…": ["మీ సంచిని పరిశీలిస్తున్నాం…", "आपके बैग की जाँच हो रही है…"],
   "Your selected option and current price will be checked again before checkout.": ["చెక్‌అవుట్‌కు ముందు మీరు ఎంచుకున్న ఎంపిక, ప్రస్తుత ధరను మళ్లీ పరిశీలిస్తాం.", "चेकआउट से पहले चुने गए विकल्प और मौजूदा कीमत की फिर से जाँच होगी।"],
   "Delivery charges are quoted at checkout. Payment is completed securely on a hosted payment page.": ["చెక్‌అవుట్‌లో డెలివరీ ఛార్జీలు చూపబడతాయి. సురక్షిత చెల్లింపు పేజీలో చెల్లింపు పూర్తవుతుంది.", "चेकआउट पर डिलीवरी शुल्क बताया जाएगा। सुरक्षित भुगतान पेज पर भुगतान पूरा होगा।"],
   "Continue to secure payment": ["సురక్షిత చెల్లింపుకు కొనసాగండి", "सुरक्षित भुगतान जारी रखें"],
@@ -1093,6 +1096,35 @@ export function translatePhrase(language: StoreLanguage, source: string): string
     };
     const key = filterBy[1].toLowerCase();
     return `${language === "te" ? "వడపోత" : "फ़िल्टर"} ${labels[key][languageIndex]}: ${translated(filterBy[2])}`;
+  }
+
+  const stockWhileChecking = normalized.match(/^(\d+) pieces? in stock\. Checking your current bag…$/);
+  if (stockWhileChecking) {
+    const count = stockWhileChecking[1];
+    return language === "te"
+      ? `స్టాక్‌లో ${count} వస్తువులు ఉన్నాయి. మీ సంచిని పరిశీలిస్తున్నాం…`
+      : `स्टॉक में ${count} वस्तुएँ हैं। आपके बैग की जाँच हो रही है…`;
+  }
+
+  const stockNote = normalized.match(
+    /^(\d+) pieces? in stock\.(?: (\d+) pieces? already in your bag; (?:(\d+) more can be added\.|no additional quantity can be added\.))?$/,
+  );
+  if (stockNote) {
+    const [, stockCount, bagCount, addCount] = stockNote;
+    const itemCount = (count: string) => language === "te"
+      ? `${count} ${count === "1" ? "వస్తువు" : "వస్తువులు"}`
+      : `${count} ${count === "1" ? "वस्तु" : "वस्तुएँ"}`;
+    const stockText = language === "te"
+      ? `స్టాక్‌లో ${itemCount(stockCount)} ఉన్నాయి.`
+      : `स्टॉक में ${itemCount(stockCount)} हैं।`;
+    if (!bagCount) return stockText;
+    const bagText = language === "te"
+      ? `మీ సంచిలో ఇప్పటికే ${itemCount(bagCount)} ఉన్నాయి; `
+      : `${itemCount(bagCount)} पहले से आपके बैग में हैं; `;
+    const addText = addCount
+      ? language === "te" ? `మరో ${addCount} చేర్చవచ్చు.` : `${addCount} और जोड़ी जा सकती हैं।`
+      : language === "te" ? "ఇకపై పరిమాణం జోడించలేరు." : "अब और मात्रा नहीं जोड़ी जा सकती।";
+    return `${stockText} ${bagText}${addText}`;
   }
 
   const noSamples = normalized.match(/^There are no sample (sarees|pieces) for (.+) with the selected filters\.$/);

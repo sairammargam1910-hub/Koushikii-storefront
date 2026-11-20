@@ -415,6 +415,9 @@ function ShopifyProductDetail({ product, catalogProducts }: {
           : "no additional quantity can be added."
       }`
     : "";
+  const productStockNote = productStockLabel
+    ? `${productStockLabel}${bagStockLabel ? ` ${bagStockLabel}` : ""}`
+    : null;
   const price = variant ? formatShopifyMoney(variant.price, variant.currencyCode) : "";
   const recommendations = useMemo(
     () => getShopifyProductRecommendations(product, catalogProducts),
@@ -827,9 +830,9 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                   ? <span className="shopify-stock-note" role="status">
                       {productStockLabel ? `${productStockLabel} Checking your current bag…` : "Checking your current bag…"}
                     </span>
-                  : productStockLabel && (
+                  : productStockNote && (
                     <span className="shopify-stock-note" data-testid="text-available-quantity">
-                      {productStockLabel}{bagStockLabel ? ` ${bagStockLabel}` : ""}
+                      {productStockNote}
                     </span>
                   )}
               </label>

@@ -38,6 +38,12 @@ For storefront quantity caps, use tracked Shopify Admin inventory when `inventor
 
 **How to apply:** For tracked `DENY` variants, cap selectors and cart additions using Admin `inventoryQuantity` minus quantities already in the cart. Return no client cap for untracked or `CONTINUE` items, and keep Shopify's cart mutation as the final authority.
 
+On product pages, show the full tracked variant inventory as the stock count; subtract the shopper's bag quantity only when calculating how many more can be added.
+
+**Why:** The user clarified that the stock label should reflect the product's quantity, not the remainder after subtracting their current bag.
+
+**How to apply:** Keep total stock and remaining addable quantity distinct in shopper copy, while preserving the existing cart and inventory limits.
+
 Verify the store domain before using a Shopify connector for operational checks; the `shopify-store` and `shopify` connections can point to different stores.
 
 **Why:** The code's `shopify-store` connection pointed at a different shop during live checkout verification, while the separate `shopify` connection matched the checkout store.

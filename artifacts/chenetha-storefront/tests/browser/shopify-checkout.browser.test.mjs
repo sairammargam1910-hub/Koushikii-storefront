@@ -590,6 +590,22 @@ test("shows product stock separately from bag quantity and keeps Buy now full wi
     actions: button.parentElement.getBoundingClientRect().width,
   }));
   assert.ok(Math.abs(actionWidths.button - actionWidths.actions) < 1, "Buy now should span the full mobile action width");
+  await page.getByTestId("select-language").selectOption("te");
+  await page.waitForFunction(() =>
+    document.querySelector("[data-testid='text-available-quantity']")?.textContent?.trim() ===
+      "స్టాక్‌లో 5 వస్తువులు ఉన్నాయి. మీ సంచిలో ఇప్పటికే 2 వస్తువులు ఉన్నాయి; మరో 3 చేర్చవచ్చు.",
+  );
+  await page.waitForFunction(() =>
+    document.querySelector("[data-testid='button-buy-shopify-now']")?.textContent?.trim() === "ఇప్పుడే కొనండి",
+  );
+  await page.getByTestId("select-language").selectOption("hi");
+  await page.waitForFunction(() =>
+    document.querySelector("[data-testid='text-available-quantity']")?.textContent?.trim() ===
+      "स्टॉक में 5 वस्तुएँ हैं। 2 वस्तुएँ पहले से आपके बैग में हैं; 3 और जोड़ी जा सकती हैं।",
+  );
+  await page.waitForFunction(() =>
+    document.querySelector("[data-testid='button-buy-shopify-now']")?.textContent?.trim() === "अभी खरीदें",
+  );
 
   await page.getByTestId("button-increase-quantity").click();
   await page.getByTestId("button-increase-quantity").click();
