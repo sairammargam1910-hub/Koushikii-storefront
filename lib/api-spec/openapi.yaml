@@ -2033,6 +2033,31 @@ components:
           type: string
           enum: [included, not_included, not_specified]
       required: [fabric, regionalHandloom, craftTechnique, region, colour, blouseAvailability]
+    ShopifyProductDetails:
+      type: object
+      properties:
+        fabricComposition:
+          type: string
+          maxLength: 2000
+        sareeLength:
+          type: string
+          maxLength: 100
+        blousePieceLength:
+          type: string
+          maxLength: 100
+        borderDetails:
+          type: string
+          maxLength: 2000
+        designPattern:
+          type: string
+          maxLength: 1000
+        washCareInstructions:
+          type: string
+          maxLength: 5000
+        additionalInformation:
+          type: string
+          maxLength: 5000
+      required: [fabricComposition, sareeLength, blousePieceLength, borderDetails, designPattern, washCareInstructions, additionalInformation]
     ShopifyProduct:
       type: object
       properties:
@@ -2055,6 +2080,8 @@ components:
             type: string
         attributes:
           $ref: "#/components/schemas/ShopifyProductAttributes"
+        productDetails:
+          $ref: "#/components/schemas/ShopifyProductDetails"
         collections:
           type: array
           items:
@@ -2067,7 +2094,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyVariant"
-      required: [id, handle, title, description, productType, tags, attributes, collections, images, variants]
+      required: [id, handle, title, description, productType, tags, attributes, productDetails, collections, images, variants]
     ShopifyProductsResponse:
       type: object
       properties:
@@ -2580,6 +2607,8 @@ components:
           type: string
         colour:
           type: string
+        productDetails:
+          $ref: "#/components/schemas/ShopifyProductDetails"
         collectionIds:
           type: array
           items:
@@ -2595,7 +2624,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyAdminProductOption"
-      required: [id, title, handle, description, productType, status, tags, fabric, regionalHandloom, blouseAvailability, craftTechnique, region, colour, collectionIds, imageUrl, variants, options]
+      required: [id, title, handle, description, productType, status, tags, fabric, regionalHandloom, blouseAvailability, craftTechnique, region, colour, productDetails, collectionIds, imageUrl, variants, options]
     ShopifyAdminCollection:
       type: object
       properties:
@@ -2758,6 +2787,8 @@ components:
         colour:
           type: string
           maxLength: 255
+        productDetails:
+          $ref: "#/components/schemas/ShopifyProductDetails"
         collectionIds:
           type: array
           maxItems: 100
@@ -2819,6 +2850,8 @@ components:
         colour:
           type: string
           maxLength: 255
+        productDetails:
+          $ref: "#/components/schemas/ShopifyProductDetails"
         collectionIds:
           type: array
           maxItems: 100

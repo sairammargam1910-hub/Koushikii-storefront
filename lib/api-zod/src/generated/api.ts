@@ -21,6 +21,22 @@ export const HealthCheckResponse = zod.object({
  * Returns published Shopify products classified as sarees.
  * @summary Get published sarees from Shopify
  */
+export const getShopifyProductsResponseProductsItemProductDetailsFabricCompositionMax = 2000;
+
+export const getShopifyProductsResponseProductsItemProductDetailsSareeLengthMax = 100;
+
+export const getShopifyProductsResponseProductsItemProductDetailsBlousePieceLengthMax = 100;
+
+export const getShopifyProductsResponseProductsItemProductDetailsBorderDetailsMax = 2000;
+
+export const getShopifyProductsResponseProductsItemProductDetailsDesignPatternMax = 1000;
+
+export const getShopifyProductsResponseProductsItemProductDetailsWashCareInstructionsMax = 5000;
+
+export const getShopifyProductsResponseProductsItemProductDetailsAdditionalInformationMax = 5000;
+
+
+
 export const GetShopifyProductsResponse = zod.object({
   "products": zod.array(zod.object({
   "id": zod.string(),
@@ -37,6 +53,15 @@ export const GetShopifyProductsResponse = zod.object({
   "region": zod.string().nullable(),
   "colour": zod.string().nullable(),
   "blouseAvailability": zod.enum(['included', 'not_included', 'not_specified'])
+}),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(getShopifyProductsResponseProductsItemProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(getShopifyProductsResponseProductsItemProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(getShopifyProductsResponseProductsItemProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(getShopifyProductsResponseProductsItemProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(getShopifyProductsResponseProductsItemProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(getShopifyProductsResponseProductsItemProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(getShopifyProductsResponseProductsItemProductDetailsAdditionalInformationMax)
 }),
   "collections": zod.array(zod.object({
   "id": zod.string(),
@@ -920,6 +945,22 @@ export const UploadShopifyAdminImageResponse = zod.object({
  * Lists Shopify products for the authenticated store owner.
  * @summary List products for the merchant dashboard
  */
+export const getShopifyAdminProductsResponseProductsItemProductDetailsFabricCompositionMax = 2000;
+
+export const getShopifyAdminProductsResponseProductsItemProductDetailsSareeLengthMax = 100;
+
+export const getShopifyAdminProductsResponseProductsItemProductDetailsBlousePieceLengthMax = 100;
+
+export const getShopifyAdminProductsResponseProductsItemProductDetailsBorderDetailsMax = 2000;
+
+export const getShopifyAdminProductsResponseProductsItemProductDetailsDesignPatternMax = 1000;
+
+export const getShopifyAdminProductsResponseProductsItemProductDetailsWashCareInstructionsMax = 5000;
+
+export const getShopifyAdminProductsResponseProductsItemProductDetailsAdditionalInformationMax = 5000;
+
+
+
 export const GetShopifyAdminProductsResponse = zod.object({
   "currencyCode": zod.string(),
   "products": zod.array(zod.object({
@@ -936,6 +977,15 @@ export const GetShopifyAdminProductsResponse = zod.object({
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(getShopifyAdminProductsResponseProductsItemProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(getShopifyAdminProductsResponseProductsItemProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(getShopifyAdminProductsResponseProductsItemProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(getShopifyAdminProductsResponseProductsItemProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(getShopifyAdminProductsResponseProductsItemProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(getShopifyAdminProductsResponseProductsItemProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(getShopifyAdminProductsResponseProductsItemProductDetailsAdditionalInformationMax)
+}),
   "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
@@ -993,6 +1043,20 @@ export const createShopifyAdminProductBodyRegionMax = 255;
 
 export const createShopifyAdminProductBodyColourMax = 255;
 
+export const createShopifyAdminProductBodyProductDetailsFabricCompositionMax = 2000;
+
+export const createShopifyAdminProductBodyProductDetailsSareeLengthMax = 100;
+
+export const createShopifyAdminProductBodyProductDetailsBlousePieceLengthMax = 100;
+
+export const createShopifyAdminProductBodyProductDetailsBorderDetailsMax = 2000;
+
+export const createShopifyAdminProductBodyProductDetailsDesignPatternMax = 1000;
+
+export const createShopifyAdminProductBodyProductDetailsWashCareInstructionsMax = 5000;
+
+export const createShopifyAdminProductBodyProductDetailsAdditionalInformationMax = 5000;
+
 export const createShopifyAdminProductBodyCollectionIdsMax = 100;
 
 export const createShopifyAdminProductBodyNewCollectionTitleMax = 120;
@@ -1017,6 +1081,15 @@ export const CreateShopifyAdminProductBody = zod.object({
   "craftTechnique": zod.string().max(createShopifyAdminProductBodyCraftTechniqueMax).optional(),
   "region": zod.string().max(createShopifyAdminProductBodyRegionMax).optional(),
   "colour": zod.string().max(createShopifyAdminProductBodyColourMax).optional(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(createShopifyAdminProductBodyProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(createShopifyAdminProductBodyProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(createShopifyAdminProductBodyProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(createShopifyAdminProductBodyProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(createShopifyAdminProductBodyProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(createShopifyAdminProductBodyProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(createShopifyAdminProductBodyProductDetailsAdditionalInformationMax)
+}).optional(),
   "collectionIds": zod.array(zod.string()).max(createShopifyAdminProductBodyCollectionIdsMax).optional(),
   "newCollectionTitle": zod.string().max(createShopifyAdminProductBodyNewCollectionTitleMax).optional(),
   "price": zod.number().gt(createShopifyAdminProductBodyPriceExclusiveMin),
@@ -1025,6 +1098,22 @@ export const CreateShopifyAdminProductBody = zod.object({
   "imageUrl": zod.url().nullish(),
   "publishToWebsite": zod.boolean()
 })
+
+export const createShopifyAdminProductResponseProductProductDetailsFabricCompositionMax = 2000;
+
+export const createShopifyAdminProductResponseProductProductDetailsSareeLengthMax = 100;
+
+export const createShopifyAdminProductResponseProductProductDetailsBlousePieceLengthMax = 100;
+
+export const createShopifyAdminProductResponseProductProductDetailsBorderDetailsMax = 2000;
+
+export const createShopifyAdminProductResponseProductProductDetailsDesignPatternMax = 1000;
+
+export const createShopifyAdminProductResponseProductProductDetailsWashCareInstructionsMax = 5000;
+
+export const createShopifyAdminProductResponseProductProductDetailsAdditionalInformationMax = 5000;
+
+
 
 export const CreateShopifyAdminProductResponse = zod.object({
   "currencyCode": zod.string(),
@@ -1042,6 +1131,15 @@ export const CreateShopifyAdminProductResponse = zod.object({
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(createShopifyAdminProductResponseProductProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(createShopifyAdminProductResponseProductProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(createShopifyAdminProductResponseProductProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(createShopifyAdminProductResponseProductProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(createShopifyAdminProductResponseProductProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(createShopifyAdminProductResponseProductProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(createShopifyAdminProductResponseProductProductDetailsAdditionalInformationMax)
+}),
   "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
@@ -1124,6 +1222,22 @@ export const GetShopifyAdminProductParams = zod.object({
   "productId": zod.coerce.string().min(1).max(getShopifyAdminProductPathProductIdMax)
 })
 
+export const getShopifyAdminProductResponseProductProductDetailsFabricCompositionMax = 2000;
+
+export const getShopifyAdminProductResponseProductProductDetailsSareeLengthMax = 100;
+
+export const getShopifyAdminProductResponseProductProductDetailsBlousePieceLengthMax = 100;
+
+export const getShopifyAdminProductResponseProductProductDetailsBorderDetailsMax = 2000;
+
+export const getShopifyAdminProductResponseProductProductDetailsDesignPatternMax = 1000;
+
+export const getShopifyAdminProductResponseProductProductDetailsWashCareInstructionsMax = 5000;
+
+export const getShopifyAdminProductResponseProductProductDetailsAdditionalInformationMax = 5000;
+
+
+
 export const GetShopifyAdminProductResponse = zod.object({
   "currencyCode": zod.string(),
   "product": zod.object({
@@ -1140,6 +1254,15 @@ export const GetShopifyAdminProductResponse = zod.object({
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(getShopifyAdminProductResponseProductProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(getShopifyAdminProductResponseProductProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(getShopifyAdminProductResponseProductProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(getShopifyAdminProductResponseProductProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(getShopifyAdminProductResponseProductProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(getShopifyAdminProductResponseProductProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(getShopifyAdminProductResponseProductProductDetailsAdditionalInformationMax)
+}),
   "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
@@ -1205,6 +1328,20 @@ export const updateShopifyAdminProductBodyRegionMax = 255;
 
 export const updateShopifyAdminProductBodyColourMax = 255;
 
+export const updateShopifyAdminProductBodyProductDetailsFabricCompositionMax = 2000;
+
+export const updateShopifyAdminProductBodyProductDetailsSareeLengthMax = 100;
+
+export const updateShopifyAdminProductBodyProductDetailsBlousePieceLengthMax = 100;
+
+export const updateShopifyAdminProductBodyProductDetailsBorderDetailsMax = 2000;
+
+export const updateShopifyAdminProductBodyProductDetailsDesignPatternMax = 1000;
+
+export const updateShopifyAdminProductBodyProductDetailsWashCareInstructionsMax = 5000;
+
+export const updateShopifyAdminProductBodyProductDetailsAdditionalInformationMax = 5000;
+
 export const updateShopifyAdminProductBodyCollectionIdsMax = 100;
 
 export const updateShopifyAdminProductBodyNewCollectionTitleMax = 120;
@@ -1222,11 +1359,36 @@ export const UpdateShopifyAdminProductBody = zod.object({
   "craftTechnique": zod.string().max(updateShopifyAdminProductBodyCraftTechniqueMax).optional(),
   "region": zod.string().max(updateShopifyAdminProductBodyRegionMax).optional(),
   "colour": zod.string().max(updateShopifyAdminProductBodyColourMax).optional(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(updateShopifyAdminProductBodyProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(updateShopifyAdminProductBodyProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(updateShopifyAdminProductBodyProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(updateShopifyAdminProductBodyProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(updateShopifyAdminProductBodyProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(updateShopifyAdminProductBodyProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(updateShopifyAdminProductBodyProductDetailsAdditionalInformationMax)
+}).optional(),
   "collectionIds": zod.array(zod.string()).max(updateShopifyAdminProductBodyCollectionIdsMax).optional(),
   "newCollectionTitle": zod.string().max(updateShopifyAdminProductBodyNewCollectionTitleMax).optional(),
   "imageUrl": zod.url().nullish(),
   "publishToWebsite": zod.boolean().optional()
 })
+
+export const updateShopifyAdminProductResponseProductProductDetailsFabricCompositionMax = 2000;
+
+export const updateShopifyAdminProductResponseProductProductDetailsSareeLengthMax = 100;
+
+export const updateShopifyAdminProductResponseProductProductDetailsBlousePieceLengthMax = 100;
+
+export const updateShopifyAdminProductResponseProductProductDetailsBorderDetailsMax = 2000;
+
+export const updateShopifyAdminProductResponseProductProductDetailsDesignPatternMax = 1000;
+
+export const updateShopifyAdminProductResponseProductProductDetailsWashCareInstructionsMax = 5000;
+
+export const updateShopifyAdminProductResponseProductProductDetailsAdditionalInformationMax = 5000;
+
+
 
 export const UpdateShopifyAdminProductResponse = zod.object({
   "currencyCode": zod.string(),
@@ -1244,6 +1406,15 @@ export const UpdateShopifyAdminProductResponse = zod.object({
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(updateShopifyAdminProductResponseProductProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(updateShopifyAdminProductResponseProductProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(updateShopifyAdminProductResponseProductProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(updateShopifyAdminProductResponseProductProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(updateShopifyAdminProductResponseProductProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(updateShopifyAdminProductResponseProductProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(updateShopifyAdminProductResponseProductProductDetailsAdditionalInformationMax)
+}),
   "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
@@ -1346,6 +1517,22 @@ export const UpdateShopifyAdminVariantBody = zod.object({
 })).min(1).max(updateShopifyAdminVariantBodySelectedOptionsMax).optional()
 })
 
+export const updateShopifyAdminVariantResponseProductProductDetailsFabricCompositionMax = 2000;
+
+export const updateShopifyAdminVariantResponseProductProductDetailsSareeLengthMax = 100;
+
+export const updateShopifyAdminVariantResponseProductProductDetailsBlousePieceLengthMax = 100;
+
+export const updateShopifyAdminVariantResponseProductProductDetailsBorderDetailsMax = 2000;
+
+export const updateShopifyAdminVariantResponseProductProductDetailsDesignPatternMax = 1000;
+
+export const updateShopifyAdminVariantResponseProductProductDetailsWashCareInstructionsMax = 5000;
+
+export const updateShopifyAdminVariantResponseProductProductDetailsAdditionalInformationMax = 5000;
+
+
+
 export const UpdateShopifyAdminVariantResponse = zod.object({
   "currencyCode": zod.string(),
   "product": zod.object({
@@ -1362,6 +1549,15 @@ export const UpdateShopifyAdminVariantResponse = zod.object({
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(updateShopifyAdminVariantResponseProductProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(updateShopifyAdminVariantResponseProductProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(updateShopifyAdminVariantResponseProductProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(updateShopifyAdminVariantResponseProductProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(updateShopifyAdminVariantResponseProductProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(updateShopifyAdminVariantResponseProductProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(updateShopifyAdminVariantResponseProductProductDetailsAdditionalInformationMax)
+}),
   "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
@@ -1404,6 +1600,22 @@ export const DeleteShopifyAdminVariantParams = zod.object({
   "variantId": zod.coerce.string()
 })
 
+export const deleteShopifyAdminVariantResponseProductProductDetailsFabricCompositionMax = 2000;
+
+export const deleteShopifyAdminVariantResponseProductProductDetailsSareeLengthMax = 100;
+
+export const deleteShopifyAdminVariantResponseProductProductDetailsBlousePieceLengthMax = 100;
+
+export const deleteShopifyAdminVariantResponseProductProductDetailsBorderDetailsMax = 2000;
+
+export const deleteShopifyAdminVariantResponseProductProductDetailsDesignPatternMax = 1000;
+
+export const deleteShopifyAdminVariantResponseProductProductDetailsWashCareInstructionsMax = 5000;
+
+export const deleteShopifyAdminVariantResponseProductProductDetailsAdditionalInformationMax = 5000;
+
+
+
 export const DeleteShopifyAdminVariantResponse = zod.object({
   "currencyCode": zod.string(),
   "product": zod.object({
@@ -1420,6 +1632,15 @@ export const DeleteShopifyAdminVariantResponse = zod.object({
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(deleteShopifyAdminVariantResponseProductProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(deleteShopifyAdminVariantResponseProductProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(deleteShopifyAdminVariantResponseProductProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(deleteShopifyAdminVariantResponseProductProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(deleteShopifyAdminVariantResponseProductProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(deleteShopifyAdminVariantResponseProductProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(deleteShopifyAdminVariantResponseProductProductDetailsAdditionalInformationMax)
+}),
   "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({
@@ -1483,6 +1704,22 @@ export const CreateShopifyAdminVariantBody = zod.object({
 })).min(1).max(createShopifyAdminVariantBodySelectedOptionsMax)
 })
 
+export const createShopifyAdminVariantResponseProductProductDetailsFabricCompositionMax = 2000;
+
+export const createShopifyAdminVariantResponseProductProductDetailsSareeLengthMax = 100;
+
+export const createShopifyAdminVariantResponseProductProductDetailsBlousePieceLengthMax = 100;
+
+export const createShopifyAdminVariantResponseProductProductDetailsBorderDetailsMax = 2000;
+
+export const createShopifyAdminVariantResponseProductProductDetailsDesignPatternMax = 1000;
+
+export const createShopifyAdminVariantResponseProductProductDetailsWashCareInstructionsMax = 5000;
+
+export const createShopifyAdminVariantResponseProductProductDetailsAdditionalInformationMax = 5000;
+
+
+
 export const CreateShopifyAdminVariantResponse = zod.object({
   "currencyCode": zod.string(),
   "product": zod.object({
@@ -1499,6 +1736,15 @@ export const CreateShopifyAdminVariantResponse = zod.object({
   "craftTechnique": zod.string(),
   "region": zod.string(),
   "colour": zod.string(),
+  "productDetails": zod.object({
+  "fabricComposition": zod.string().max(createShopifyAdminVariantResponseProductProductDetailsFabricCompositionMax),
+  "sareeLength": zod.string().max(createShopifyAdminVariantResponseProductProductDetailsSareeLengthMax),
+  "blousePieceLength": zod.string().max(createShopifyAdminVariantResponseProductProductDetailsBlousePieceLengthMax),
+  "borderDetails": zod.string().max(createShopifyAdminVariantResponseProductProductDetailsBorderDetailsMax),
+  "designPattern": zod.string().max(createShopifyAdminVariantResponseProductProductDetailsDesignPatternMax),
+  "washCareInstructions": zod.string().max(createShopifyAdminVariantResponseProductProductDetailsWashCareInstructionsMax),
+  "additionalInformation": zod.string().max(createShopifyAdminVariantResponseProductProductDetailsAdditionalInformationMax)
+}),
   "collectionIds": zod.array(zod.string()),
   "imageUrl": zod.url().nullable(),
   "variants": zod.array(zod.object({

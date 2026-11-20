@@ -279,7 +279,7 @@ test("shows live blouse details and ranked, purchasable related products", async
   await mobile.context.close();
 });
 
-test("hides blouse details for non-sarees and shows unspecified for an unconfigured saree", async () => {
+test("shows blouse details only for sarees with configured availability", async () => {
   const dupatta = {
     ...productResponse.products[0],
     productType: "Dupatta",
@@ -294,8 +294,77 @@ test("hides blouse details for non-sarees and shows unspecified for an unconfigu
     attributes: { ...productResponse.products[0].attributes, blouseAvailability: null },
   };
   const unspecified = await openProduct({ catalog: { products: [saree] } });
-  await unspecified.page.getByTestId("text-blouse-availability").getByText("Blouse availability not specified.").waitFor();
+  assert.equal(await unspecified.page.getByTestId("text-blouse-availability").count(), 0);
   await unspecified.context.close();
+});
+
+test("renders only known piece details, supports gallery selection, wishlist, and an available variant", async () => {
+  const image = (label) => ({
+    url: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="8" height="10"><rect width="8" height="10" fill="${label}"/></svg>`)}`,
+    altText: label,
+  });
+  const product = {
+    ...productResponse.products[0],
+    title: "Narayanpet handloom saree",
+    images: [image("#8b2d36"), image("#c2a36d")],
+    attributes: {
+      fabric: "Cotton",
+      regionalHandloom: "Narayanpet",
+      craftTechnique: null,
+      region: "Telangana",
+      colour: null,
+      blouseAvailability: "included",
+    },
+    productDetails: {
+      fabricComposition: "100% cotton",
+      sareeLength: "",
+      blousePieceLength: "0.8 metres",
+      borderDetails: "",
+      designPattern: "Small geometric motifs",
+      washCareInstructions: "Gentle hand wash separately.",
+      additionalInformation: "",
+    },
+    variants: [
+      { ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/unavailable", title: "Unavailable", availableForSale: false },
+      { ...productResponse.products[0].variants[0], id: variantId, title: "Ready to wear", availableForSale: true },
+    ],
+  };
+  const { context, page } = await openProduct({ catalog: { products: [product] } });
+  assert.equal(await page.getByTestId("section-product-details").count(), 1);
+  await page.getByTestId("section-product-details").getByRole("button", { name: /Piece details/ }).click();
+  await page.getByText("100% cotton").waitFor();
+  await page.getByText("Small geometric motifs").waitFor();
+  assert.equal(await page.getByText("0.8 metres").count(), 1);
+  assert.equal(await page.getByText("Gentle hand wash separately.").count(), 1);
+  const detailCopy = await page.getByTestId("section-product-details").innerText();
+  assert.match(detailCopy, /MATERIAL\s+Cotton/);
+  assert.match(detailCopy, /REGIONAL HANDLOOM \/ TRADITION\s+Narayanpet/);
+  assert.match(detailCopy, /REGION OF ORIGIN\s+Telangana/);
+  assert.match(detailCopy, /BLOUSE AVAILABILITY\s+Blouse Piece Included/);
+  assert.doesNotMatch(detailCopy, /Saree length/);
+  assert.equal(await page.getByText("Pure", { exact: true }).count(), 0);
+  assert.equal(await page.locator(".shopify-attribute-strip dd").allTextContents().then((items) => items.includes("")), false);
+
+  await page.getByRole("button", { name: "Show product photo 2 of 2" }).click();
+  await page.getByRole("button", { name: "Enlarge product photo 2 of 2" }).waitFor();
+  assert.equal(await page.locator(".shopify-gallery-count").innerText(), "2 / 2");
+  await page.getByRole("button", { name: "Enlarge product photo 2 of 2" }).click();
+  await page.getByRole("dialog", { name: "Product photo enlarged" }).waitFor();
+  await page.keyboard.press("Escape");
+  assert.equal(await page.getByRole("dialog", { name: "Product photo enlarged" }).count(), 0);
+  assert.equal(await page.locator(".shopify-variant-select option:disabled").count(), 1);
+  assert.equal(await page.getByTestId("button-add-shopify-to-cart").isDisabled(), false);
+
+  await page.getByTestId("button-wishlist-shopify-detail").click();
+  await page.getByTestId("button-wishlist-shopify-detail").getAttribute("aria-pressed").then((value) => assert.equal(value, "true"));
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("kq-wish") || "[]").length), 1);
+  await context.close();
+
+  const missing = { ...product, productDetails: undefined, attributes: { ...product.attributes, fabric: null, regionalHandloom: null, craftTechnique: null, region: null, colour: null, blouseAvailability: null } };
+  const blank = await openProduct({ catalog: { products: [missing] } });
+  assert.equal(await blank.page.getByTestId("section-product-details").count(), 0);
+  assert.equal(await blank.page.locator(".shopify-attribute-strip").count(), 0);
+  await blank.context.close();
 });
 
 async function openCart({

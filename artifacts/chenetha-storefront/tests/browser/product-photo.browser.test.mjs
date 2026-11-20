@@ -127,9 +127,20 @@ async function openForm({ mobile = false, edit = false, setup } = {}) {
             status: "ACTIVE",
             tags: ["silk"],
             fabric: "Silk",
+            regionalHandloom: "",
+            blouseAvailability: "included",
             craftTechnique: "",
             region: "",
             colour: "",
+            productDetails: {
+              fabricComposition: "Pure silk",
+              sareeLength: "",
+              blousePieceLength: "",
+              borderDetails: "",
+              designPattern: "",
+              washCareInstructions: "",
+              additionalInformation: "",
+            },
             collectionIds: [],
             imageUrl: "https://cdn.example.test/existing-cover.jpg",
             options: [],
@@ -883,6 +894,9 @@ test("staged photos reach the update gallery and saving details keeps the existi
   });
   await mockSuccessfulUpload(page);
   await page.getByTestId("input-product-title").fill("Description refreshed");
+  await page.getByTestId("input-product-fabric-composition").fill("Pure silk with zari");
+  await page.getByTestId("input-product-saree-length").fill("5.5 metres");
+  await page.getByTestId("input-product-wash-care").fill("Dry clean only");
   await page.getByTestId("button-add-gallery-photo").click();
   await page.getByLabel("Choose a product gallery photo").setInputFiles({
     name: "gallery-update.jpg",
@@ -907,6 +921,15 @@ test("staged photos reach the update gallery and saving details keeps the existi
   assert.equal(mutations.length, 1);
   assert.equal(mutations[0].request.method(), "PATCH");
   assert.equal(Object.hasOwn(mutations[0].body, "imageUrl"), false);
+  assert.deepEqual(mutations[0].body.productDetails, {
+    fabricComposition: "Pure silk with zari",
+    sareeLength: "5.5 metres",
+    blousePieceLength: "",
+    borderDetails: "",
+    designPattern: "",
+    washCareInstructions: "Dry clean only",
+    additionalInformation: "",
+  });
   await context.close();
 });
 

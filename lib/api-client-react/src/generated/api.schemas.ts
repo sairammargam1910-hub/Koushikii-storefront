@@ -166,6 +166,23 @@ export interface ShopifyProductAttributes {
   blouseAvailability: ShopifyProductAttributesBlouseAvailability;
 }
 
+export interface ShopifyProductDetails {
+  /** @maxLength 2000 */
+  fabricComposition: string;
+  /** @maxLength 100 */
+  sareeLength: string;
+  /** @maxLength 100 */
+  blousePieceLength: string;
+  /** @maxLength 2000 */
+  borderDetails: string;
+  /** @maxLength 1000 */
+  designPattern: string;
+  /** @maxLength 5000 */
+  washCareInstructions: string;
+  /** @maxLength 5000 */
+  additionalInformation: string;
+}
+
 export interface ShopifyProduct {
   id: string;
   createdAt?: string;
@@ -175,6 +192,7 @@ export interface ShopifyProduct {
   productType: string;
   tags: string[];
   attributes: ShopifyProductAttributes;
+  productDetails: ShopifyProductDetails;
   collections: ShopifyProductCollection[];
   images: ShopifyImage[];
   variants: ShopifyVariant[];
@@ -602,6 +620,7 @@ export interface ShopifyAdminProduct {
   craftTechnique: string;
   region: string;
   colour: string;
+  productDetails: ShopifyProductDetails;
   collectionIds: string[];
   /** @nullable */
   imageUrl: string | null;
@@ -758,6 +777,7 @@ export interface ShopifyAdminProductInput {
   region?: string;
   /** @maxLength 255 */
   colour?: string;
+  productDetails?: ShopifyProductDetails;
   /** @maxItems 100 */
   collectionIds?: string[];
   /** @maxLength 120 */
@@ -811,6 +831,7 @@ export interface ShopifyAdminProductUpdate {
   region?: string;
   /** @maxLength 255 */
   colour?: string;
+  productDetails?: ShopifyProductDetails;
   /** @maxItems 100 */
   collectionIds?: string[];
   /** @maxLength 120 */

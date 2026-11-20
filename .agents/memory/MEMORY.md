@@ -13,5 +13,6 @@
 - [Cashfree cross-device payment](cashfree-cross-device.md) — keep checkout open for QR payments and rely on server-verified status, not the browser redirect.
 - [Neon migration preparation](neon-migration-preparation.md) — prepared migrations reject dollar-quoted DO blocks; test equivalent plain SQL on the temporary branch first.
 - [Shopify classification storage](shopify-classification-storage.md) — preserve scalar metafields; store multiple classification values as JSON without changing Shopify definitions.
+- [Shopify product details](shopify-product-details.md) — keep verified per-piece details in a separate public JSON metafield and hide blank fields.
 - [Git push verification](git-push-verification.md) — an internal mirror push can succeed remotely before a local tracking-ref safety error; verify before retrying.
 - [Shopify discount totals](shopify-discount-totals.md) — order-level coupons can leave line costs unchanged; include cart allocations and keep paid-line totals consistent.

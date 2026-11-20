@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, ZoomIn, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   addShopifyCartLine,
@@ -352,10 +352,22 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   catalogProducts: ShopifyProduct[];
 }) {
   const [imageIndex, setImageIndex] = useState(0);
-  const [variantId, setVariantId] = useState(product.variants[0]?.id ?? "");
+  const [variantId, setVariantId] = useState(
+    product.variants.find(isShopifyVariantPurchasable)?.id ?? product.variants[0]?.id ?? "",
+  );
   const [quantity, setQuantity] = useState(1);
   const [cartMessage, setCartMessage] = useState("");
   const [cartError, setCartError] = useState("");
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const zoomTriggerRef = useRef<HTMLButtonElement>(null);
+  const zoomCloseRef = useRef<HTMLButtonElement>(null);
+  const zoomDialogRef = useRef<HTMLElement>(null);
+  const wishlist = useStore("kq-wish");
+  const { toggleWishlist, loading: wishlistLoading, error: wishlistErrorFromHook } = useShopperPreferences();
+  const [wishlistError, setWishlistError] = useState(false);
+  const saved = wishlist.some((item) => item.id === product.id);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const image = product.images[imageIndex];
@@ -367,12 +379,36 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   );
   const productSummary = getShopifyProductSummary(product.description) ||
     "More details about this piece will be added soon.";
-  const blouseAvailability = product.attributes.blouseAvailability ?? "not_specified";
+  const blouseAvailability = product.attributes?.blouseAvailability;
   const blouseAvailabilityText = blouseAvailability === "included"
     ? "Blouse Piece Included"
     : blouseAvailability === "not_included"
       ? "Blouse Piece Not Included"
-      : "Blouse availability not specified.";
+      : "";
+  const clean = (value?: string | null) => value?.trim() ?? "";
+  const productDetailRows = [
+    ["Material", clean(product.attributes?.fabric)],
+    ["Fabric composition", clean(product.productDetails?.fabricComposition)],
+    ["Weave / craft technique", clean(product.attributes?.craftTechnique)],
+    ["Regional handloom / tradition", clean(product.attributes?.regionalHandloom)],
+    ["Region of origin", clean(product.attributes?.region)],
+    ["Blouse availability", isSareeProductType(product.productType) ? blouseAvailabilityText : ""],
+    ["Saree length", clean(product.productDetails?.sareeLength)],
+    ["Blouse-piece length", clean(product.productDetails?.blousePieceLength)],
+    ["Border details", clean(product.productDetails?.borderDetails)],
+    ["Design / pattern", clean(product.productDetails?.designPattern)],
+    ["Colour", clean(product.attributes?.colour)],
+    ["Wash and care", clean(product.productDetails?.washCareInstructions)],
+    ["Additional information", clean(product.productDetails?.additionalInformation)],
+  ].filter(([, value]) => value);
+  const attributeRows = [
+    ["Fabric", clean(product.attributes?.fabric)],
+    ["Weave / print", clean(product.attributes?.craftTechnique)],
+    ["Regional tradition", clean(product.attributes?.regionalHandloom)],
+    ["Region", clean(product.attributes?.region)],
+    ["Colour", clean(product.attributes?.colour)],
+  ].filter(([, value]) => value);
+  const collection = product.collections?.find((item) => item.handle && item.handle !== "frontpage");
   const demo = isDemoProduct(product);
   const hasVariantChoice = product.variants.length > 1 ||
     (product.variants.length === 1 && !isDefaultShopifyVariantTitle(product.variants[0].title));
@@ -405,22 +441,81 @@ function ShopifyProductDetail({ product, catalogProducts }: {
     item.selectedOptions.length
       ? item.selectedOptions.map((option) => `${option.name}: ${option.value}`).join(" · ")
       : item.title;
+  const moveImage = (direction: number) => {
+    if (product.images.length > 1) {
+      setImageIndex((current) => (current + direction + product.images.length) % product.images.length);
+    }
+  };
+  useEffect(() => {
+    if (!zoomOpen) return;
+    zoomCloseRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setZoomOpen(false);
+      if (event.key === "ArrowLeft") moveImage(-1);
+      if (event.key === "ArrowRight") moveImage(1);
+      if (event.key === "Tab" && zoomDialogRef.current) {
+        const focusable = [...zoomDialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled])")];
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      zoomTriggerRef.current?.focus();
+    };
+  }, [zoomOpen, product.images.length]);
+  const handleWishlist = async () => {
+    setWishlistError(false);
+    try {
+      await toggleWishlist(product.id);
+    } catch {
+      setWishlistError(true);
+    }
+  };
 
   return (
     <Shell>
       <main className="wrap">
         <nav className="product-breadcrumb" aria-label="Breadcrumb">
-          <a href={base}>Home</a><span>/</span><a href={`${base}Collections`}>Collections</a>
+          <a href={base}>Home</a><span>/</span><a href={`${base}Collections`}>{collection?.title || "Collections"}</a>
           <span>/</span><span aria-current="page">{product.title}</span>
         </nav>
         <div className="splitdetail shopify-product-detail" style={{ paddingTop: 0 }}>
-          <section aria-label="Product photos">
-            <div className="gallery-main shopify-gallery-main">
+          <section aria-label="Product photos" className="shopify-gallery">
+            {product.images.length > 1 && (
+              <div className="thumbs shopify-thumbs" aria-label="Choose product photo">
+                {product.images.map((item, index) => (
+                  <button key={`${item.url}-${index}`} type="button"
+                    aria-label={`Show product photo ${index + 1} of ${product.images.length}`}
+                    aria-pressed={imageIndex === index} onClick={() => setImageIndex(index)}>
+                    <img src={item.url} alt="" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="gallery-main shopify-gallery-main"
+              onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null; }}
+              onTouchEnd={(event) => {
+                if (touchStartX.current === null) return;
+                const delta = event.changedTouches[0]?.clientX - touchStartX.current;
+                if (Math.abs(delta) > 40) moveImage(delta < 0 ? 1 : -1);
+                touchStartX.current = null;
+              }}>
               {image ? (
-                <img
-                  src={image.url}
-                  alt={image.altText || product.title}
-                />
+                <button ref={zoomTriggerRef} type="button" className="shopify-zoom-trigger" onClick={() => setZoomOpen(true)}
+                  aria-label={`Enlarge product photo ${imageIndex + 1} of ${product.images.length}`}>
+                  <img src={image.url} alt={image.altText || product.title} />
+                  <span className="shopify-zoom-hint"><ZoomIn size={15}/> View detail</span>
+                </button>
               ) : (
                 <div className="shopify-detail-placeholder">
                   <span className="textile s1" />
@@ -428,41 +523,50 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                 </div>
               )}
               {demo && <span className="shopify-demo-badge">Demo listing · not for sale</span>}
+              {product.images.length > 1 && <>
+                <button type="button" className="shopify-gallery-arrow is-prev" onClick={() => moveImage(-1)} aria-label="Previous product photo"><ChevronLeft size={20}/></button>
+                <button type="button" className="shopify-gallery-arrow is-next" onClick={() => moveImage(1)} aria-label="Next product photo"><ChevronRight size={20}/></button>
+                <span className="shopify-gallery-count" aria-live="polite">{imageIndex + 1} / {product.images.length}</span>
+              </>}
             </div>
-            {product.images.length > 1 && (
-              <div className="thumbs shopify-thumbs" aria-label="Product photos">
-                {product.images.map((item, index) => (
-                  <button
-                    key={`${item.url}-${index}`}
-                    type="button"
-                    aria-label={`Show product photo ${index + 1}`}
-                    aria-pressed={imageIndex === index}
-                    onClick={() => setImageIndex(index)}
-                  >
-                    <img src={item.url} alt={item.altText || `${product.title}, photo ${index + 1}`} />
-                  </button>
-                ))}
-              </div>
-            )}
           </section>
 
           <section className="detail">
-            <span className="eyebrow">{product.productType || "Saree"}</span>
+            <span className="eyebrow">{collection?.title || product.productType || "Handloom"}</span>
             <h1>{product.title}</h1>
-            <span className="price shopify-detail-price">
-              {demo ? "Demo price · " : ""}
-              {price || "Price to be confirmed"}
-            </span>
             <div className="shopify-product-summary" data-testid="text-product-summary">
               <h2>About the product</h2>
               <p>{productSummary}</p>
             </div>
-            {isSareeProductType(product.productType) && (
+            {attributeRows.length > 0 && <dl className="shopify-attribute-strip" aria-label="Textile attributes">
+              {attributeRows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+            </dl>}
+            <span className="price shopify-detail-price">
+              {demo ? "Demo price · " : ""}
+              {price || "Price to be confirmed"}
+            </span>
+            <p className="shopify-availability" data-testid="text-product-availability">
+              <span className={`shopify-availability-dot${canPurchase ? " is-available" : ""}`} aria-hidden="true"/>
+              {demo ? "Demo listing · not for sale" : canPurchase ? "Available to add to your bag" : "Currently unavailable"}
+            </p>
+            {isSareeProductType(product.productType) && blouseAvailabilityText && (
               <div className="shopify-blouse-availability" data-testid="text-blouse-availability">
                 <span className="eyebrow">Blouse piece</span>
                 <strong>{blouseAvailabilityText}</strong>
               </div>
             )}
+            {productDetailRows.length > 0 && <section className={`shopify-details-block${detailOpen ? " is-open" : ""}`} data-testid="section-product-details">
+              <button className="shopify-details-toggle" type="button" aria-expanded={detailOpen}
+                aria-controls="shopify-details-content" onClick={() => setDetailOpen((open) => !open)}>
+                <span><small>THE TEXTILE</small><strong>Piece details</strong></span>
+                <span aria-hidden="true">{detailOpen ? "−" : "+"}</span>
+              </button>
+              <div id="shopify-details-content" className="shopify-details-content">
+                <dl>
+                  {productDetailRows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+                </dl>
+              </div>
+            </section>}
             {product.variants.length > 0 && hasVariantChoice && (
               <label className="shopify-variant-select">
                 {product.variants.length > 1 ? "Choose an option" : "Selected option"}
@@ -503,6 +607,18 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                         : `Add to bag${price ? ` · ${formatShopifyMoney(String(Number(variant?.price || 0) * quantity), variant?.currencyCode || "INR")}` : ""}`}
                 </button>
                 <button
+                  className={`btn shopify-wishlist-button${saved ? " is-saved" : ""}`}
+                  type="button"
+                  data-testid="button-wishlist-shopify-detail"
+                  disabled={wishlistLoading || Boolean(wishlistErrorFromHook)}
+                  aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-pressed={saved}
+                  onClick={() => void handleWishlist()}
+                >
+                  <Heart size={17} fill={saved ? "currentColor" : "none"}/>
+                  {saved ? "Saved to wishlist" : "Add to wishlist"}
+                </button>
+                <button
                   className="btn shopify-buy-now"
                   type="button"
                   data-testid="button-buy-shopify-now"
@@ -524,6 +640,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                 </p>
               )}
               {cartError && <p className="shopify-cart-feedback is-error" role="alert">{customerFacingMessage(cartError, "This product could not be added. Please try again.")}</p>}
+              {wishlistError && <p className="shopify-cart-feedback is-error" role="alert">Wishlist could not be saved. Please try again.</p>}
               {!variant?.availableForSale && !demo && (
                 <p className="muted">This option is currently out of stock.</p>
               )}
@@ -549,6 +666,19 @@ function ShopifyProductDetail({ product, catalogProducts }: {
           </section>
         )}
       </main>
+      {zoomOpen && image && <div className="shopify-zoom-backdrop" role="presentation" onMouseDown={(event) => {
+        if (event.target === event.currentTarget) setZoomOpen(false);
+      }}>
+        <section ref={zoomDialogRef} className="shopify-zoom-dialog" role="dialog" aria-modal="true" aria-label="Product photo enlarged">
+          <button ref={zoomCloseRef} type="button" className="shopify-zoom-close" onClick={() => setZoomOpen(false)} aria-label="Close enlarged photo"><X size={21}/></button>
+          {product.images.length > 1 && <>
+            <button type="button" className="shopify-gallery-arrow is-prev" onClick={() => moveImage(-1)} aria-label="Previous product photo"><ChevronLeft size={22}/></button>
+            <button type="button" className="shopify-gallery-arrow is-next" onClick={() => moveImage(1)} aria-label="Next product photo"><ChevronRight size={22}/></button>
+          </>}
+          <img src={image.url} alt={image.altText || product.title}/>
+          <p aria-live="polite">{image.altText || product.title}{product.images.length > 1 ? ` · ${imageIndex + 1} of ${product.images.length}` : ""}</p>
+        </section>
+      </div>}
     </Shell>
   );
 }

@@ -518,3 +518,31 @@ mtime_ms = 1794921814594
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/db27ad20-a0c3-4f96-ae21-4b59ab1f6a7c/0ce3c84d-8fd6-47a1-b99b-ad3148fdd0ae"
 storage_version_token = "1794921846783231"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "56qrLiltQLzGXmOAYjFW2"
+uri = "file://generated-artifacts/product-detail-desktop.jpg"
+type = "image"
+title = "Product page · Desktop"
+description = "Full-page desktop screenshot using the current Shopify development listing; catalog data was not changed."
+logical_id = "5165ef52-626c-4cf4-a9e6-93bc554392c4"
+content_hash = "sha256:72a39fceac0881a7e37849a7eeedfbb0e73c2e842d3613ca525c929d40847f83"
+size = 277857
+mtime_ms = 1795144484026
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/5165ef52-626c-4cf4-a9e6-93bc554392c4/85103952-f3e3-48f7-a1cb-5dc3c374ca9b"
+storage_version_token = "1795144733027736"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "GZbIqasOZx_Nx60MFNXca"
+uri = "file://generated-artifacts/product-detail-mobile.jpg"
+type = "image"
+title = "Product page · Mobile"
+description = "Full-page mobile screenshot using the current Shopify development listing; catalog data was not changed."
+logical_id = "173842bc-7190-407f-9e21-63187bcc6b92"
+content_hash = "sha256:45dfafc8ba163e968135e50d0fd18812d4a91324a45967e642177c111129b214"
+size = 156394
+mtime_ms = 1795144486538
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/173842bc-7190-407f-9e21-63187bcc6b92/ec2e304f-4c2a-4ff9-b0d4-64db2a742ec5"
+storage_version_token = "1795144734425024"
+content_type = "image/jpeg"

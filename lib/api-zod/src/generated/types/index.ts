@@ -97,6 +97,7 @@ export * from './shopifyProduct';
 export * from './shopifyProductAttributes';
 export * from './shopifyProductAttributesBlouseAvailability';
 export * from './shopifyProductCollection';
+export * from './shopifyProductDetails';
 export * from './shopifyProductsResponse';
 export * from './shopifyStorefrontPromotion';
 export * from './shopifyStorefrontPromotionsResponse';

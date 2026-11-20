@@ -47,6 +47,13 @@ import {
   validatePublicImageUrl,
 } from "../lib/shopifyAdminClient";
 import { MAX_IMAGE_BYTES, stageProductImage } from "../lib/shopifyImageUpload";
+import {
+  EMPTY_SHOPIFY_PRODUCT_DETAILS,
+  hasShopifyProductDetails,
+  parseShopifyProductDetails,
+  serializeShopifyProductDetails,
+  type ShopifyProductDetails,
+} from "../lib/shopifyProductDetails";
 
 const router: IRouter = Router();
 let storefrontPromotionCache: {
@@ -91,6 +98,7 @@ type AdminProduct = {
   craftTechniqueMetafield: AdminProductMetafield | null;
   regionMetafield: AdminProductMetafield | null;
   colourMetafield: AdminProductMetafield | null;
+  productDetailsMetafield: AdminProductMetafield | null;
   collections: {
     nodes: Array<{
       id: string;
@@ -198,6 +206,7 @@ const ADMIN_PRODUCT_FIELDS = `#graphql
   craftTechniqueMetafield: metafield(namespace: "chenetha", key: "craft_technique") { key value }
   regionMetafield: metafield(namespace: "chenetha", key: "region") { key value }
   colourMetafield: metafield(namespace: "chenetha", key: "colour") { key value }
+  productDetailsMetafield: metafield(namespace: "chenetha", key: "product_details") { key value }
   collections(first: 10) {
     nodes { id title handle ruleSet { appliedDisjunctively } }
     pageInfo { hasNextPage endCursor }
@@ -343,6 +352,7 @@ const CHENETHA_PRODUCT_ATTRIBUTES = [
 ] as const;
 
 let productAttributeDefinitionsReady: Promise<void> | undefined;
+let productDetailsDefinitionReady: Promise<void> | undefined;
 
 const ADMIN_PRODUCT_MEDIA_QUERY = `#graphql
   query MerchantProductMedia($id: ID!, $after: String) {
@@ -711,6 +721,7 @@ function mapProduct(
     craftTechnique: metafield("craft_technique"),
     region: metafield("region"),
     colour: metafield("colour"),
+    productDetails: parseShopifyProductDetails(product.productDetailsMetafield?.value),
     collectionIds: manualCollections.map((collection) => collection.id),
     imageUrl: product.featuredMedia?.image?.url ?? null,
     options: product.options.map((option) => ({
@@ -921,6 +932,103 @@ async function createProductAttributeDefinitions(): Promise<void> {
       definition = updated.metafieldDefinitionUpdate.updatedDefinition ?? definition;
     }
   }
+}
+
+async function createProductDetailsDefinition(): Promise<void> {
+  const existing = await shopifyAdminRequest<{
+    metafieldDefinitions: {
+      nodes: Array<{
+        id: string;
+        namespace: string;
+        key: string;
+        type: { name: string };
+        access: { storefront: string | null };
+      }>;
+    };
+  }>(ADMIN_PRODUCT_ATTRIBUTE_DEFINITIONS_QUERY);
+  let definition = existing.metafieldDefinitions.nodes.find(
+    (entry) => entry.namespace === "chenetha" && entry.key === "product_details",
+  );
+  if (definition && definition.type.name !== "json") {
+    throw new ShopifyInputError(
+      "Shopify metafield chenetha.product_details must use JSON. Update its Shopify definition before saving product details.",
+    );
+  }
+  if (!definition) {
+    const created = await shopifyAdminRequest<{
+      metafieldDefinitionCreate: {
+        createdDefinition: typeof definition;
+        userErrors: ShopifyUserErrors;
+      };
+    }>(ADMIN_METAFIELD_DEFINITION_CREATE, {
+      definition: {
+        namespace: "chenetha",
+        key: "product_details",
+        name: "Chenetha product details",
+        description: "Product-specific fabric composition, measurements, border, design, care and additional details.",
+        ownerType: "PRODUCT",
+        type: "json",
+        access: { storefront: "PUBLIC_READ" },
+      },
+    });
+    assertNoUserErrors(created.metafieldDefinitionCreate.userErrors);
+    definition = created.metafieldDefinitionCreate.createdDefinition ?? undefined;
+    if (!definition) {
+      throw new ShopifyAdminError("Shopify did not create the product details metafield.");
+    }
+  } else if (definition.access.storefront !== "PUBLIC_READ") {
+    const updated = await shopifyAdminRequest<{
+      metafieldDefinitionUpdate: {
+        updatedDefinition: typeof definition;
+        userErrors: ShopifyUserErrors;
+      };
+    }>(ADMIN_METAFIELD_DEFINITION_UPDATE, {
+      definition: { id: definition.id, access: { storefront: "PUBLIC_READ" } },
+    });
+    assertNoUserErrors(updated.metafieldDefinitionUpdate.userErrors);
+  }
+}
+
+function ensureProductDetailsDefinition(): Promise<void> {
+  if (!productDetailsDefinitionReady) {
+    productDetailsDefinitionReady = createProductDetailsDefinition().catch((error: unknown) => {
+      productDetailsDefinitionReady = undefined;
+      throw error;
+    });
+  }
+  return productDetailsDefinitionReady;
+}
+
+async function saveProductDetails(
+  productId: string,
+  details: ShopifyProductDetails,
+  existing?: AdminProductMetafield | null,
+): Promise<void> {
+  const hasDetails = hasShopifyProductDetails(details);
+  if (!hasDetails && !existing?.value) return;
+  if (!hasDetails) {
+    const result = await shopifyAdminRequest<{
+      metafieldsDelete: { userErrors: ShopifyUserErrors };
+    }>(ADMIN_METAFIELDS_DELETE, {
+      metafields: [{ ownerId: productId, namespace: "chenetha", key: "product_details" }],
+    });
+    assertNoUserErrors(result.metafieldsDelete.userErrors);
+    return;
+  }
+
+  await ensureProductDetailsDefinition();
+  const result = await shopifyAdminRequest<{
+    metafieldsSet: { userErrors: ShopifyUserErrors };
+  }>(ADMIN_METAFIELDS_SET, {
+    metafields: [{
+      ownerId: productId,
+      namespace: "chenetha",
+      key: "product_details",
+      type: "json",
+      value: serializeShopifyProductDetails(details),
+    }],
+  });
+  assertNoUserErrors(result.metafieldsSet.userErrors);
 }
 
 function ensureProductAttributeDefinitions(): Promise<void> {
@@ -1918,6 +2026,11 @@ router.post("/shopify/admin/products", async (req, res): Promise<void> => {
       input.blouseAvailability ?? "not_specified",
       productAttributeMetafields(initial.product),
     );
+    await saveProductDetails(
+      productId,
+      input.productDetails ?? EMPTY_SHOPIFY_PRODUCT_DETAILS,
+      initial.product.productDetailsMetafield,
+    );
 
     const collectionPlan =
       selectedCollectionIds.length || newCollectionTitle
@@ -2074,6 +2187,13 @@ router.patch(
           productId,
           input.blouseAvailability,
           productAttributeMetafields(existing.product),
+        );
+      }
+      if (input.productDetails !== undefined) {
+        await saveProductDetails(
+          productId,
+          input.productDetails,
+          existing.product.productDetailsMetafield,
         );
       }
 

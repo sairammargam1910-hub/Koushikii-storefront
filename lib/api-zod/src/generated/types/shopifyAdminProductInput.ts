@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ShopifyAdminProductInputBlouseAvailability } from './shopifyAdminProductInputBlouseAvailability';
+import type { ShopifyProductDetails } from './shopifyProductDetails';
 
 export interface ShopifyAdminProductInput {
   /**
@@ -33,6 +34,7 @@ export interface ShopifyAdminProductInput {
   region?: string;
   /** @maxLength 255 */
   colour?: string;
+  productDetails?: ShopifyProductDetails;
   /** @maxItems 100 */
   collectionIds?: string[];
   /** @maxLength 120 */

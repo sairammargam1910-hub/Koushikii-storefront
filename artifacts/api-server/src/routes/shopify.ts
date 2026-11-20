@@ -12,6 +12,7 @@ import {
   getShopifyCustomerAccountUrl,
   shopifyStorefrontRequest,
 } from "../lib/shopifyStorefrontClient";
+import { parseShopifyProductDetails } from "../lib/shopifyProductDetails";
 import {
   getCartDiscountAmount,
   getCheckoutItemTotal,
@@ -45,6 +46,7 @@ type ShopifyProduct = {
   craftTechnique: { value: string } | null;
   region: { value: string } | null;
   colour: { value: string } | null;
+  productDetails: { value: string } | null;
   collections: { nodes: Array<{ id: string; handle: string; title: string }> };
   images: { nodes: ShopifyImage[] };
   variants: { nodes: ShopifyVariant[] };
@@ -172,6 +174,7 @@ const SHOPIFY_PRODUCTS_QUERY = `#graphql
         craftTechnique: metafield(namespace: "chenetha", key: "craft_technique") { value }
         region: metafield(namespace: "chenetha", key: "region") { value }
         colour: metafield(namespace: "chenetha", key: "colour") { value }
+        productDetails: metafield(namespace: "chenetha", key: "product_details") { value }
         collections(first: 50) {
           nodes { id handle title }
         }
@@ -744,6 +747,7 @@ router.get("/shopify/products", async (_req, res) => {
           colour: product.colour?.value ?? null,
           blouseAvailability: normalizeBlouseAvailability(product.blouseAvailability?.value),
         },
+        productDetails: parseShopifyProductDetails(product.productDetails?.value),
         collections: product.collections.nodes,
         images: product.images.nodes,
         variants: product.variants.nodes.map((variant) => ({

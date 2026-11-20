@@ -9,6 +9,7 @@ import type { ShopifyAdminProductBlouseAvailability } from './shopifyAdminProduc
 import type { ShopifyAdminProductOption } from './shopifyAdminProductOption';
 import type { ShopifyAdminProductStatus } from './shopifyAdminProductStatus';
 import type { ShopifyAdminProductVariant } from './shopifyAdminProductVariant';
+import type { ShopifyProductDetails } from './shopifyProductDetails';
 
 export interface ShopifyAdminProduct {
   id: string;
@@ -24,6 +25,7 @@ export interface ShopifyAdminProduct {
   craftTechnique: string;
   region: string;
   colour: string;
+  productDetails: ShopifyProductDetails;
   collectionIds: string[];
   /** @nullable */
   imageUrl: string | null;

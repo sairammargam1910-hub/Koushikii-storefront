@@ -49,6 +49,66 @@
 .kq .shopify-product-notice{margin:16px 0}
 .kq .shopify-product-notice.is-demo{border-left-color:#b77927;background:#fff3d8}
 .kq .shopify-cart-warning{color:#7c311d;font-size:12px;line-height:1.6}
+.kq .shopify-gallery{display:grid;grid-template-columns:76px minmax(0,1fr);gap:12px;align-items:start;min-width:0}
+.kq .shopify-gallery .shopify-thumbs{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:9px;margin:0;max-height:min(760px,75vw);overflow:auto}
+.kq .shopify-gallery .shopify-thumbs button{width:76px;height:98px;padding:3px;border:1px solid var(--line);background:#eee3cf;opacity:.7;cursor:pointer}
+.kq .shopify-gallery .shopify-thumbs button[aria-pressed=true]{border:2px solid var(--red);opacity:1}
+.kq .shopify-gallery .shopify-thumbs button img{display:block;width:100%;height:100%;object-fit:contain}
+.kq .splitdetail .shopify-gallery-main{grid-column:2;grid-row:1;min-width:0;position:relative;overflow:hidden;align-self:start;background:#eee3cf}
+.kq .shopify-zoom-trigger{display:block;position:relative;width:100%;padding:0;border:0;background:transparent;cursor:zoom-in}
+.kq .shopify-zoom-trigger img{display:block;width:100%;height:auto;max-height:78vh;object-fit:contain}
+.kq .shopify-zoom-hint{position:absolute;right:12px;bottom:12px;display:inline-flex;align-items:center;gap:6px;padding:8px 10px;background:#f7f1e6e8;color:#513e34;font-size:10px;letter-spacing:.04em}
+.kq .shopify-gallery-arrow{position:absolute;z-index:3;top:50%;display:grid;place-items:center;width:38px;height:38px;padding:0;border:1px solid #e2d4c4;border-radius:50%;background:#fbf7efed;color:#6d332e;transform:translateY(-50%);cursor:pointer}
+.kq .shopify-gallery-arrow.is-prev{left:12px}.kq .shopify-gallery-arrow.is-next{right:12px}
+.kq .shopify-gallery-count{position:absolute;right:12px;top:12px;z-index:2;padding:5px 8px;background:#f7f1e6df;color:#514741;font-size:10px;font-variant-numeric:tabular-nums}
+.kq .shopify-attribute-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:18px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.kq .shopify-attribute-strip>div{min-width:0;padding:10px 12px 10px 0}
+.kq .shopify-attribute-strip dt,.kq .shopify-details-content dt{color:var(--muted);font-size:10px;letter-spacing:.11em;text-transform:uppercase}
+.kq .shopify-attribute-strip dd{margin:4px 0 0;color:var(--ink);font-family:var(--font-display,'Cormorant Garamond',Georgia,serif);font-size:19px;line-height:1.15}
+.kq .shopify-detail-price{margin:10px 0 5px}
+.kq .shopify-availability{display:flex;align-items:center;gap:8px;margin:4px 0 16px;color:var(--muted);font-size:12px}
+.kq .shopify-availability-dot{width:8px;height:8px;border-radius:50%;background:#a77d5c}
+.kq .shopify-availability-dot.is-available{background:#64794b}
+.kq .shopify-details-block{margin:17px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.kq .shopify-details-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 0;border:0;background:transparent;color:var(--ink);text-align:left;cursor:pointer}
+.kq .shopify-details-toggle>span:first-child{display:grid;gap:3px}
+.kq .shopify-details-toggle small{color:var(--red);font-size:9px;font-weight:700;letter-spacing:.15em}
+.kq .shopify-details-toggle strong{font:500 26px/1.1 'Cormorant Garamond',Georgia,serif}
+.kq .shopify-details-toggle>span:last-child{color:var(--red);font:400 24px 'DM Sans',sans-serif}
+.kq .shopify-details-content{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.kq .shopify-details-block.is-open .shopify-details-content{grid-template-rows:1fr}
+.kq .shopify-details-content dl{overflow:hidden;margin:0}
+.kq .shopify-details-content dl>div{padding:10px 0;border-top:1px solid #e9ddcf}
+.kq .shopify-details-content dd{margin:4px 0 0;color:#514741;font-size:13px;line-height:1.65;white-space:pre-line}
+.kq .shopify-wishlist-button{display:flex;align-items:center;gap:9px;justify-content:center;border:1px solid var(--line);background:transparent;color:var(--red)}
+.kq .shopify-wishlist-button.is-saved{background:#f0e5d8}
+.kq .shopify-zoom-backdrop{position:fixed;z-index:999;inset:0;display:grid;place-items:center;padding:20px;background:#261e1bcc}
+.kq .shopify-zoom-dialog{position:relative;display:grid;place-items:center;width:min(100%,1100px);height:min(92dvh,900px);padding:30px 56px 18px;background:#f7f1e6}
+.kq .shopify-zoom-dialog>img{display:block;max-width:100%;max-height:calc(100% - 40px);object-fit:contain}
+.kq .shopify-zoom-dialog>p{margin:10px 0 0;color:#695b50;font-size:11px;text-align:center}
+.kq .shopify-zoom-close{position:absolute;right:12px;top:12px;z-index:4;display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:#fbf7ef;color:var(--red);cursor:pointer}
+.kq .shopify-related-section .products{min-width:0}
+@media(max-width:760px){
+  .kq .shopify-gallery{display:flex;flex-direction:column;gap:9px}
+  .kq .splitdetail .shopify-gallery-main{order:1;width:100%}
+  .kq .shopify-gallery .shopify-thumbs{order:2;flex-direction:row;width:100%;max-height:none;overflow-x:auto;overflow-y:hidden;padding-bottom:3px}
+  .kq .shopify-gallery .shopify-thumbs button{flex:0 0 70px;width:70px;height:82px}
+  .kq .shopify-zoom-trigger img{max-height:none}
+  .kq .shopify-buy-actions{grid-template-columns:1fr}
+  .kq .shopify-buy-actions .shopify-wishlist-button{min-height:42px}
+  .kq .shopify-related-section .products{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:0 1px 12px;scroll-snap-type:x proximity}
+  .kq .shopify-related-section .shopify-product-card{flex:0 0 min(68vw,245px);min-width:0;scroll-snap-align:start}
+  .kq .shopify-related-section .shopify-product-img{height:auto;aspect-ratio:4/5}
+  .kq .shopify-zoom-dialog{height:auto;max-height:90dvh;padding:48px 38px 18px}
+  .kq .shopify-zoom-dialog>img{max-height:75dvh}
+}
+@media(max-width:420px){
+  .kq .shopify-attribute-strip{grid-template-columns:1fr 1fr}
+  .kq .shopify-attribute-strip>div{padding:9px 8px 9px 0}
+  .kq .shopify-attribute-strip dd{font-size:17px;overflow-wrap:anywhere}
+  .kq .shopify-gallery-arrow{width:33px;height:33px}
+  .kq .shopify-zoom-dialog{padding-inline:32px}
+}
 .kq .shopify-cart-legacy{background:#faf3e8}
 .kq .shopify-cart-legacy .shopify-cart-warning{display:inline-block;margin-top:8px}
 .kq .shopify-catalog-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap}

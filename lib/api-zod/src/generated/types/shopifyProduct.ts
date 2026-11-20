@@ -8,6 +8,7 @@
 import type { ShopifyImage } from './shopifyImage';
 import type { ShopifyProductAttributes } from './shopifyProductAttributes';
 import type { ShopifyProductCollection } from './shopifyProductCollection';
+import type { ShopifyProductDetails } from './shopifyProductDetails';
 import type { ShopifyVariant } from './shopifyVariant';
 
 export interface ShopifyProduct {
@@ -19,6 +20,7 @@ export interface ShopifyProduct {
   productType: string;
   tags: string[];
   attributes: ShopifyProductAttributes;
+  productDetails: ShopifyProductDetails;
   collections: ShopifyProductCollection[];
   images: ShopifyImage[];
   variants: ShopifyVariant[];

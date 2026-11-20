@@ -63,6 +63,9 @@ test("recommendations follow tradition, weave, fabric, type, then collection rel
   const sameType = product("type", {
     attributes: { ...product("x").attributes, regionalHandloom: null, craftTechnique: null, fabric: null },
   });
+  const sameRegion = product("region", {
+    attributes: { ...product("x").attributes, region: "Telangana" },
+  });
   const sameCollection = product("collection", {
     productType: "Dupatta",
     collections: [{ id: "collection-1", handle: "silk-edit", title: "Silk Edit" }],
@@ -71,9 +74,9 @@ test("recommendations follow tradition, weave, fabric, type, then collection rel
 
   assert.deepEqual(
     getShopifyProductRecommendations(current, [
-      sameCollection, sameType, fabric, weave, tradition, unrelated,
-    ], 5).map(({ id }) => id),
-    [tradition.id, weave.id, fabric.id, sameType.id, sameCollection.id],
+      sameCollection, sameType, fabric, sameRegion, weave, tradition, unrelated,
+    ], 6).map(({ id }) => id),
+    [tradition.id, weave.id, fabric.id, sameRegion.id, sameType.id, sameCollection.id],
   );
 });
 

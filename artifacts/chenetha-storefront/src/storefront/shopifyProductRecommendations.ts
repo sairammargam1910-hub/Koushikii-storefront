@@ -5,8 +5,9 @@ const MATCH_TIERS = {
   regionalHandloom: 5,
   weave: 4,
   fabric: 3,
-  productType: 2,
-  collection: 1,
+  region: 2,
+  productType: 1,
+  collection: 0.5,
 } as const;
 
 function normalized(value: string) {
@@ -76,6 +77,10 @@ export function getShopifyProductRecommendations(
       getShopifyAttributeValues(product, "fabric"),
       getShopifyAttributeValues(candidate, "fabric"),
     );
+    const sameRegion = sharedValues(
+      getShopifyAttributeValues(product, "region"),
+      getShopifyAttributeValues(candidate, "region"),
+    );
     const sameProductType = currentType && currentType === normalized(candidate.productType);
     const sameCollections = sharedValues(
       currentCollections,
@@ -88,7 +93,9 @@ export function getShopifyProductRecommendations(
         ? MATCH_TIERS.weave
         : sameFabric.length
           ? MATCH_TIERS.fabric
-          : sameProductType
+          : sameRegion.length
+            ? MATCH_TIERS.region
+            : sameProductType
             ? MATCH_TIERS.productType
             : sameCollections.length
               ? MATCH_TIERS.collection
@@ -101,6 +108,8 @@ export function getShopifyProductRecommendations(
         ? sameWeave.length
         : tier === MATCH_TIERS.fabric
           ? sameFabric.length
+            : tier === MATCH_TIERS.region
+              ? sameRegion.length
           : tier === MATCH_TIERS.collection
             ? sameCollections.length
             : 1;
