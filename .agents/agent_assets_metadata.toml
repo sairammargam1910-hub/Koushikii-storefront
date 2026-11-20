@@ -560,3 +560,17 @@ mtime_ms = 1795145783106
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/bbdace1d-341b-4d1b-9d32-6651f3d1e137/77dc6393-82ea-4ce3-abd0-f68d9932fe4f"
 storage_version_token = "1795146106579365"
 content_type = "image/png"
+
+[[outputs]]
+id = "nW-HAnsEj25AvmaKw1Ntp"
+uri = "file://generated-artifacts/chenetha-project-quotation-2026-11-20.html"
+type = "html"
+title = "Project quotation for Chenetha by Koushikii"
+description = "Print-ready project quote with the ₹52,000 project amount, ₹700 Shiprocket expenses, ₹10,000 paid, and ₹42,700 remaining. Use the page’s print button to save as PDF."
+logical_id = "e0d077d2-0653-4eec-b347-ce2605baa10f"
+content_hash = "sha256:ffcdb3dc5a182fce30d75e75523a5c229b01baac292225ac6d5c0740b5fae2b0"
+size = 8830
+mtime_ms = 1795195417267
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/e0d077d2-0653-4eec-b347-ce2605baa10f/11ceef15-d69e-4300-a869-c8e04b0494a6"
+storage_version_token = "1795195455475931"
+content_type = "text/html"
