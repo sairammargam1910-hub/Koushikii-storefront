@@ -3,9 +3,9 @@ type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/chenetha-delivery-progress/Current.tsx": () => import("../components/mockups/chenetha-delivery-progress/Current.tsx"),
   "./components/mockups/chenetha-delivery-progress/Improved.tsx": () => import("../components/mockups/chenetha-delivery-progress/Improved.tsx"),
-  "./components/mockups/chenetha-header/Current.tsx": () => import("../components/mockups/chenetha-header/Current.tsx"),
   "./components/mockups/chenetha-product-detail/Current.tsx": () => import("../components/mockups/chenetha-product-detail/Current.tsx"),
   "./components/mockups/chenetha-product-detail/Redesign.tsx": () => import("../components/mockups/chenetha-product-detail/Redesign.tsx"),
+  "./components/mockups/chenetha-header/Current.tsx": () => import("../components/mockups/chenetha-header/Current.tsx"),
   "./components/mockups/chenetha-product-polish/Current.tsx": () => import("../components/mockups/chenetha-product-polish/Current.tsx"),
   "./components/mockups/chenetha-product-polish/Refined.tsx": () => import("../components/mockups/chenetha-product-polish/Refined.tsx"),
   "./components/mockups/koushikii/Account.tsx": () => import("../components/mockups/koushikii/Account.tsx"),

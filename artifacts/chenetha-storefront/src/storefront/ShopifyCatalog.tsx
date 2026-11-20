@@ -395,7 +395,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   const queryClient = useQueryClient();
   const image = product.images[imageIndex];
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
-  const currentVariantCartQuantity = currentCart.data?.lines.find((line) => line.merchandiseId === variant?.id)?.quantity ?? 0;
+  const currentVariantCartQuantity = currentCart.data?.lines?.find((line) => line.merchandiseId === variant?.id)?.quantity ?? 0;
   const isCheckingCurrentCart = Boolean(cartMeta?.id && currentCart.isLoading);
   const quantityAvailableToAdd = variant?.quantityAvailable != null
     ? Math.max(0, variant.quantityAvailable - currentVariantCartQuantity)
