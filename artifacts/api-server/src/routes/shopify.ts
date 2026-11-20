@@ -29,6 +29,7 @@ type ShopifyVariant = {
   title: string;
   sku: string | null;
   availableForSale: boolean;
+  quantityAvailable: number | null;
   price: { amount: string; currencyCode: string };
   selectedOptions: Array<{ name: string; value: string }>;
 };
@@ -75,6 +76,7 @@ type ShopifyCartMerchandise = {
   title: string;
   sku: string | null;
   availableForSale: boolean;
+  quantityAvailable: number | null;
   weight: number;
   weightUnit: "GRAMS" | "KILOGRAMS" | "OUNCES" | "POUNDS";
   price: ShopifyMoney;
@@ -131,6 +133,7 @@ class IndiaMarketUnavailableError extends Error {
 type ShopifyVariantForCart = {
   id: string;
   availableForSale: boolean;
+  quantityAvailable: number | null;
   product: { title: string; description: string; tags: string[] } | null;
 };
 
@@ -150,6 +153,7 @@ type ShopifyCartApiResponse = {
     productTitle: string;
     variantTitle: string;
     quantity: number;
+    quantityAvailable: number | null;
     unitPrice: string;
     currencyCode: string;
     availableForSale: boolean;
@@ -188,6 +192,7 @@ const SHOPIFY_PRODUCTS_QUERY = `#graphql
             title
             sku
             availableForSale
+            quantityAvailable
             price { amount currencyCode }
             selectedOptions { name value }
           }
@@ -237,6 +242,7 @@ const CART_FIELDS = `#graphql
           title
           sku
           availableForSale
+          quantityAvailable
           weight
           weightUnit
           price { amount currencyCode }
@@ -359,6 +365,7 @@ const SHOPIFY_VARIANT_FOR_CART = `#graphql
       ... on ProductVariant {
         id
         availableForSale
+        quantityAvailable
         product { title description tags }
       }
     }
@@ -439,6 +446,7 @@ function mapShopifyCart(cart: ShopifyCartNode): ShopifyCartApiResponse {
       productTitle: product?.title ?? "Unavailable product",
       variantTitle: merchandise?.title ?? "Unavailable option",
       quantity: line.quantity,
+      quantityAvailable: merchandise?.quantityAvailable ?? null,
       unitPrice: merchandise?.price.amount ?? "0",
       currencyCode: merchandise?.price.currencyCode ?? cart.cost.subtotalAmount.currencyCode,
       availableForSale: merchandise?.availableForSale ?? false,
@@ -760,6 +768,7 @@ router.get("/shopify/products", async (_req, res) => {
           title: variant.title,
           sku: variant.sku ?? null,
           availableForSale: variant.availableForSale,
+          quantityAvailable: variant.quantityAvailable,
           price: variant.price.amount,
           currencyCode: variant.price.currencyCode,
           selectedOptions: variant.selectedOptions,
@@ -836,6 +845,27 @@ router.post("/shopify/cart", async (req, res): Promise<void> => {
       return;
     }
     await assertIndiaMarketAvailable();
+    const existingCart = body.data.cartId ? await getShopifyCart(body.data.cartId) : null;
+    if (body.data.cartId && !existingCart) {
+      res.status(404).json({ error: "This Shopify bag has expired or could not be found." });
+      return;
+    }
+    const existingVariantQuantity = existingCart?.lines.nodes
+      .filter((line) => line.merchandise?.id === body.data.merchandiseId)
+      .reduce((total, line) => total + line.quantity, 0) ?? 0;
+    if (
+      purchasable.variant.quantityAvailable != null &&
+      purchasable.variant.quantityAvailable > 0 &&
+      existingVariantQuantity + body.data.quantity > purchasable.variant.quantityAvailable
+    ) {
+      const remaining = Math.max(0, purchasable.variant.quantityAvailable - existingVariantQuantity);
+      res.status(400).json({
+        error: remaining > 0
+          ? `Only ${remaining} additional ${remaining === 1 ? "piece is" : "pieces are"} available for this option.`
+          : "This product option is already at its available quantity in your bag.",
+      });
+      return;
+    }
 
     const result = body.data.cartId
       ? await shopifyStorefrontRequest<{ cartLinesAdd: ShopifyCartMutationResult }>(

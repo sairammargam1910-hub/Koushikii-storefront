@@ -235,12 +235,15 @@ export function Qty({
  onChange,
  onRemove,
  disabled = false,
+  max,
 }: {
  value: number;
  onChange: (n: number) => void;
  onRemove?: () => void;
  disabled?: boolean;
+  max?: number;
 }) {
+  const atMaximum = max != null && value >= max;
  const decrease = () => {
   if (disabled) return;
   if (value <= 1 && onRemove) {
@@ -252,7 +255,7 @@ export function Qty({
  return <div className="qty" aria-label={`Quantity ${value}`}>
   <button type="button" data-testid="button-decrease-quantity" aria-label={value <= 1 && onRemove ? "Remove item" : "Decrease quantity"} disabled={disabled} onClick={decrease}><Minus size={14}/></button>
   <span data-testid="text-quantity">{value}</span>
-  <button type="button" data-testid="button-increase-quantity" aria-label="Increase quantity" disabled={disabled} onClick={()=>{if(!disabled)onChange(value+1)}}><Plus size={14}/></button>
+   <button type="button" data-testid="button-increase-quantity" aria-label="Increase quantity" disabled={disabled || atMaximum} onClick={()=>{if(!disabled&&!atMaximum)onChange(Math.min(max ?? Number.MAX_SAFE_INTEGER,value+1))}}><Plus size={14}/></button>
  </div>
 }
 export function Empty({title,copy,cta="Browse the collection",href=base+"Collections"}:{title:string;copy:string;cta?:string;href?:string}){return <div className="empty"><span className="eyebrow">A fresh beginning</span><h2 style={{fontSize:42,margin:"14px 0"}}>{title}</h2><p>{copy}</p><a className="btn" href={href}>{cta}<ArrowRight size={15}/></a></div>}

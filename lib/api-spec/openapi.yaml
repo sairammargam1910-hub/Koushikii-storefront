@@ -2048,6 +2048,9 @@ components:
           type: ["string", "null"]
         availableForSale:
           type: boolean
+        quantityAvailable:
+          type: ["integer", "null"]
+          minimum: 0
         price:
           type: string
         currencyCode:
@@ -2056,7 +2059,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ShopifyOption"
-      required: [id, title, availableForSale, price, currencyCode, selectedOptions]
+      required: [id, title, availableForSale, quantityAvailable, price, currencyCode, selectedOptions]
     ShopifyProductCollection:
       type: object
       properties:
@@ -2437,6 +2440,9 @@ components:
           type: string
         quantity:
           type: integer
+        quantityAvailable:
+          type: ["integer", "null"]
+          minimum: 0
         unitPrice:
           type: string
         currencyCode:
@@ -2449,7 +2455,7 @@ components:
           anyOf:
             - $ref: "#/components/schemas/ShopifyImage"
             - type: "null"
-      required: [id, merchandiseId, productHandle, productTitle, variantTitle, quantity, unitPrice, currencyCode, availableForSale, isDemo, image]
+      required: [id, merchandiseId, productHandle, productTitle, variantTitle, quantity, quantityAvailable, unitPrice, currencyCode, availableForSale, isDemo, image]
     ShopifyCartResponse:
       type: object
       properties:

@@ -29,6 +29,8 @@ export { useShopifyCatalog } from "./shopifyCatalogQuery";
 import {
   readShopifyCartMeta,
   saveShopifyCartMeta,
+  useShopifyCart,
+  useShopifyCartMeta,
 } from "./shopifyCartState";
 import "./ShopifyCatalog.css";
 
@@ -353,6 +355,8 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   catalogProducts: ShopifyProduct[];
 }) {
   const returnSettings = useGetStorefrontSettings();
+  const cartMeta = useShopifyCartMeta();
+  const currentCart = useShopifyCart(cartMeta?.id);
   const [imageIndex, setImageIndex] = useState(0);
   const [variantId, setVariantId] = useState(
     product.variants.find(isShopifyVariantPurchasable)?.id ?? product.variants[0]?.id ?? "",
@@ -391,6 +395,14 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   const queryClient = useQueryClient();
   const image = product.images[imageIndex];
   const variant = product.variants.find((item) => item.id === variantId) ?? product.variants[0];
+  const currentVariantCartQuantity = currentCart.data?.lines.find((line) => line.merchandiseId === variant?.id)?.quantity ?? 0;
+  const isCheckingCurrentCart = Boolean(cartMeta?.id && currentCart.isLoading);
+  const quantityAvailableToAdd = variant?.quantityAvailable != null && variant.quantityAvailable > 0
+    ? Math.max(0, variant.quantityAvailable - currentVariantCartQuantity)
+    : undefined;
+  const quantityControlMax = quantityAvailableToAdd == null ? undefined : Math.max(1, quantityAvailableToAdd);
+  const canAddRequestedQuantity = quantityAvailableToAdd == null ||
+    (quantityAvailableToAdd > 0 && quantity <= quantityAvailableToAdd);
   const price = variant ? formatShopifyMoney(variant.price, variant.currencyCode) : "";
   const recommendations = useMemo(
     () => getShopifyProductRecommendations(product, catalogProducts),
@@ -783,9 +795,12 @@ function ShopifyProductDetail({ product, catalogProducts }: {
             {product.variants.length > 0 && hasVariantChoice && (
               <label className="shopify-variant-select">
                 {product.variants.length > 1 ? "Choose an option" : "Selected option"}
-                <select value={variant?.id ?? ""} onChange={(event) => setVariantId(event.target.value)}>
+                <select value={variant?.id ?? ""} onChange={(event) => {
+                  setVariantId(event.target.value);
+                  setQuantity(1);
+                }}>
                   {product.variants.map((item) => (
-                    <option key={item.id} value={item.id} disabled={!isShopifyVariantPurchasable(item)}>
+                  <option key={item.id} value={item.id} disabled={!isShopifyVariantPurchasable(item)}>
                       {variantLabel(item)}{!item.availableForSale ? " · Unavailable" : ""}
                     </option>
                   ))}
@@ -795,14 +810,23 @@ function ShopifyProductDetail({ product, catalogProducts }: {
             <div className="shopify-buy-controls">
               <label className="shopify-quantity-label">
                 Quantity
-                <Qty value={quantity} onChange={setQuantity} />
+                <Qty value={quantity} max={quantityControlMax} disabled={!canPurchase || isCheckingCurrentCart} onChange={setQuantity} />
+                {isCheckingCurrentCart
+                  ? <span className="shopify-stock-note" role="status">Checking your current bag…</span>
+                  : quantityAvailableToAdd != null && (
+                    <span className="shopify-stock-note" data-testid="text-available-quantity">
+                      {quantityAvailableToAdd > 0
+                        ? `${quantityAvailableToAdd} ${quantityAvailableToAdd === 1 ? "piece is" : "pieces are"} available to add.`
+                        : "No additional quantity is available for this option."}
+                    </span>
+                  )}
               </label>
               <div className="shopify-buy-actions">
                 <button
                   className="btn"
                   type="button"
                   data-testid="button-add-shopify-to-cart"
-                  disabled={!canPurchase || addToCart.isPending}
+                  disabled={!canPurchase || addToCart.isPending || isCheckingCurrentCart || !canAddRequestedQuantity}
                   onClick={() => {
                     if (variant && canPurchase) {
                       setCartMessage("");
@@ -817,7 +841,9 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                       ? "Currently unavailable"
                       : addToCart.isPending
                         ? "Adding to bag…"
-                        : `Add to bag${price ? ` · ${formatShopifyMoney(String(Number(variant?.price || 0) * quantity), variant?.currencyCode || "INR")}` : ""}`}
+                        : !canAddRequestedQuantity
+                          ? "Available quantity is in your bag"
+                          : `Add to bag${price ? ` · ${formatShopifyMoney(String(Number(variant?.price || 0) * quantity), variant?.currencyCode || "INR")}` : ""}`}
                 </button>
                 <button
                   className={`btn shopify-wishlist-button${saved ? " is-saved" : ""}`}
@@ -835,7 +861,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                   className="btn shopify-buy-now"
                   type="button"
                   data-testid="button-buy-shopify-now"
-                  disabled={!canPurchase || addToCart.isPending}
+                  disabled={!canPurchase || addToCart.isPending || isCheckingCurrentCart || !canAddRequestedQuantity}
                   onClick={() => {
                     if (variant && canPurchase) {
                       setCartMessage("");
