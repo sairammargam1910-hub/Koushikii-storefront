@@ -96,8 +96,15 @@
 .kq .shopify-wishlist-button{display:flex;align-items:center;gap:9px;justify-content:center;border:1px solid var(--line);background:transparent;color:var(--red)}
 .kq .shopify-wishlist-button.is-saved{background:#f0e5d8}
 .kq .shopify-zoom-backdrop{position:fixed;z-index:999;inset:0;display:grid;place-items:center;padding:20px;background:#261e1bcc}
-.kq .shopify-zoom-dialog{position:relative;display:grid;place-items:center;width:min(100%,1100px);height:min(92dvh,900px);padding:30px 56px 18px;background:#f7f1e6}
-.kq .shopify-zoom-dialog>img{display:block;max-width:100%;max-height:calc(100% - 40px);object-fit:contain}
+.kq .shopify-zoom-dialog{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:8px;place-items:center;width:min(100%,1100px);height:min(92dvh,900px);padding:30px 56px 18px;background:#f7f1e6}
+.kq .shopify-zoom-viewport{width:100%;height:100%;min-height:0;overflow:hidden;display:grid;place-items:center;touch-action:none;user-select:none;cursor:default}
+.kq .shopify-zoom-viewport.is-zoomed{cursor:grab}
+.kq .shopify-zoom-viewport.is-zoomed:active{cursor:grabbing}
+.kq .shopify-zoom-viewport img{display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;transform-origin:center;transition:transform .12s ease-out}
+.kq .shopify-zoom-controls{display:flex;align-items:center;justify-content:center;gap:8px}
+.kq .shopify-zoom-controls button{display:grid;place-items:center;width:36px;height:34px;border:1px solid var(--line);border-radius:4px;background:#fbf7ef;color:var(--red);cursor:pointer}
+.kq .shopify-zoom-controls button:disabled{opacity:.45;cursor:not-allowed}
+.kq .shopify-zoom-controls output{min-width:48px;color:#514741;font-size:11px;font-variant-numeric:tabular-nums;text-align:center}
 .kq .shopify-zoom-dialog>p{margin:10px 0 0;color:#695b50;font-size:11px;text-align:center}
 .kq .shopify-zoom-close{position:absolute;right:12px;top:12px;z-index:4;display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:#fbf7ef;color:var(--red);cursor:pointer}
 .kq .shopify-related-section .products{min-width:0}
@@ -112,8 +119,7 @@
   .kq .shopify-related-section .products{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:0 1px 12px;scroll-snap-type:x proximity}
   .kq .shopify-related-section .shopify-product-card{flex:0 0 min(68vw,245px);min-width:0;scroll-snap-align:start}
   .kq .shopify-related-section .shopify-product-img{height:auto;aspect-ratio:4/5}
-  .kq .shopify-zoom-dialog{height:auto;max-height:90dvh;padding:48px 38px 18px}
-  .kq .shopify-zoom-dialog>img{max-height:75dvh}
+   .kq .shopify-zoom-dialog{height:min(90dvh,900px);max-height:90dvh;padding:48px 38px 18px}
 }
 @media(max-width:420px){
   .kq .shopify-attribute-strip{grid-template-columns:1fr 1fr}

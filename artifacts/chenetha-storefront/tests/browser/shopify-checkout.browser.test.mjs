@@ -457,9 +457,25 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   await page.getByRole("button", { name: "Enlarge product photo 2 of 2" }).waitFor();
   assert.equal(await page.locator(".shopify-gallery-count").innerText(), "2 / 2");
   await page.getByRole("button", { name: "Enlarge product photo 2 of 2" }).click();
-  await page.getByRole("dialog", { name: "Product photo enlarged" }).waitFor();
+  const zoomDialog = page.getByRole("dialog", { name: "Product photo enlarged" });
+  await zoomDialog.waitFor();
+  const zoomLevel = page.getByTestId("product-image-zoom-level");
+  assert.equal(await zoomLevel.innerText(), "100%");
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  assert.equal(await zoomLevel.innerText(), "125%");
+  await page.getByRole("button", { name: "Zoom out" }).click();
+  assert.equal(await zoomLevel.innerText(), "100%");
+  const zoomViewport = page.locator(".shopify-zoom-viewport");
+  const zoomBounds = await zoomViewport.boundingBox();
+  assert.ok(zoomBounds);
+  await page.mouse.move(zoomBounds.x + 12, zoomBounds.y + 12);
+  await page.mouse.wheel(0, -120);
+  await page.waitForFunction(() => document.querySelector("[data-testid='product-image-zoom-level']")?.textContent === "125%");
+  assert.equal(await zoomLevel.innerText(), "125%");
+  await page.getByRole("button", { name: "Reset zoom" }).click();
+  assert.equal(await zoomLevel.innerText(), "100%");
   await page.keyboard.press("Escape");
-  assert.equal(await page.getByRole("dialog", { name: "Product photo enlarged" }).count(), 0);
+  assert.equal(await zoomDialog.count(), 0);
   assert.equal(await page.locator(".shopify-variant-select option:disabled").count(), 1);
   assert.equal(await page.getByTestId("button-add-shopify-to-cart").isDisabled(), false);
 
