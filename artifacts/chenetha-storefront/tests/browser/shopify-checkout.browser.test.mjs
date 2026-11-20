@@ -279,6 +279,18 @@ test("customer care answers blouse-stitching enquiries", async () => {
   await context.close();
 });
 
+test("customer care shows the complete Returns & Support copy", async () => {
+  const { context, page } = await openCustomerCare(4);
+  await page.getByRole("heading", { name: "Returns & Support", exact: true }).waitFor();
+
+  await page.getByText("WILL THE COLOUR LOOK EXACTLY LIKE THE PHOTO?", { exact: true }).click();
+  await page.getByText("The saree’s colour may look slightly different from the photos due to lighting and screen settings. Slight colour variations from these factors are expected. If you’re unsure about the colour, you can watch our saree videos on Instagram or request a video call before buying.", { exact: true }).waitFor();
+
+  await page.getByText("HOW DO I CONTACT KOUSHIKII?", { exact: true }).click();
+  await page.getByText("Message us on WhatsApp at 7981614119 or use the Contact page. We’re happy to help with questions about a saree, an order or a delivery.", { exact: true }).waitFor();
+  await context.close();
+});
+
 test("shows live blouse details and ranked, purchasable related products", async () => {
   const current = {
     ...productResponse.products[0],

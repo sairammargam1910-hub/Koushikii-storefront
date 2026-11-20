@@ -15,9 +15,9 @@ const buildFaqs = (): { group: string; questions: FaqItem[] }[] => [
    ["WHERE DO YOU DELIVER, AND HOW MUCH DOES IT COST?","We deliver across India and internationally. Shipping charges depend on the courier service and your location: within the same city, elsewhere in India, or abroad.\n\nOnce your order ships, we’ll send a tracking link to your registered email or WhatsApp number. To make sure you receive updates, please create an account with your full details.\n\nFor smooth, hassle-free delivery, always enter your complete address and the correct PIN code."],
    ["HOW DO I TRACK MY ORDER?","Create an account first. It’s the easiest way to keep track of your orders.\n\nOnce you’ve signed in, go to Your Orders to see order and delivery updates. Use the same email address at checkout as the one on your account. Otherwise your order won’t show up.\n\nYou’ll also get a tracking link by email or WhatsApp once your order ships."],
  ]},
- {group:"Returns & support",questions:[
+  {group:"Returns & Support",questions:[
      ["CAN I RETURN OR EXCHANGE A SAREE?","We do not accept returns or exchanges at the moment. Every saree is quality-checked before packing. Please review the product details, including the fabric, length, blouse piece and colour, before placing your order. If you’d like to confirm any details before buying, message us on WhatsApp at 7981614119."],
-   ["WILL THE COLOUR LOOK EXACTLY LIKE THE PHOTO?","Colours may look slightly different because of camera lighting and screen settings. This is not a defect. If you’re unsure, watch the saree on our video page or request a video call before buying."],
+    ["WILL THE COLOUR LOOK EXACTLY LIKE THE PHOTO?","The saree’s colour may look slightly different from the photos due to lighting and screen settings. Slight colour variations from these factors are expected. If you’re unsure about the colour, you can watch our saree videos on Instagram or request a video call before buying."],
    ["WHAT IF MY SAREE ARRIVES DAMAGED?",{
      intro:"We thoroughly quality-check every saree before shipping. If your saree arrives damaged or you notice a defect, please submit your claim on WhatsApp at 7981614119 within 4 days of delivery.",
      bullets:[
@@ -27,7 +27,7 @@ const buildFaqs = (): { group: string; questions: FaqItem[] }[] => [
      ],
      closing:"We’ll review the video and check the saree’s original condition and folds before getting in touch about any applicable remedy."
     }],
-   ["HOW DO I CONTACT KOUSHIKII?","Message us on WhatsApp at 7981614119, or use the Contact page. We’re happy to help with any questions about a saree, an order or delivery."],
+    ["HOW DO I CONTACT KOUSHIKII?","Message us on WhatsApp at 7981614119 or use the Contact page. We’re happy to help with questions about a saree, an order or a delivery."],
  ]},
 ];
 
