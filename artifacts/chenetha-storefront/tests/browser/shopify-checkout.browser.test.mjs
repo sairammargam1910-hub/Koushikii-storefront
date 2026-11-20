@@ -323,12 +323,12 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     },
     productDetails: {
       fabricComposition: "100% cotton",
-      sareeLength: "",
-      blousePieceLength: "0.8 metres",
+      sareeLength: "6.2 metres",
+      blousePieceLength: "70 cm",
       borderDetails: "",
       designPattern: "Small geometric motifs",
       washCareInstructions: "Gentle hand wash separately.",
-      additionalInformation: "",
+      additionalInformation: "Slight colour variation may occur due to screen settings.",
     },
     variants: [
       { ...productResponse.products[0].variants[0], id: "gid://shopify/ProductVariant/unavailable", title: "Unavailable", availableForSale: false },
@@ -340,8 +340,6 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   await page.getByTestId("button-open-product-details").click();
   const detailsDrawer = page.getByTestId("dialog-product-details");
   await detailsDrawer.waitFor();
-  await page.getByText("100% cotton").waitFor();
-  await page.getByText("Small geometric motifs").waitFor();
   await detailsDrawer.getByRole("link", { name: /View the collection/ }).waitFor();
   await detailsDrawer.getByText("SKU · NK-01", { exact: true }).waitFor();
   await detailsDrawer.getByText("Checks and bold borders woven by artisans in Telangana.").waitFor();
@@ -349,14 +347,17 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     await detailsDrawer.getByRole("link", { name: /View the collection/ }).getAttribute("href"),
     /Collections\?collection=narayanpet$/,
   );
-  assert.equal(await page.getByText("0.8 metres").count(), 1);
+  assert.equal(await page.getByText("70 cm").count(), 1);
   assert.equal(await page.getByText("Gentle hand wash separately.").count(), 1);
   const detailCopy = await detailsDrawer.innerText();
-  assert.match(detailCopy, /Material:\s+Cotton/);
-  assert.match(detailCopy, /Regional handloom \/ tradition:\s+Narayanpet/);
-  assert.match(detailCopy, /Region of origin:\s+Telangana/);
-  assert.match(detailCopy, /Blouse availability:\s+Blouse Piece Included/);
-  assert.doesNotMatch(detailCopy, /Saree length:/);
+  assert.deepEqual(await detailsDrawer.locator(".shopify-details-list li").allTextContents(), [
+    "Material: Cotton",
+    "Blouse: Blouse Piece Included",
+    "Length of saree: 6.2 metres · blouse piece: 70 cm",
+    "Wash & Care: Gentle hand wash separately.",
+    "Note: Slight colour variation may occur due to screen settings.",
+  ]);
+  assert.doesNotMatch(detailCopy, /100% cotton|Regional handloom|Narayanpet:|Small geometric motifs|Border details|Colour:/);
   assert.equal(await page.getByText("Pure", { exact: true }).count(), 0);
   assert.equal(await page.locator(".shopify-attribute-strip dd").allTextContents().then((items) => items.includes("")), false);
   await page.keyboard.press("Escape");

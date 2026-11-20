@@ -389,20 +389,18 @@ function ShopifyProductDetail({ product, catalogProducts }: {
       ? "Blouse Piece Not Included"
       : "";
   const clean = (value?: string | null) => value?.trim() ?? "";
+  const sareeLength = clean(product.productDetails?.sareeLength);
+  const blousePieceLength = clean(product.productDetails?.blousePieceLength);
+  const combinedLength = [
+    sareeLength,
+    blousePieceLength ? `blouse piece: ${blousePieceLength}` : "",
+  ].filter(Boolean).join(" · ");
   const productDetailRows = [
     ["Material", clean(product.attributes?.fabric)],
-    ["Fabric composition", clean(product.productDetails?.fabricComposition)],
-    ["Weave / craft technique", clean(product.attributes?.craftTechnique)],
-    ["Regional handloom / tradition", clean(product.attributes?.regionalHandloom)],
-    ["Region of origin", clean(product.attributes?.region)],
-    ["Blouse availability", isSareeProductType(product.productType) ? blouseAvailabilityText : ""],
-    ["Saree length", clean(product.productDetails?.sareeLength)],
-    ["Blouse-piece length", clean(product.productDetails?.blousePieceLength)],
-    ["Border details", clean(product.productDetails?.borderDetails)],
-    ["Design / pattern", clean(product.productDetails?.designPattern)],
-    ["Colour", clean(product.attributes?.colour)],
-    ["Wash and care", clean(product.productDetails?.washCareInstructions)],
-    ["Additional information", clean(product.productDetails?.additionalInformation)],
+    ["Blouse", isSareeProductType(product.productType) ? blouseAvailabilityText : ""],
+    ["Length of saree", combinedLength],
+    ["Wash & Care", clean(product.productDetails?.washCareInstructions)],
+    ["Note", clean(product.productDetails?.additionalInformation)],
   ].filter(([, value]) => value);
   const attributeRows = [
     ["Fabric", clean(product.attributes?.fabric)],
@@ -721,11 +719,10 @@ function ShopifyProductDetail({ product, catalogProducts }: {
             <X size={20}/>
           </button>
           <div className="shopify-details-drawer-header">
-            <span className="eyebrow">PRODUCT DETAILS</span>
             <h2 id="shopify-product-details-title">{product.title}</h2>
             {variant?.sku?.trim() && <p className="shopify-details-sku">SKU · {variant.sku.trim()}</p>}
-            {product.description.trim() && <p>{productSummary}</p>}
           </div>
+          <p className="eyebrow shopify-details-section-label">PRODUCT DETAILS</p>
           {collection && <section className="shopify-details-collection" aria-label="Product collection">
             <span>This product is from the collection</span>
             <strong>{collection.title}</strong>
