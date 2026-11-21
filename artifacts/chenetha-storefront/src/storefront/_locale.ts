@@ -754,6 +754,7 @@ const phrases: Record<string, [string, string]> = {
   "See the making lifecycle": ["తయారీ ప్రయాణాన్ని చూడండి", "बुनाई की यात्रा देखें"],
   "The Yarn Prep": ["నూలు సిద్ధం", "धागे की तैयारी"],
   "Bring in the colour": ["రంగును జోడించండి", "रंग भरें"],
+  "The yarn is first washed, then dipped in dye and squeezed by hand until the colour is just right. It is then rinsed and dried in the shade, ready for weaving.": ["నూలును ముందుగా కడిగి, రంగులో ముంచి, రంగు సరిగ్గా వచ్చే వరకు చేతితో పిండుతారు. తరువాత కడిగి, నీడలో ఆరబెట్టి, నేయడానికి సిద్ధం చేస్తారు.", "धागे को पहले धोया जाता है, फिर रंग में डुबोकर मनचाहा रंग आने तक हाथ से निचोड़ा जाता है। इसके बाद उसे धोकर छाँव में सुखाया जाता है, ताकि वह बुनाई के लिए तैयार हो।"],
   "Weave the cloth": ["వస్త్రాన్ని నేయండి", "कपड़ा बुनें"],
   "Preparation": ["సిద్ధం చేయడం", "तैयारी"],
   "Colour": ["రంగు", "रंग"],

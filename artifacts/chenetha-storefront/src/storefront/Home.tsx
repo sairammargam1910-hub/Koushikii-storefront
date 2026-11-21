@@ -69,7 +69,7 @@ function HomeHeroCarousel(){
 }
 const makingStages = [
   {id:"yarn",step:"01",note:"Preparation",title:"The Yarn Prep",copy:"Raw Fibers are cleaned, softened, and twisted into a strong and continuous thread",image:"/images/koushikii-home-yarn.svg",video:"/images/koushikii-home-yarn.mp4",alt:"A short video of yarn preparation for handloom weaving."},
-  {id:"dye",step:"02",note:"Colour",title:"Bring in the colour",copy:"Yarn may be coloured before it is woven. Dye methods and timing differ by material, design and regional practice.",image:"/images/koushikii-home-dye.svg",video:"/images/koushikii-home-dye.mp4",alt:"A short video showing the colouring stage of handloom preparation."},
+  {id:"dye",step:"02",note:"Colour",title:"Bring in the colour",copy:"The yarn is first washed, then dipped in dye and squeezed by hand until the colour is just right. It is then rinsed and dried in the shade, ready for weaving.",image:"/images/koushikii-home-dye.svg",video:"/images/koushikii-home-dye.mp4",alt:"A short video showing the colouring stage of handloom preparation."},
   {id:"loom",step:"03",note:"Weaving",title:"Weave the cloth",copy:"Warp and weft meet at the handloom. Each pass of the shuttle brings the fabric a little closer to its finished form.",image:"/images/koushikii-home-loom.svg",video:"/images/koushikii-home-loom.mp4",alt:"A short video of a handloom in use."},
 ];
 const loomMotionScriptLoads = new WeakMap<SVGSVGElement, Promise<void>>();
