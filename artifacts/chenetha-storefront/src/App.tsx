@@ -1,34 +1,40 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Route, Switch, useLocation, Router as WouterRouter } from "wouter";
-import { ClerkProvider, Show, SignIn, SignUp, useAuth, useClerk } from "@clerk/react";
+import { ClerkProvider, Show, useAuth, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
-import { Home } from "./storefront/Home";
-import { Collections } from "./storefront/Collections";
-import { Product } from "./storefront/Product";
-import { Cart } from "./storefront/Cart";
-import { Wishlist } from "./storefront/Wishlist";
-import { Checkout } from "./storefront/Checkout";
-import { Confirmation } from "./storefront/Confirmation";
-import { OurStory } from "./storefront/OurStory";
-import { Contact } from "./storefront/Contact";
-import { CustomerCare } from "./storefront/CustomerCare";
-import { SareeCare } from "./storefront/SareeCare";
-import { Account } from "./storefront/Account";
-import { Profile } from "./storefront/Profile";
-import { Orders } from "./storefront/Orders";
-import { OrderDetail } from "./storefront/OrderDetail";
-import { Videos } from "./storefront/Videos";
-import { AdminDashboard, AdminDiscounts, AdminProducts, AdminSignInPrompt } from "./admin/Admin";
-import { AdminSettings } from "./admin/StorefrontSettings";
-import { AdminContent } from "./admin/ContentAdmin";
 import { ShopperPreferencesProvider } from "./storefront/ShopperPreferences";
 import { ScrollRestoration } from "./storefront/RouteEffects";
+
+const Home = lazy(() => import("./storefront/Home").then((module) => ({ default: module.Home })));
+const Collections = lazy(() => import("./storefront/Collections").then((module) => ({ default: module.Collections })));
+const Product = lazy(() => import("./storefront/Product").then((module) => ({ default: module.Product })));
+const Cart = lazy(() => import("./storefront/Cart").then((module) => ({ default: module.Cart })));
+const Wishlist = lazy(() => import("./storefront/Wishlist").then((module) => ({ default: module.Wishlist })));
+const Checkout = lazy(() => import("./storefront/Checkout").then((module) => ({ default: module.Checkout })));
+const Confirmation = lazy(() => import("./storefront/Confirmation").then((module) => ({ default: module.Confirmation })));
+const OurStory = lazy(() => import("./storefront/OurStory").then((module) => ({ default: module.OurStory })));
+const Contact = lazy(() => import("./storefront/Contact").then((module) => ({ default: module.Contact })));
+const CustomerCare = lazy(() => import("./storefront/CustomerCare").then((module) => ({ default: module.CustomerCare })));
+const SareeCare = lazy(() => import("./storefront/SareeCare").then((module) => ({ default: module.SareeCare })));
+const Account = lazy(() => import("./storefront/Account").then((module) => ({ default: module.Account })));
+const Profile = lazy(() => import("./storefront/Profile").then((module) => ({ default: module.Profile })));
+const Orders = lazy(() => import("./storefront/Orders").then((module) => ({ default: module.Orders })));
+const OrderDetail = lazy(() => import("./storefront/OrderDetail").then((module) => ({ default: module.OrderDetail })));
+const Videos = lazy(() => import("./storefront/Videos").then((module) => ({ default: module.Videos })));
+const AdminDashboard = lazy(() => import("./admin/Admin").then((module) => ({ default: module.AdminDashboard })));
+const AdminDiscounts = lazy(() => import("./admin/Admin").then((module) => ({ default: module.AdminDiscounts })));
+const AdminProducts = lazy(() => import("./admin/Admin").then((module) => ({ default: module.AdminProducts })));
+const AdminSignInPrompt = lazy(() => import("./admin/Admin").then((module) => ({ default: module.AdminSignInPrompt })));
+const AdminSettings = lazy(() => import("./admin/StorefrontSettings").then((module) => ({ default: module.AdminSettings })));
+const AdminContent = lazy(() => import("./admin/ContentAdmin").then((module) => ({ default: module.AdminContent })));
+const SignInPage = lazy(() => import("./AuthPages").then((module) => ({ default: module.SignInPage })));
+const SignUpPage = lazy(() => import("./AuthPages").then((module) => ({ default: module.SignUpPage })));
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -138,50 +144,12 @@ function ProtectedShopperRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function SignInPage() {
-  const redirectPath = authRedirectPath();
-  return <div className="clerk-screen"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={authWidgetUrl("/sign-up", redirectPath)} forceRedirectUrl={`${basePath}${redirectPath}`}/></div>;
-}
-
-function SignUpPage() {
-  const redirectPath = authRedirectPath();
-  return <div className="clerk-screen"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={authWidgetUrl("/sign-in", redirectPath)} forceRedirectUrl={`${basePath}${redirectPath}`}/></div>;
-}
-
-function authRedirectPath(): string {
-  const destination = new URLSearchParams(window.location.search).get("redirect_url");
-  if (!destination) return "/Account";
-
-  let internalPath: string;
-  if (destination.startsWith("/") && !destination.startsWith("//")) {
-    internalPath = destination;
-  } else {
-    try {
-      const parsedDestination = new URL(destination);
-      if (parsedDestination.origin !== window.location.origin) return "/Account";
-      internalPath = `${parsedDestination.pathname}${parsedDestination.search}${parsedDestination.hash}`;
-    } catch {
-      return "/Account";
-    }
-  }
-
-  if (basePath && (internalPath === basePath || internalPath.startsWith(`${basePath}/`))) {
-    internalPath = internalPath.slice(basePath.length) || "/";
-  }
-  return internalPath.startsWith("/") && !internalPath.startsWith("//")
-    ? internalPath
-    : "/Account";
-}
-
-function authWidgetUrl(route: "/sign-in" | "/sign-up", redirectPath: string): string {
-  return `${basePath}${route}?redirect_url=${encodeURIComponent(redirectPath)}`;
-}
-
 function Router() {
   return <>
     <ScrollRestoration/>
     <Metadata/>
     <RoutedErrorBoundary>
+      <Suspense fallback={<main className="clerk-screen" role="status">Loading page…</main>}>
       <Switch>
         <Route path="/sign-in/*?" component={SignInPage}/>
         <Route path="/sign-up/*?" component={SignUpPage}/>
@@ -210,6 +178,7 @@ function Router() {
         <Route path="/Videos" component={Videos}/>
         <Route component={NotFound}/>
       </Switch>
+      </Suspense>
     </RoutedErrorBoundary>
   </>;
 }
