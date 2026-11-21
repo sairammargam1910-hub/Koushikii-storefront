@@ -618,7 +618,7 @@ test("shows product stock separately from bag quantity and keeps Buy now full wi
   await context.close();
 });
 
-test("renders multiple product colours as separate list items", async () => {
+test("renders multiple product colours inline while retaining list semantics", async () => {
   const catalog = {
     products: [{
       ...productResponse.products[0],
@@ -632,6 +632,11 @@ test("renders multiple product colours as separate list items", async () => {
   const colourList = page.locator(".shopify-colour-values");
   await colourList.waitFor();
   assert.deepEqual(await colourList.locator("li").allTextContents(), ["Olive green", "Green"]);
+  const layout = await colourList.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { display: style.display, flexWrap: style.flexWrap, listRole: element.tagName };
+  });
+  assert.deepEqual(layout, { display: "flex", flexWrap: "wrap", listRole: "UL" });
   assert.doesNotMatch(await page.locator(".shopify-attribute-strip").innerText(), /\["Olive green"/);
   await context.close();
 });
