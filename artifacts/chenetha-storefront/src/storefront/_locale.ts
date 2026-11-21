@@ -104,7 +104,7 @@ const phrases: Record<string, [string, string]> = {
   "Your email address": ["మీ ఇమెయిల్ చిరునామా", "आपका ईमेल पता"],
   "Subscribe": ["చందా చేయండి", "सदस्यता लें"],
   "Preview only · No email is sent or shared.": ["ప్రివ్యూ మాత్రమే · ఇమెయిల్ పంపబడదు లేదా పంచుకోబడదు.", "केवल प्रीव्यू · कोई ईमेल भेजा या साझा नहीं किया जाता।"],
-  "Sarees and dupattas. The warmth of a hand, the memory of a loom.": ["చీరలు, దుపట్టాలు. చేతి వెచ్చదనం, మగ్గపు జ్ఞాపకం.", "साड़ियाँ और दुपट्टे। हाथों की गरमाहट, करघे की याद।"],
+  "Not Fast Not Flashy, Just Forever. The warmth of a hand, the memory of a loom": ["వేగం కాదు, ఆర్భాటం కాదు—ఎప్పటికీ నిలిచేది. చేతి వెచ్చదనం, మగ్గపు జ్ఞాపకం", "न तेज़, न दिखावा—बस हमेशा के लिए। हाथों की गरमाहट, करघे की याद"],
   "Follow the thread": ["దారాన్ని అనుసరించండి", "धागे के साथ चलें"],
   "Shop": ["షాపింగ్", "खरीदारी"],
   "New Arrivals": ["కొత్త రాకలు", "नई पेशकश"],

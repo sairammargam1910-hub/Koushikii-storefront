@@ -166,7 +166,7 @@ export function Footer(){
   <div className="home-footer-grid">
    <div className="home-footer-brand">
     <a className="home-footer-logo" href={base+"Home"} aria-label="Chenetha by Koushikii home"><LogoSilhouette/></a>
-    <p>Sarees and dupattas. The warmth of a hand, the memory of a loom.</p>
+    <p>Not Fast Not Flashy, Just Forever. The warmth of a hand, the memory of a loom</p>
     <a className="home-footer-contact" href={base+"Contact"}>Questions about a weave? We’re here to help <ArrowRight size={14}/></a>
     <span className="home-footer-origin">Rooted in the South · Woven across India</span>
    </div>
