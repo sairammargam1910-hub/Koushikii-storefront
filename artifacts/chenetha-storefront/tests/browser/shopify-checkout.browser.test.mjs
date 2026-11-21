@@ -459,7 +459,7 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   const stitchingContact = page.getByTestId("text-blouse-stitching-contact").getByRole("link", {
     name: "for blouse stitching reach us at 7382714119",
   });
-  assert.equal(await stitchingContact.getAttribute("href"), "tel:7382714119");
+  assert.equal(await stitchingContact.getAttribute("href"), "https://wa.me/917382714119");
   await page.getByTestId("button-open-product-details").click();
   const detailsDrawer = page.getByTestId("dialog-product-details");
   await detailsDrawer.waitFor();

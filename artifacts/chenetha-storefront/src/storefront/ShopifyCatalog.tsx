@@ -810,7 +810,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
             </button>
             {isSareeProductType(product.productType) && (
               <p className="shopify-stitching-contact" data-testid="text-blouse-stitching-contact">
-                <a href="tel:7382714119">for blouse stitching reach us at 7382714119</a>
+                <a href="https://wa.me/917382714119">for blouse stitching reach us at 7382714119</a>
               </p>
             )}
             {product.variants.length > 0 && hasVariantChoice && (
