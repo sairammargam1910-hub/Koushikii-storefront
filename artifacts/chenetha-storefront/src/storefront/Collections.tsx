@@ -171,9 +171,9 @@ export function Collections() {
 
   return <Shell>
     <PageHero
-      eyebrow="Shop the collection"
-      title={premiumOnly || legacyEdit === "premium" ? "Premium Collection" : legacyEdit === "new" ? "New Arrivals" : "All published products"}
-      subtitle={premiumOnly ? "Explore premium pieces in the selected collection or regional tradition." : "Explore available pieces. Refine by material, tradition, technique and more."}
+      eyebrow="SHOP THE COLLECTION"
+      title={premiumOnly || legacyEdit === "premium" ? "Premium Collection" : legacyEdit === "new" ? "New Arrivals" : "The Drape Archive"}
+      subtitle={premiumOnly ? "Explore premium pieces in the selected collection or regional tradition." : legacyEdit === "premium" || legacyEdit === "new" ? "Explore available pieces. Refine by material, tradition, technique and more." : "Loomed Slowly, Sold Honestly"}
     />
     <main className="content wrap">
       <div className="catalog-controls">
