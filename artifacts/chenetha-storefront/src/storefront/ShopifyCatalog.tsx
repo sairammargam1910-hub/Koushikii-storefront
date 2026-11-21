@@ -715,7 +715,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
           <span>/</span><span aria-current="page">{product.title}</span>
         </nav>
         <div className="splitdetail shopify-product-detail" style={{ paddingTop: 0 }}>
-          <section aria-label="Product photos" className="shopify-gallery">
+          <section aria-label="Product photos" className={`shopify-gallery${product.images.length <= 1 ? " is-single-image" : ""}`}>
             {product.images.length > 1 && (
               <div className="thumbs shopify-thumbs" aria-label="Choose product photo">
                 {product.images.map((item, index) => (
@@ -748,7 +748,8 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                   setZoomOpen(true);
                 }}
                   aria-label={`Enlarge product photo ${imageIndex + 1} of ${product.images.length}`}>
-                  <img src={image.url} alt={image.altText || product.title} />
+                  <img className="shopify-zoom-backdrop" src={image.url} alt="" aria-hidden="true" />
+                  <img className="shopify-zoom-image" src={image.url} alt={image.altText || product.title} />
                   <span className="shopify-zoom-hint"><ZoomIn size={15}/> View detail</span>
                 </button>
               ) : (
@@ -807,6 +808,11 @@ function ShopifyProductDetail({ product, catalogProducts }: {
             >
               <span>View product details</span><ArrowRight size={16} aria-hidden="true"/>
             </button>
+            {isSareeProductType(product.productType) && (
+              <p className="shopify-stitching-contact" data-testid="text-blouse-stitching-contact">
+                <a href="tel:7382714119">for blouse stitching reach us at 7382714119</a>
+              </p>
+            )}
             {product.variants.length > 0 && hasVariantChoice && (
               <label className="shopify-variant-select">
                 {product.variants.length > 1 ? "Choose an option" : "Selected option"}
