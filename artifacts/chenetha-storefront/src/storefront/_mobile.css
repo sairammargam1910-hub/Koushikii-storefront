@@ -208,8 +208,8 @@
     grid-row: 2;
     width: 100%;
     min-width: 0;
-    justify-content: center;
-    gap: clamp(5px, 2vw, 9px);
+    justify-content: space-between;
+    gap: 0;
   }
 
   .kq .head-actions .language-switcher,
@@ -218,23 +218,24 @@
   }
 
   .kq .language-switcher {
-    min-height: 34px;
-    padding: 0 5px;
+    min-height: 40px;
+    height: 40px;
+    padding: 0 7px;
   }
 
   .kq .language-switcher select {
-    width: 82px;
-    max-width: 82px;
+    width: 78px;
+    max-width: 78px;
     font-size: 10px;
   }
 
   .kq .head-actions .text-action {
-    width: 34px;
-    min-width: 34px;
-    height: 36px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
     justify-content: center;
     gap: 0;
-    padding: 4px;
+    padding: 0;
     font-size: 0;
   }
 
@@ -245,9 +246,10 @@
 
   .kq .head-actions .header-whatsapp,
   .kq .head-actions > .iconbtn {
-    width: 34px;
-    height: 36px;
-    flex: 0 0 34px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
     justify-content: center;
   }
 
@@ -294,7 +296,8 @@
   }
 
   .kq .head-actions {
-    gap: 4px;
+    gap: 0;
+    justify-content: space-between;
   }
 
   .kq .language-switcher select {

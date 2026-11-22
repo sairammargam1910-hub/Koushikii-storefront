@@ -1228,7 +1228,7 @@
   }
 
   .kq:has(.home-fabric-section) .headrow {
-    grid-template-rows: 42px 34px;
+    grid-template-rows: 42px 42px;
     height: auto;
     min-height: 80px;
     gap: 0 6px;
@@ -1256,31 +1256,31 @@
 
   .kq:has(.home-fabric-section) .head-actions {
     min-width: 0;
-    height: 34px;
-    justify-content: center;
-    gap: clamp(3px, 1vw, 6px);
+    height: 40px;
+    justify-content: space-between;
+    gap: 0;
   }
 
   .kq:has(.home-fabric-section) .language-switcher {
-    min-height: 30px;
-    height: 30px;
-    gap: 3px;
-    padding: 0 4px;
+    min-height: 40px;
+    height: 40px;
+    gap: 4px;
+    padding: 0 7px;
   }
 
   .kq:has(.home-fabric-section) .language-switcher select {
-    width: clamp(64px, 20vw, 76px);
-    max-width: clamp(64px, 20vw, 76px);
+    width: 78px;
+    max-width: 78px;
     font-size: 10px;
   }
 
   .kq:has(.home-fabric-section) .head-actions .text-action,
   .kq:has(.home-fabric-section) .head-actions .header-whatsapp,
   .kq:has(.home-fabric-section) .head-actions > .iconbtn {
-    width: 30px;
-    min-width: 30px;
-    height: 32px;
-    flex: 0 0 30px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
     justify-content: center;
     padding: 0;
   }
