@@ -599,6 +599,35 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     send("pointerdown", 32, x, y); send("pointerup", 32, x, y);
   });
   assert.equal(await mobileZoomLevel.innerText(), "200%", "a mobile double-tap should zoom at the tap location");
+  await mobile.page.setViewportSize({ width: 844, height: 390 });
+  await mobile.page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const landscapeZoomLayout = await mobile.page.evaluate(() => {
+    const bounds = (selector) => {
+      const rect = document.querySelector(selector)?.getBoundingClientRect();
+      return rect ? { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height } : null;
+    };
+    return {
+      viewport: { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
+      close: bounds(".shopify-zoom-close"),
+      image: bounds(".shopify-zoom-viewport"),
+      controls: bounds(".shopify-zoom-controls"),
+      caption: bounds(".shopify-zoom-dialog > p"),
+    };
+  });
+  for (const [name, rect] of Object.entries({
+    close: landscapeZoomLayout.close,
+    image: landscapeZoomLayout.image,
+    controls: landscapeZoomLayout.controls,
+    caption: landscapeZoomLayout.caption,
+  })) {
+    assert.ok(rect, `${name} should remain rendered after rotating to landscape`);
+    assert.ok(rect.left >= 0 && rect.right <= landscapeZoomLayout.viewport.width + 1, `${name} should fit the landscape width`);
+    assert.ok(rect.top >= 0 && rect.bottom <= landscapeZoomLayout.viewport.height + 1, `${name} should fit the landscape height`);
+  }
+  assert.equal(await mobileZoomLevel.innerText(), "200%", "rotating should preserve the current zoom level");
+  await mobile.page.setViewportSize({ width: 390, height: 844 });
+  await mobile.page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await mobileZoomLevel.innerText(), "200%", "returning to portrait should preserve the current zoom level");
   await mobile.page.getByRole("button", { name: "Reset zoom" }).click();
   await mobileZoomViewport.evaluate((viewport) => {
     const rect = viewport.getBoundingClientRect();
