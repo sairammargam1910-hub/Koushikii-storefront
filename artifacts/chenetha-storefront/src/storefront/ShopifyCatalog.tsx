@@ -840,7 +840,6 @@ function ShopifyProductDetail({ product, catalogProducts }: {
               {image ? (
                 <button ref={zoomTriggerRef} type="button" className="shopify-zoom-trigger" onClick={(event) => openZoomViewer(event.currentTarget)}
                   aria-label={`Enlarge product photo ${imageIndex + 1} of ${product.images.length}`}>
-                  <img className="shopify-zoom-backdrop" src={getShopifyImageSrc(image.url, 1200)} alt="" aria-hidden="true" />
                   <img className="shopify-zoom-image" src={getShopifyImageSrc(image.url, 1200)} alt={image.altText || product.title} fetchPriority="high" decoding="async" />
                   <span className="shopify-zoom-hint"><ZoomIn size={15}/> View detail</span>
                 </button>

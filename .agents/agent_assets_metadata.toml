@@ -658,3 +658,17 @@ mtime_ms = 1795337726873
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b18ca1ba-1c0b-43af-9435-2473ce2164b7/f7c18660-5666-4f93-a041-050eb34eb32e"
 storage_version_token = "1795337771793599"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "Z8bordwRcoRyaT8bne-xH"
+uri = "file://generated-artifacts/product-photo-clean-desktop.jpg"
+type = "image"
+title = "Product photo — plain surrounding space"
+description = "Desktop preview showing the product photo without a blurred duplicate filling the unused gallery space."
+logical_id = "c8cfd45f-4622-46ce-8621-c8f88666a19c"
+content_hash = "sha256:a230e85931c6d09aeb0e685f31fcb81502bc0ada0d6eab13e4c337862de8d653"
+size = 145162
+mtime_ms = 1795338384029
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/c8cfd45f-4622-46ce-8621-c8f88666a19c/dc235827-2bc9-429e-8d5b-1227442d289d"
+storage_version_token = "1795338444863238"
+content_type = "image/jpeg"

@@ -475,6 +475,16 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     ],
   };
   const { context, page } = await openProduct({ catalog: { products: [product] }, mockShopifyImages: true });
+  assert.equal(
+    await page.locator(".shopify-product-detail .shopify-gallery-main img.shopify-zoom-backdrop").count(),
+    0,
+    "the product gallery should not render a blurred duplicate behind the main photo",
+  );
+  assert.equal(
+    await page.locator(".shopify-product-detail .shopify-zoom-image").evaluate((img) => getComputedStyle(img).objectFit),
+    "contain",
+    "the main product photo should remain fully visible with plain space around it",
+  );
   const footerLayout = await page.evaluate(() => {
     const grid = document.querySelector(".home-footer-grid");
     const logo = document.querySelector(".home-footer-logo");
