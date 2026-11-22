@@ -95,20 +95,21 @@
 @media(prefers-reduced-motion:reduce){.kq .shopify-details-backdrop,.kq .shopify-details-drawer{animation:none}}
 .kq .shopify-wishlist-button{display:flex;align-items:center;gap:9px;justify-content:center;border:1px solid var(--line);background:transparent;color:var(--red)}
 .kq .shopify-wishlist-button.is-saved{background:#f0e5d8}
-.kq .shopify-zoom-backdrop{position:fixed;z-index:999;inset:0;display:grid;place-items:center;padding:20px;background:#261e1bcc}
-.kq .shopify-zoom-dialog{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:8px;place-items:center;width:min(100%,1100px);height:min(92dvh,900px);padding:30px 56px 18px;background:#f7f1e6}
+.kq .shopify-zoom-backdrop{position:fixed;z-index:999;inset:0;display:grid;place-items:center;padding:16px;background:rgba(20,18,17,.97);overscroll-behavior:contain}
+.kq .shopify-zoom-dialog{position:relative;display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:8px;place-items:center;width:min(100%,1400px);height:100%;max-height:calc(100dvh - 32px);padding:58px 68px 16px;background:transparent;color:#f7f1e6}
 .kq .shopify-zoom-viewport{width:100%;height:100%;min-height:0;overflow:hidden;display:grid;place-items:center;touch-action:none;user-select:none;cursor:default}
 .kq .shopify-zoom-viewport.is-zoomed{cursor:grab}
 .kq .shopify-zoom-viewport.is-zoomed:active{cursor:grabbing}
-.kq .shopify-zoom-viewport img{display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;transform-origin:center;transition:transform .16s ease-out}
+.kq .shopify-zoom-viewport img{display:block;width:auto;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;transform-origin:center;transition:transform .16s ease-out}
 .kq .shopify-zoom-controls{display:grid;grid-template-rows:44px 32px;gap:4px;width:min(100%,320px)}
 .kq .shopify-zoom-buttons{display:grid;grid-template-columns:44px minmax(48px,1fr) 44px 44px;align-items:center;justify-items:center;gap:8px}
 .kq .shopify-zoom-controls button{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--line);border-radius:6px;background:#fbf7ef;color:var(--red);cursor:pointer}
 .kq .shopify-zoom-controls button:disabled{opacity:.45;cursor:not-allowed}
-.kq .shopify-zoom-controls output{min-width:48px;color:#514741;font-size:12px;font-variant-numeric:tabular-nums;text-align:center}
+.kq .shopify-zoom-controls output{min-width:48px;color:#f7f1e6;font-size:12px;font-variant-numeric:tabular-nums;text-align:center}
 .kq .shopify-zoom-slider{width:100%;height:32px;min-height:32px;margin:0;padding:0;border:0;background:transparent;accent-color:var(--red);cursor:ew-resize;touch-action:pan-x}
-.kq .shopify-zoom-dialog>p{margin:10px 0 0;color:#695b50;font-size:11px;text-align:center}
-.kq .shopify-zoom-close{position:absolute;right:12px;top:12px;z-index:4;display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:#fbf7ef;color:var(--red);cursor:pointer}
+.kq .shopify-zoom-dialog>p{max-width:100%;margin:10px 0 0;color:#e6ddd2;font-size:11px;text-align:center}
+.kq .shopify-zoom-close{position:absolute;right:12px;top:12px;z-index:4;display:grid;place-items:center;width:44px;height:44px;border:1px solid #e2d4c4;border-radius:50%;background:#fbf7ef;color:var(--red);cursor:pointer}
+.kq .shopify-zoom-counter{position:absolute;z-index:4;top:16px;left:50%;transform:translateX(-50%);padding:7px 12px;border:1px solid #ffffff38;border-radius:999px;background:#0009;color:#fffaf2;font-size:12px;font-variant-numeric:tabular-nums;letter-spacing:.05em}
 .kq .shopify-related-section .products{min-width:0}
 @media(max-width:760px){
   .kq .shopify-gallery{display:flex;flex-direction:column;gap:9px}
@@ -121,14 +122,17 @@
   .kq .shopify-related-section .products{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;padding:0 1px 12px;scroll-snap-type:x proximity}
   .kq .shopify-related-section .shopify-product-card{flex:0 0 min(68vw,245px);min-width:0;scroll-snap-align:start}
   .kq .shopify-related-section .shopify-product-img{height:auto;aspect-ratio:4/5}
-   .kq .shopify-zoom-dialog{height:min(90dvh,900px);max-height:90dvh;padding:48px 38px 18px}
+   .kq .shopify-zoom-backdrop{padding:0}
+   .kq .shopify-zoom-dialog{width:100%;height:100dvh;max-height:100dvh;padding:calc(58px + env(safe-area-inset-top,0px)) calc(12px + env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) calc(12px + env(safe-area-inset-left,0px))}
+   .kq .shopify-zoom-close{top:calc(8px + env(safe-area-inset-top,0px));right:calc(8px + env(safe-area-inset-right,0px))}
+   .kq .shopify-zoom-counter{top:calc(14px + env(safe-area-inset-top,0px))}
+   .kq .shopify-zoom-dialog .shopify-gallery-arrow{width:44px;height:44px}
 }
 @media(max-width:420px){
   .kq .shopify-attribute-strip{grid-template-columns:1fr 1fr}
   .kq .shopify-attribute-strip>div{padding:9px 8px 9px 0}
   .kq .shopify-attribute-strip dd{font-size:17px;overflow-wrap:anywhere}
   .kq .shopify-gallery-arrow{width:33px;height:33px}
-  .kq .shopify-zoom-dialog{padding-inline:32px}
 }
 @media(max-width:600px){
   .kq .shopify-details-drawer{width:100%;padding:26px 22px 36px}

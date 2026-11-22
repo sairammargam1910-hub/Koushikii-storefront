@@ -616,3 +616,31 @@ mtime_ms = 1795332016380
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/6668fb1c-4d1d-4e54-9c48-54cb1bff835c/b57dd9c8-9388-47c1-9055-5ac2dbe581d2"
 storage_version_token = "1795332137850776"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "wKHPZx1kc_E5apOyEse3Y"
+uri = "file://generated-artifacts/product-viewer/product-viewer-desktop.png"
+type = "image"
+title = "Product photo viewer — desktop"
+description = "QA screenshot using a generated test image; shows the full photo fitted without cropping and the viewer controls."
+logical_id = "c7cd97fb-60fe-4ef4-91b3-0b231f6918da"
+content_hash = "sha256:4cfe033d78debabfdb7ec5be582eba9d410356a725641ec5e9d841e87f49b37b"
+size = 257761
+mtime_ms = 1795335097613
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/c7cd97fb-60fe-4ef4-91b3-0b231f6918da/3440ac79-a869-4bc5-b9cf-8d1bc036de24"
+storage_version_token = "1795335263796616"
+content_type = "image/png"
+
+[[outputs]]
+id = "kzrHG7sli_ugrovtXZMzR"
+uri = "file://generated-artifacts/product-viewer/product-viewer-mobile.png"
+type = "image"
+title = "Product photo viewer — mobile"
+description = "QA screenshot using a generated test image; shows the full photo fitted on a phone-sized viewport with touch controls."
+logical_id = "5e919aea-90b0-42cd-aced-8d0a9324e939"
+content_hash = "sha256:811dfe00bf7043f736dbcf5edd885c90543249ff5f220e2248764711754ce65e"
+size = 143182
+mtime_ms = 1795335096105
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/5e919aea-90b0-42cd-aced-8d0a9324e939/4240b44e-5401-4540-ab5a-c0027d323335"
+storage_version_token = "1795335265312585"
+content_type = "image/png"

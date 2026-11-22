@@ -48,6 +48,17 @@ function normalizedTag(value: string) {
   return value.trim().toLowerCase().replace(/[\s_]+/g, "-");
 }
 
+function getShopifyImageSrc(source: string, width: number) {
+  try {
+    const imageUrl = new URL(source);
+    if (imageUrl.protocol !== "https:" || imageUrl.hostname !== "cdn.shopify.com") return source;
+    imageUrl.searchParams.set("width", String(width));
+    return imageUrl.toString();
+  } catch {
+    return source;
+  }
+}
+
 function hasTag(product: ShopifyProduct, ...values: string[]) {
   const tags = product.tags.map(normalizedTag);
   return values.some((value) => tags.includes(normalizedTag(value)));
@@ -367,15 +378,20 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
   const [zoomOffset, setZoomOffset] = useState({ x: 0, y: 0 });
+  const [zoomImageFitSize, setZoomImageFitSize] = useState<{ width: number; height: number } | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const zoomScaleRef = useRef(zoomScale);
   zoomScaleRef.current = zoomScale;
   const touchStartX = useRef<number | null>(null);
   const zoomTriggerRef = useRef<HTMLButtonElement>(null);
+  const zoomReturnFocusRef = useRef<HTMLButtonElement | null>(null);
   const zoomCloseRef = useRef<HTMLButtonElement>(null);
   const zoomDialogRef = useRef<HTMLElement>(null);
   const zoomImageViewportRef = useRef<HTMLDivElement>(null);
   const zoomImageRef = useRef<HTMLImageElement>(null);
+  const zoomTouchStartRef = useRef<{ pointerId: number; x: number; y: number; startedAt: number } | null>(null);
+  const zoomLastTapRef = useRef<{ x: number; y: number; at: number } | null>(null);
+  const zoomTouchDoubleTapAtRef = useRef(Number.NEGATIVE_INFINITY);
   const zoomDragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
   const zoomPointersRef = useRef(new Map<number, { x: number; y: number }>());
   const zoomPinchRef = useRef<{
@@ -500,7 +516,21 @@ function ShopifyProductDetail({ product, catalogProducts }: {
       zoomScaleRef.current = 1;
       setZoomScale(1);
       setZoomOffset({ x: 0, y: 0 });
+      setZoomImageFitSize(null);
+      zoomTouchStartRef.current = null;
+      zoomLastTapRef.current = null;
     }
+  };
+  const openZoomViewer = (trigger: HTMLButtonElement, nextImageIndex = imageIndex) => {
+    zoomReturnFocusRef.current = trigger;
+    setImageIndex(nextImageIndex);
+    zoomScaleRef.current = 1;
+    setZoomScale(1);
+    setZoomOffset({ x: 0, y: 0 });
+    setZoomImageFitSize(null);
+    zoomTouchStartRef.current = null;
+    zoomLastTapRef.current = null;
+    setZoomOpen(true);
   };
   const clampZoomOffset = (offset: { x: number; y: number }, scale: number) => {
     const viewport = zoomImageViewportRef.current;
@@ -542,6 +572,19 @@ function ShopifyProductDetail({ product, catalogProducts }: {
     setZoomScale(next);
     setZoomOffset(clampZoomOffset(nextOffset, next));
   };
+  const fitZoomImageToViewport = () => {
+    const viewport = zoomImageViewportRef.current;
+    const photo = zoomImageRef.current;
+    if (!viewport || !photo?.naturalWidth || !photo.naturalHeight) return;
+    const scale = Math.min(
+      viewport.clientWidth / photo.naturalWidth,
+      viewport.clientHeight / photo.naturalHeight,
+    );
+    setZoomImageFitSize({
+      width: Math.max(1, photo.naturalWidth * scale),
+      height: Math.max(1, photo.naturalHeight * scale),
+    });
+  };
   const handleZoomWheel = (event: ReactWheelEvent<HTMLElement>) => {
     event.preventDefault();
     setZoomAt(zoomScaleRef.current + (event.deltaY < 0 ? 0.2 : -0.2), event.clientX, event.clientY);
@@ -550,6 +593,17 @@ function ShopifyProductDetail({ product, catalogProducts }: {
     if (event.pointerType === "touch") {
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
+      if (zoomPointersRef.current.size === 0) {
+        zoomTouchStartRef.current = {
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          startedAt: performance.now(),
+        };
+      } else {
+        zoomTouchStartRef.current = null;
+        zoomLastTapRef.current = null;
+      }
       zoomPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (zoomPointersRef.current.size === 2) {
         const [first, second] = [...zoomPointersRef.current.values()];
@@ -615,6 +669,44 @@ function ShopifyProductDetail({ product, catalogProducts }: {
   };
   const stopZoomPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "touch") {
+      const activePointers = zoomPointersRef.current.size;
+      const wasPinching = activePointers > 1 || Boolean(zoomPinchRef.current);
+      const touchStart = zoomTouchStartRef.current?.pointerId === event.pointerId
+        ? zoomTouchStartRef.current
+        : null;
+      if (event.type === "pointerup" && touchStart && !wasPinching && activePointers === 1) {
+        const deltaX = event.clientX - touchStart.x;
+        const deltaY = event.clientY - touchStart.y;
+        const movedHorizontally = Math.abs(deltaX) >= 40 && Math.abs(deltaX) > Math.abs(deltaY);
+        if (zoomScaleRef.current <= 1 && movedHorizontally) {
+          moveImage(deltaX < 0 ? 1 : -1);
+          zoomLastTapRef.current = null;
+        } else if (
+          Math.hypot(deltaX, deltaY) <= 12 &&
+          performance.now() - touchStart.startedAt <= 400
+        ) {
+          const now = performance.now();
+          const previousTap = zoomLastTapRef.current;
+          if (
+            previousTap &&
+            now - previousTap.at <= 350 &&
+            Math.hypot(event.clientX - previousTap.x, event.clientY - previousTap.y) <= 32
+          ) {
+            zoomLastTapRef.current = null;
+            zoomTouchDoubleTapAtRef.current = now;
+            setZoomAt(zoomScaleRef.current > 1 ? 1 : 2, event.clientX, event.clientY);
+          } else {
+            zoomLastTapRef.current = { x: event.clientX, y: event.clientY, at: now };
+          }
+        } else {
+          zoomLastTapRef.current = null;
+        }
+      } else if (wasPinching || event.type === "pointercancel") {
+        zoomLastTapRef.current = null;
+      }
+      if (zoomTouchStartRef.current?.pointerId === event.pointerId) {
+        zoomTouchStartRef.current = null;
+      }
       zoomPointersRef.current.delete(event.pointerId);
       if (zoomPointersRef.current.size < 2) zoomPinchRef.current = null;
       const remaining = zoomPointersRef.current.entries().next().value as [number, { x: number; y: number }] | undefined;
@@ -637,15 +729,22 @@ function ShopifyProductDetail({ product, catalogProducts }: {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     zoomCloseRef.current?.focus();
+    const viewport = zoomImageViewportRef.current;
+    const resizeObserver = viewport ? new ResizeObserver(fitZoomImageToViewport) : null;
+    if (viewport && resizeObserver) resizeObserver.observe(viewport);
+    fitZoomImageToViewport();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setZoomOpen(false);
-      if (event.key === "ArrowLeft") moveImage(-1);
-      if (event.key === "ArrowRight") moveImage(1);
+      const isZoomSlider = event.target instanceof HTMLInputElement && event.target.type === "range";
+      if (!isZoomSlider && event.key === "ArrowLeft") moveImage(-1);
+      if (!isZoomSlider && event.key === "ArrowRight") moveImage(1);
       if (event.key === "+" || event.key === "=") setZoom(zoomScaleRef.current + 0.25);
       if (event.key === "-") setZoom(zoomScaleRef.current - 0.25);
       if (event.key === "0") setZoom(1);
       if (event.key === "Tab" && zoomDialogRef.current) {
-        const focusable = [...zoomDialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled])")];
+        const focusable = [...zoomDialogRef.current.querySelectorAll<HTMLElement>(
+          "button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])",
+        )];
         if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
@@ -662,10 +761,13 @@ function ShopifyProductDetail({ product, catalogProducts }: {
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
+      resizeObserver?.disconnect();
       zoomPointersRef.current.clear();
       zoomPinchRef.current = null;
       zoomDragRef.current = null;
-      zoomTriggerRef.current?.focus();
+      zoomTouchStartRef.current = null;
+      zoomLastTapRef.current = null;
+      (zoomReturnFocusRef.current ?? zoomTriggerRef.current)?.focus();
     };
   }, [zoomOpen, product.images.length]);
   useEffect(() => {
@@ -721,13 +823,8 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                 {product.images.map((item, index) => (
                   <button key={`${item.url}-${index}`} type="button"
                     aria-label={`Show product photo ${index + 1} of ${product.images.length}`}
-                  aria-pressed={imageIndex === index} onClick={() => {
-                    setImageIndex(index);
-                    zoomScaleRef.current = 1;
-                    setZoomScale(1);
-                    setZoomOffset({ x: 0, y: 0 });
-                  }}>
-                    <img src={item.url} alt="" />
+                    aria-pressed={imageIndex === index} onClick={(event) => openZoomViewer(event.currentTarget, index)}>
+                    <img src={getShopifyImageSrc(item.url, 180)} alt="" loading="lazy" decoding="async" />
                   </button>
                 ))}
               </div>
@@ -741,15 +838,10 @@ function ShopifyProductDetail({ product, catalogProducts }: {
                 touchStartX.current = null;
               }}>
               {image ? (
-                <button ref={zoomTriggerRef} type="button" className="shopify-zoom-trigger" onClick={() => {
-                  zoomScaleRef.current = 1;
-                  setZoomScale(1);
-                  setZoomOffset({ x: 0, y: 0 });
-                  setZoomOpen(true);
-                }}
+                <button ref={zoomTriggerRef} type="button" className="shopify-zoom-trigger" onClick={(event) => openZoomViewer(event.currentTarget)}
                   aria-label={`Enlarge product photo ${imageIndex + 1} of ${product.images.length}`}>
-                  <img className="shopify-zoom-backdrop" src={image.url} alt="" aria-hidden="true" />
-                  <img className="shopify-zoom-image" src={image.url} alt={image.altText || product.title} />
+                  <img className="shopify-zoom-backdrop" src={getShopifyImageSrc(image.url, 1200)} alt="" aria-hidden="true" />
+                  <img className="shopify-zoom-image" src={getShopifyImageSrc(image.url, 1200)} alt={image.altText || product.title} fetchPriority="high" decoding="async" />
                   <span className="shopify-zoom-hint"><ZoomIn size={15}/> View detail</span>
                 </button>
               ) : (
@@ -991,6 +1083,7 @@ function ShopifyProductDetail({ product, catalogProducts }: {
           {product.images.length > 1 && <>
             <button type="button" className="shopify-gallery-arrow is-prev" onClick={() => moveImage(-1)} aria-label="Previous product photo"><ChevronLeft size={22}/></button>
             <button type="button" className="shopify-gallery-arrow is-next" onClick={() => moveImage(1)} aria-label="Next product photo"><ChevronRight size={22}/></button>
+            <span className="shopify-zoom-counter" data-testid="product-image-zoom-count" aria-live="polite">{imageIndex + 1} / {product.images.length}</span>
           </>}
           <div
             ref={zoomImageViewportRef}
@@ -1000,14 +1093,26 @@ function ShopifyProductDetail({ product, catalogProducts }: {
             onPointerMove={handleZoomPointerMove}
             onPointerUp={stopZoomPointer}
             onPointerCancel={stopZoomPointer}
-            onDoubleClick={(event) => setZoomAt(zoomScaleRef.current > 1 ? 1 : 2, event.clientX, event.clientY)}
+            onDoubleClick={(event) => {
+              if (performance.now() - zoomTouchDoubleTapAtRef.current < 500) return;
+              setZoomAt(zoomScaleRef.current > 1 ? 1 : 2, event.clientX, event.clientY);
+            }}
           >
             <img
               ref={zoomImageRef}
+              key={image.url}
               src={image.url}
               alt={image.altText || product.title}
               draggable={false}
-              style={{ transform: `translate3d(${zoomOffset.x}px, ${zoomOffset.y}px, 0) scale(${zoomScale})` }}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              onLoad={fitZoomImageToViewport}
+              style={{
+                width: zoomImageFitSize?.width ?? 0,
+                height: zoomImageFitSize?.height ?? 0,
+                transform: `translate3d(${zoomOffset.x}px, ${zoomOffset.y}px, 0) scale(${zoomScale})`,
+              }}
             />
           </div>
           <div className="shopify-zoom-controls" role="group" aria-label="Image zoom controls">

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { createServer } from "node:net";
 import { spawn } from "node:child_process";
-import { access } from "node:fs/promises";
+import { access, mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { chromium } from "playwright-core";
 
 const packageDir = new URL("../../", import.meta.url).pathname;
@@ -166,6 +167,7 @@ async function openProduct({
   catalog = productResponse,
   returnSettings = { returnWindowDays: 4 },
   viewport = { width: 1280, height: 900 },
+  mockShopifyImages = false,
 } = {}) {
   const context = await browser.newContext({ viewport });
   if (savedCart) {
@@ -187,6 +189,27 @@ async function openProduct({
     contentType: "application/json",
     body: JSON.stringify(returnSettings),
   }));
+  if (mockShopifyImages) {
+    await page.route("https://cdn.shopify.com/**", (route) => route.fulfill({
+      status: 200,
+      contentType: "image/svg+xml",
+      body: `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960">
+        <defs>
+          <linearGradient id="cloth" x2="1" y2="1"><stop stop-color="#342a56"/><stop offset=".55" stop-color="#5b3e73"/><stop offset="1" stop-color="#24213f"/></linearGradient>
+          <pattern id="weave" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M0 4h24M0 16h24M4 0v24M16 0v24" stroke="#d6bc82" stroke-opacity=".18" stroke-width="2"/>
+            <circle cx="12" cy="10" r="2.8" fill="#e4bd70" fill-opacity=".85"/>
+          </pattern>
+        </defs>
+        <rect width="720" height="960" fill="#eee7dc"/>
+        <ellipse cx="390" cy="870" rx="260" ry="42" fill="#1c1720" opacity=".18"/>
+        <path d="M118 92c132 44 266 10 490 103l-48 622c-116 72-270 104-424-2 58-177 28-447-18-723z" fill="url(#cloth)"/>
+        <path d="M118 92c132 44 266 10 490 103l-48 622c-116 72-270 104-424-2 58-177 28-447-18-723z" fill="url(#weave)"/>
+        <path d="M140 747c132 86 274 96 433 33l-13 37c-143 76-296 67-434-30z" fill="#d5b36a"/>
+        <path d="M137 779c136 88 280 98 422 34M132 797c134 84 278 94 423 33M126 816c132 81 276 91 424 32" fill="none" stroke="#9c3150" stroke-width="8"/>
+      </svg>`,
+    }));
+  }
   if (cart) {
     await page.route("**/api/shopify/cart**", (route) => route.fulfill({
       status: 200,
@@ -416,7 +439,7 @@ test("shows blouse details only for sarees with configured availability", async 
 
 test("renders only known piece details, supports gallery selection, wishlist, and an available variant", async () => {
   const image = (label) => ({
-    url: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="8" height="10"><rect width="8" height="10" fill="${label}"/></svg>`)}`,
+    url: `https://cdn.shopify.com/s/files/1/999999999/products/fixture-${label.slice(1)}.jpg?v=1`,
     altText: label,
   });
   const product = {
@@ -451,7 +474,7 @@ test("renders only known piece details, supports gallery selection, wishlist, an
       { ...productResponse.products[0].variants[0], id: variantId, title: "Ready to wear", sku: "NK-01", availableForSale: true, quantityAvailable: 1 },
     ],
   };
-  const { context, page } = await openProduct({ catalog: { products: [product] } });
+  const { context, page } = await openProduct({ catalog: { products: [product] }, mockShopifyImages: true });
   assert.equal(await page.getByTestId("text-quantity").innerText(), "1");
   assert.equal(await page.getByTestId("button-increase-quantity").isDisabled(), true);
   assert.match(await page.getByTestId("text-available-quantity").innerText(), /1 piece in stock/);
@@ -486,7 +509,11 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   await page.keyboard.press("Escape");
   assert.equal(await page.getByTestId("dialog-product-details").count(), 0);
 
-  const mobile = await openProduct({ catalog: { products: [product] }, viewport: { width: 390, height: 844 } });
+  const mobile = await openProduct({
+    catalog: { products: [product] },
+    viewport: { width: 390, height: 844 },
+    mockShopifyImages: true,
+  });
   await mobile.page.getByTestId("button-open-product-details").click();
   const mobileDrawer = mobile.page.getByTestId("dialog-product-details");
   await mobileDrawer.waitFor();
@@ -498,9 +525,38 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   assert.ok(mobileDrawerLayout.drawerWidth <= mobileDrawerLayout.viewportWidth + 1, "details drawer should fit the mobile viewport");
   assert.ok(mobileDrawerLayout.documentWidth <= mobileDrawerLayout.viewportWidth + 1, "details drawer should not cause horizontal page overflow");
   await mobile.page.getByRole("button", { name: "Close product details" }).click();
-  await mobile.page.getByRole("button", { name: "Enlarge product photo 1 of 2" }).click();
+  assert.equal(
+    new URL(await mobile.page.locator(".shopify-zoom-image").getAttribute("src")).searchParams.get("width"),
+    "1200",
+    "the product page should use a responsive preview image",
+  );
+  await mobile.page.getByRole("button", { name: "Show product photo 1 of 2" }).click();
   const mobileZoomDialog = mobile.page.getByRole("dialog", { name: "Product photo enlarged" });
   await mobileZoomDialog.waitFor();
+  await mobile.page.waitForFunction(() => {
+    const image = document.querySelector(".shopify-zoom-viewport img");
+    return Boolean(image && image.getBoundingClientRect().width > 0);
+  });
+  assert.equal(
+    new URL(await mobileZoomDialog.locator(".shopify-zoom-viewport img").getAttribute("src")).searchParams.get("width"),
+    null,
+    "the full viewer should request the original image URL",
+  );
+  const mobileImageDimensions = await mobileZoomDialog.locator(".shopify-zoom-viewport img").evaluate(async (img) => {
+    await img.decode();
+    return {
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+      objectFit: getComputedStyle(img).objectFit,
+      displayAspect: img.getBoundingClientRect().width / img.getBoundingClientRect().height,
+    };
+  });
+  assert.deepEqual(
+    { width: mobileImageDimensions.width, height: mobileImageDimensions.height, objectFit: mobileImageDimensions.objectFit },
+    { width: 720, height: 960, objectFit: "contain" },
+  );
+  assert.ok(Math.abs(mobileImageDimensions.displayAspect - 0.75) < 0.01, "mobile viewer should preserve the original photo aspect ratio");
+  await mobileZoomDialog.getByTestId("product-image-zoom-count").waitFor();
   const mobileZoomLayout = await mobile.page.evaluate(() => {
     const zoomButton = document.querySelector(".shopify-zoom-buttons button");
     const slider = document.querySelector(".shopify-zoom-slider");
@@ -515,19 +571,99 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   });
   assert.ok(mobileZoomLayout.buttonWidth >= 44 && mobileZoomLayout.buttonHeight >= 44, "zoom buttons should be comfortable touch targets");
   assert.ok(mobileZoomLayout.sliderWidth > 0, "the mobile zoom slider should remain visible");
-  assert.ok(mobileZoomLayout.documentWidth <= mobileZoomLayout.viewportWidth + 1, "zoom controls should not cause horizontal overflow");
+  assert.ok(mobileZoomLayout.documentWidth <= mobileZoomLayout.viewportWidth + 1, "zoom controls should not cause horizontal page overflow");
+  if (process.env.PRODUCT_VIEWER_SCREENSHOT_DIR) {
+    await mkdir(process.env.PRODUCT_VIEWER_SCREENSHOT_DIR, { recursive: true });
+    await mobile.page.screenshot({
+      path: join(process.env.PRODUCT_VIEWER_SCREENSHOT_DIR, "product-viewer-mobile.png"),
+      animations: "disabled",
+    });
+  }
+  const mobileZoomLevel = mobile.page.getByTestId("product-image-zoom-level");
+  const mobileZoomViewport = mobile.page.locator(".shopify-zoom-viewport");
+  await mobileZoomViewport.evaluate((viewport) => {
+    Object.defineProperty(viewport, "setPointerCapture", { value: () => {}, configurable: true });
+    const rect = viewport.getBoundingClientRect();
+    const send = (type, pointerId, clientX, clientY = rect.top + rect.height / 2) => viewport.dispatchEvent(new PointerEvent(type, {
+      pointerId,
+      pointerType: "touch",
+      clientX,
+      clientY,
+      button: 0,
+      bubbles: true,
+      cancelable: true,
+    }));
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    send("pointerdown", 31, x, y); send("pointerup", 31, x, y);
+    send("pointerdown", 32, x, y); send("pointerup", 32, x, y);
+  });
+  assert.equal(await mobileZoomLevel.innerText(), "200%", "a mobile double-tap should zoom at the tap location");
+  await mobile.page.getByRole("button", { name: "Reset zoom" }).click();
+  await mobileZoomViewport.evaluate((viewport) => {
+    const rect = viewport.getBoundingClientRect();
+    const x = rect.left + rect.width * .7;
+    const y = rect.top + rect.height / 2;
+    Object.defineProperty(viewport, "setPointerCapture", { value: () => {}, configurable: true });
+    const send = (type, clientX) => viewport.dispatchEvent(new PointerEvent(type, {
+      pointerId: 33,
+      pointerType: "touch",
+      clientX,
+      clientY: y,
+      button: 0,
+      bubbles: true,
+      cancelable: true,
+    }));
+    send("pointerdown", x);
+    send("pointermove", x - 70);
+    send("pointerup", x - 70);
+  });
+  assert.equal(await mobile.page.getByTestId("product-image-zoom-count").innerText(), "2 / 2", "a horizontal swipe should switch photos inside the viewer");
+  assert.equal(await mobileZoomLevel.innerText(), "100%", "switching photos should reset zoom");
   await mobile.page.keyboard.press("Escape");
   assert.equal(await mobileZoomDialog.count(), 0);
+  const mainImageTrigger = mobile.page.getByRole("button", { name: "Enlarge product photo 2 of 2" });
+  await mainImageTrigger.click();
+  await mobileZoomDialog.waitFor();
+  assert.equal(await mobile.page.getByTestId("product-image-zoom-count").innerText(), "2 / 2", "the main image should open the full viewer");
+  await mobile.page.keyboard.press("Escape");
+  assert.equal(await mainImageTrigger.evaluate((button) => button === document.activeElement), true);
   await mobile.context.close();
 
-  await page.getByRole("button", { name: "Show product photo 2 of 2" }).click();
-  await page.getByRole("button", { name: "Enlarge product photo 2 of 2" }).waitFor();
-  assert.equal(await page.locator(".shopify-gallery-count").innerText(), "2 / 2");
-  await page.getByRole("button", { name: "Enlarge product photo 2 of 2" }).click();
+  const secondThumbnail = page.getByRole("button", { name: "Show product photo 2 of 2" });
+  await secondThumbnail.click();
   const zoomDialog = page.getByRole("dialog", { name: "Product photo enlarged" });
   await zoomDialog.waitFor();
+  const desktopImageDimensions = await zoomDialog.locator(".shopify-zoom-viewport img").evaluate(async (img) => {
+    await img.decode();
+    const bounds = img.getBoundingClientRect();
+    return { width: img.naturalWidth, height: img.naturalHeight, objectFit: getComputedStyle(img).objectFit, displayAspect: bounds.width / bounds.height };
+  });
+  assert.deepEqual(
+    { width: desktopImageDimensions.width, height: desktopImageDimensions.height, objectFit: desktopImageDimensions.objectFit },
+    { width: 720, height: 960, objectFit: "contain" },
+  );
+  assert.ok(Math.abs(desktopImageDimensions.displayAspect - 0.75) < 0.01, "desktop viewer should preserve the original photo aspect ratio");
+  assert.equal(await page.getByTestId("product-image-zoom-count").innerText(), "2 / 2");
+  assert.equal(
+    new URL(await zoomDialog.locator(".shopify-zoom-viewport img").getAttribute("src")).searchParams.get("width"),
+    null,
+    "the viewer should load the full-size source rather than a preview rendition",
+  );
   const zoomLevel = page.getByTestId("product-image-zoom-level");
   assert.equal(await zoomLevel.innerText(), "100%");
+  if (process.env.PRODUCT_VIEWER_SCREENSHOT_DIR) {
+    await mkdir(process.env.PRODUCT_VIEWER_SCREENSHOT_DIR, { recursive: true });
+    await page.screenshot({
+      path: join(process.env.PRODUCT_VIEWER_SCREENSHOT_DIR, "product-viewer-desktop.png"),
+      animations: "disabled",
+    });
+  }
+  await zoomDialog.getByRole("button", { name: "Next product photo" }).click();
+  assert.equal(await page.getByTestId("product-image-zoom-count").innerText(), "1 / 2");
+  assert.equal(await zoomLevel.innerText(), "100%", "changing photos should reset zoom");
+  await zoomDialog.getByRole("button", { name: "Previous product photo" }).click();
+  assert.equal(await page.getByTestId("product-image-zoom-count").innerText(), "2 / 2");
   await page.getByRole("button", { name: "Zoom in" }).click();
   assert.equal(await zoomLevel.innerText(), "125%");
   await page.getByRole("button", { name: "Zoom out" }).click();
@@ -537,6 +673,7 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   await zoomSlider.press("ArrowRight");
   assert.equal(await zoomLevel.innerText(), "105%");
   assert.equal(await zoomSlider.getAttribute("aria-valuetext"), "105%");
+  assert.equal(await page.getByTestId("product-image-zoom-count").innerText(), "2 / 2", "slider arrow keys should not change gallery photos");
   await page.getByRole("button", { name: "Reset zoom" }).click();
   assert.equal(await zoomLevel.innerText(), "100%");
   const zoomViewport = page.locator(".shopify-zoom-viewport");
@@ -550,6 +687,23 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   assert.equal(await zoomLevel.innerText(), "100%");
   await page.mouse.dblclick(zoomBounds.x + 12, zoomBounds.y + 12);
   assert.equal(await zoomLevel.innerText(), "200%");
+  const zoomImage = zoomViewport.locator("img");
+  const beforeDrag = await zoomImage.boundingBox();
+  assert.ok(beforeDrag);
+  const dragStartX = zoomBounds.x + zoomBounds.width / 2;
+  const dragStartY = zoomBounds.y + zoomBounds.height / 2;
+  await page.mouse.move(dragStartX, dragStartY);
+  await page.mouse.down();
+  await page.mouse.move(dragStartX + 10, dragStartY - 1200, { steps: 4 });
+  await page.mouse.up();
+  const afterDrag = await zoomImage.boundingBox();
+  assert.ok(afterDrag && afterDrag.y < beforeDrag.y, "a mouse drag should pan the zoomed image");
+  const panOffsetY = await zoomImage.evaluate((img) => {
+    const match = img.style.transform.match(/translate3d\([^,]+,\s*(-?[\d.]+)px,/);
+    return match ? Number(match[1]) : Number.NaN;
+  });
+  assert.ok(panOffsetY < -40, "dragging should update the image pan offset");
+  assert.ok(Math.abs(panOffsetY) <= zoomBounds.height / 2 + 2, "dragging should clamp the pan offset to the fitted image bounds");
   await page.getByRole("button", { name: "Reset zoom" }).click();
   assert.equal(await zoomLevel.innerText(), "100%");
   await zoomViewport.evaluate((viewport) => {
@@ -576,6 +730,7 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   assert.equal(await zoomLevel.innerText(), "100%");
   await page.keyboard.press("Escape");
   assert.equal(await zoomDialog.count(), 0);
+  assert.equal(await secondThumbnail.evaluate((button) => button === document.activeElement), true, "closing the viewer should restore focus to its opener");
   assert.equal(await page.locator(".shopify-variant-select option:disabled").count(), 1);
   assert.equal(await page.getByTestId("button-add-shopify-to-cart").isDisabled(), false);
 
