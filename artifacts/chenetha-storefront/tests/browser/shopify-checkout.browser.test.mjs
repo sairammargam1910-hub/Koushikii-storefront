@@ -503,37 +503,42 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   const galleryGeometry = await page.locator(".shopify-product-detail .shopify-gallery-main").evaluate((frame) => {
     const image = frame.querySelector(".shopify-zoom-image");
     const hint = frame.querySelector(".shopify-zoom-hint");
-      const previous = frame.querySelector(".shopify-gallery-arrow.is-prev");
+    const previous = frame.querySelector(".shopify-gallery-arrow.is-prev");
     const frameRect = frame.getBoundingClientRect();
     const imageRect = image.getBoundingClientRect();
     const hintRect = hint.getBoundingClientRect();
     const hintStyle = getComputedStyle(hint);
-      const previousStyle = previous ? getComputedStyle(previous) : null;
+    const previousRect = previous.getBoundingClientRect();
+    const previousStyle = getComputedStyle(previous);
     return {
       frameHeight: frameRect.height,
       imageHeight: imageRect.height,
       frameX: frameRect.x,
       imageX: imageRect.x,
-      hintTop: hintStyle.top,
-      hintOffset: hint.getBoundingClientRect().top - frameRect.top,
-      hintOffsetX: hintRect.left - imageRect.left,
+      hintBottom: hintStyle.bottom,
+      hintRight: hintStyle.right,
+      hintBottomGap: imageRect.bottom - hintRect.bottom,
+      hintRightGap: imageRect.right - hintRect.right,
       hintZIndex: Number(hintStyle.zIndex),
       imageZIndex: Number(getComputedStyle(image).zIndex),
-        previousTop: previousStyle?.top,
+      previousCenterOffset: previousRect.top + previousRect.height / 2 - (imageRect.top + imageRect.height / 2),
     };
   });
   assert.ok(
     galleryGeometry.frameHeight <= galleryGeometry.imageHeight + 2,
     "the desktop gallery should fit the photo instead of stretching down beside product details",
   );
-  assert.equal(galleryGeometry.hintTop, "12px", "the view-detail control should stay at the top of the photo");
-  assert.ok(galleryGeometry.hintOffset <= 13, "the view-detail control should remain near the top edge of the image");
+  assert.equal(galleryGeometry.hintBottom, "12px", "the view-detail control should sit near the bottom of the photo");
+  assert.equal(galleryGeometry.hintRight, "12px", "the view-detail control should sit near the right edge of the photo");
   assert.ok(
-    Math.abs(galleryGeometry.hintOffsetX - 12) <= 1,
-    `the view-detail control should overlay the image near its left edge (frame ${galleryGeometry.frameX}, image ${galleryGeometry.imageX}, offset ${galleryGeometry.hintOffsetX})`,
+    Math.abs(galleryGeometry.hintBottomGap - 12) <= 1 && Math.abs(galleryGeometry.hintRightGap - 12) <= 1,
+    `the view-detail control should overlay the image at its bottom-right corner (bottom gap ${galleryGeometry.hintBottomGap}, right gap ${galleryGeometry.hintRightGap})`,
   );
   assert.ok(galleryGeometry.hintZIndex > galleryGeometry.imageZIndex, "the view-detail control should render above the image");
-  assert.equal(galleryGeometry.previousTop, "56px", "the previous-image control should stay in the top area of the photo");
+  assert.ok(
+    Math.abs(galleryGeometry.previousCenterOffset) <= 1,
+    `the previous-image control should align with the photo's vertical center (offset ${galleryGeometry.previousCenterOffset})`,
+  );
   const footerLayout = await page.evaluate(() => {
     const grid = document.querySelector(".home-footer-grid");
     const logo = document.querySelector(".home-footer-logo");

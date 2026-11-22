@@ -283,6 +283,6 @@
   .kq .shopify-product-detail .shopify-gallery-main{display:flex;width:fit-content;max-width:100%;height:auto;min-height:0;align-self:start;justify-self:center}
   .kq .shopify-product-detail .shopify-zoom-trigger{width:fit-content;max-width:100%;height:auto;min-height:0;flex:0 1 auto;overflow:visible}
   .kq .shopify-product-detail .shopify-zoom-image{position:relative;z-index:1;display:block;width:auto;height:auto;max-width:100%;max-height:78vh;object-fit:contain;object-position:50% 0%}
-  .kq .shopify-product-detail .shopify-zoom-hint{top:12px;right:auto;bottom:auto;left:12px}
-  .kq .shopify-product-detail .shopify-gallery-arrow{top:56px;transform:none}
+   .kq .shopify-product-detail .shopify-zoom-hint{top:auto;right:12px;bottom:12px;left:auto}
+   .kq .shopify-product-detail .shopify-gallery-arrow{top:50%;transform:translateY(-50%)}
 }
