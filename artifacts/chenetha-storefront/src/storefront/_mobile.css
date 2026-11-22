@@ -305,7 +305,7 @@
 
   .kq .head-actions {
     gap: 0;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .kq .head-icon-group {
