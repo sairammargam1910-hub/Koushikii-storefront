@@ -672,3 +672,17 @@ mtime_ms = 1795338384029
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/c8cfd45f-4622-46ce-8621-c8f88666a19c/dc235827-2bc9-429e-8d5b-1227442d289d"
 storage_version_token = "1795338444863238"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "KlkJCRVUxN7vtvYAb25Hk"
+uri = "file://generated-artifacts/product-photo-transparent-background.jpg"
+type = "image"
+title = "Product photo without a colored gallery panel"
+description = "Desktop preview showing the photo directly on the storefront background, with the gallery fill and border removed."
+logical_id = "b741ec9d-0900-432d-b965-0d24c3b38f58"
+content_hash = "sha256:42b53dcb4e7f743e8ea35960606317f8787073a8fa9085643fd24d6003d75f64"
+size = 128083
+mtime_ms = 1795339268297
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b741ec9d-0900-432d-b965-0d24c3b38f58/10258bf9-6b2d-4300-b02d-a21bc0dd8f4e"
+storage_version_token = "1795339300971200"
+content_type = "image/jpeg"

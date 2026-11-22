@@ -485,6 +485,16 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     "contain",
     "the main product photo should remain fully visible with plain space around it",
   );
+  assert.equal(
+    await page.locator(".shopify-product-detail .shopify-gallery-main").evaluate((element) => getComputedStyle(element).backgroundColor),
+    "rgba(0, 0, 0, 0)",
+    "the gallery should not add a colored background behind the photo",
+  );
+  assert.equal(
+    await page.locator(".shopify-product-detail .shopify-zoom-trigger").evaluate((element) => getComputedStyle(element).backgroundColor),
+    "rgba(0, 0, 0, 0)",
+    "the clickable photo surface should remain transparent",
+  );
   const footerLayout = await page.evaluate(() => {
     const grid = document.querySelector(".home-footer-grid");
     const logo = document.querySelector(".home-footer-logo");
