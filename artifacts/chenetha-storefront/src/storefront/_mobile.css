@@ -261,6 +261,19 @@
     justify-content: center;
   }
 
+  .kq .head-icon-group .text-action,
+  .kq .head-icon-group > .iconbtn {
+    align-items: center;
+    line-height: 1;
+  }
+
+  .kq .head-icon-group svg {
+    display: block;
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
   .kq .head-actions .optional {
     display: inline-flex;
   }

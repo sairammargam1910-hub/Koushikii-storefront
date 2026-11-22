@@ -1290,9 +1290,22 @@
     padding: 0;
   }
 
+  .kq:has(.home-fabric-section) .head-icon-group .text-action,
+  .kq:has(.home-fabric-section) .head-icon-group > .iconbtn {
+    align-items: center;
+    line-height: 1;
+  }
+
+  .kq:has(.home-fabric-section) .head-icon-group svg {
+    display: block;
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
   .kq:has(.home-fabric-section) .head-actions .text-action svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
 }
 
