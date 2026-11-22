@@ -1011,12 +1011,26 @@ function ShopifyProductDetail({ product, catalogProducts }: {
             />
           </div>
           <div className="shopify-zoom-controls" role="group" aria-label="Image zoom controls">
-            <button type="button" onClick={() => setZoom(zoomScale - 0.25)} disabled={zoomScale <= 1} aria-label="Zoom out"><ZoomOut size={17}/></button>
-            <output data-testid="product-image-zoom-level" aria-live="polite">{Math.round(zoomScale * 100)}%</output>
-            <button type="button" onClick={() => setZoom(zoomScale + 0.25)} disabled={zoomScale >= 4} aria-label="Zoom in"><Plus size={17}/></button>
-            <button type="button" onClick={() => setZoom(1)} disabled={zoomScale === 1} aria-label="Reset zoom"><RotateCcw size={15}/></button>
+            <div className="shopify-zoom-buttons">
+              <button type="button" onClick={() => setZoom(zoomScale - 0.25)} disabled={zoomScale <= 1} aria-label="Zoom out"><ZoomOut size={19}/></button>
+              <output data-testid="product-image-zoom-level" aria-live="polite">{Math.round(zoomScale * 100)}%</output>
+              <button type="button" onClick={() => setZoom(zoomScale + 0.25)} disabled={zoomScale >= 4} aria-label="Zoom in"><Plus size={19}/></button>
+              <button type="button" onClick={() => setZoom(1)} disabled={zoomScale === 1} aria-label="Reset zoom"><RotateCcw size={17}/></button>
+            </div>
+            <input
+              className="shopify-zoom-slider"
+              data-testid="product-image-zoom-slider"
+              type="range"
+              min="1"
+              max="4"
+              step="0.05"
+              value={zoomScale}
+              aria-label="Zoom level"
+              aria-valuetext={`${Math.round(zoomScale * 100)}%`}
+              onChange={(event) => setZoom(Number(event.currentTarget.value))}
+            />
           </div>
-          <p aria-live="polite">{image.altText || product.title}{product.images.length > 1 ? ` · ${imageIndex + 1} of ${product.images.length}` : ""} · Use +/−, pinch or scroll; double-click to zoom, drag to move</p>
+          <p aria-live="polite">{image.altText || product.title}{product.images.length > 1 ? ` · ${imageIndex + 1} of ${product.images.length}` : ""} · Use the controls, pinch or scroll; double-click to zoom and drag to pan.</p>
         </section>
       </div>}
     </Shell>

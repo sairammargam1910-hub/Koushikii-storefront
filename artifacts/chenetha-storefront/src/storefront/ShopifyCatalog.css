@@ -100,11 +100,13 @@
 .kq .shopify-zoom-viewport{width:100%;height:100%;min-height:0;overflow:hidden;display:grid;place-items:center;touch-action:none;user-select:none;cursor:default}
 .kq .shopify-zoom-viewport.is-zoomed{cursor:grab}
 .kq .shopify-zoom-viewport.is-zoomed:active{cursor:grabbing}
-.kq .shopify-zoom-viewport img{display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;transform-origin:center;transition:transform .12s ease-out}
-.kq .shopify-zoom-controls{display:flex;align-items:center;justify-content:center;gap:8px}
-.kq .shopify-zoom-controls button{display:grid;place-items:center;width:36px;height:34px;border:1px solid var(--line);border-radius:4px;background:#fbf7ef;color:var(--red);cursor:pointer}
+.kq .shopify-zoom-viewport img{display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;transform-origin:center;transition:transform .16s ease-out}
+.kq .shopify-zoom-controls{display:grid;grid-template-rows:44px 32px;gap:4px;width:min(100%,320px)}
+.kq .shopify-zoom-buttons{display:grid;grid-template-columns:44px minmax(48px,1fr) 44px 44px;align-items:center;justify-items:center;gap:8px}
+.kq .shopify-zoom-controls button{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--line);border-radius:6px;background:#fbf7ef;color:var(--red);cursor:pointer}
 .kq .shopify-zoom-controls button:disabled{opacity:.45;cursor:not-allowed}
-.kq .shopify-zoom-controls output{min-width:48px;color:#514741;font-size:11px;font-variant-numeric:tabular-nums;text-align:center}
+.kq .shopify-zoom-controls output{min-width:48px;color:#514741;font-size:12px;font-variant-numeric:tabular-nums;text-align:center}
+.kq .shopify-zoom-slider{width:100%;height:32px;min-height:32px;margin:0;padding:0;border:0;background:transparent;accent-color:var(--red);cursor:ew-resize;touch-action:pan-x}
 .kq .shopify-zoom-dialog>p{margin:10px 0 0;color:#695b50;font-size:11px;text-align:center}
 .kq .shopify-zoom-close{position:absolute;right:12px;top:12px;z-index:4;display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:#fbf7ef;color:var(--red);cursor:pointer}
 .kq .shopify-related-section .products{min-width:0}
@@ -263,6 +265,7 @@
 }
 @media(prefers-reduced-motion:reduce){
   .kq .shopify-zoom-trigger img{transition:none}
+  .kq .shopify-zoom-viewport img{transition:none}
 }
 
 .kq .shopify-stitching-contact{margin:-4px 0 12px;font-size:12px;line-height:1.5}

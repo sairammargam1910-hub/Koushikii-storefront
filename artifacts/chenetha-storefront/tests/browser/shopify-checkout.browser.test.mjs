@@ -498,6 +498,26 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   assert.ok(mobileDrawerLayout.drawerWidth <= mobileDrawerLayout.viewportWidth + 1, "details drawer should fit the mobile viewport");
   assert.ok(mobileDrawerLayout.documentWidth <= mobileDrawerLayout.viewportWidth + 1, "details drawer should not cause horizontal page overflow");
   await mobile.page.getByRole("button", { name: "Close product details" }).click();
+  await mobile.page.getByRole("button", { name: "Enlarge product photo 1 of 2" }).click();
+  const mobileZoomDialog = mobile.page.getByRole("dialog", { name: "Product photo enlarged" });
+  await mobileZoomDialog.waitFor();
+  const mobileZoomLayout = await mobile.page.evaluate(() => {
+    const zoomButton = document.querySelector(".shopify-zoom-buttons button");
+    const slider = document.querySelector(".shopify-zoom-slider");
+    const buttonBounds = zoomButton?.getBoundingClientRect();
+    return {
+      buttonWidth: buttonBounds?.width ?? 0,
+      buttonHeight: buttonBounds?.height ?? 0,
+      sliderWidth: slider?.getBoundingClientRect().width ?? 0,
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+  assert.ok(mobileZoomLayout.buttonWidth >= 44 && mobileZoomLayout.buttonHeight >= 44, "zoom buttons should be comfortable touch targets");
+  assert.ok(mobileZoomLayout.sliderWidth > 0, "the mobile zoom slider should remain visible");
+  assert.ok(mobileZoomLayout.documentWidth <= mobileZoomLayout.viewportWidth + 1, "zoom controls should not cause horizontal overflow");
+  await mobile.page.keyboard.press("Escape");
+  assert.equal(await mobileZoomDialog.count(), 0);
   await mobile.context.close();
 
   await page.getByRole("button", { name: "Show product photo 2 of 2" }).click();
@@ -511,6 +531,13 @@ test("renders only known piece details, supports gallery selection, wishlist, an
   await page.getByRole("button", { name: "Zoom in" }).click();
   assert.equal(await zoomLevel.innerText(), "125%");
   await page.getByRole("button", { name: "Zoom out" }).click();
+  assert.equal(await zoomLevel.innerText(), "100%");
+  const zoomSlider = page.getByTestId("product-image-zoom-slider");
+  await zoomSlider.focus();
+  await zoomSlider.press("ArrowRight");
+  assert.equal(await zoomLevel.innerText(), "105%");
+  assert.equal(await zoomSlider.getAttribute("aria-valuetext"), "105%");
+  await page.getByRole("button", { name: "Reset zoom" }).click();
   assert.equal(await zoomLevel.innerText(), "100%");
   const zoomViewport = page.locator(".shopify-zoom-viewport");
   const zoomBounds = await zoomViewport.boundingBox();
