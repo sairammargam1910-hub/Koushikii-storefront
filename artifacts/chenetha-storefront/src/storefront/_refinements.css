@@ -13,8 +13,8 @@
 .kq[data-lang="hi"]{font-family:'Noto Sans Devanagari','DM Sans',sans-serif}
 .kq[data-lang="hi"] h1,.kq[data-lang="hi"] h2,.kq[data-lang="hi"] h3,.kq[data-lang="hi"] blockquote,.kq[data-lang="hi"] .journey-stage-title{font-family:'Noto Serif Devanagari','Cormorant Garamond',serif}
 .kq[data-lang="te"] *,.kq[data-lang="hi"] *{letter-spacing:normal!important;text-transform:none!important}
-@media(max-width:767px){.kq .headrow{gap:8px}.kq .brand{width:122px;height:54px;flex:0 1 122px}.kq .head-actions{gap:7px;flex:1;justify-content:flex-end}.kq .language-switcher{min-height:34px;gap:3px;padding:0 5px}.kq .language-switcher select{width:72px;max-width:72px;font-size:10px}}
-@media(max-width:380px){.kq .headrow{gap:5px}.kq .brand{width:105px;height:48px;flex-basis:105px}.kq .head-actions{gap:5px}.kq .language-switcher select{width:65px;max-width:65px}}
+@media(max-width:767px){.kq .headrow{gap:8px}.kq .brand{width:122px;height:54px;flex:0 1 122px}.kq .head-actions{gap:7px;flex:1;justify-content:flex-start}.kq .head-icon-group{display:flex;align-items:center;gap:6px;margin-left:6px;flex:none}.kq .language-switcher{min-height:34px;gap:3px;padding:0 5px}.kq .language-switcher select{width:72px;max-width:72px;font-size:10px}}
+@media(max-width:380px){.kq .headrow{gap:5px}.kq .brand{width:105px;height:48px;flex-basis:105px}.kq .head-actions{gap:5px}.kq .language-switcher select{width:65px;max-width:65px}.kq .head-icon-group{gap:4px;margin-left:4px}}
 .kq .footer-logo{width:100%;height:auto;display:block;overflow:visible}
 .kq .craft-scene svg{aspect-ratio:900/510}
 .kq .scene-caption{background:#f7f1e6e8;padding:7px 10px;letter-spacing:.1em;top:14px;left:14px;max-width:calc(100% - 28px);border-left:2px solid var(--red)}
@@ -29,6 +29,7 @@
 .kq .nav a,.kq .nav summary{font-size:11px;font-weight:500;text-transform:none;letter-spacing:.015em}
 .kq .nav a{padding:12px 0}
 .kq .head-actions{justify-self:end;gap:11px;white-space:nowrap}
+.kq .head-icon-group{display:flex;align-items:center;gap:11px}
 .kq .text-action{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:36px;gap:6px;padding:5px;font-size:11px}
 .kq .head-actions .optional{display:inline-flex}
 .kq .mobile-menu{display:none}
@@ -61,7 +62,8 @@
  .kq .collection-nav{width:100%}
   .kq .mega-menu{position:static;left:auto;transform:none;width:100%;grid-template-columns:1fr;margin:4px 0 12px;box-shadow:none}
   .kq .mega-menu>div+div{border-left:0;border-top:1px solid var(--line);padding:16px 0 0}
- .kq .head-actions{gap:7px}
+  .kq .head-actions{gap:7px}
+  .kq .head-icon-group{gap:7px}
  .kq .head-actions .optional{display:none}
 }
 .kq .guide-intro h2{max-width:600px;margin:10px 0 18px}

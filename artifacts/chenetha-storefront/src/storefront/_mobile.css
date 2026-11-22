@@ -208,8 +208,16 @@
     grid-row: 2;
     width: 100%;
     min-width: 0;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 0;
+  }
+
+  .kq .head-icon-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 6px;
+    flex: none;
   }
 
   .kq .head-actions .language-switcher,
@@ -244,8 +252,8 @@
     height: 17px;
   }
 
-  .kq .head-actions .header-whatsapp,
-  .kq .head-actions > .iconbtn {
+  .kq .head-icon-group .header-whatsapp,
+  .kq .head-icon-group > .iconbtn {
     width: 40px;
     min-width: 40px;
     height: 40px;
@@ -300,13 +308,18 @@
     justify-content: space-between;
   }
 
+  .kq .head-icon-group {
+    gap: 4px;
+    margin-left: 4px;
+  }
+
   .kq .language-switcher select {
     width: 76px;
     max-width: 76px;
   }
 
-  .kq .head-actions .text-action,
-  .kq .head-actions > .iconbtn {
+  .kq .head-icon-group .text-action,
+  .kq .head-icon-group > .iconbtn {
     width: 32px;
     min-width: 32px;
     flex-basis: 32px;

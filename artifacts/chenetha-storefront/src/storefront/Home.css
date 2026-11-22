@@ -1257,8 +1257,13 @@
   .kq:has(.home-fabric-section) .head-actions {
     min-width: 0;
     height: 40px;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 0;
+  }
+
+  .kq:has(.home-fabric-section) .head-icon-group {
+    gap: 6px;
+    margin-left: 6px;
   }
 
   .kq:has(.home-fabric-section) .language-switcher {
@@ -1276,7 +1281,7 @@
 
   .kq:has(.home-fabric-section) .head-actions .text-action,
   .kq:has(.home-fabric-section) .head-actions .header-whatsapp,
-  .kq:has(.home-fabric-section) .head-actions > .iconbtn {
+  .kq:has(.home-fabric-section) .head-icon-group > .iconbtn {
     width: 40px;
     min-width: 40px;
     height: 40px;
@@ -1347,10 +1352,15 @@
 
   .kq:has(.home-fabric-section) .head-actions .text-action,
   .kq:has(.home-fabric-section) .head-actions .header-whatsapp,
-  .kq:has(.home-fabric-section) .head-actions > .iconbtn {
+  .kq:has(.home-fabric-section) .head-icon-group > .iconbtn {
     width: 28px;
     min-width: 28px;
     flex-basis: 28px;
+  }
+
+  .kq:has(.home-fabric-section) .head-icon-group {
+    gap: 4px;
+    margin-left: 4px;
   }
 }
 
