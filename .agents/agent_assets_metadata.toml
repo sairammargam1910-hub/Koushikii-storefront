@@ -686,3 +686,17 @@ mtime_ms = 1795339268297
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b741ec9d-0900-432d-b965-0d24c3b38f58/10258bf9-6b2d-4300-b02d-a21bc0dd8f4e"
 storage_version_token = "1795339300971200"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "x-d9Mnuy7GMziIMaxiGit"
+uri = "file://generated-artifacts/product-image-top-aligned.jpg"
+type = "image"
+title = "Product image aligned to the top"
+description = "Desktop preview of the top-aligned product photo with the existing product details unchanged."
+logical_id = "39bf13aa-7b27-416f-9c90-c0d0afa59c71"
+content_hash = "sha256:42b53dcb4e7f743e8ea35960606317f8787073a8fa9085643fd24d6003d75f64"
+size = 128083
+mtime_ms = 1795340144617
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/39bf13aa-7b27-416f-9c90-c0d0afa59c71/3ac57b19-3e34-4ee5-b504-a0babfb149b0"
+storage_version_token = "1795340182002971"
+content_type = "image/jpeg"

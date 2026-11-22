@@ -486,6 +486,11 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     "the main product photo should remain fully visible with plain space around it",
   );
   assert.equal(
+    await page.locator(".shopify-product-detail .shopify-zoom-image").evaluate((img) => getComputedStyle(img).objectPosition),
+    "50% 0%",
+    "the main product photo should align to the top of the desktop gallery frame",
+  );
+  assert.equal(
     await page.locator(".shopify-product-detail .shopify-gallery-main").evaluate((element) => getComputedStyle(element).backgroundColor),
     "rgba(0, 0, 0, 0)",
     "the gallery should not add a colored background behind the photo",
