@@ -644,3 +644,17 @@ mtime_ms = 1795335096105
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/5e919aea-90b0-42cd-aced-8d0a9324e939/4240b44e-5401-4540-ab5a-c0027d323335"
 storage_version_token = "1795335265312585"
 content_type = "image/png"
+
+[[outputs]]
+id = "Pqy4ZO-FXwXh48ymB_qYt"
+uri = "file://generated-artifacts/footer-desktop-qa.jpg"
+type = "image"
+title = "Product page footer — desktop QA"
+description = "Full-page preview showing the footer's corrected desktop layout on the saree2 product page."
+logical_id = "b18ca1ba-1c0b-43af-9435-2473ce2164b7"
+content_hash = "sha256:11ac057ffa2efa9edd8bd948638178b0df0e3d958c7cd357d7223a21d30baa8f"
+size = 314687
+mtime_ms = 1795337726873
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/b18ca1ba-1c0b-43af-9435-2473ce2164b7/f7c18660-5666-4f93-a041-050eb34eb32e"
+storage_version_token = "1795337771793599"
+content_type = "image/jpeg"

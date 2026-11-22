@@ -475,6 +475,33 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     ],
   };
   const { context, page } = await openProduct({ catalog: { products: [product] }, mockShopifyImages: true });
+  const footerLayout = await page.evaluate(() => {
+    const grid = document.querySelector(".home-footer-grid");
+    const logo = document.querySelector(".home-footer-logo");
+    const company = document.querySelector('[aria-label="Our company"]');
+    const quickLinks = document.querySelector('[aria-label="Quick links"]');
+    const newsletter = document.querySelector(".home-footer-newsletter");
+    const columns = [grid, logo, company, quickLinks, newsletter].map((element) => {
+      const rect = element?.getBoundingClientRect();
+      return rect ? { x: rect.x, width: rect.width } : null;
+    });
+    return {
+      templateColumns: grid ? getComputedStyle(grid).gridTemplateColumns.split(" ").length : 0,
+      footerBackground: document.querySelector(".footer")
+        ? getComputedStyle(document.querySelector(".footer")).backgroundColor
+        : "",
+      ...Object.fromEntries(["grid", "logo", "company", "quickLinks", "newsletter"].map((name, index) => [name, columns[index]])),
+    };
+  });
+  assert.equal(footerLayout.templateColumns, 4, "the shared footer should keep its four-column desktop layout on the product page");
+  assert.equal(footerLayout.footerBackground, "rgb(178, 34, 34)", "the shared footer should use the brand-red surface");
+  assert.ok(footerLayout.logo?.width && footerLayout.logo.width <= 211, "the footer logo should stay at its intended size on product pages");
+  assert.ok(
+    footerLayout.company?.x > (footerLayout.logo?.x ?? Infinity) &&
+      footerLayout.quickLinks?.x > footerLayout.company.x &&
+      footerLayout.newsletter?.x > footerLayout.quickLinks.x,
+    "footer links and newsletter should occupy separate desktop columns",
+  );
   assert.equal(await page.getByTestId("text-quantity").innerText(), "1");
   assert.equal(await page.getByTestId("button-increase-quantity").isDisabled(), true);
   assert.match(await page.getByTestId("text-available-quantity").innerText(), /1 piece in stock/);

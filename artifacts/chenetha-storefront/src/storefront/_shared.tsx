@@ -10,6 +10,7 @@ import "./_profile.css";
 import "./_storefront-pattern.css";
 import "./_mobile.css";
 import "./StorefrontPromotions.css";
+import "./_footer.css";
 import { useLocation } from "wouter";
 import { getGetShopifyStorefrontPromotionsQueryKey, useGetShopifyStorefrontPromotions } from "@workspace/api-client-react";
 import { useShopifyCartMeta, useShopifyCart } from "./shopifyCartState";
