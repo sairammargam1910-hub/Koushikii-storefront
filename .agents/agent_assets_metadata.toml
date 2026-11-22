@@ -700,3 +700,17 @@ mtime_ms = 1795340144617
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/39bf13aa-7b27-416f-9c90-c0d0afa59c71/3ac57b19-3e34-4ee5-b504-a0babfb149b0"
 storage_version_token = "1795340182002971"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "UH5GHl3LVaW3eTzV_sknB"
+uri = "file://generated-artifacts/product-image-controls-visible.jpg"
+type = "image"
+title = "Product photo controls aligned at the top"
+description = "Desktop preview showing the photo-sized gallery and its visible view-detail control at the top."
+logical_id = "5d9a1b51-e9eb-4b62-8efa-4c1fba62acbc"
+content_hash = "sha256:b3860def5b91e1094e0985bbd1befa9e4d775ab6d4e6b23f70aa54a961db5f49"
+size = 133517
+mtime_ms = 1795341343213
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/5d9a1b51-e9eb-4b62-8efa-4c1fba62acbc/180562ff-7fb1-463b-aa34-6f6cbb975ef8"
+storage_version_token = "1795341383687838"
+content_type = "image/jpeg"

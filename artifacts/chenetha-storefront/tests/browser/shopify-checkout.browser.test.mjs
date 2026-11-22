@@ -500,6 +500,40 @@ test("renders only known piece details, supports gallery selection, wishlist, an
     "rgba(0, 0, 0, 0)",
     "the clickable photo surface should remain transparent",
   );
+  const galleryGeometry = await page.locator(".shopify-product-detail .shopify-gallery-main").evaluate((frame) => {
+    const image = frame.querySelector(".shopify-zoom-image");
+    const hint = frame.querySelector(".shopify-zoom-hint");
+      const previous = frame.querySelector(".shopify-gallery-arrow.is-prev");
+    const frameRect = frame.getBoundingClientRect();
+    const imageRect = image.getBoundingClientRect();
+    const hintRect = hint.getBoundingClientRect();
+    const hintStyle = getComputedStyle(hint);
+      const previousStyle = previous ? getComputedStyle(previous) : null;
+    return {
+      frameHeight: frameRect.height,
+      imageHeight: imageRect.height,
+      frameX: frameRect.x,
+      imageX: imageRect.x,
+      hintTop: hintStyle.top,
+      hintOffset: hint.getBoundingClientRect().top - frameRect.top,
+      hintOffsetX: hintRect.left - imageRect.left,
+      hintZIndex: Number(hintStyle.zIndex),
+      imageZIndex: Number(getComputedStyle(image).zIndex),
+        previousTop: previousStyle?.top,
+    };
+  });
+  assert.ok(
+    galleryGeometry.frameHeight <= galleryGeometry.imageHeight + 2,
+    "the desktop gallery should fit the photo instead of stretching down beside product details",
+  );
+  assert.equal(galleryGeometry.hintTop, "12px", "the view-detail control should stay at the top of the photo");
+  assert.ok(galleryGeometry.hintOffset <= 13, "the view-detail control should remain near the top edge of the image");
+  assert.ok(
+    Math.abs(galleryGeometry.hintOffsetX - 12) <= 1,
+    `the view-detail control should overlay the image near its left edge (frame ${galleryGeometry.frameX}, image ${galleryGeometry.imageX}, offset ${galleryGeometry.hintOffsetX})`,
+  );
+  assert.ok(galleryGeometry.hintZIndex > galleryGeometry.imageZIndex, "the view-detail control should render above the image");
+  assert.equal(galleryGeometry.previousTop, "56px", "the previous-image control should stay in the top area of the photo");
   const footerLayout = await page.evaluate(() => {
     const grid = document.querySelector(".home-footer-grid");
     const logo = document.querySelector(".home-footer-logo");
