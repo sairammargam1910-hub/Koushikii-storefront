@@ -4,33 +4,41 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import pg from "pg";
 
-export const columns = [
+const legacyColumns = [
   "id", "kind", "placement", "title", "eyebrow", "body", "image_url", "media_url", "alt_text",
   "cta_label", "cta_url", "linked_product_id", "sort_order", "published", "approved", "created_at", "updated_at",
 ];
+export const columns = [
+  "id", "kind", "placement", "title", "eyebrow", "body", "image_url", "mobile_image_url", "image_fit",
+  "desktop_image_aspect_ratio", "mobile_image_aspect_ratio", "media_url", "alt_text", "focal_point_x",
+  "focal_point_y", "cta_label", "cta_url", "linked_product_id", "sort_order", "published", "approved",
+  "created_at", "updated_at",
+];
 export type ContentRow = Record<string, unknown>;
-export type ContentExport = { version: 1; rows: ContentRow[]; assetIds: string[]; sha256: string };
+export type ContentExport = { version: 1 | 2; rows: ContentRow[]; assetIds: string[]; sha256: string };
 export const defaultExportFile = fileURLToPath(new URL("../../generated-artifacts/migration/site-content.json", import.meta.url));
-export function fingerprint(rows: ContentRow[]) {
+export function fingerprint(rows: ContentRow[], version: 1 | 2 = 2) {
+  const contentColumns = version === 1 ? legacyColumns : columns;
   const ordered = [...rows].sort((a, b) => String(a.id).localeCompare(String(b.id)));
-  return createHash("sha256").update(JSON.stringify(ordered.map(row => columns.map(column => {
+  return createHash("sha256").update(JSON.stringify(ordered.map(row => contentColumns.map(column => {
     const value = row[column];
     return value instanceof Date ? value.toISOString() :
       ((column === "created_at" || column === "updated_at") && typeof value === "string" ? new Date(value).toISOString() : value);
   })))).digest("hex");
 }
 export function mediaIds(rows: ContentRow[]) {
-  return [...new Set(rows.flatMap(row => [row.image_url, row.media_url]).flatMap(value => {
+  return [...new Set(rows.flatMap(row => [row.image_url, row.mobile_image_url, row.media_url]).flatMap(value => {
     const match = typeof value === "string" && /^\/api\/site-content\/media\/([0-9a-f-]{36})$/i.exec(value);
     return match ? [match[1]] : [];
   }))].sort();
 }
 export function validateExport(data: ContentExport) {
-  if (data.version !== 1 || !Array.isArray(data.rows) || data.sha256 !== fingerprint(data.rows) ||
+  const contentColumns = data.version === 1 ? legacyColumns : data.version === 2 ? columns : [];
+  if (!contentColumns.length || !Array.isArray(data.rows) || data.sha256 !== fingerprint(data.rows, data.version) ||
     JSON.stringify(data.assetIds) !== JSON.stringify(mediaIds(data.rows))) throw new Error("Invalid or altered migration export.");
   const ids = new Set();
   for (const row of data.rows) {
-    if (columns.some(column => !(column in row)) || Object.keys(row).some(column => !columns.includes(column))) {
+    if (contentColumns.some(column => !(column in row)) || Object.keys(row).some(column => !contentColumns.includes(column))) {
       throw new Error("Unexpected content export columns.");
     }
     if (!/^[0-9a-f-]{36}$/i.test(String(row.id)) || ids.has(row.id)) throw new Error("Invalid or duplicate content ID.");
@@ -43,7 +51,7 @@ export async function readExport(file: string) {
   return data;
 }
 export async function saveExport(file: string, rows: ContentRow[]) {
-  const data: ContentExport = { version: 1, rows, assetIds: mediaIds(rows), sha256: fingerprint(rows) };
+  const data: ContentExport = { version: 2, rows, assetIds: mediaIds(rows), sha256: fingerprint(rows, 2) };
   await mkdir(dirname(file), { recursive: true, mode: 0o700 });
   await writeFile(file, JSON.stringify(data, null, 2), { mode: 0o600, flag: "wx" });
   return data;
@@ -89,8 +97,19 @@ async function main() {
       await client.query("LOCK TABLE site_content_items IN EXCLUSIVE MODE");
       const count = await client.query("SELECT count(*)::int AS count FROM site_content_items");
       if (count.rows[0].count) throw new Error("Destination contains content. Refusing to overwrite it.");
+      const defaults: ContentRow = {
+        mobile_image_url: null,
+        image_fit: "cover",
+        desktop_image_aspect_ratio: "4:3",
+        mobile_image_aspect_ratio: "5:4",
+        focal_point_x: null,
+        focal_point_y: null,
+      };
       for (const row of data.rows) {
-        await client.query(`INSERT INTO site_content_items (${columns.join(",")}) VALUES (${columns.map((_, i) => `$${i + 1}`).join(",")})`, columns.map(column => row[column]));
+        await client.query(
+          `INSERT INTO site_content_items (${columns.join(",")}) VALUES (${columns.map((_, i) => `$${i + 1}`).join(",")})`,
+          columns.map(column => Object.prototype.hasOwnProperty.call(row, column) ? row[column] : defaults[column]),
+        );
       }
     } else {
       await client.query("BEGIN READ ONLY");

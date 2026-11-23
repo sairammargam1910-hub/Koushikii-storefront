@@ -5,7 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SiteContentItemDesktopImageAspectRatio } from './siteContentItemDesktopImageAspectRatio';
+import type { SiteContentItemImageFit } from './siteContentItemImageFit';
 import type { SiteContentItemKind } from './siteContentItemKind';
+import type { SiteContentItemMobileImageAspectRatio } from './siteContentItemMobileImageAspectRatio';
 import type { SiteContentItemPlacement } from './siteContentItemPlacement';
 
 export interface SiteContentItem {
@@ -20,6 +23,11 @@ export interface SiteContentItem {
   body: string | null;
   /** @nullable */
   imageUrl: string | null;
+  /** @nullable */
+  mobileImageUrl: string | null;
+  imageFit: SiteContentItemImageFit;
+  desktopImageAspectRatio: SiteContentItemDesktopImageAspectRatio;
+  mobileImageAspectRatio: SiteContentItemMobileImageAspectRatio;
   /** @nullable */
   mediaUrl: string | null;
   /** @nullable */

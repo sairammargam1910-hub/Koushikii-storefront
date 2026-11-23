@@ -643,6 +643,130 @@ test("fabric and collection choices load from the public Shopify catalog", async
   await context.close();
 });
 
+test("merchant can tune and save responsive collection image settings", async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+  const uploads = [];
+  const savedItems = [];
+  const product = {
+    id: "gid://shopify/Product/narayanpet-image-settings",
+    title: "Cotton Narayanpet saree",
+    handle: "cotton-narayanpet-saree",
+    description: "",
+    productType: "Saree",
+    status: "ACTIVE",
+    tags: [],
+    fabric: "Cotton",
+    regionalHandloom: "Narayanpet",
+    blouseAvailability: "not_specified",
+    craftTechnique: "",
+    region: "Telangana",
+    colour: "",
+    collectionIds: [],
+    imageUrl: null,
+    variants: [],
+    options: [],
+  };
+  await page.route("**/api/shopify/admin/products", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ currencyCode: "INR", products: [product] }),
+  }));
+  await page.route("**/api/shopify/products", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      products: [{
+        ...product,
+        attributes: { fabric: "Cotton", regionalHandloom: "Narayanpet", craftTechnique: null, region: "Telangana", colour: null },
+        collections: [],
+        images: [],
+      }],
+      totalPublishedProducts: 1,
+      truncated: false,
+    }),
+  }));
+  await page.route("**/api/site-content/uploads", async route => {
+    uploads.push(route.request().postDataJSON());
+    const asset = uploads.length === 1 ? "desktop" : "mobile";
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        uploadUrl: `${origin}/mock-collection-image-upload`,
+        assetUrl: `https://cdn.example.test/${asset}-narayanpet.webp`,
+      }),
+    });
+  });
+  await page.route("**/mock-collection-image-upload", async route => {
+    assert.equal(route.request().method(), "PUT");
+    await route.fulfill({ status: 200, body: "" });
+  });
+  await page.route("**/api/site-content", async route => {
+    if (route.request().method() !== "POST") {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) });
+    }
+    const body = route.request().postDataJSON();
+    savedItems.push(body);
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...body,
+        id: "narayanpet-responsive-image",
+        createdAt: "2026-11-23T00:00:00.000Z",
+        updatedAt: "2026-11-23T00:00:00.000Z",
+      }),
+    });
+  });
+  await page.goto(`${origin}/tests/browser/fixture.html?screen=home-image-editor`);
+  await page.getByRole("dialog").waitFor();
+  await page.locator(".admin-form select").nth(0).selectOption("regional_handloom_tile");
+  await page.locator(".admin-form select").nth(1).selectOption("Narayanpet");
+  await page.locator('.content-media-field input[type="file"]').nth(0).setInputFiles({
+    name: "narayanpet-wide.webp",
+    mimeType: "image/webp",
+    buffer: Buffer.from("desktop-image"),
+  });
+  await page.locator('.content-media-field input[type="file"]').nth(1).setInputFiles({
+    name: "narayanpet-mobile.webp",
+    mimeType: "image/webp",
+    buffer: Buffer.from("mobile-image"),
+  });
+  const cropPreview = page.locator(".collection-image-position-editor");
+  await cropPreview.scrollIntoViewIfNeeded();
+  const cropBounds = await cropPreview.boundingBox();
+  assert.ok(cropBounds);
+  await page.mouse.move(cropBounds.x + cropBounds.width * 0.5, cropBounds.y + cropBounds.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(cropBounds.x + cropBounds.width * 0.22, cropBounds.y + cropBounds.height * 0.78);
+  await page.mouse.up();
+  assert.equal(await page.getByLabel("Horizontal image position").inputValue(), "custom");
+  assert.equal(await page.getByLabel("Vertical image position").inputValue(), "custom");
+  await page.getByLabel("Horizontal image position").selectOption("0");
+  await page.getByLabel("Vertical image position").selectOption("100");
+  await page.getByLabel("Collection image fit").selectOption("contain");
+  await page.getByLabel("Desktop image aspect ratio").selectOption("3:2");
+  await page.getByLabel("Mobile image aspect ratio").selectOption("4:3");
+  const previews = page.locator(".collection-image-live-preview");
+  assert.equal(await previews.count(), 2, "desktop and mobile live previews should both be visible in the editor");
+  assert.match(await previews.nth(0).locator("img").getAttribute("src"), /^blob:/);
+  assert.match(await previews.nth(1).locator("img").getAttribute("src"), /^blob:/);
+  await page.getByRole("button", { name: "Save content" }).click();
+  await page.getByTestId("home-image-editor-closed").waitFor();
+
+  assert.equal(uploads.length, 2);
+  assert.equal(savedItems.length, 1);
+  assert.equal(savedItems[0].imageUrl, "https://cdn.example.test/desktop-narayanpet.webp");
+  assert.equal(savedItems[0].mobileImageUrl, "https://cdn.example.test/mobile-narayanpet.webp");
+  assert.equal(savedItems[0].imageFit, "contain");
+  assert.equal(savedItems[0].desktopImageAspectRatio, "3:2");
+  assert.equal(savedItems[0].mobileImageAspectRatio, "4:3");
+  assert.equal(savedItems[0].focalPointX, 0);
+  assert.equal(savedItems[0].focalPointY, 100);
+  await context.close();
+});
+
 test("merchant can publish without a collection and later assign a Shopify collection", async () => {
   const created = await openForm();
   const createMutations = await mockCreateOrUpdate(created.page);

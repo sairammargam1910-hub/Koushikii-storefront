@@ -714,3 +714,31 @@ mtime_ms = 1795341343213
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/5d9a1b51-e9eb-4b62-8efa-4c1fba62acbc/180562ff-7fb1-463b-aa34-6f6cbb975ef8"
 storage_version_token = "1795341383687838"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "mGlzlXjHhTmkJiSoPakvl"
+uri = "file://generated-artifacts/collection-cards-desktop.jpg"
+type = "image"
+title = "Desktop collection cards"
+description = "1440px layout with illustrative sample images; the existing product images were not changed."
+logical_id = "07d3439d-d397-45a4-9b7f-775fb1bee372"
+content_hash = "sha256:4cf5a80d4ff9dc0a8ce3591de1bb74e9ec5fd4275b0230e02c2d7efc8a8cbef9"
+size = 162142
+mtime_ms = 1795452922509
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/07d3439d-d397-45a4-9b7f-775fb1bee372/63dc87a3-76c6-4a95-bc5c-3095ad5b41e3"
+storage_version_token = "1795453191383083"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "6v5s3OEjcpwq2gWmowTS_"
+uri = "file://generated-artifacts/collection-cards-mobile.jpg"
+type = "image"
+title = "Mobile collection cards"
+description = "390px layout with a visible next-card preview; illustrative sample images are used."
+logical_id = "c3817330-e7b0-47fc-a54e-96a41f6ce194"
+content_hash = "sha256:896840fa1618fc64bc49b01cdfc861076e90bb8edf7ae9b36c4c0b80dec27276"
+size = 52808
+mtime_ms = 1795452922969
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:2cab143d-5533-4712-aed3-9b48e7b934c0/c3817330-e7b0-47fc-a54e-96a41f6ce194/92528768-00e3-4078-a0c0-28cc42a5e874"
+storage_version_token = "1795453192668070"
+content_type = "image/jpeg"

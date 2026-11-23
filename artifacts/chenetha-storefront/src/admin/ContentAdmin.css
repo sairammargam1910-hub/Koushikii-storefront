@@ -65,6 +65,22 @@
 .hero-focal-preview.desktop{width:180px;height:92px}
 .hero-focal-preview.mobile{width:58px;height:92px}
 .hero-focal-preview img{width:100%;height:100%;object-fit:cover}
+.collection-image-settings{min-width:0;margin:0;padding:13px;border:1px solid #e7dcd4;border-radius:6px;background:#fcf8f2}
+.collection-image-settings legend{padding:0 5px;color:#645258;font-size:11px;font-weight:700}
+.collection-image-settings>.field-note{margin:0 0 12px}
+.collection-image-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.collection-image-controls label{display:grid;gap:5px;color:#645258;font-size:10px}
+.collection-image-controls select{min-width:0}
+.collection-image-live-previews{display:grid;grid-template-columns:minmax(0,1fr) 112px;align-items:start;gap:16px;margin-top:14px}
+.collection-image-live-preview{min-width:0}
+.collection-image-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;color:#827477;font-size:9px}
+.collection-image-preview-heading span{font-variant-numeric:tabular-nums}
+.collection-image-position-editor,.collection-image-mobile-frame{position:relative;width:100%;overflow:hidden;border:1px solid #ddcfc4;border-radius:5px;background:#eee4d8}
+.collection-image-position-editor{touch-action:none;cursor:crosshair}
+.collection-image-position-editor img,.collection-image-mobile-frame img{display:block;width:100%;height:100%}
+.collection-image-position-editor>span,.collection-image-mobile-frame>span{position:absolute;inset:0;display:grid;place-items:center;padding:8px;color:#786957;text-align:center;font-size:9px}
+.collection-image-position-editor>small{position:absolute;right:5px;bottom:5px;padding:3px 5px;border-radius:3px;background:#fffaf2e8;color:#6d5148;font-size:8px;pointer-events:none}
+.collection-image-preview-note{display:block;margin-top:5px;color:#827477;font-size:8px}
 .content-publish{align-self:end;min-height:40px}
 .admin-form select{width:100%;border:1px solid #e7dcd4;border-radius:5px;outline:none;padding:10px 11px;color:#47383e;background:#fffefa;font-size:12px;font-weight:400}
 .admin-form select:focus{border-color:#a87c82;box-shadow:0 0 0 3px rgba(133,85,100,.11)}
@@ -96,5 +112,7 @@
  .content-upload-progress progress{grid-column:1/-1;grid-row:2}
  .hero-focal-controls{grid-template-columns:1fr}
  .hero-focal-controls .text-button{grid-column:1}
+  .collection-image-controls{grid-template-columns:1fr}
+  .collection-image-live-previews{grid-template-columns:minmax(0,1fr) minmax(76px,112px);gap:10px}
 }
 @media(prefers-reduced-motion:reduce){.content-row,.content-skeleton span{animation:none}}

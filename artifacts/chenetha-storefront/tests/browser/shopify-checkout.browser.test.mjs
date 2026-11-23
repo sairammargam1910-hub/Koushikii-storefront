@@ -2632,3 +2632,102 @@ test("delivery progress never exposes tracking for an unpaid order", async () =>
   assert.equal(await page.getByTestId("latest-scan-shipment-0").count(), 0);
   await context.close();
 });
+
+test("Shop by Collection cards keep their image ratios and phone carousel peek", async () => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, hasTouch: true });
+  const page = await context.newPage();
+  const products = ["Narayanpet", "Pochampally"].map((tradition, index) => ({
+    ...productResponse.products[0],
+    id: `gid://shopify/Product/collection-card-${index}`,
+    handle: `collection-card-${index}`,
+    title: `${tradition} handloom saree`,
+    attributes: {
+      ...productResponse.products[0].attributes,
+      fabric: null,
+      regionalHandloom: tradition,
+      craftTechnique: null,
+      region: "Telangana",
+      colour: null,
+    },
+    collections: [],
+  }));
+  const contentItems = products.map((product, index) => ({
+    id: `collection-card-image-${index}`,
+    kind: "home_image",
+    placement: "regional_handloom_tile",
+    title: product.attributes.regionalHandloom,
+    imageUrl: `https://cdn.example.test/collection-${index}-landscape.jpg`,
+    mobileImageUrl: `https://cdn.example.test/collection-${index}-mobile.jpg`,
+    imageFit: index === 0 ? "cover" : "contain",
+    desktopImageAspectRatio: "4:3",
+    mobileImageAspectRatio: "5:4",
+    altText: `Saree detail for ${product.attributes.regionalHandloom}`,
+    focalPointX: index === 0 ? 15 : 70,
+    focalPointY: index === 0 ? 90 : 20,
+    published: true,
+    sortOrder: index,
+  }));
+  await page.route("**/api/shopify/products", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ products, totalPublishedProducts: products.length, truncated: false }),
+  }));
+  await page.route("**/api/site-content", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ items: contentItems }),
+  }));
+  await page.goto(`${origin}${fixtureUrl}?screen=home`);
+  await page.getByRole("heading", { name: "Shop by Collection", exact: true }).waitFor();
+  const track = page.locator(".home-collection-track");
+  const cards = track.locator("> a");
+  assert.equal(await cards.count(), 2);
+
+  for (const width of [360, 375, 390, 430, 1366, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const dimensions = await track.evaluate(element => {
+      const trackRect = element.getBoundingClientRect();
+      const cards = [...element.querySelectorAll(":scope > a")].map(card => {
+        const image = card.querySelector(".home-collection-image");
+        const imageRect = image.getBoundingClientRect();
+        const img = image.querySelector("img");
+        const imageStyle = getComputedStyle(img);
+        return {
+          cardRect: card.getBoundingClientRect().toJSON(),
+          imageRect: imageRect.toJSON(),
+          ratio: imageRect.width / imageRect.height,
+          objectFit: imageStyle.objectFit,
+          objectPosition: imageStyle.objectPosition,
+          mobileImage: image.querySelector("source")?.getAttribute("srcset"),
+          titleVisible: Boolean(card.querySelector("h3")?.textContent?.trim()),
+          ctaVisible: Boolean(card.querySelector(".eyebrow")?.textContent?.trim()),
+        };
+      });
+      return {
+        trackRect: trackRect.toJSON(),
+        trackScrollWidth: element.scrollWidth,
+        trackClientWidth: element.clientWidth,
+        overflowX: getComputedStyle(element).overflowX,
+        cards,
+      };
+    });
+    assert.equal(dimensions.cards.every(card => card.titleVisible && card.ctaVisible), true, `${width}px cards should keep their full titles and links`);
+    assert.equal(dimensions.cards[0].objectFit, "cover");
+    assert.equal(dimensions.cards[1].objectFit, "contain");
+    assert.equal(dimensions.cards[0].mobileImage, "https://cdn.example.test/collection-0-mobile.jpg");
+    if (width <= 767) {
+      assert.equal(dimensions.overflowX, "auto");
+      assert.ok(dimensions.trackScrollWidth > dimensions.trackClientWidth, `${width}px collection cards should scroll horizontally`);
+      assert.ok(Math.abs(dimensions.cards[0].ratio - 1.25) < 0.03, `${width}px mobile card image should use 5:4 framing`);
+      assert.ok(dimensions.cards[1].cardRect.x < dimensions.trackRect.right, `${width}px should reveal part of the next card`);
+      assert.ok(dimensions.cards[1].cardRect.x > dimensions.trackRect.x, `${width}px next card should begin after the first card`);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${width}px page should not gain horizontal overflow`);
+    } else {
+      assert.ok(Math.abs(dimensions.cards[0].ratio - 4 / 3) < 0.03, `${width}px desktop card image should use 4:3 framing`);
+      assert.ok(Math.abs(dimensions.cards[0].cardRect.width - dimensions.cards[1].cardRect.width) < 1, `${width}px desktop cards should be balanced in two columns`);
+      assert.ok(Math.abs(dimensions.cards[0].cardRect.y - dimensions.cards[1].cardRect.y) < 1, `${width}px desktop cards should share a row`);
+      assert.ok(dimensions.trackScrollWidth <= dimensions.trackClientWidth + 1, `${width}px desktop cards should remain in the two-column grid`);
+    }
+  }
+  await context.close();
+});

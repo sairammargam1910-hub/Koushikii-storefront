@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw } from "lucide-react";
 import { Shell, base } from "./_shared";
 import { getAvailableShopifyCollections, getPremiumCollections, getShopifyAttribute, isNewArrival, ShopifyProductCard, useShopifyCatalog } from "./ShopifyCatalog";
@@ -236,13 +236,38 @@ function IndiaWeaves({products}:{products:ShopifyProduct[]}){
  </div></section>
 }
 type HomeTilePlacement = "fabric_tile" | "weave_tile" | "regional_handloom_tile";
+type HomeImageTile = SiteContentItem & { placement: HomeTilePlacement | null };
+const cssAspectRatio = (ratio: string | null | undefined, fallback: string) => (ratio || fallback).replace(":", " / ");
+
+export function HomeCollectionTileImage({ item, index = 0 }: { item?: HomeImageTile; index?: number }) {
+  const title = item?.title || "Regional handloom";
+  const style = {
+    "--home-collection-desktop-ratio": cssAspectRatio(item?.desktopImageAspectRatio, "4:3"),
+    "--home-collection-mobile-ratio": cssAspectRatio(item?.mobileImageAspectRatio, "5:4"),
+  } as CSSProperties;
+  const imageStyle: CSSProperties = {
+    objectFit: item?.imageFit || "cover",
+    objectPosition: `${item?.focalPointX ?? 50}% ${item?.focalPointY ?? 50}%`,
+  };
+  return <div className="home-collection-image" style={style}>
+    {item?.imageUrl
+      ? <picture>
+          {item.mobileImageUrl && <source media="(max-width: 767px)" srcSet={item.mobileImageUrl}/>}
+          <img src={item.imageUrl} alt={item.altText || title} loading="lazy" style={imageStyle}/>
+        </picture>
+      : <Textile pattern={`s${(index % 6) + 1}`} label={title}/>}
+  </div>;
+}
+
 export function DynamicHomeTiles({items,placement}:{items:(SiteContentItem & {placement:HomeTilePlacement|null})[];placement:HomeTilePlacement}){
   const fallback=base+"Collections";
   const isFabric=placement==="fabric_tile";
   const isRegionalHandloom=placement==="regional_handloom_tile";
-  const className=isFabric?"fabric-grid":isRegionalHandloom?"weave-grid":"taxonomy-link-grid technique-link-grid";
+  const className=isFabric?"fabric-grid":isRegionalHandloom?"weave-grid home-collection-track":"taxonomy-link-grid technique-link-grid";
   return <div className={className}>{items.map((item,index)=><a key={item.id} className={isFabric?"fabric-card":""} href={item.ctaUrl||(isRegionalHandloom?`${fallback}?regionalHandloom=${encodeURIComponent(item.title)}`:fallback)}>
-   {item.imageUrl
+   {isRegionalHandloom
+     ? <HomeCollectionTileImage item={item} index={index}/>
+     : item.imageUrl
      ? <img className={isFabric||isRegionalHandloom?"dynamic-home-tile-image":"dynamic-home-weave-image"} src={item.imageUrl} alt={item.altText||item.title} loading="lazy"/>
      : <Textile pattern={isFabric?(item.title==="Silk"?"silk":item.title==="Cotton-Silk"?"cotton-silk":item.title==="Others"?"blends":"cotton"):`s${(index%6)+1}`} label={item.title}/>}
    {isFabric ? (
@@ -373,11 +398,11 @@ export function Home(){
    <IndiaWeaves products={storefrontProducts}/>
    <Reviews items={voices}/>
     <section className="section home-weave-section" id="shop-by-collection"><div className="wrap"><div className="section-head"><div><h2>Shop by Collection</h2><p>Explore regional weaves from across India.</p></div>{homeCollectionLinks.length>0&&<a href={base+"Collections"} className="link">All collections →</a>}</div>
-        {homeCollectionLinks.length?<div className="weave-grid home-horizontal-track" role="region" aria-label="Shop by Collection" tabIndex={0}>{homeCollectionLinks.map((item,index)=>{
+         {homeCollectionLinks.length?<div className="weave-grid home-collection-track" role="region" aria-label="Shop by Collection" tabIndex={0}>{homeCollectionLinks.map((item,index)=>{
           const href=base+"Collections?regionalHandloom="+encodeURIComponent(item.title);
           const tile=homeTiles.find(entry=>entry.placement==="regional_handloom_tile"&&entry.title.trim().toLowerCase()===item.title.trim().toLowerCase());
-          return <a key={item.key} href={href}>
-           {tile?.imageUrl?<img className="dynamic-home-tile-image" src={tile.imageUrl} alt={tile.altText||item.title} loading="lazy"/>:<Textile pattern={"s"+(index%6+1)} label={item.title}/>}
+           return <a key={item.key} className="home-collection-card" href={href}>
+            <HomeCollectionTileImage item={tile} index={index}/>
            <h3>{item.title}</h3><span className="eyebrow" style={{fontSize:9}}>Handloom · Shop now →</span>
          </a>;
         })}</div>:<p role="status" className="shopify-catalog-status">{storefrontCatalog.isLoading?"Loading regional handlooms…":storefrontCatalog.isError?"We couldn’t load the product list. Try the collections page again shortly.":"Real regional handlooms appear here when published products have a tradition value; test and demo values are hidden."}</p>}

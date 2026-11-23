@@ -2128,6 +2128,10 @@ export const GetSiteContentResponse = zod.object({
   "eyebrow": zod.string().nullable(),
   "body": zod.string().nullable(),
   "imageUrl": zod.string().nullable(),
+  "mobileImageUrl": zod.string().nullable(),
+  "imageFit": zod.enum(['cover', 'contain']),
+  "desktopImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
+  "mobileImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
   "mediaUrl": zod.string().nullable(),
   "altText": zod.string().nullable(),
   "focalPointX": zod.int().min(getSiteContentResponseItemsItemFocalPointXMin).max(getSiteContentResponseItemsItemFocalPointXMax).nullable(),
@@ -2155,6 +2159,8 @@ export const createSiteContentBodyEyebrowMax = 120;
 export const createSiteContentBodyBodyMax = 3000;
 
 export const createSiteContentBodyImageUrlMax = 2048;
+
+export const createSiteContentBodyMobileImageUrlMax = 2048;
 
 export const createSiteContentBodyMediaUrlMax = 2048;
 
@@ -2184,6 +2190,10 @@ export const CreateSiteContentBody = zod.object({
   "eyebrow": zod.string().max(createSiteContentBodyEyebrowMax).nullable(),
   "body": zod.string().max(createSiteContentBodyBodyMax).nullable(),
   "imageUrl": zod.string().max(createSiteContentBodyImageUrlMax).nullable(),
+  "mobileImageUrl": zod.string().max(createSiteContentBodyMobileImageUrlMax).nullable(),
+  "imageFit": zod.enum(['cover', 'contain']),
+  "desktopImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
+  "mobileImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
   "mediaUrl": zod.string().max(createSiteContentBodyMediaUrlMax).nullable(),
   "altText": zod.string().max(createSiteContentBodyAltTextMax).nullable(),
   "focalPointX": zod.int().min(createSiteContentBodyFocalPointXMin).max(createSiteContentBodyFocalPointXMax).nullable(),
@@ -2212,6 +2222,10 @@ export const CreateSiteContentResponse = zod.object({
   "eyebrow": zod.string().nullable(),
   "body": zod.string().nullable(),
   "imageUrl": zod.string().nullable(),
+  "mobileImageUrl": zod.string().nullable(),
+  "imageFit": zod.enum(['cover', 'contain']),
+  "desktopImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
+  "mobileImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
   "mediaUrl": zod.string().nullable(),
   "altText": zod.string().nullable(),
   "focalPointX": zod.int().min(createSiteContentResponseFocalPointXMin).max(createSiteContentResponseFocalPointXMax).nullable(),
@@ -2248,6 +2262,10 @@ export const GetAdminSiteContentResponse = zod.object({
   "eyebrow": zod.string().nullable(),
   "body": zod.string().nullable(),
   "imageUrl": zod.string().nullable(),
+  "mobileImageUrl": zod.string().nullable(),
+  "imageFit": zod.enum(['cover', 'contain']),
+  "desktopImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
+  "mobileImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
   "mediaUrl": zod.string().nullable(),
   "altText": zod.string().nullable(),
   "focalPointX": zod.int().min(getAdminSiteContentResponseItemsItemFocalPointXMin).max(getAdminSiteContentResponseItemsItemFocalPointXMax).nullable(),
@@ -2280,6 +2298,8 @@ export const updateSiteContentBodyBodyMax = 3000;
 
 export const updateSiteContentBodyImageUrlMax = 2048;
 
+export const updateSiteContentBodyMobileImageUrlMax = 2048;
+
 export const updateSiteContentBodyMediaUrlMax = 2048;
 
 export const updateSiteContentBodyAltTextMax = 500;
@@ -2308,6 +2328,10 @@ export const UpdateSiteContentBody = zod.object({
   "eyebrow": zod.string().max(updateSiteContentBodyEyebrowMax).nullable(),
   "body": zod.string().max(updateSiteContentBodyBodyMax).nullable(),
   "imageUrl": zod.string().max(updateSiteContentBodyImageUrlMax).nullable(),
+  "mobileImageUrl": zod.string().max(updateSiteContentBodyMobileImageUrlMax).nullable(),
+  "imageFit": zod.enum(['cover', 'contain']),
+  "desktopImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
+  "mobileImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
   "mediaUrl": zod.string().max(updateSiteContentBodyMediaUrlMax).nullable(),
   "altText": zod.string().max(updateSiteContentBodyAltTextMax).nullable(),
   "focalPointX": zod.int().min(updateSiteContentBodyFocalPointXMin).max(updateSiteContentBodyFocalPointXMax).nullable(),
@@ -2336,6 +2360,10 @@ export const UpdateSiteContentResponse = zod.object({
   "eyebrow": zod.string().nullable(),
   "body": zod.string().nullable(),
   "imageUrl": zod.string().nullable(),
+  "mobileImageUrl": zod.string().nullable(),
+  "imageFit": zod.enum(['cover', 'contain']),
+  "desktopImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
+  "mobileImageAspectRatio": zod.enum(['16:9', '3:2', '4:3', '5:4', '1:1']),
   "mediaUrl": zod.string().nullable(),
   "altText": zod.string().nullable(),
   "focalPointX": zod.int().min(updateSiteContentResponseFocalPointXMin).max(updateSiteContentResponseFocalPointXMax).nullable(),

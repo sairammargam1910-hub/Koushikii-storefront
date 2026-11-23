@@ -3147,6 +3147,17 @@ components:
           type: ["string", "null"]
         imageUrl:
           type: ["string", "null"]
+        mobileImageUrl:
+          type: ["string", "null"]
+        imageFit:
+          type: string
+          enum: [cover, contain]
+        desktopImageAspectRatio:
+          type: string
+          enum: ["16:9", "3:2", "4:3", "5:4", "1:1"]
+        mobileImageAspectRatio:
+          type: string
+          enum: ["16:9", "3:2", "4:3", "5:4", "1:1"]
         mediaUrl:
           type: ["string", "null"]
         altText:
@@ -3177,7 +3188,7 @@ components:
         updatedAt:
           type: string
           format: date-time
-      required: [id, kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, focalPointX, focalPointY, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved, createdAt, updatedAt]
+      required: [id, kind, placement, title, eyebrow, body, imageUrl, mobileImageUrl, imageFit, desktopImageAspectRatio, mobileImageAspectRatio, mediaUrl, altText, focalPointX, focalPointY, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved, createdAt, updatedAt]
     StorefrontReturnSettings:
       type: object
       properties:
@@ -3224,6 +3235,18 @@ components:
         imageUrl:
           type: ["string", "null"]
           maxLength: 2048
+        mobileImageUrl:
+          type: ["string", "null"]
+          maxLength: 2048
+        imageFit:
+          type: string
+          enum: [cover, contain]
+        desktopImageAspectRatio:
+          type: string
+          enum: ["16:9", "3:2", "4:3", "5:4", "1:1"]
+        mobileImageAspectRatio:
+          type: string
+          enum: ["16:9", "3:2", "4:3", "5:4", "1:1"]
         mediaUrl:
           type: ["string", "null"]
           maxLength: 2048
@@ -3255,7 +3278,7 @@ components:
           type: boolean
         approved:
           type: boolean
-      required: [kind, placement, title, eyebrow, body, imageUrl, mediaUrl, altText, focalPointX, focalPointY, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved]
+      required: [kind, placement, title, eyebrow, body, imageUrl, mobileImageUrl, imageFit, desktopImageAspectRatio, mobileImageAspectRatio, mediaUrl, altText, focalPointX, focalPointY, ctaLabel, ctaUrl, linkedProductId, sortOrder, published, approved]
     SiteContentDeleteResponse:
       type: object
       properties:

@@ -1019,6 +1019,36 @@ export const SiteContentItemPlacement = {
   regional_handloom_tile: 'regional_handloom_tile',
 } as const;
 
+export type SiteContentItemImageFit = typeof SiteContentItemImageFit[keyof typeof SiteContentItemImageFit];
+
+
+export const SiteContentItemImageFit = {
+  cover: 'cover',
+  contain: 'contain',
+} as const;
+
+export type SiteContentItemDesktopImageAspectRatio = typeof SiteContentItemDesktopImageAspectRatio[keyof typeof SiteContentItemDesktopImageAspectRatio];
+
+
+export const SiteContentItemDesktopImageAspectRatio = {
+  '16:9': '16:9',
+  '3:2': '3:2',
+  '4:3': '4:3',
+  '5:4': '5:4',
+  '1:1': '1:1',
+} as const;
+
+export type SiteContentItemMobileImageAspectRatio = typeof SiteContentItemMobileImageAspectRatio[keyof typeof SiteContentItemMobileImageAspectRatio];
+
+
+export const SiteContentItemMobileImageAspectRatio = {
+  '16:9': '16:9',
+  '3:2': '3:2',
+  '4:3': '4:3',
+  '5:4': '5:4',
+  '1:1': '1:1',
+} as const;
+
 export interface SiteContentItem {
   id: string;
   kind: SiteContentItemKind;
@@ -1031,6 +1061,11 @@ export interface SiteContentItem {
   body: string | null;
   /** @nullable */
   imageUrl: string | null;
+  /** @nullable */
+  mobileImageUrl: string | null;
+  imageFit: SiteContentItemImageFit;
+  desktopImageAspectRatio: SiteContentItemDesktopImageAspectRatio;
+  mobileImageAspectRatio: SiteContentItemMobileImageAspectRatio;
   /** @nullable */
   mediaUrl: string | null;
   /** @nullable */
@@ -1102,6 +1137,36 @@ export const SiteContentInputPlacement = {
   regional_handloom_tile: 'regional_handloom_tile',
 } as const;
 
+export type SiteContentInputImageFit = typeof SiteContentInputImageFit[keyof typeof SiteContentInputImageFit];
+
+
+export const SiteContentInputImageFit = {
+  cover: 'cover',
+  contain: 'contain',
+} as const;
+
+export type SiteContentInputDesktopImageAspectRatio = typeof SiteContentInputDesktopImageAspectRatio[keyof typeof SiteContentInputDesktopImageAspectRatio];
+
+
+export const SiteContentInputDesktopImageAspectRatio = {
+  '16:9': '16:9',
+  '3:2': '3:2',
+  '4:3': '4:3',
+  '5:4': '5:4',
+  '1:1': '1:1',
+} as const;
+
+export type SiteContentInputMobileImageAspectRatio = typeof SiteContentInputMobileImageAspectRatio[keyof typeof SiteContentInputMobileImageAspectRatio];
+
+
+export const SiteContentInputMobileImageAspectRatio = {
+  '16:9': '16:9',
+  '3:2': '3:2',
+  '4:3': '4:3',
+  '5:4': '5:4',
+  '1:1': '1:1',
+} as const;
+
 export interface SiteContentInput {
   kind: SiteContentInputKind;
   /** @nullable */
@@ -1126,6 +1191,14 @@ export interface SiteContentInput {
      * @nullable
      */
   imageUrl: string | null;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  mobileImageUrl: string | null;
+  imageFit: SiteContentInputImageFit;
+  desktopImageAspectRatio: SiteContentInputDesktopImageAspectRatio;
+  mobileImageAspectRatio: SiteContentInputMobileImageAspectRatio;
   /**
      * @maxLength 2048
      * @nullable

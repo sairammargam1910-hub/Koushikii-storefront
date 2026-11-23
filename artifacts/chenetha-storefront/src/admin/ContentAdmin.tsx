@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CircleAlert, Eye, Film, ImagePlus, MessageSquareQuote, Pencil, Plus, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import {
@@ -18,13 +18,16 @@ type Kind = SiteContentInput["kind"];
 type Placement = "fabric_tile" | "weave_tile" | "regional_handloom_tile";
 type Draft = SiteContentInput & { placement: Placement | null };
 const emptyDraft = (kind: Kind = "hero_slide"): Draft => ({
-  kind, title: "", eyebrow: null, body: null, imageUrl: null, mediaUrl: null,
+  kind, title: "", eyebrow: null, body: null, imageUrl: null, mobileImageUrl: null,
+  imageFit: "cover", desktopImageAspectRatio: "4:3", mobileImageAspectRatio: "5:4", mediaUrl: null,
   altText: null, focalPointX: null, focalPointY: null, ctaLabel: null, ctaUrl: null, linkedProductId: null,
   placement: null, sortOrder: 0, published: false, approved: false,
 });
 const draftFromItem = (item: SiteContentItem): Draft => ({
   kind: item.kind, title: item.title, eyebrow: item.eyebrow, body: item.body,
-  imageUrl: item.imageUrl, mediaUrl: item.mediaUrl, altText: item.altText,
+  imageUrl: item.imageUrl, mobileImageUrl: item.mobileImageUrl,
+  imageFit: item.imageFit, desktopImageAspectRatio: item.desktopImageAspectRatio,
+  mobileImageAspectRatio: item.mobileImageAspectRatio, mediaUrl: item.mediaUrl, altText: item.altText,
   focalPointX: item.focalPointX, focalPointY: item.focalPointY,
   ctaLabel: item.ctaLabel, ctaUrl: item.ctaUrl, linkedProductId: item.linkedProductId,
   placement: (item as SiteContentItem & { placement?: Placement | null }).placement || null,
@@ -59,7 +62,7 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
   const [error, setError] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [progress, setProgress] = useState<{ label: string; value: number } | null>(null);
-  const [previews, setPreviews] = useState<{ imageUrl?: string; mediaUrl?: string }>({});
+  const [previews, setPreviews] = useState<{ imageUrl?: string; mobileImageUrl?: string; mediaUrl?: string }>({});
   const localPreviewUrls = useRef<string[]>([]);
   const previewTriggerRef = useRef<HTMLButtonElement>(null);
   const hadPreviewOpen = useRef(false);
@@ -117,7 +120,7 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
       hadPreviewOpen.current = false;
     }
   }, [previewOpen]);
-  const upload = async (file: File, field: "imageUrl" | "mediaUrl") => {
+  const upload = async (file: File, field: "imageUrl" | "mobileImageUrl" | "mediaUrl") => {
     const isVideo = field === "mediaUrl";
     const validTypes = isVideo ? acceptedVideo : acceptedImage;
     const max = isVideo ? 200 * 1024 * 1024 : 10 * 1024 * 1024;
@@ -135,7 +138,7 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
       localPreviewUrls.current.push(localPreview);
       setPreviews(current => ({ ...current, [field]: localPreview }));
       set(field, signed.assetUrl);
-      if (field === "imageUrl" && kind === "hero_slide") {
+      if (field === "imageUrl" && (kind === "hero_slide" || (kind === "home_image" && draft.placement === "regional_handloom_tile"))) {
         setDraft(current => ({ ...current, focalPointX: null, focalPointY: null }));
       }
       setProgress(null);
@@ -177,8 +180,17 @@ export function ContentEditor({ item, kind, onClose, existingItems = [] }: { ite
          {kind === "home_image" && (draft.placement === "fabric_tile" || draft.placement === "weave_tile") && <label>Category description <span className="label-hint">Optional</span><textarea data-testid="input-category-description" rows={3} maxLength={500} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="e.g. Light, breathable sarees for every day."/><span className="field-note">Shown below this fabric or weave name on the homepage.</span></label>}
          {(kind === "hero_slide" || kind === "video_post") && <label>{kind === "video_post" ? "Caption" : "Supporting copy"}<textarea rows={3} maxLength={3000} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="Optional supporting text"/></label>}
         {kind === "customer_voice" && <label>Exact customer-supplied quote<textarea required rows={5} maxLength={3000} value={draft.body || ""} onChange={event => set("body", event.target.value || null)} placeholder="Paste the approved quote exactly as supplied"/></label>}
-         {kind !== "video_post" ? <MediaField label="Image" url={previews.imageUrl || draft.imageUrl} required={kind === "hero_slide" || (kind === "home_image" && draft.placement === "regional_handloom_tile")} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if (kind === "hero_slide" && url !== draft.imageUrl) setDraft(current => ({ ...current, focalPointX: null, focalPointY: null })); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/> :
+          {kind !== "video_post" ? <MediaField label="Image" url={previews.imageUrl || draft.imageUrl} required={kind === "hero_slide" || (kind === "home_image" && draft.placement === "regional_handloom_tile")} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if ((kind === "hero_slide" || (kind === "home_image" && draft.placement === "regional_handloom_tile")) && url !== draft.imageUrl) setDraft(current => ({ ...current, focalPointX: null, focalPointY: null })); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/> :
           <><MediaField label="Video file" url={previews.mediaUrl || draft.mediaUrl} required accept="video/mp4,video/webm" video onFile={file => void upload(file, "mediaUrl")} onUrl={url => { set("mediaUrl", url || null); if (!url) setPreviews(current => ({ ...current, mediaUrl: undefined })); }}/><MediaField label="Poster image" url={previews.imageUrl || draft.imageUrl} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "imageUrl")} onUrl={url => { set("imageUrl", url || null); if (!url) setPreviews(current => ({ ...current, imageUrl: undefined })); }}/></>}
+         {kind === "home_image" && draft.placement === "regional_handloom_tile" && <>
+           <MediaField label="Mobile image" url={previews.mobileImageUrl || draft.mobileImageUrl} accept="image/jpeg,image/png,image/webp" onFile={file => void upload(file, "mobileImageUrl")} onUrl={url => { set("mobileImageUrl", url || null); if (!url) setPreviews(current => ({ ...current, mobileImageUrl: undefined })); }}/>
+           <CollectionImageSettings
+             draft={draft}
+             desktopImageUrl={previews.imageUrl || draft.imageUrl}
+             mobileImageUrl={previews.mobileImageUrl || draft.mobileImageUrl || previews.imageUrl || draft.imageUrl}
+             onChange={(values) => setDraft(current => ({ ...current, ...values }))}
+           />
+         </>}
         {kind === "hero_slide" && <FocalPointField imageUrl={previews.imageUrl || draft.imageUrl} x={draft.focalPointX} y={draft.focalPointY} onChange={(x, y) => setDraft(current => ({ ...current, focalPointX: x, focalPointY: y }))} onReset={() => setDraft(current => ({ ...current, focalPointX: null, focalPointY: null }))}/>}
         {(kind === "hero_slide" || kind === "home_image") && <label>Image description <span className="label-hint">For accessibility</span><input maxLength={500} value={draft.altText || ""} onChange={event => set("altText", event.target.value || null)} placeholder="Describe the image"/></label>}
         {kind === "hero_slide" && <div className="form-row"><label>Button label<input maxLength={80} value={draft.ctaLabel || ""} onChange={event => set("ctaLabel", event.target.value || null)} placeholder="Explore the collection"/></label><label>Button destination<input maxLength={2048} value={draft.ctaUrl || ""} onChange={event => set("ctaUrl", event.target.value || null)} placeholder="/Collections"/></label></div>}
@@ -219,6 +231,107 @@ function FocalPointField({ imageUrl, x, y, onChange, onReset }: { imageUrl: stri
       <div><span>Desktop</span><div className="hero-focal-preview desktop"><img src={imageUrl} alt="" style={{ objectPosition: desktopPreviewPosition }}/></div></div>
       <div><span>Mobile</span><div className="hero-focal-preview mobile"><img src={imageUrl} alt="" style={{ objectPosition: mobilePreviewPosition }}/></div></div>
     </div>}
+  </fieldset>;
+}
+
+const collectionAspectRatios: Draft["desktopImageAspectRatio"][] = ["16:9", "3:2", "4:3", "5:4", "1:1"];
+const asCssRatio = (ratio: string) => ratio.replace(":", " / ");
+
+function CollectionImageSettings({
+  draft,
+  desktopImageUrl,
+  mobileImageUrl,
+  onChange,
+}: {
+  draft: Draft;
+  desktopImageUrl?: string | null;
+  mobileImageUrl?: string | null;
+  onChange: (values: Partial<Pick<Draft, "imageFit" | "desktopImageAspectRatio" | "mobileImageAspectRatio" | "focalPointX" | "focalPointY">>) => void;
+}) {
+  const activePointer = useRef<number | null>(null);
+  const x = draft.focalPointX ?? 50;
+  const y = draft.focalPointY ?? 50;
+  const horizontal = x === 0 || x === 50 || x === 100 ? String(x) : "custom";
+  const vertical = y === 0 || y === 50 || y === 100 ? String(y) : "custom";
+  const updateFromPointer = (event: PointerEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    const nextX = Math.round(Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width)) * 100);
+    const nextY = Math.round(Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height)) * 100);
+    onChange({ focalPointX: nextX, focalPointY: nextY });
+  };
+  const previewStyle = (ratio: string) => ({ aspectRatio: asCssRatio(ratio) });
+  const imageStyle = {
+    objectFit: draft.imageFit,
+    objectPosition: `${x}% ${y}%`,
+  } as const;
+
+  return <fieldset className="collection-image-settings">
+    <legend>Collection image display</legend>
+    <p className="field-note">Set the crop, shape and fit for the homepage card. Drag the crop preview or use the position selectors.</p>
+    <div className="collection-image-controls">
+      <label>Horizontal position
+        <select aria-label="Horizontal image position" value={horizontal} onChange={event => onChange({ focalPointX: Number(event.target.value) })}>
+          {horizontal === "custom" && <option value="custom" disabled>Custom · {x}%</option>}
+          <option value="0">Left</option><option value="50">Centre</option><option value="100">Right</option>
+        </select>
+      </label>
+      <label>Vertical position
+        <select aria-label="Vertical image position" value={vertical} onChange={event => onChange({ focalPointY: Number(event.target.value) })}>
+          {vertical === "custom" && <option value="custom" disabled>Custom · {y}%</option>}
+          <option value="0">Top</option><option value="50">Centre</option><option value="100">Bottom</option>
+        </select>
+      </label>
+      <label>Image fit
+        <select aria-label="Collection image fit" value={draft.imageFit} onChange={event => onChange({ imageFit: event.target.value as Draft["imageFit"] })}>
+          <option value="cover">Cover · fill the frame</option>
+          <option value="contain">Contain · show the full image</option>
+        </select>
+      </label>
+      <label>Desktop image shape
+        <select aria-label="Desktop image aspect ratio" value={draft.desktopImageAspectRatio} onChange={event => onChange({ desktopImageAspectRatio: event.target.value as Draft["desktopImageAspectRatio"] })}>
+          {collectionAspectRatios.map(ratio => <option key={ratio} value={ratio}>{ratio.replace(":", " : ")}</option>)}
+        </select>
+      </label>
+      <label>Mobile image shape
+        <select aria-label="Mobile image aspect ratio" value={draft.mobileImageAspectRatio} onChange={event => onChange({ mobileImageAspectRatio: event.target.value as Draft["mobileImageAspectRatio"] })}>
+          {collectionAspectRatios.map(ratio => <option key={ratio} value={ratio}>{ratio.replace(":", " : ")}</option>)}
+        </select>
+      </label>
+    </div>
+    <div className="collection-image-live-previews">
+      <div className="collection-image-live-preview">
+        <div className="collection-image-preview-heading"><b>Desktop preview</b><span>{draft.desktopImageAspectRatio}</span></div>
+        <div
+          className="collection-image-position-editor"
+          style={previewStyle(draft.desktopImageAspectRatio)}
+          onPointerDown={event => {
+            activePointer.current = event.pointerId;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            updateFromPointer(event);
+          }}
+          onPointerMove={event => {
+            if (activePointer.current === event.pointerId) updateFromPointer(event);
+          }}
+          onPointerUp={event => {
+            activePointer.current = null;
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+          }}
+          onPointerCancel={() => { activePointer.current = null; }}
+          aria-label="Drag to set collection image focal point"
+        >
+          {desktopImageUrl ? <img src={desktopImageUrl} alt="" style={imageStyle}/> : <span>Upload an image to preview</span>}
+          {desktopImageUrl && <small>Drag to position</small>}
+        </div>
+      </div>
+      <div className="collection-image-live-preview">
+        <div className="collection-image-preview-heading"><b>Mobile preview</b><span>{draft.mobileImageAspectRatio}</span></div>
+        <div className="collection-image-mobile-frame" style={previewStyle(draft.mobileImageAspectRatio)}>
+          {mobileImageUrl ? <img src={mobileImageUrl} alt="" style={imageStyle}/> : <span>Using desktop image</span>}
+        </div>
+        {draft.mobileImageUrl && <small className="collection-image-preview-note">Separate mobile image selected</small>}
+      </div>
+    </div>
   </fieldset>;
 }
 

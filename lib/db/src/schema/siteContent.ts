@@ -13,6 +13,14 @@ export const siteContentPlacementEnum = pgEnum("site_content_placement", [
   "weave_tile",
   "regional_handloom_tile",
 ]);
+export const siteContentImageFitEnum = pgEnum("site_content_image_fit", ["cover", "contain"]);
+export const siteContentImageAspectRatioEnum = pgEnum("site_content_image_aspect_ratio", [
+  "16:9",
+  "3:2",
+  "4:3",
+  "5:4",
+  "1:1",
+]);
 
 export const siteContentTable = pgTable("site_content_items", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -22,6 +30,10 @@ export const siteContentTable = pgTable("site_content_items", {
   eyebrow: text("eyebrow"),
   body: text("body"),
   imageUrl: text("image_url"),
+  mobileImageUrl: text("mobile_image_url"),
+  imageFit: siteContentImageFitEnum("image_fit").notNull().default("cover"),
+  desktopImageAspectRatio: siteContentImageAspectRatioEnum("desktop_image_aspect_ratio").notNull().default("4:3"),
+  mobileImageAspectRatio: siteContentImageAspectRatioEnum("mobile_image_aspect_ratio").notNull().default("5:4"),
   mediaUrl: text("media_url"),
   altText: text("alt_text"),
   focalPointX: integer("focal_point_x"),

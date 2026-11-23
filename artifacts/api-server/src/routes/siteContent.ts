@@ -40,6 +40,10 @@ function toResponseItem(row: SiteContent) {
     eyebrow: row.eyebrow,
     body: row.body,
     imageUrl: row.imageUrl,
+    mobileImageUrl: row.mobileImageUrl,
+    imageFit: row.imageFit,
+    desktopImageAspectRatio: row.desktopImageAspectRatio,
+    mobileImageAspectRatio: row.mobileImageAspectRatio,
     mediaUrl: row.mediaUrl,
     altText: row.altText,
     focalPointX: row.focalPointX,
@@ -156,6 +160,10 @@ async function prepareInput(
     eyebrow: string | null;
     body: string | null;
     imageUrl: string | null;
+    mobileImageUrl: string | null;
+    imageFit: "cover" | "contain";
+    desktopImageAspectRatio: "16:9" | "3:2" | "4:3" | "5:4" | "1:1";
+    mobileImageAspectRatio: "16:9" | "3:2" | "4:3" | "5:4" | "1:1";
     mediaUrl: string | null;
     altText: string | null;
     focalPointX: number | null;
@@ -172,6 +180,7 @@ async function prepareInput(
   const message = invalidContentMessage(input);
   if (message) throw new Error(message);
   const imageUrl = await normalizeMediaUrl(input.imageUrl, "image", ownerId);
+  const mobileImageUrl = await normalizeMediaUrl(input.mobileImageUrl, "image", ownerId);
   const mediaUrl = await normalizeMediaUrl(input.mediaUrl, "video", ownerId);
   return {
     ...input,
@@ -179,6 +188,7 @@ async function prepareInput(
     eyebrow: input.eyebrow?.trim() || null,
     body: input.body?.trim() || null,
     imageUrl,
+    mobileImageUrl,
     mediaUrl,
     altText: input.altText?.trim() || null,
     ctaLabel: input.ctaLabel?.trim() || null,
@@ -193,10 +203,11 @@ async function removeUnreferencedAssets(candidates: Array<string | null>) {
   if (!ids.length) return;
   const remaining = await db.select({
     imageUrl: siteContentTable.imageUrl,
+    mobileImageUrl: siteContentTable.mobileImageUrl,
     mediaUrl: siteContentTable.mediaUrl,
   }).from(siteContentTable);
   const usedIds = new Set(
-    remaining.flatMap((row) => [row.imageUrl, row.mediaUrl])
+    remaining.flatMap((row) => [row.imageUrl, row.mobileImageUrl, row.mediaUrl])
       .map(siteContentAssetIdFromUrl)
       .filter((id): id is string => Boolean(id)),
   );
@@ -265,7 +276,7 @@ router.post("/site-content", requireMerchantAdmin, async (req, res) => {
     const [row] = await db.insert(siteContentTable).values(input).returning();
     return res.status(201).json(CreateSiteContentResponse.parse(toResponseItem(row)));
   } catch (error) {
-    void removeUnreferencedAssets([parsed.data.imageUrl, parsed.data.mediaUrl]).catch((cleanupError) => {
+    void removeUnreferencedAssets([parsed.data.imageUrl, parsed.data.mobileImageUrl, parsed.data.mediaUrl]).catch((cleanupError) => {
       req.log.warn({ err: cleanupError }, "Could not clean up an unsaved media upload");
     });
     const message = error instanceof Error ? error.message : "Could not save this content.";
@@ -291,12 +302,12 @@ router.put("/site-content/:id", requireMerchantAdmin, async (req, res) => {
       .where(eq(siteContentTable.id, params.data.id))
       .returning();
     if (!row) return res.status(404).json({ error: "This content item no longer exists." });
-    void removeUnreferencedAssets([previous.imageUrl, previous.mediaUrl]).catch((cleanupError) => {
+    void removeUnreferencedAssets([previous.imageUrl, previous.mobileImageUrl, previous.mediaUrl]).catch((cleanupError) => {
       req.log.warn({ err: cleanupError }, "Could not clean up replaced site media");
     });
     return res.json(UpdateSiteContentResponse.parse(toResponseItem(row)));
   } catch (error) {
-    void removeUnreferencedAssets([parsed.data.imageUrl, parsed.data.mediaUrl]).catch((cleanupError) => {
+    void removeUnreferencedAssets([parsed.data.imageUrl, parsed.data.mobileImageUrl, parsed.data.mediaUrl]).catch((cleanupError) => {
       req.log.warn({ err: cleanupError }, "Could not clean up an unsaved media upload");
     });
     const message = error instanceof Error ? error.message : "Could not update this content.";
@@ -312,7 +323,7 @@ router.delete("/site-content/:id", requireMerchantAdmin, async (req, res) => {
     .where(eq(siteContentTable.id, params.data.id))
     .returning();
   if (!row) return res.status(404).json({ error: "This content item no longer exists." });
-  void removeUnreferencedAssets([row.imageUrl, row.mediaUrl]).catch((error) => {
+  void removeUnreferencedAssets([row.imageUrl, row.mobileImageUrl, row.mediaUrl]).catch((error) => {
     req.log.warn({ err: error }, "Could not clean up unreferenced site media");
   });
   return res.json(DeleteSiteContentResponse.parse({ id: row.id, deleted: true }));
@@ -326,7 +337,11 @@ async function hasPublishedMediaReference(assetId: string) {
   }).from(siteContentTable)
     .where(and(
       eq(siteContentTable.published, true),
-      or(eq(siteContentTable.imageUrl, mediaUrl), eq(siteContentTable.mediaUrl, mediaUrl)),
+      or(
+        eq(siteContentTable.imageUrl, mediaUrl),
+        eq(siteContentTable.mobileImageUrl, mediaUrl),
+        eq(siteContentTable.mediaUrl, mediaUrl),
+      ),
     ))
     .limit(1);
   return Boolean(row && (row.kind !== "customer_voice" || row.approved));

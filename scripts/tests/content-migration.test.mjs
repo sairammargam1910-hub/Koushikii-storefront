@@ -17,17 +17,24 @@ test("hashes normalize dates and row order, but detect changed content", () => {
   assert.notEqual(fingerprint([a]), fingerprint([{ ...a, title: "changed" }]));
 });
 test("exports inventory referenced uploaded media only", () => {
-  const a = row(); a.image_url = `/api/site-content/media/${a.id}`; a.media_url = a.image_url;
-  assert.deepEqual(mediaIds([a, { ...a, image_url: "/images/bundled.png", media_url: "https://example.test/photo.jpg" }]), [a.id]);
+  const a = row(); a.image_url = `/api/site-content/media/${a.id}`; a.mobile_image_url = a.image_url; a.media_url = a.image_url;
+  assert.deepEqual(mediaIds([a, { ...a, image_url: "/images/bundled.png", mobile_image_url: null, media_url: "https://example.test/photo.jpg" }]), [a.id]);
 });
 test("migration manifests reject tampering, missing columns, and altered media inventories", () => {
   const rows = [row()];
-  const valid = { version: 1, rows, sha256: fingerprint(rows), assetIds: [] };
+  const valid = { version: 2, rows, sha256: fingerprint(rows, 2), assetIds: [] };
   validateExport(valid);
   assert.throws(() => validateExport({ ...valid, sha256: "tampered" }));
   assert.throws(() => validateExport({ ...valid, assetIds: ["unexpected"] }));
   const incomplete = [{ id: rows[0].id }];
   assert.throws(() => validateExport({ ...valid, rows: incomplete, sha256: fingerprint(incomplete) }));
+});
+test("legacy content exports remain readable with defaults for new image settings", () => {
+  const current = row();
+  const legacy = { ...current };
+  for (const column of ["mobile_image_url", "image_fit", "desktop_image_aspect_ratio", "mobile_image_aspect_ratio", "focal_point_x", "focal_point_y"]) delete legacy[column];
+  const manifest = { version: 1, rows: [legacy], sha256: fingerprint([legacy], 1), assetIds: [] };
+  validateExport(manifest);
 });
 test("export never overwrites an existing backup and round-trips empty data", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "koushikii-export-"));
